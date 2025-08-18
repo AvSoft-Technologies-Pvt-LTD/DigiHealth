@@ -1,10 +1,10 @@
-
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import DocsReader from "../../../../components/DocsReader";
+import CameraCapture from "./CameraCapture";
+import PreviewModal from "./PreviewModal";
 import {
   ArrowLeft,
   FileText,
@@ -21,13 +21,36 @@ import {
   Upload,
   FileCheck,
   X,
+  Camera,
+  Phone,
+  AtSign,
 } from "lucide-react";
 
 const MedicalRecordDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const selectedRecord = location.state?.selectedRecord;
-  const { firstName, lastName, email, phone } = location.state || {};
+  
+  // Get all patient data from navigation state
+  const patientName = location.state?.patientName || selectedRecord?.patientName || selectedRecord?.name || "";
+  const email = location.state?.email || selectedRecord?.email || "";
+  const phone = location.state?.phone || selectedRecord?.phone || "";
+  const gender = location.state?.gender || selectedRecord?.gender || selectedRecord?.sex || "";
+  const dob = location.state?.dob || selectedRecord?.dob || "";
+  const diagnosis = location.state?.diagnosis || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "";
+  const firstName = location.state?.firstName || "";
+  const lastName = location.state?.lastName || "";
+  const patientDetails = location.state?.patientDetails || null;
+  const opdPatientData = location.state?.opdPatientData || {};
+
+  // Use OPD patient data if available
+  const displayPatientName = opdPatientData?.name || patientName || "Guest Patient";
+  const displayEmail = opdPatientData?.email || email || "";
+  const displayPhone = opdPatientData?.phone || phone || "";
+  const displayGender = opdPatientData?.gender || gender || "";
+  const displayDob = opdPatientData?.dob || dob || "";
+  const displayDiagnosis = opdPatientData?.diagnosis || diagnosis || "";
+  const displayAge = opdPatientData?.age || "";
 
   const [state, setState] = useState({
     detailsActiveTab: "medical-records",
@@ -45,9 +68,12 @@ const MedicalRecordDetails = () => {
     hospitalBillingFiles: []
   });
 
-  const [patientDetails, setPatientDetails] = useState(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [currentSection, setCurrentSection] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [isSending, setIsSending] = useState({ whatsapp: false, email: false });
 
-  // Mock data for existing records
   const mockData = {
     medicalDetails: {
       chiefComplaint: "High fever with chills, body ache, and headache for 3 days",
@@ -128,45 +154,20 @@ const MedicalRecordDetails = () => {
     },
   };
 
- useEffect(() => {
-  const fetchPatientDetails = async () => {
-    // Stop if no phone number
-    if (!phone) return;
-
-    try {
-      const url = `https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient?phone=${encodeURIComponent(phone)}`;
-
-      const res = await axios.get(url);
-      console.log("API Response:", res.data);
-
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        setPatientDetails(res.data[0]); // take first matching record
-      } else if (res.data) {
-        setPatientDetails(res.data);
-      }
-    } catch (e) {
-      setPatientDetails(null);
-    }
-  };
-
-  fetchPatientDetails();
-}, [phone]); // only depends on phone
-
   const calculateAge = (dob, appointmentDate) => {
     if (!dob || !appointmentDate) return "N/A";
-
     const dobDate = new Date(dob);
     const appointmentDateObj = new Date(appointmentDate);
-
     let age = appointmentDateObj.getFullYear() - dobDate.getFullYear();
     const monthDiff = appointmentDateObj.getMonth() - dobDate.getMonth();
-
     if (monthDiff < 0 || (monthDiff === 0 && appointmentDateObj.getDate() < dobDate.getDate())) {
       age--;
     }
-
     return `${age} years`;
   };
+
+  // Calculate age using display data
+  const calculatedAge = displayAge || calculateAge(displayDob, selectedRecord?.dateOfVisit || selectedRecord?.dateOfAdmission || selectedRecord?.dateOfConsultation);
 
   const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
 
@@ -185,21 +186,34 @@ const MedicalRecordDetails = () => {
       medicalDetails: mockData.medicalDetails,
       prescriptionsData: mockData.prescriptionsData,
       labTestsData: mockData.labTestsData,
-      patientName: `${patientDetails?.firstName || firstName || ''} ${patientDetails?.lastName || lastName || ''}`.trim() || selectedRecord.patientName || "Guest",
-      age: calculateAge(patientDetails?.dob, selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation),
-      sex: selectedRecord.sex,
+      patientName: displayPatientName,
+      age: calculatedAge,
+      sex: displayGender,
       hospitalName: selectedRecord.hospitalName,
-      diagnosis: patientDetails?.diagnosis || mockData.medicalDetails.diagnosis,
-      dateOfVisit: patientDetails?.appointmentDate || selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A",
+      diagnosis: displayDiagnosis || mockData.medicalDetails.diagnosis,
+      dateOfVisit: selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A",
       "K/C/O": selectedRecord["K/C/O"] ?? "--",
       vitals: selectedRecord?.vitals || {},
     };
     navigate("/doctordashboard/second-opinion", { state: { selectedRecord: recordToPass } });
   };
 
-  const handleBack = () => {
-    navigate("/doctordashboard/medical-record");
-  };
+ const handleBack = () => {
+  navigate("/doctordashboard/medical-record", {
+    state: {
+      selectedRecord: selectedRecord,
+      patientName: displayPatientName,
+      email: displayEmail,
+      phone: displayPhone,
+      gender: displayGender,
+      dob: displayDob,
+      diagnosis: displayDiagnosis,
+      patientDetails: patientDetails,
+      opdPatientData: location.state?.opdPatientData || {},
+    }
+  });
+};
+
 
   const printLabTest = (labTest) => {
     const printContents = `
@@ -230,9 +244,11 @@ const MedicalRecordDetails = () => {
       const validTypes = ['image/jpeg', 'image/png', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
       return validTypes.includes(file.type);
     });
+
     if (validFiles.length !== files.length) {
       alert('Some files were not uploaded. Only .jpg, .png, .pdf, .docx, and .txt files are allowed.');
     }
+
     setUploadedFiles(prev => ({
       ...prev,
       [section]: [...prev[section], ...validFiles]
@@ -246,21 +262,121 @@ const MedicalRecordDetails = () => {
     }));
   };
 
+  const handleCameraClick = (section) => {
+    setCurrentSection(section);
+    setShowCamera(true);
+  };
+
+  const handleCameraCapture = (file) => {
+    if (currentSection) {
+      setUploadedFiles(prev => ({
+        ...prev,
+        [currentSection]: [...prev[currentSection], file]
+      }));
+      const imageUrl = URL.createObjectURL(file);
+      setCapturedImage(imageUrl);
+      setShowPreviewModal(true);
+    }
+    setShowCamera(false);
+  };
+
+  const handleSendWhatsApp = async (phoneNumber, imageUrl) => {
+    setIsSending(prev => ({ ...prev, whatsapp: true }));
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      alert(`Document sent to WhatsApp: ${phoneNumber}`);
+      setShowPreviewModal(false);
+    } catch (error) {
+      alert('Failed to send WhatsApp message');
+    } finally {
+      setIsSending(prev => ({ ...prev, whatsapp: false }));
+    }
+  };
+
+  const handleSendEmail = async (emailAddress, imageUrl) => {
+    setIsSending(prev => ({ ...prev, email: true }));
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      alert(`Document sent to email: ${emailAddress}`);
+      setShowPreviewModal(false);
+    } catch (error) {
+      alert('Failed to send email');
+    } finally {
+      setIsSending(prev => ({ ...prev, email: false }));
+    }
+  };
+
+  const handlePrintDocument = (imageUrl) => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head><title>Print Document</title></head>
+        <body style="margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+          <img src="${imageUrl}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+    setShowPreviewModal(false);
+  };
+
+  useEffect(() => {
+    const fetchPatientDetails = async () => {
+      if (!displayPhone && !displayEmail) return;
+      try {
+        const url = `https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient`;
+        const res = await axios.get(url);
+        let matchedPatient = null;
+        if (Array.isArray(res.data)) {
+          matchedPatient = res.data.find((p) => {
+            const phoneMatch = displayPhone && p.phone?.toString().trim() === displayPhone?.toString().trim();
+            const emailMatch = displayEmail && p.email?.toString().trim().toLowerCase() === displayEmail?.toString().trim().toLowerCase();
+            return phoneMatch || emailMatch;
+          });
+        }
+        if (matchedPatient) {
+          console.log("Matched patient:", matchedPatient);
+        } else {
+          console.log("No patient matched by phone or email.");
+        }
+      } catch (e) {
+        console.error("Error fetching patient details:", e);
+      }
+    };
+    fetchPatientDetails();
+  }, [displayPhone, displayEmail]);
+
   const renderUploadSection = (sectionKey, title) => {
     if (!selectedRecord?.isNewlyAdded) return null;
+
     const files = uploadedFiles[sectionKey] || [];
+
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={() => handleCameraClick(sectionKey)}
+            className="flex items-center justify-center bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
+            title="Take Photo"
+          >
+            <Camera size={20} />
+          </button>
+        </div>
         <h4 className="font-semibold text-blue-800 mb-2">{title}</h4>
         <div className="border-2 border-dashed border-blue-300 rounded-lg p-4 text-center">
-          <DocsReader />
+          <DocsReader onFileUpload={(event) => handleFileUpload(event, sectionKey)} />
         </div>
         {files.length > 0 && (
           <div className="mt-2 space-y-1">
             {files.map((file, index) => (
               <div key={index} className="flex items-center justify-between bg-white rounded-lg border border-blue-200 p-2">
                 <span className="text-sm font-medium text-blue-800 truncate">{file.name}</span>
-                <button onClick={() => handleRemoveFile(sectionKey, index)} className="text-red-600 hover:text-red-800" title="Remove">
+                <button
+                  onClick={() => handleRemoveFile(sectionKey, index)}
+                  className="text-red-600 hover:text-red-800"
+                  title="Remove"
+                >
                   <X size={14} />
                 </button>
               </div>
@@ -313,7 +429,7 @@ const MedicalRecordDetails = () => {
               { label: "Investigations", value: mockData.medicalDetails.investigations },
               { label: "Treatment / Advice", value: mockData.medicalDetails.treatmentAdvice },
               { label: "Treatment Given", value: mockData.medicalDetails.treatmentGiven },
-              { label: "Final Diagnosis", value: patientDetails?.diagnosis || mockData.medicalDetails.diagnosis }, // Use fetched diagnosis or mock data
+              { label: "Final Diagnosis", value: displayDiagnosis || mockData.medicalDetails.diagnosis },
               { label: "Doctor's Notes", value: mockData.medicalDetails.doctorsNotes },
             ].map((item, index) => (
               <div key={index} className="bg-white p-6 rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
@@ -461,15 +577,20 @@ const MedicalRecordDetails = () => {
         </div>
       ),
     };
+
     return tabContentMap[state.detailsActiveTab] || null;
   };
 
   const getBillingUploadSection = () => {
     switch (state.billingActiveTab) {
-      case "pharmacy": return { key: "pharmacyBillingFiles", title: "Upload Pharmacy Bills" };
-      case "labs": return { key: "labBillingFiles", title: "Upload Lab Bills" };
-      case "hospital": return { key: "hospitalBillingFiles", title: "Upload Hospital Bills" };
-      default: return { key: "pharmacyBillingFiles", title: "Upload Pharmacy Bills" };
+      case "pharmacy":
+        return { key: "pharmacyBillingFiles", title: "Upload Pharmacy Bills" };
+      case "labs":
+        return { key: "labBillingFiles", title: "Upload Lab Bills" };
+      case "hospital":
+        return { key: "hospitalBillingFiles", title: "Upload Hospital Bills" };
+      default:
+        return { key: "pharmacyBillingFiles", title: "Upload Pharmacy Bills" };
     }
   };
 
@@ -490,13 +611,12 @@ const MedicalRecordDetails = () => {
     { id: "billing", label: "Billing", icon: CreditCard },
   ];
 
-  const age = calculateAge(patientDetails?.dob, selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation);
-  const diagnosis = patientDetails?.diagnosis || "N/A";
-  const visitDate = patientDetails?.appointmentDate || selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A";
-
   return (
     <div className="p-6 space-y-6">
-      <button onClick={handleBack} className="flex items-center gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600">
+      <button
+        onClick={handleBack}
+        className="flex items-center gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600"
+      >
         <ArrowLeft size={20} />
         <span className="font-medium">Back to Medical Records</span>
       </button>
@@ -517,24 +637,24 @@ const MedicalRecordDetails = () => {
         <div className="flex flex-col md:flex-row md:items-start gap-6">
           <div className="relative h-20 w-20 shrink-0">
             <div className="flex h-full w-full items-center justify-center rounded-full bg-white text-2xl font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2 text-[#01B07A]">
-              {getInitials(`${patientDetails?.firstName || firstName || ''} ${patientDetails?.lastName || lastName || ''}`)}
+              {getInitials(displayPatientName)}
             </div>
           </div>
           <div className="flex-1">
             <h3 className="text-2xl font-bold mb-4">
-              {`${patientDetails?.firstName || firstName || ''} ${patientDetails?.lastName || lastName || ''}`.trim() || selectedRecord.patientName || "Guest"}
+              <p> {displayPatientName}</p>
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6 text-sm">
               <div className="space-y-1">
-                <div>Age: {age}</div>
-                <div>Gender: {selectedRecord.sex}</div>
+                <div>Age: {calculatedAge}</div>
+                <div>Gender: {displayGender}</div>
               </div>
               <div className="space-y-1">
                 <div>Hospital: {selectedRecord.hospitalName}</div>
-                <div>Visit Date: {visitDate}</div>
+                <div>Visit Date: {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}</div>
               </div>
               <div className="space-y-1">
-                <div>Diagnosis: {diagnosis}</div>
+                <div>Diagnosis: {displayDiagnosis}</div>
                 <div>K/C/O: {selectedRecord["K/C/O"] ?? "--"}</div>
               </div>
             </div>
@@ -596,12 +716,29 @@ const MedicalRecordDetails = () => {
             className="btn btn-primary text-white px-4 py-3 text-xs flex items-center gap-2 hover:opacity-90 transition-opacity"
           >
             <Stethoscope size={18} />
-            Refer to  Doctor
+            Refer to Doctor
           </button>
         </div>
       </div>
 
       <div className="animate-slide-fade-in">{renderTabContent()}</div>
+
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
+
+      <PreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        capturedImage={capturedImage}
+        onSendWhatsApp={handleSendWhatsApp}
+        onSendEmail={handleSendEmail}
+        onPrint={handlePrintDocument}
+        isSending={isSending}
+      />
     </div>
   );
 };

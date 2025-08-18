@@ -8,7 +8,6 @@ import {
 } from "react-icons/fa";
 import { createPortal } from "react-dom";
 import toast, { Toaster } from "react-hot-toast";
-import Consult from "../../assets/CTABG.jpg";
 import Videocall from "../../assets/videocalling.avif"; // Replace with the actual path to your image
 
 const Modal = ({ show, onClose, children, large, showEndButton }) =>

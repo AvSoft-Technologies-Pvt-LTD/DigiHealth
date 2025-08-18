@@ -12,7 +12,7 @@ import NotificationPage from "../../../../components/NotificationPage"; // Adjus
 import MedicalRecordsTemplate from "./MedicalRecordsTemplate";
 import BillingForm from "./BillingForm";
 import MedicalRecordDetails from "./MedicalRecordDetails";
-import MedicalRecords from "./ MedicalRecords";
+import MedicalRecords from "./MedicalRecords";
 import SecondOpinion from "./SecondOpinion";const DrRoutes = () => {
   return (
     <Routes>
