@@ -13,7 +13,11 @@ import MedicalRecordsTemplate from "./MedicalRecordsTemplate";
 import BillingForm from "./BillingForm";
 import MedicalRecordDetails from "./MedicalRecordDetails";
 import MedicalRecords from "./MedicalRecords";
-import SecondOpinion from "./SecondOpinion";const DrRoutes = () => {
+import SecondOpinion from "./SecondOpinion";
+import NursingAndTreatment from "./NursingAndTreatment";
+import GatePassModal from "./GatePassModal";
+import DischargeModal from "./DischargeModal";
+const DrRoutes = () => {
   return (
     <Routes>
       <Route index element={<Overview />} /> {/* renders at /doctordashboard */}
@@ -23,7 +27,9 @@ import SecondOpinion from "./SecondOpinion";const DrRoutes = () => {
        <Route path="form" element={<FormsPage />} />
        <Route path="second-opinion" element={<SecondOpinion/>} />
       <Route path="medical-record" element={<MedicalRecords/>} />
-
+      <Route path="form/Nursing-and-treatment"element={<NursingAndTreatment />} />
+      <Route path="form/Gate-pass" element={<GatePassModal />} />
+      <Route path="form/Disharge-modal" element={<DischargeModal />} />
 
 
 <Route path="medical-record-details" element={<MedicalRecordDetails/>} />

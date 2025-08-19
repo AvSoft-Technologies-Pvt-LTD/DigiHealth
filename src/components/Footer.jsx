@@ -16,12 +16,12 @@ const Footer = () => {
 
   const sections = [
     {
-      title: 'AVSwasthya',
+      title: 'DigiHealth',
       content: (
         <>
           <p className="text-[#F5F5F5]/80 text-xs sm:text-sm">Experience personalized medical care from the comfort of your home.</p>
           <p className="mt-2 text-[var(--accent-color)] text-sm">9144-784-724</p>
-          <a href="mailto:info@avswasthya.com" className="text-[var(--accent-color)] hover:opacity-80 transition-opacity text-sm block">info@avswasthya.com</a>
+          <a href="mailto:info@DigiHealth.com" className="text-[var(--accent-color)] hover:opacity-80 transition-opacity text-sm block">info@DigiHealth.com</a>
         </>
       )
     },
@@ -119,8 +119,8 @@ const Footer = () => {
               ))}
             </div>
             <div className="text-center sm:text-right">
-              <span className="text-[var(--accent-color)] font-semibold text-sm">AVSwasthya</span>
-              <p className="text-[#F5F5F5]/60 text-xs sm:text-sm mt-1">Copyright © 2025, AVSwasthya. All rights reserved.</p>
+              <span className="text-[var(--accent-color)] font-semibold text-sm">DigiHealth</span>
+              <p className="text-[#F5F5F5]/60 text-xs sm:text-sm mt-1">Copyright © 2025, DigiHealth. All rights reserved.</p>
               <div className="mt-1">
                 <a href="/healthcheck" onClick={healthCheckHandle} className="text-slate-400 hover:underline text-xs sm:text-sm">HealthCheck @Testing</a>
               </div>

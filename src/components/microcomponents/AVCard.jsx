@@ -5,11 +5,11 @@ import logo from "../../assets/logo.png";
 
 const AVCard = () => {
   const [formData] = useState({
-    name: "Enter Your Name",
-    mobile: "Enter Your Mobile No.",
-    dob: "Date of birth",
-    gender: "Gender",
-    healthId: "250810-MH00F-99271",
+    name: "XXXXXXXXX",
+    mobile: "+91 XXXXXXXXXX",
+    dob: "XX/XX/XXXX",
+    gender: "XXXXX",
+    healthId: "XXXXXX-XXXXX-XXXXX",
     helpline: "1800-123-4567",
     imageUrl:
       "https://img.freepik.com/vecteurs-premium/icone-profil-avatar-par-defaut-image-utilisateur-medias-sociaux-icone-avatar-gris-silhouette-profil-vide-illustration-vectorielle_561158-3383.jpg",
@@ -93,8 +93,8 @@ const AVCard = () => {
 
           {/* QR Code */}
           <div className="flex flex-col items-center">
-            <div className="w-14 h-14 md:w-16 md:h-16 bg-white p-1 rounded">
-              <QrCode size={55} className="text-green-600" />
+            <div className="w-15 h-15 md:w-15 md:h-15 bg-white p-1 rounded">
+              <QrCode size={50} className="text-[#01D48C]" />
             </div>
           </div>
         </div>

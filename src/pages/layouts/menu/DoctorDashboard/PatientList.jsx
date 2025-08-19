@@ -1,14 +1,14 @@
-
+//patientlist.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useSelector } from 'react-redux';
 import OPDTab from "./OPDTab";
 import IPDTab from "./IPDTab";
 import VirtualTab from "./VirtualTab";
 import ReusableModal from "../../../../components/microcomponents/Modal";
 import axios from "axios";
 
+const DEFAULT_DOCTOR_NAME = "Dr.Sheetal S. Shelke";
 const OPT = {
   GENDER: ["Female", "Male", "Other"],
   BLOOD: ["A+", "B+", "O+", "AB+"],
@@ -22,18 +22,15 @@ const OPT = {
     "Gynecology",
   ],
   INS: ["None", "CGHS", "ESIC", "Private Insurance", "Other"],
-  STATUS: ["Admitted", "Under Treatment", "Discharged"],
+  STATUS: ["Admitted", "Discharged"],
   SURGERY: ["No", "Yes"],
 };
-
 const API = {
   FORM: "https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient",
   HD: "https://680cc0c92ea307e081d4edda.mockapi.io/personalHealthDetails",
   FD: "https://6808fb0f942707d722e09f1d.mockapi.io/FamilyData",
   HS: "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary",
-  DOCTOR: "https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users",
 };
-
 const WARD_TYPES = [
   "General",
   "Semi-Private",
@@ -67,28 +64,31 @@ const PATIENT_BASIC_FIELDS = [
     options: OPT.BLOOD.map((b) => ({ value: b, label: b })),
   },
   {
+    name: "occupation",
+    label: "Occupation",
+    type: "select",
+    required: true,
+    options: OPT.OCC.map((o) => ({ value: o, label: o })),
+  },
+  {
     name: "addressPerm",
     label: "Permanent Address",
     type: "textarea",
     required: true,
-  },
-  {
-    name: "sameAsPermAddress",
-    label: "Temporary address same as permanent",
-    type: "checkbox",
+    colSpan: 1.5, // Half width for side-by-side display
   },
   {
     name: "addressTemp",
     label: "Temporary Address",
     type: "textarea",
     required: true,
+    colSpan: 1.5, // Half width for side-by-side display
   },
   {
-    name: "occupation",
-    label: "Occupation",
-    type: "select",
-    required: true,
-    options: OPT.OCC.map((o) => ({ value: o, label: o })),
+    name: "sameAsPermAddress",
+    label: "Same as Permanent Address",
+    type: "checkbox",
+    colSpan: 3, // Full width below address fields
   },
   {
     name: "password",
@@ -103,7 +103,6 @@ const PATIENT_BASIC_FIELDS = [
     required: true,
   },
 ];
-
 
 const APPOINTMENT_FIELDS = [
   { name: "date", label: "Appointment Date", type: "date", required: true },
@@ -178,18 +177,6 @@ const IPD_DETAILS_FIELDS = [
     required: true,
     options: OPT.INS.map((i) => ({ value: i, label: i })),
   },
-  { name: "doctorInCharge", label: "Doctor In Charge", type: "text" },
-  {
-    name: "doctorSpecialization",
-    label: "Doctor Specialization",
-    type: "text",
-  },
-  {
-    name: "treatmentPlan",
-    label: "Treatment Plan",
-    type: "textarea",
-    colSpan: 2,
-  },
   {
     name: "surgeryRequired",
     label: "Surgery Required",
@@ -261,20 +248,22 @@ function to24Hour(t) {
 }
 
 export default function PatientList() {
-  const user = useSelector((state) => state.auth.user);
+  const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("OPD");
   const [patients, setPatients] = useState([]);
   const [ipdPatients, setIpdPatients] = useState([]);
   const [virtualPatients, setVirtualPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newPatientId, setNewPatientId] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const [modals, setModals] = useState({
     addPatient: false,
     appointment: false,
     ipdDetails: false,
     scheduleConsultation: false,
+    viewPatient: false,
+    editPatient: false,
   });
   const [patientFormData, setPatientFormData] = useState({});
   const [appointmentFormData, setAppointmentFormData] = useState({
@@ -291,8 +280,6 @@ export default function PatientList() {
     duration: 30,
   });
   const [patientIdInput, setPatientIdInput] = useState("");
-  const [doctorName, setDoctorName] = useState("");
-
   const tabs = [
     { label: "OPD", value: "OPD" },
     { label: "IPD", value: "IPD" },
@@ -300,114 +287,114 @@ export default function PatientList() {
   ];
 
   useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam && ["OPD", "IPD", "Virtual"].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [searchParams]);
+    fetchAllPatients();
+  }, []);
 
   useEffect(() => {
-    fetchDoctorName();
-  }, [user]);
-
-  useEffect(() => {
-    if (doctorName) {
-      fetchAllPatients();
+    const queryParams = new URLSearchParams(location.search);
+    const tab = queryParams.get("tab");
+    if (tab) {
+      setActiveTab(tab.charAt(0).toUpperCase() + tab.slice(1));
     }
-  }, [doctorName]);
+  }, [location.search]);
 
-  const fetchDoctorName = async () => {
-    if (!user?.email) {
-      console.error("No user email found in Redux");
-      setDoctorName("Dr. Sheetal S. Shelke");
-      return;
-    }
+  const fetchAllPatients = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get(`${API.DOCTOR}?email=${encodeURIComponent(user.email)}`);
-      const users = res.data;
-      if (users.length === 0) {
-        throw new Error('No user found with the provided email');
-      }
-      const doctor = users[0];
-      const fullName = `${doctor.firstName} ${doctor.lastName}`.trim();
-      const formattedDoctorName = `Dr. ${fullName}`;
-      setDoctorName(formattedDoctorName);
+      const res = await axios.get(API.FORM);
+      const allPatients = res.data
+        .map((p) => ({
+          ...p,
+          name:
+            p.name ||
+            [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
+          fullName: [p.firstName, p.middleName, p.lastName]
+            .filter(Boolean)
+            .join(" "),
+        }))
+        .reverse();
+
+      const opdData = allPatients.filter(
+        (p) =>
+          (!p.type || p.type.toLowerCase() === "opd") &&
+          p.doctorName === DEFAULT_DOCTOR_NAME
+      );
+      const ipdData = allPatients.filter(
+        (p) => p.type?.toLowerCase() === "ipd"
+      );
+      const virtualData = allPatients.filter(
+        (p) => p.type?.toLowerCase() === "virtual" || p.consultationType
+      );
+
+      // Add sequential IDs for each type
+      setPatients(
+        opdData.map((p, index) => ({
+          ...p,
+          sequentialId: index + 1, // Sequential ID for OPD
+          datetime:
+            p.appointmentDate && p.appointmentTime
+              ? `${p.appointmentDate} ${p.appointmentTime}`
+              : "Not scheduled",
+          temporaryAddress:
+            p.temporaryAddress || p.addressTemp || p.address || "",
+          address: p.address || p.temporaryAddress || p.addressTemp || "",
+          addressTemp: p.addressTemp || p.temporaryAddress || p.address || "",
+          diagnosis: p.diagnosis || "Not specified",
+          reason: p.reason || "General consultation",
+        }))
+      );
+
+      setIpdPatients(
+        ipdData.map((p, index) => ({
+          ...p,
+          sequentialId: index + 1, // Sequential ID for IPD
+          wardNo: p.wardNumber || p.wardNo,
+          bedNo: p.bedNumber || p.bedNo,
+          // Combined ward field for display: WardType-WardNo-BedNo
+          ward: `${p.wardType || "N/A"}-${p.wardNumber || p.wardNo || "N/A"}-${
+            p.bedNumber || p.bedNo || "N/A"
+          }`,
+          temporaryAddress:
+            p.temporaryAddress || p.addressTemp || p.address || "",
+          address: p.address || p.temporaryAddress || p.addressTemp || "",
+          addressTemp: p.addressTemp || p.temporaryAddress || p.address || "",
+          status: p.status || "Admitted",
+          diagnosis: p.diagnosis || "Under evaluation",
+          admissionDate: p.admissionDate || "Not specified",
+          department: p.department || "General Medicine",
+        }))
+      );
+
+      setVirtualPatients(
+        virtualData.map((p, index) => ({
+          ...p,
+          sequentialId: index + 1, // Sequential ID for Virtual
+          scheduledDateTime:
+            p.scheduledDateTime ||
+            (p.scheduledDate && p.scheduledTime
+              ? `${p.scheduledDate} ${p.scheduledTime}`
+              : "Not scheduled"),
+          consultationStatus: p.consultationStatus || "Scheduled",
+          duration: p.duration || 30,
+          temporaryAddress:
+            p.temporaryAddress || p.addressTemp || p.address || "",
+          address: p.address || p.temporaryAddress || p.addressTemp || "",
+          addressTemp: p.addressTemp || p.temporaryAddress || p.address || "",
+          consultationType: p.consultationType || "Video Call",
+        }))
+      );
     } catch (error) {
-      console.error('Error fetching doctor name:', error);
-      setDoctorName("Dr. Sheetal S. Shelke");
+      console.error("Error fetching patients:", error);
+      toast.error("Failed to fetch patients");
+    } finally {
+      setLoading(false);
     }
   };
 
-const fetchAllPatients = async () => {
-  setLoading(true);
-  try {
-    const res = await axios.get(API.FORM);
-    const allPatients = res.data
-      .map((p) => {
-        return {
-          ...p,
-          name: p.name || `${p.firstName || ""} ${p.lastName || ""}`.trim(),
-        };
-      })
-      .reverse();
-
-    const normalizedDoctorName = doctorName.trim().toLowerCase();
-    const opdData = allPatients.filter(
-      (p) =>
-        (!p.type || p.type.toLowerCase() === "opd") &&
-        p.doctorName.trim().toLowerCase() === normalizedDoctorName
-    );
-    const ipdData = allPatients.filter(
-      (p) => p.type?.toLowerCase() === "ipd" &&
-      p.doctorName.trim().toLowerCase() === normalizedDoctorName
-    );
-    const virtualData = allPatients.filter(
-      (p) => (p.type?.toLowerCase() === "virtual" || p.consultationType) &&
-      p.doctorName.trim().toLowerCase() === normalizedDoctorName
-    );
-
-    setPatients(
-      opdData.map((p) => ({
-        ...p,
-        datetime: `${p.appointmentDate} ${p.appointmentTime}`,
-        temporaryAddress: p.temporaryAddress || p.addressTemp || p.address || "",
-        address: p.address || p.temporaryAddress || p.addressTemp || "",
-        addressTemp: p.addressTemp || p.temporaryAddress || p.address || "",
-      }))
-    );
-    setIpdPatients(
-      ipdData.map((p) => ({
-        ...p,
-        wardNo: p.wardNumber,
-        bedNo: p.bedNumber,
-        temporaryAddress: p.temporaryAddress || p.addressTemp || p.address || "",
-        address: p.address || p.temporaryAddress || p.addressTemp || "",
-        addressTemp: p.addressTemp || p.temporaryAddress || p.address || "",
-      }))
-    );
-    setVirtualPatients(
-      virtualData.map((p) => ({
-        ...p,
-        scheduledDateTime: p.scheduledDateTime || `${p.scheduledDate} ${p.scheduledTime}`,
-        consultationStatus: p.consultationStatus || "Scheduled",
-        duration: p.duration || 30,
-        temporaryAddress: p.temporaryAddress || p.addressTemp || p.address || "",
-        address: p.address || p.temporaryAddress || p.addressTemp || "",
-        addressTemp: p.addressTemp || p.temporaryAddress || p.address || "",
-      }))
-    );
-  } catch (error) {
-    console.error("Error fetching patients:", error);
-    toast.error("Failed to fetch patients");
-  } finally {
-    setLoading(false);
-  }
-};
-
   const handleTabChange = (tabValue) => {
     setActiveTab(tabValue);
-    setSearchParams({ tab: tabValue });
     setNewPatientId(null);
+    navigate(`/doctordashboard/patients?tab=${tabValue}`);
   };
 
   const openModal = (modalName) => {
@@ -439,44 +426,41 @@ const fetchAllPatients = async () => {
         duration: 30,
       });
     }
+    if (modalName === "viewPatient" || modalName === "editPatient") {
+      setSelectedPatient(null);
+    }
   };
 
- const handleFetchPatientDetails = async () => {
-  if (!patientIdInput.trim()) {
-    toast.error("Please enter a Patient ID");
-    return;
-  }
-  try {
-    const data = await (await fetch(API.FORM)).json();
-    const found = data.find(
-      (p) => (p.id || "").toString() === patientIdInput.trim()
-    );
-    if (found) {
-      const clean = (str) => str?.replace(/\d+/g, "").trim() || "";
-      const firstName = clean(found.firstName) || "Trupti";
-      const middleName = clean(found.middleName);
-      const lastName = clean(found.lastName) || "Chavan";
-
-      setPatientFormData({
-        ...found,
-        firstName,
-        middleName,
-        lastName,
-        name: [firstName, middleName, lastName].filter(Boolean).join(" "),
-        addressPerm: found.permanentAddress || "",
-        addressTemp: found.temporaryAddress || "",
-      });
-      toast.success(`${found.type || "Patient"} details loaded!`);
-    } else {
-      toast.info("No patient found with this ID.");
+  const handleFetchPatientDetails = async () => {
+    if (!patientIdInput.trim()) {
+      toast.error("Please enter a Patient ID");
+      return;
     }
-  } catch {
-    toast.error("Failed to fetch patient");
-  }
-};
-
+    try {
+      const data = await (await fetch(API.FORM)).json();
+      const found = data.find(
+        (p) => (p.id || "").toString() === patientIdInput.trim()
+      );
+      if (found) {
+        setPatientFormData({
+          ...found,
+          name: `${found.firstName || ""} ${found.middleName || ""} ${
+            found.lastName || ""
+          }`.trim(),
+          addressPerm: found.permanentAddress || "",
+          addressTemp: found.temporaryAddress || "",
+        });
+        toast.success(`${found.type || "Patient"} details loaded!`);
+      } else {
+        toast.info("No patient found with this ID.");
+      }
+    } catch {
+      toast.error("Failed to fetch patient");
+    }
+  };
 
   const handlePatientFormChange = (formData) => {
+    // Handle "Same as Permanent Address" checkbox
     if (formData.sameAsPermAddress && formData.addressPerm) {
       formData.addressTemp = formData.addressPerm;
     }
@@ -484,146 +468,183 @@ const fetchAllPatients = async () => {
   };
 
   const handleIPDFormChange = (formData) => {
-    if (formData.sameAsPermAddress && formData.addressPerm) {
-      formData.addressTemp = formData.addressPerm;
-    }
     setIpdFormData(formData);
+  };
+
+  const handleViewPatient = (patient) => {
+    setSelectedPatient(patient);
+    openModal("viewPatient");
+  };
+
+  const handleEditPatient = (patient) => {
+    setSelectedPatient(patient);
+    setPatientFormData({
+      ...patient,
+      addressPerm: patient.permanentAddress || patient.addressPerm || "",
+      addressTemp: patient.temporaryAddress || patient.addressTemp || "",
+    });
+    if (activeTab === "IPD") {
+      setIpdFormData({
+        ...patient,
+        wardType: patient.wardType || "",
+        wardNumber: patient.wardNumber || patient.wardNo || "",
+        bedNumber: patient.bedNumber || patient.bedNo || "",
+      });
+    }
+    closeModal("viewPatient");
+    openModal("editPatient");
+  };
+
+  const handleUpdatePatient = async (formData) => {
+    try {
+      let payload = {
+        ...formData,
+        name: `${formData.firstName || ""} ${formData.middleName || ""} ${
+          formData.lastName || ""
+        }`.trim(),
+        permanentAddress: formData.addressPerm,
+        temporaryAddress: formData.addressTemp,
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (activeTab === "IPD") {
+        payload = {
+          ...payload,
+          ...ipdFormData,
+          admissionTime: to24Hour(ipdFormData.admissionTime),
+          wardNo: ipdFormData.wardNumber,
+          bedNo: ipdFormData.bedNumber,
+        };
+      }
+
+      await axios.put(`${API.FORM}/${selectedPatient.id}`, payload);
+      toast.success("Patient updated successfully!");
+      closeModal("editPatient");
+      fetchAllPatients();
+    } catch (error) {
+      console.error("Error updating patient:", error);
+      toast.error("Failed to update patient");
+    }
   };
 
   const handleSavePatient = async (formData) => {
     try {
-      setPatientFormData(formData);
+      const payload = {
+        ...formData,
+        name: `${formData.firstName || ""} ${formData.middleName || ""} ${
+          formData.lastName || ""
+        }`.trim(),
+        permanentAddress: formData.addressPerm,
+        temporaryAddress: formData.addressTemp,
+        type: activeTab.toLowerCase(),
+        doctorName: DEFAULT_DOCTOR_NAME,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const response = await axios.post(API.FORM, payload);
+      setNewPatientId(response.data.id);
+      toast.success("Patient details saved!");
       closeModal("addPatient");
       if (activeTab === "OPD") {
         openModal("appointment");
-        toast.success("Patient details saved! Please schedule appointment.");
+        toast.success("Please schedule appointment.");
       } else if (activeTab === "IPD") {
         openModal("ipdDetails");
-        toast.success("Patient details saved! Please fill IPD details.");
+        toast.success("Please fill IPD details.");
       }
+      fetchAllPatients();
     } catch (error) {
+      console.error("Error saving patient:", error);
       toast.error("Failed to save patient details");
     }
   };
 
-const handleScheduleAppointment = async (formData) => {
-  try {
-    const payload = {
-      ...patientFormData,
-      name: `${patientFormData.firstName} ${patientFormData.lastName}`.trim(),
-      permanentAddress: patientFormData.addressPerm,
-      temporaryAddress: patientFormData.addressTemp,
-      appointmentDate: formData.date,
-      appointmentTime: formData.time,
-      diagnosis: formData.diagnosis,
-      reason: formData.reason,
-      doctorName: doctorName,
-      type: "OPD",
-    };
+  const handleScheduleAppointment = async (formData) => {
+    try {
+      const payload = {
+        ...patientFormData,
+        appointmentDate: formData.date,
+        appointmentTime: formData.time,
+        diagnosis: formData.diagnosis,
+        reason: formData.reason,
+        doctorName: DEFAULT_DOCTOR_NAME,
+        type: "OPD",
+        updatedAt: new Date().toISOString(),
+      };
+      await axios.put(`${API.FORM}/${newPatientId}`, payload);
+      toast.success("Appointment scheduled successfully!");
+      closeModal("appointment");
+      fetchAllPatients();
+    } catch (error) {
+      console.error("Error scheduling appointment:", error);
+      toast.error("Failed to schedule appointment.");
+    }
+  };
 
-    const response = await axios.post(API.FORM, payload);
-    toast.success("Appointment scheduled successfully!");
-    closeModal("appointment");
-    setNewPatientId(response.data.id);
-    fetchAllPatients();
-  } catch (error) {
-    console.error("Error scheduling appointment:", error);
-    toast.error("Failed to schedule appointment.");
-  }
-};
+  const handleSaveIPD = async (formData) => {
+    try {
+      const patientData = {
+        ...patientFormData,
+        ...formData,
+        type: "ipd",
+        name: `${patientFormData.firstName || ""} ${
+          patientFormData.middleName || ""
+        } ${patientFormData.lastName || ""}`.trim(),
+        permanentAddress: formData.addressPerm || patientFormData.addressPerm,
+        temporaryAddress: formData.addressTemp || patientFormData.addressTemp,
+        admissionTime: to24Hour(formData.admissionTime),
+        wardNo: formData.wardNumber,
+        bedNo: formData.bedNumber,
+        updatedAt: new Date().toISOString(),
+      };
+      await axios.put(`${API.FORM}/${newPatientId}`, patientData);
+      toast.success("IPD details updated successfully!");
+      closeModal("ipdDetails");
+      fetchAllPatients();
+    } catch (error) {
+      console.error("Error updating IPD details:", error);
+      toast.error("Failed to update IPD details");
+    }
+  };
 
-
-const handleSaveIPD = async (formData) => {
-  try {
-    const patientData = {
-      ...patientFormData,
-      ...formData,
-      name: `${patientFormData.firstName} ${patientFormData.lastName}`.trim(),
-      type: "ipd",
-      permanentAddress: formData.addressPerm || patientFormData.addressPerm,
-      temporaryAddress: formData.addressTemp || patientFormData.addressTemp,
-      admissionTime: to24Hour(formData.admissionTime),
-      wardNo: formData.wardNumber,
-      bedNo: formData.bedNumber,
-      doctorName: doctorName,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const response = await axios.post(API.FORM, patientData);
-    toast.success("Patient added to IPD successfully!");
-    closeModal("ipdDetails");
-    setNewPatientId(response.data.id);
-    fetchAllPatients();
-    setPatientFormData({});
-    setIpdFormData({
-      admissionDate: getCurrentDate(),
-      admissionTime: getCurrentTime(),
-    });
-  } catch (error) {
-    toast.error("Failed to save patient");
-  }
-};
-
-
-const handleScheduleConsultation = async (formData) => {
-  try {
-    const payload = {
-      ...formData,
-      name: `${formData.firstName} ${formData.lastName}`.trim(),
-      type: "virtual",
-      scheduledDateTime: `${formData.scheduledDate} ${formData.scheduledTime}`,
-      consultationStatus: "Scheduled",
-      doctorName: doctorName,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const response = await axios.post(API.FORM, payload);
-    toast.success("Virtual consultation scheduled successfully!");
-    closeModal("scheduleConsultation");
-    setNewPatientId(response.data.id);
-    fetchAllPatients();
-  } catch (error) {
-    console.error("Error scheduling consultation:", error);
-    toast.error("Failed to schedule consultation.");
-  }
-};
+  const handleScheduleConsultation = async (formData) => {
+    try {
+      const payload = {
+        ...formData,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        type: "virtual",
+        scheduledDateTime: `${formData.scheduledDate} ${formData.scheduledTime}`,
+        consultationStatus: "Scheduled",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const response = await axios.post(API.FORM, payload);
+      toast.success("Virtual consultation scheduled successfully!");
+      closeModal("scheduleConsultation");
+      setNewPatientId(response.data.id);
+      fetchAllPatients();
+    } catch (error) {
+      console.error("Error scheduling consultation:", error);
+      toast.error("Failed to schedule consultation.");
+    }
+  };
 
   const renderActiveTab = () => {
+    const commonProps = {
+      loading,
+      newPatientId,
+      onViewPatient: handleViewPatient,
+    };
+
     switch (activeTab) {
       case "OPD":
-        return (
-          <OPDTab
-            patients={patients}
-            loading={loading}
-            newPatientId={newPatientId}
-          />
-        );
+        return <OPDTab patients={patients} {...commonProps} />;
       case "IPD":
-        return (
-          <IPDTab
-            patients={ipdPatients}
-            loading={loading}
-            newPatientId={newPatientId}
-          />
-        );
+        return <IPDTab patients={ipdPatients} {...commonProps} />;
       case "Virtual":
-        return (
-          <VirtualTab
-            patients={virtualPatients}
-            loading={loading}
-            newPatientId={newPatientId}
-          />
-        );
+        return <VirtualTab patients={virtualPatients} {...commonProps} />;
       default:
-        return (
-          <OPDTab
-            patients={patients}
-            loading={loading}
-            newPatientId={newPatientId}
-          />
-        );
+        return <OPDTab patients={patients} {...commonProps} />;
     }
   };
 
@@ -646,6 +667,54 @@ const handleScheduleConsultation = async (formData) => {
     }
   };
 
+  // Define view fields for patient details
+  const getViewFields = () => {
+    const baseFields = [
+      { key: "name", label: "Patient Name", titleKey: true },
+      { key: "sequentialId", label: "Patient ID", subtitleKey: true },
+      { key: "name", label: "Full Name", initialsKey: true },
+      { key: "phone", label: "Phone" },
+      { key: "email", label: "Email" },
+      { key: "gender", label: "Gender" },
+      { key: "bloodGroup", label: "Blood Group" },
+      { key: "addressPerm", label: "Permanent Address" },
+      { key: "addressTemp", label: "Temporary Address" },
+    ];
+
+    if (activeTab === "IPD") {
+      return [
+        ...baseFields.slice(0, 3),
+        { key: "admissionDate", label: "Admission Date" },
+        { key: "admissionTime", label: "Admission Time" },
+        { key: "status", label: "Status" },
+        { key: "ward", label: "Ward" },
+        { key: "department", label: "Department" },
+        { key: "diagnosis", label: "Diagnosis" },
+        ...baseFields.slice(3),
+      ];
+    }
+
+    if (activeTab === "Virtual") {
+      return [
+        ...baseFields.slice(0, 3),
+        { key: "consultationType", label: "Consultation Type" },
+        { key: "scheduledDateTime", label: "Scheduled Date & Time" },
+        { key: "consultationStatus", label: "Status" },
+        { key: "duration", label: "Duration (minutes)" },
+        { key: "notes", label: "Notes" },
+        ...baseFields.slice(3),
+      ];
+    }
+
+    return [
+      ...baseFields.slice(0, 3),
+      { key: "datetime", label: "Appointment" },
+      { key: "diagnosis", label: "Diagnosis" },
+      { key: "reason", label: "Reason" },
+      ...baseFields.slice(3),
+    ];
+  };
+
   return (
     <div className="p-4">
       <div className="mb-4">
@@ -657,12 +726,11 @@ const handleScheduleConsultation = async (formData) => {
             <button
               key={tab.value}
               onClick={() => handleTabChange(tab.value)}
-              className={`relative cursor-pointer flex items-center gap-1 px-4 py-2 font-medium transition-colors duration-300
-                ${
-                  activeTab === tab.value
-                    ? "text-[var(--primary-color)] after:content-[''] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-[var(--primary-color)]"
-                    : "text-gray-500 hover:text-[var(--accent-color)] before:content-[''] before:absolute before:left-0 before:bottom-0 before:h-[2px] before:w-0 before:bg-[var(--accent-color)] before:transition-all before:duration-300 hover:before:w-full"
-                }`}
+              className={`relative cursor-pointer flex items-center gap-1 px-4 py-2 font-medium transition-colors duration-300 ${
+                activeTab === tab.value
+                  ? "text-[var(--primary-color)] after:content-[''] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-[var(--primary-color)]"
+                  : "text-gray-500 hover:text-[var(--accent-color)] before:content-[''] before:absolute before:left-0 before:bottom-0 before:h-[2px] before:w-0 before:bg-[var(--accent-color)] before:transition-all before:duration-300 hover:before:w-full"
+              }`}
             >
               {tab.label}
             </button>
@@ -676,7 +744,9 @@ const handleScheduleConsultation = async (formData) => {
         </button>
       </div>
       {renderActiveTab()}
-     <ReusableModal
+
+      {/* Add Patient Modal */}
+      <ReusableModal
         isOpen={modals.addPatient}
         onClose={() => closeModal("addPatient")}
         mode="add"
@@ -695,8 +765,18 @@ const handleScheduleConsultation = async (formData) => {
               <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-semibold text-blue-800 flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
                     </svg>
                     Search Existing Patient
                   </h4>
@@ -712,7 +792,7 @@ const handleScheduleConsultation = async (formData) => {
                     className="flex-1 px-2 py-1.5 border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-xs placeholder-blue-400"
                     placeholder="Patient ID"
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         e.preventDefault();
                         handleFetchPatientDetails();
                       }
@@ -723,8 +803,18 @@ const handleScheduleConsultation = async (formData) => {
                     disabled={!patientIdInput.trim()}
                     className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-xs font-medium flex items-center gap-1"
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                     Search
                   </button>
@@ -734,7 +824,9 @@ const handleScheduleConsultation = async (formData) => {
           )
         }
       />
-       <ReusableModal
+
+      {/* Appointment Modal */}
+      <ReusableModal
         isOpen={modals.appointment}
         onClose={() => closeModal("appointment")}
         mode="add"
@@ -748,12 +840,19 @@ const handleScheduleConsultation = async (formData) => {
         size="md"
         extraContent={
           <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="text-sm font-semibold text-blue-800 mb-2">Patient Information</h4>
-            <p className="text-sm text-blue-700">{patientFormData.firstName} {patientFormData.middleName} {patientFormData.lastName}</p>
+            <h4 className="text-sm font-semibold text-blue-800 mb-2">
+              Patient Information
+            </h4>
+            <p className="text-sm text-blue-700">
+              {patientFormData.firstName} {patientFormData.middleName}{" "}
+              {patientFormData.lastName}
+            </p>
             <p className="text-xs text-blue-600">{patientFormData.email}</p>
           </div>
         }
       />
+
+      {/* IPD Details Modal */}
       <ReusableModal
         isOpen={modals.ipdDetails}
         onClose={() => closeModal("ipdDetails")}
@@ -767,6 +866,8 @@ const handleScheduleConsultation = async (formData) => {
         cancelLabel="Back"
         size="lg"
       />
+
+      {/* Schedule Consultation Modal */}
       <ReusableModal
         isOpen={modals.scheduleConsultation}
         onClose={() => closeModal("scheduleConsultation")}
@@ -790,6 +891,69 @@ const handleScheduleConsultation = async (formData) => {
             </p>
           </div>
         }
+      />
+
+      {/* View Patient Modal */}
+      <ReusableModal
+        isOpen={modals.viewPatient}
+        onClose={() => closeModal("viewPatient")}
+        mode="viewProfile"
+        title="Patient Details"
+        viewFields={getViewFields()}
+        data={selectedPatient || {}}
+        extraContent={
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={() => handleEditPatient(selectedPatient)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Edit
+            </button>
+          </div>
+        }
+      />
+
+      {/* Edit Patient Modal */}
+      <ReusableModal
+        isOpen={modals.editPatient}
+        onClose={() => closeModal("editPatient")}
+        mode="edit"
+        title={`Edit ${activeTab} Patient`}
+        fields={
+          activeTab === "IPD"
+            ? [...PATIENT_BASIC_FIELDS, ...IPD_DETAILS_FIELDS]
+            : PATIENT_BASIC_FIELDS
+        }
+        data={
+          activeTab === "IPD"
+            ? { ...patientFormData, ...ipdFormData }
+            : patientFormData
+        }
+        onSave={handleUpdatePatient}
+        onChange={
+          activeTab === "IPD"
+            ? (formData) => {
+                // Split the form data between patient and IPD fields
+                const ipdFieldNames = IPD_DETAILS_FIELDS.map((f) => f.name);
+                const patientData = {};
+                const ipdData = {};
+
+                Object.keys(formData).forEach((key) => {
+                  if (ipdFieldNames.includes(key)) {
+                    ipdData[key] = formData[key];
+                  } else {
+                    patientData[key] = formData[key];
+                  }
+                });
+
+                handlePatientFormChange(patientData);
+                handleIPDFormChange(ipdData);
+              }
+            : handlePatientFormChange
+        }
+        saveLabel="Update"
+        cancelLabel="Cancel"
+        size="lg"
       />
     </div>
   );

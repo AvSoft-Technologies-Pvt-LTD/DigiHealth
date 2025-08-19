@@ -6,12 +6,15 @@ import {
   RiDashboardFill,
   RiCalendarCheckFill,
   RiShoppingBagFill,
+  RiShoppingCartFill,
+  RiShieldUserFill,
   RiShieldCheckFill,
   RiAlarmWarningFill,
   RiSettings3Fill,
   RiLogoutBoxRFill,
   RiArrowLeftSLine,
   RiArrowRightSLine,
+  RiMoneyDollarCircleFill,
   RiTestTubeFill,
   RiMicroscopeFill,
   RiCapsuleFill,
@@ -23,6 +26,7 @@ import {
   RiArrowDownSLine,
   RiArrowUpSLine,
 } from "react-icons/ri";
+import logo from "../../assets/logo.png"
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -132,15 +136,15 @@ const Sidebar = () => {
       { icon: RiShieldCheckFill, label: "Payments", path: "/superadmindashboard/payments" },
       { icon: RiSettings3Fill, label: "Settings", path: "/superadmindashboard/settings" },
     ],
-    patient: [
-      { icon: RiDashboardFill, label: "Dashboard", path: "/patientdashboard" },
-      { icon: RiCalendarCheckFill, label: "My Appointments", path: "/patientdashboard/app" },
-      { icon: RiShoppingBagFill, label: "Medical Records", path: "/patientdashboard/medical-records" },
-      { icon: RiShoppingBagFill, label: "Online Shopping", path: "/patientdashboard/shopping" },
-      { icon: RiShieldCheckFill, label: "Insurance", path: "/patientdashboard/insurance" },
-      { icon: RiShieldCheckFill, label: "Billing", path: "/patientdashboard/billing" },
-      { icon: RiSettings3Fill, label: "Settings", path: "/patientdashboard/settings" },
-    ],
+   patient: [
+  { icon: RiDashboardFill, label: "Dashboard", path: "/patientdashboard" },
+  { icon: RiCalendarCheckFill, label: "My Appointments", path: "/patientdashboard/app" },
+  { icon: RiFileList3Fill, label: "Medical Records", path: "/patientdashboard/medical-records" },
+  { icon: RiShoppingCartFill, label: "Online Shopping", path: "/patientdashboard/shopping" },
+  { icon: RiShieldUserFill, label: "Insurance", path: "/patientdashboard/insurance" },
+  { icon: RiMoneyDollarCircleFill, label: "Billing", path: "/patientdashboard/billing" },
+  { icon: RiSettings3Fill, label: "Settings", path: "/patientdashboard/settings" },
+],
   };
 
   const getDisplayName = () => {
@@ -158,7 +162,7 @@ const Sidebar = () => {
     <div className={`h-screen bg-[var(--primary-color)] text-white p-2 sm:p-4 flex flex-col rounded-xl shadow-xl transition-all duration-300 ${isCollapsed ? "w-16 sm:w-20" : "w-60"}`}>
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div className={`flex items-center ${isCollapsed ? "justify-center w-full" : ""}`}>
-          {!isCollapsed && <div className="text-[var(--primary-color)] text-base sm:text-lg bg-[var(--accent-color)] p-1 sm:p-2 rounded-full font-bold">AV</div>}
+          {!isCollapsed && (<div> <img src={logo} alt="AV Logo" className="h-10 w-10 object-contain" /> </div>)}
           {!isCollapsed && <h3 className="ml-2 sm:ml-3 font-bold text-sm sm:text-base">DigiHealth</h3>}
         </div>
         <button onClick={toggleSidebar} className="text-white hover:bg-slate-500 p-1 rounded-full">
@@ -166,7 +170,7 @@ const Sidebar = () => {
         </button>
       </div>
       <div className="flex items-center mb-4 sm:mb-6">
-        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[var(--accent-color)] text-[var(--primary-color)] flex items-center justify-center rounded-full text-lg sm:text-xl">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[var(--accent-color)] text-[var(--primary-color)] flex items-center justify-center rounded-full  sm:text-xl">
           <RiUser3Fill />
         </div>
         {!isCollapsed && (
