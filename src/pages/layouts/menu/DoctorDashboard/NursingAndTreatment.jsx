@@ -1,14 +1,14 @@
-//NursingAndTreatment.jsx
+//nursing
 import React, { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Mail, Phone, Building, User, Calendar, Bed, FileText, Activity, ChevronLeft, Plus, Eye, Heart, Edit, Trash2, CheckCircle, Clock, BarChart3, X } from "lucide-react";
+import { Mail, Phone, Building, User, Calendar, Bed, FileText, Activity, ChevronLeft, Plus, Eye, Heart, Edit, Trash2, CheckCircle, Clock, BarChart3, X, Search } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import VitalsForm from "./VitalsForm";
 import ReusableModal from "../../../../components/microcomponents/Modal";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import VitalsChart from "./VitalsChart";
-
+import { FaEdit, FaTrash } from "react-icons/fa";
 const NursingAndTreatment = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,17 +19,100 @@ const NursingAndTreatment = () => {
   const [showVitalsChart, setShowVitalsChart] = useState(false);
   const [chartVital, setChartVital] = useState(null);
   const [chartType, setChartType] = useState("bar");
-  const [records, setRecords] = useState([{ id: 1, nurseId: "NUR123", assignedNurse: "Jane Doe", assignedDate: "2025-01-15", drugName: "Paracetamol", dosage: "500", dosageUnit: "mg", frequency: "twice a day", intake: "After Food", duration: "5", status: "pending", remarks: "Take with water" }, { id: 2, nurseId: "NUR456", assignedNurse: "Mary Smith", assignedDate: "2025-01-14", drugName: "Ibuprofen", dosage: "400", dosageUnit: "mg", frequency: "once a day", intake: "Before Food", duration: "3", status: "completed", remarks: "Take before breakfast" }]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const searchInputRef = useRef(null);
+  const [records, setRecords] = useState([
+    {
+      id: 1,
+      nurseId: "NUR123",
+      assignedNurse: "Jane Doe",
+      assignedDate: "2025-01-15",
+      drugName: "Paracetamol",
+      dosage: "500",
+      dosageUnit: "mg",
+      frequency: "twice a day",
+      intake: "After Food",
+      duration: "5",
+      status: "pending",
+      remarks: "Take with water"
+    },
+    {
+      id: 2,
+      nurseId: "NUR456",
+      assignedNurse: "Mary Smith",
+      assignedDate: "2025-01-14",
+      drugName: "Ibuprofen",
+      dosage: "400",
+      dosageUnit: "mg",
+      frequency: "once a day",
+      intake: "Before Food",
+      duration: "3",
+      status: "completed",
+      remarks: "Take before breakfast"
+    }
+  ]);
   const [editingRecord, setEditingRecord] = useState(null);
-  const [formData, setFormData] = useState({ assignedNurse: "", assignedDate: "", drugName: "", dosage: "", dosageUnit: "mg", frequency: "", intake: "Before Food", duration: "", status: "pending", remarks: "" });
+  const [formData, setFormData] = useState({
+    assignedNurse: "",
+    assignedDate: "",
+    drugName: "",
+    dosage: "",
+    dosageUnit: "mg",
+    frequency: "",
+    intake: "Before Food",
+    duration: "",
+    status: "pending",
+    remarks: ""
+  });
 
-  const localDrugList = [{ id: 1, name: "Dolo 650", strength: "650mg", form: "Tablet" }, { id: 2, name: "Paracetamol", strength: "500mg", form: "Tablet" }, { id: 3, name: "Ibuprofen", strength: "400mg", form: "Tablet" }, { id: 4, name: "Aspirin", strength: "325mg", form: "Tablet" }, { id: 5, name: "Amoxicillin", strength: "250mg", form: "Capsule" }, { id: 6, name: "Crocin", strength: "650mg", form: "Tablet" }, { id: 7, name: "Combiflam", strength: "325mg", form: "Tablet" }, { id: 8, name: "Azithromycin", strength: "500mg", form: "Tablet" }, { id: 9, name: "Ciprofloxacin", strength: "500mg", form: "Tablet" }, { id: 10, name: "Omeprazole", strength: "20mg", form: "Capsule" }, { id: 11, name: "Domperidone", strength: "10mg", form: "Tablet" }, { id: 12, name: "Pantoprazole", strength: "40mg", form: "Tablet" }];
+  const localDrugList = [
+    { id: 1, name: "Dolo 650", strength: "650mg", form: "Tablet" },
+    { id: 2, name: "Paracetamol", strength: "500mg", form: "Tablet" },
+    { id: 3, name: "Ibuprofen", strength: "400mg", form: "Tablet" },
+    { id: 4, name: "Aspirin", strength: "325mg", form: "Tablet" },
+    { id: 5, name: "Amoxicillin", strength: "250mg", form: "Capsule" },
+    { id: 6, name: "Crocin", strength: "650mg", form: "Tablet" },
+    { id: 7, name: "Combiflam", strength: "325mg", form: "Tablet" },
+    { id: 8, name: "Azithromycin", strength: "500mg", form: "Tablet" },
+    { id: 9, name: "Ciprofloxacin", strength: "500mg", form: "Tablet" },
+    { id: 10, name: "Omeprazole", strength: "20mg", form: "Capsule" },
+    { id: 11, name: "Domperidone", strength: "10mg", form: "Tablet" },
+    { id: 12, name: "Pantoprazole", strength: "40mg", form: "Tablet" }
+  ];
 
-  const nursesList = [{ value: "Jane Doe", label: "Jane Doe - Senior Nurse" }, { value: "Mary Smith", label: "Mary Smith - Staff Nurse" }, { value: "Sarah Johnson", label: "Sarah Johnson - Head Nurse" }, { value: "Emily Davis", label: "Emily Davis - ICU Nurse" }, { value: "Lisa Wilson", label: "Lisa Wilson - Ward Nurse" }];
-  const frequencyOptions = [{ value: "once a day", label: "Once a day" }, { value: "twice a day", label: "Twice a day" }, { value: "three times a day", label: "Three times a day" }, { value: "every 6 hours", label: "Every 6 hours" }, { value: "every 8 hours", label: "Every 8 hours" }];
-  const intakeOptions = [{ value: "Before Food", label: "Before Food" }, { value: "After Food", label: "After Food" }];
-  const dosageUnitOptions = [{ value: "mg", label: "mg" }, { value: "ml", label: "ml" }, { value: "tablet", label: "Tablet" }, { value: "capsule", label: "Capsule" }];
-  const statusOptions = [{ value: "pending", label: "Pending" }, { value: "completed", label: "Completed" }];
+  const nursesList = [
+    { value: "Jane Doe", label: "Jane Doe - Senior Nurse" },
+    { value: "Mary Smith", label: "Mary Smith - Staff Nurse" },
+    { value: "Sarah Johnson", label: "Sarah Johnson - Head Nurse" },
+    { value: "Emily Davis", label: "Emily Davis - ICU Nurse" },
+    { value: "Lisa Wilson", label: "Lisa Wilson - Ward Nurse" }
+  ];
+
+  const frequencyOptions = [
+    { value: "once a day", label: "Once a day" },
+    { value: "twice a day", label: "Twice a day" },
+    { value: "three times a day", label: "Three times a day" },
+    { value: "every 6 hours", label: "Every 6 hours" },
+    { value: "every 8 hours", label: "Every 8 hours" }
+  ];
+
+  const intakeOptions = [
+    { value: "Before Food", label: "Before Food" },
+    { value: "After Food", label: "After Food" }
+  ];
+
+  const dosageUnitOptions = [
+    { value: "mg", label: "mg" },
+    { value: "ml", label: "ml" },
+    { value: "tablet", label: "Tablet" },
+    { value: "capsule", label: "Capsule" }
+  ];
+
+  const statusOptions = [
+    { value: "pending", label: "Pending" },
+    { value: "completed", label: "Completed" }
+  ];
 
   const isIPDPatient = patient?.type?.toLowerCase() === "ipd";
 
@@ -50,9 +133,52 @@ const NursingAndTreatment = () => {
   const handleShowVitalSigns = () => setActiveSection("vitals");
   const handleShowNurseRecords = () => setActiveSection("records");
 
+  const handleSearchToggle = () => {
+    setIsSearchExpanded(!isSearchExpanded);
+    if (!isSearchExpanded) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    } else {
+      setSearchQuery("");
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const filteredRecords = records.filter((record) => {
+    if (!searchQuery) return true;
+
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      record.nurseId.toLowerCase().includes(searchLower) ||
+      record.assignedNurse.toLowerCase().includes(searchLower) ||
+      record.drugName.toLowerCase().includes(searchLower) ||
+      record.frequency.toLowerCase().includes(searchLower) ||
+      record.intake.toLowerCase().includes(searchLower) ||
+      record.status.toLowerCase().includes(searchLower) ||
+      record.remarks.toLowerCase().includes(searchLower) ||
+      `${record.dosage} ${record.dosageUnit}`.toLowerCase().includes(searchLower) ||
+      new Date(record.assignedDate).toLocaleDateString().toLowerCase().includes(searchLower)
+    );
+  });
+
   const handleAddRecord = () => {
     setEditingRecord(null);
-    setFormData({ assignedNurse: "", assignedDate: new Date().toISOString().split("T")[0], drugName: "", dosage: "", dosageUnit: "mg", frequency: "", intake: "Before Food", duration: "", status: "pending", remarks: "" });
+    setFormData({
+      assignedNurse: "",
+      assignedDate: new Date().toISOString().split("T")[0],
+      drugName: "",
+      dosage: "",
+      dosageUnit: "mg",
+      frequency: "",
+      intake: "Before Food",
+      duration: "",
+      status: "pending",
+      remarks: ""
+    });
     setShowAddRecordModal(true);
   };
 
@@ -67,7 +193,11 @@ const NursingAndTreatment = () => {
     }
   };
 
-  const handleDrugSelection = (drug) => setFormData((prev) => ({ ...prev, drugName: drug.name, dosageUnit: drug.form?.toLowerCase() === "tablet" ? "tablet" : drug.form?.toLowerCase() === "capsule" ? "capsule" : "mg" }));
+  const handleDrugSelection = (drug) => setFormData((prev) => ({
+    ...prev,
+    drugName: drug.name,
+    dosageUnit: drug.form?.toLowerCase() === "tablet" ? "tablet" : drug.form?.toLowerCase() === "capsule" ? "capsule" : "mg"
+  }));
 
   const handleSaveRecord = (recordData) => {
     if (!recordData.assignedNurse || !recordData.drugName) {
@@ -88,7 +218,18 @@ const NursingAndTreatment = () => {
 
   const handleEditRecord = (record) => {
     setEditingRecord(record);
-    setFormData({ assignedNurse: record.assignedNurse, assignedDate: record.assignedDate, drugName: record.drugName, dosage: record.dosage, dosageUnit: record.dosageUnit, frequency: record.frequency, intake: record.intake, duration: record.duration, status: record.status || "pending", remarks: record.remarks });
+    setFormData({
+      assignedNurse: record.assignedNurse,
+      assignedDate: record.assignedDate,
+      drugName: record.drugName,
+      dosage: record.dosage,
+      dosageUnit: record.dosageUnit,
+      frequency: record.frequency,
+      intake: record.intake,
+      duration: record.duration,
+      status: record.status || "pending",
+      remarks: record.remarks
+    });
     setShowAddRecordModal(true);
   };
 
@@ -104,6 +245,13 @@ const NursingAndTreatment = () => {
     toast.success("Status updated successfully!");
   };
 
+  const getCombinedWardInfo = (patient) => {
+  const wardType = patient?.wardType || "N/A";
+  const wardNo = patient?.wardNo || patient?.wardNumber || "N/A";
+  const bedNo = patient?.bedNo || patient?.bedNumber || "N/A";
+  return `${wardType}-${wardNo}-${bedNo}`;
+};
+
   const tableColumns = [
     { header: "Nurse ID", accessor: "nurseId" },
     { header: "Assigned Nurse", accessor: "assignedNurse" },
@@ -114,9 +262,19 @@ const NursingAndTreatment = () => {
     { header: "Intake", accessor: "intake" },
     { header: "Duration", accessor: "duration", cell: (row) => `${row.duration} days` },
     {
-      header: "Status", accessor: "status", cell: (row) => (
+      header: "Status",
+      accessor: "status",
+      cell: (row) => (
         <div className="flex items-center gap-2">
-          <button onClick={() => handleStatusToggle(row.id)} className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${row.status === "completed" ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"}`} title={`Click to mark as ${row.status === "pending" ? "completed" : "pending"}`}>
+          <button
+            onClick={() => handleStatusToggle(row.id)}
+            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${
+              row.status === "completed"
+                ? "bg-green-100 text-green-800 hover:bg-green-200"
+                : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+            }`}
+            title={`Click to mark as ${row.status === "pending" ? "completed" : "pending"}`}
+          >
             {row.status === "completed" ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
             {row.status === "completed" ? "Completed" : "Pending"}
           </button>
@@ -124,10 +282,24 @@ const NursingAndTreatment = () => {
       )
     },
     {
-      header: "Actions", accessor: "actions", cell: (row) => (
+      header: "Actions",
+      accessor: "actions",
+      cell: (row) => (
         <div className="flex gap-2">
-          <button onClick={() => handleEditRecord(row)} className="text-blue-600 hover:text-blue-800 flex items-center gap-1" title="Edit Record"><Edit className="w-4 h-4" /> Edit</button>
-          <button onClick={() => handleDeleteRecord(row.id)} className="text-red-600 hover:text-red-800 flex items-center gap-1" title="Delete Record"><Trash2 className="w-4 h-4" /> Delete</button>
+          <button
+            onClick={() => handleEditRecord(row)}
+             className="edit-btn flex items-center justify-center hover:bg-blue-100 rounded p-1 transition hover:animate-bounce"
+            title="Edit Record"
+          >
+            <FaEdit size={16} /> 
+          </button>
+          <button
+            onClick={() => handleDeleteRecord(row.id)}
+            className="delete-btn flex items-center justify-center hover:bg-red-100 rounded p-1 transition hover:animate-bounce"
+            title="Delete Record"
+          >
+              <FaTrash size={16} />
+          </button>
         </div>
       )
     }
@@ -163,11 +335,23 @@ const NursingAndTreatment = () => {
 
     return (
       <div className="relative">
-        <input ref={inputRef} type="text" value={value} onChange={handleInputChange} onFocus={handleInputFocus} placeholder={placeholder} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
         {showSuggestions && suggestions.length > 0 && (
           <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
             {suggestions.map((drug) => (
-              <div key={drug.id} onClick={() => handleSuggestionClick(drug)} className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0">
+              <div
+                key={drug.id}
+                onClick={() => handleSuggestionClick(drug)}
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+              >
                 <div className="font-medium text-gray-900">{drug.name}</div>
                 <div className="text-xs text-gray-500">{drug.strength}, {drug.form}</div>
               </div>
@@ -192,66 +376,306 @@ const NursingAndTreatment = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       <header>
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-4 mb-4">
-            <button onClick={handleBack} className="flex items-center gap-2 px-4 py-2 text-[var(--primary-color)] hover:bg-gray-100 rounded-lg transition-colors">
-              <ChevronLeft className="w-5 h-5" /> Back to Patient Form
-            </button>
+  <div className="flex items-center gap-4 -ml-4">
+  <button
+    onClick={handleBack}
+    className="flex items-center gap-2 px-4 text-[var(--primary-color)] rounded-lg transition-colors"
+  >
+    <ChevronLeft className="w-5 h-5" /> Back to Patient Form
+  </button>
+</div>
+
+
+{showPatientDetails && (
+  <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-4 border border-[#01B07A]/40 mb-4 shadow-md animate-fadeIn text-white">
+    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 w-full">
+      <div className="flex items-center gap-6 flex-wrap w-full lg:w-auto">
+        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-sm font-bold shadow-lg uppercase">
+          {getPatientName()?.split(" ").map((n) => n[0]).join("") || "N/A"}
+        </div>
+        <div className="flex flex-col gap-1 min-w-0">
+          <div>
+            <h2 className="text-lg font-semibold text-white truncate">
+              {getPatientName()}
+            </h2>
+            {/* <div className="flex items-center gap-2 text-sm text-gray-200 truncate">
+              <Mail className="w-4 h-4 text-white/80" />
+              <span className="truncate">{patient?.email || "N/A"}</span>
+            </div> */}
           </div>
-          {showPatientDetails && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100 mb-4 animate-fadeIn">
-              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 w-full">
-                <div className="flex items-center gap-6 flex-wrap w-full lg:w-auto">
-                  <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-[var(--primary-color)] to-[var(--accent-color)] text-white text-sm font-bold shadow-lg">
-                    {getPatientName()?.split(" ").map((n) => n[0]).join("") || "N/A"}
-                  </div>
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <div>
-                      <h2 className="text-lg font-semibold text-gray-800 truncate">{getPatientName()}</h2>
-                      <div className="flex items-center gap-2 text-sm text-[var(--accent-color)] truncate">
-                        <Mail className="w-4 h-4" /> <span className="truncate">{patient?.email || "N/A"}</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-x-12 gap-y-3 text-sm pt-1">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1"><Phone className="w-4 h-4 text-[var(--accent-color)]" /> <span><strong>Contact:</strong> {patient?.phone || "N/A"}</span></div>
-                        {isIPDPatient && <div className="flex items-center gap-1"><Building className="w-4 h-4 text-[var(--accent-color)]" /> <span><strong>Ward Type:</strong> {patient?.wardType || "N/A"}</span></div>}
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1"><User className="w-4 h-4 text-[var(--accent-color)]" /> <span><strong>Age:</strong> {getPatientAge()}</span></div>
-                        {isIPDPatient && <div className="flex items-center gap-1"><Building className="w-4 h-4 text-[var(--accent-color)]" /> <span><strong>Ward No:</strong> {patient?.wardNo || patient?.wardNumber || "N/A"}</span></div>}
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1"><Calendar className="w-4 h-4 text-[var(--accent-color)]" /> <span><strong>Gender:</strong> {patient?.gender || "N/A"}</span></div>
-                        {isIPDPatient && <div className="flex items-center gap-1"><Bed className="w-4 h-4 text-[var(--accent-color)]" /> <span><strong>Bed No:</strong> {patient?.bedNo || patient?.bedNumber || "N/A"}</span></div>}
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1"><FileText className="w-4 h-4 text-[var(--accent-color)]" /> <span><strong>Diagnosis:</strong> {patient?.diagnosis || "N/A"}</span></div>
-                        {isIPDPatient && <div className="flex items-center gap-1"><Activity className="w-4 h-4 text-[var(--accent-color)]" /> <span><strong>Status:</strong> <span className={`ml-1 px-2 py-1 rounded-full text-xs ${patient?.status === "ADMITTED" || patient?.status === "Admitted" ? "bg-green-100 text-green-800" : patient?.status === "Under Treatment" ? "bg-yellow-100 text-yellow-800" : patient?.status === "DISCHARGED" || patient?.status === "Discharged" ? "bg-gray-100 text-gray-800" : "bg-blue-100 text-blue-800"}`}>{patient?.status?.toUpperCase() || "N/A"}</span></span></div>}
-                      </div>
-                    </div>
-                  </div>
+          <div className="flex flex-wrap gap-x-12 gap-y-3 text-sm pt-1">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1">
+                <Phone className="w-4 h-4 text-white/80" />
+                <span><strong>Contact:</strong> {patient?.phone || "N/A"}</span>
+              </div>
+              {isIPDPatient && (
+                <div className="flex items-center gap-1">
+                  <Building className="w-4 h-4 text-white/80" />
+                  <span><strong>Ward:</strong> {getCombinedWardInfo(patient)}</span>
                 </div>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1">
+                <User className="w-4 h-4 text-white/80" />
+                <span><strong>Age:</strong> {getPatientAge()}</span>
+              </div>
+              {isIPDPatient && (
+                <div className="flex items-center gap-1">
+                  <Activity className="w-4 h-4 text-white/80" />
+                  <span>
+                    <strong>Status:</strong>
+                    <span
+                      className={`ml-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                        patient?.status?.toUpperCase() === "ADMITTED"
+                          ? "bg-green-200 text-green-900"
+                          : patient?.status === "Under Treatment"
+                          ? "bg-yellow-200 text-yellow-900"
+                          : patient?.status?.toUpperCase() === "DISCHARGED"
+                          ? "bg-gray-200 text-gray-900"
+                          : "bg-blue-200 text-blue-900"
+                      }`}
+                    >
+                      {patient?.status?.toUpperCase() || "N/A"}
+                    </span>
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4 text-white/80" />
+                <span><strong>Gender:</strong> {patient?.gender || "N/A"}</span>
               </div>
             </div>
-          )}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1">
+                <FileText className="w-4 h-4 text-white/80" />
+                <span><strong>Diagnosis:</strong> {patient?.diagnosis || "N/A"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
           <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
             <div className="flex flex-wrap gap-2">
-                            <button className={`px-4 py-2 rounded-md text-sm font-semibold hover:shadow-lg  transition-all flex items-center gap-2 ${activeSection === "records" ? "bg-[var(--accent-color)] text-white border-[var(--accent-color)]" : "bg-[var(--primary-color)] text-white border-[var(--primary-color)] hover:bg-[var(--accent-color)]"}`} onClick={handleShowNurseRecords}><FileText className="w-4 h-4" /> Nurse Records</button>
-              <button className={`px-4 py-2 rounded-md text-sm font-semibold hover:shadow-lg  transition-all flex items-center gap-2 ${activeSection === "vitals" ? "bg-[var(--accent-color)] text-white border-[var(--accent-color)]" : "bg-[var(--primary-color)] text-white border-[var(--primary-color)] hover:bg-[var(--accent-color)]"}`} onClick={handleShowVitalSigns}><Heart className="w-4 h-4" /> Show Vital Signs</button>
+              <button
+                className={`px-4 py-2 rounded-md text-sm font-semibold hover:shadow-lg transition-all flex items-center gap-2 ${
+                  activeSection === "records"
+                    ? "bg-[var(--accent-color)] text-white border-[var(--accent-color)]"
+                    : "bg-[var(--primary-color)] text-white border-[var(--primary-color)] hover:bg-[var(--accent-color)]"
+                }`}
+                onClick={handleShowNurseRecords}
+              >
+                <FileText className="w-4 h-4" /> Nurse Records
+              </button>
+              <button
+                className={`px-4 py-2 rounded-md text-sm font-semibold hover:shadow-lg transition-all flex items-center gap-2 ${
+                  activeSection === "vitals"
+                    ? "bg-[var(--accent-color)] text-white border-[var(--accent-color)]"
+                    : "bg-[var(--primary-color)] text-white border-[var(--primary-color)] hover:bg-[var(--accent-color)]"
+                }`}
+                onClick={handleShowVitalSigns}
+              >
+                <Heart className="w-4 h-4" /> Show Vital Signs
+              </button>
             </div>
-            {activeSection === "records" && <button onClick={handleAddRecord} className="flex items-center gap-2 px-4 py-2 bg-[var(--primary-color)] hover:bg-[var(--accent-color)] text-white rounded-lg transition-all"><Plus className="w-4 h-4" /> Add Record</button>}
+
+            {activeSection === "records" && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSearchToggle}
+                    className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-300 ${
+                      isSearchExpanded
+                        ? "bg-[var(--accent-color)] text-white"
+                        : "bg-gray-100 text-[var(--primary-color)] hover:bg-gray-200"
+                    }`}
+                    title="Search Records"
+                  >
+                    <Search className="w-4 h-4" />
+                  </button>
+
+                  <div className={`transition-all duration-300 ease-in-out ${
+                    isSearchExpanded ? "w-64 opacity-100" : "w-0 opacity-0"
+                  } overflow-hidden`}>
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      placeholder="Search records..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-[var(--primary-color)] text-sm"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleAddRecord}
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--primary-color)] hover:bg-[var(--accent-color)] text-white rounded-lg transition-all"
+                >
+                  <Plus className="w-4 h-4" /> Add Record
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
       <main className="max-w-7xl mx-auto px-6 py-2">
-        {activeSection === "vitals" && <div className="mb-8 animate-slideIn"><VitalsForm data={{}} onSave={(formType, data) => { console.log("Vitals saved:", data); toast.success("Vitals saved successfully!"); }} onPrint={(formType) => { console.log("Printing vitals form"); toast.info("Printing vitals form..."); }} patient={patient} setIsChartOpen={setShowVitalsChart} setChartVital={setChartVital} /></div>}
-        {activeSection === "records" && <div className="animate-fadeIn">{records.length > 0 ? <DynamicTable columns={tableColumns} data={records} showSearchBar={true} /> : <div className="text-center py-8"><FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" /><p className="text-gray-600 mb-4">No nursing records found</p><button onClick={handleAddRecord} className="btn btn-primary"><Plus className="w-4 h-4" /> Add First Record</button></div>}</div>}
+        {activeSection === "vitals" && (
+          <div className="mb-8 animate-slideIn">
+            <VitalsForm
+              data={{}}
+              onSave={(formType, data) => {
+                console.log("Vitals saved:", data);
+                toast.success("Vitals saved successfully!");
+              }}
+              onPrint={(formType) => {
+                console.log("Printing vitals form");
+                toast.info("Printing vitals form...");
+              }}
+              patient={patient}
+              setIsChartOpen={setShowVitalsChart}
+              setChartVital={setChartVital}
+            />
+          </div>
+        )}
+
+        {activeSection === "records" && (
+          <div className="animate-fadeIn">
+            {searchQuery && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  Showing {filteredRecords.length} of {records.length} records for "{searchQuery}"
+                  {filteredRecords.length !== records.length && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setIsSearchExpanded(false);
+                      }}
+                      className="ml-2 text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Clear search
+                    </button>
+                  )}
+                </p>
+              </div>
+            )}
+            {filteredRecords.length > 0 ? (
+              <DynamicTable
+                columns={tableColumns}
+                data={filteredRecords}
+                showSearchBar={false}
+              />
+            ) : searchQuery ? (
+              <div className="text-center py-8">
+                <Search className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600 mb-4">No records found for "{searchQuery}"</p>
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setIsSearchExpanded(false);
+                  }}
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  Clear search to see all records
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600 mb-4">No nursing records found</p>
+                <button
+                  onClick={handleAddRecord}
+                  className="btn btn-primary"
+                >
+                  <Plus className="w-4 h-4" /> Add First Record
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </main>
-      <ReusableModal isOpen={showAddRecordModal} onClose={() => { setShowAddRecordModal(false); setEditingRecord(null); }} mode={editingRecord ? "edit" : "add"} title={editingRecord ? "Edit Nursing Record" : "Add New Nursing Record"} data={formData} fields={modalFields} size="lg" onSave={handleSaveRecord} saveLabel={editingRecord ? "Update Record" : "Save Record"} cancelLabel="Cancel" />
-      {showVitalsChart && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fadeIn"><div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto relative"><button onClick={() => setShowVitalsChart(false)} className="absolute top-3 right-3 text-gray-500 hover:text-red-500 z-10"><X className="w-5 h-5" /></button><h3 className="text-xl font-semibold text-[var(--primary-color)] mb-4 flex items-center gap-2"><BarChart3 className="w-6 h-6" />{chartVital ? `${chartVital.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())} Chart & Analytics` : "Vitals Chart & Analytics"}</h3><div className="flex flex-wrap gap-2 mb-4 border-b border-gray-200 pb-3">{[{ id: "bar", name: "Bar Chart", icon: "📊" }, { id: "line", name: "Line Chart", icon: "📈" }, { id: "area", name: "Area Chart", icon: "🌄" }, { id: "pie", name: "Pie Chart", icon: "🥧" }, { id: "radar", name: "Radar Chart", icon: "🕸️" }].map((type) => <button key={type.id} onClick={() => setChartType(type.id)} className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${chartType === type.id ? "bg-[var(--primary-color)] text-white" : "bg-gray-100 text-[var(--primary-color)] hover:bg-gray-200"}`}><span>{type.icon}</span><span>{type.name}</span></button>)}</div><div className="h-96 flex flex-col w-full"><VitalsChart vital={chartVital} records={[]} selectedIdx={null} range={{ heartRate: { min: 60, max: 100, label: "bpm", name: "Heart Rate", optimal: 70 }, temperature: { min: 36.1, max: 37.2, label: "°C", name: "Temperature", optimal: 36.5 }, bloodSugar: { min: 70, max: 140, label: "mg/dL", name: "Blood Sugar", optimal: 90 }, bloodPressure: { min: 90, max: 120, label: "mmHg", name: "Blood Pressure", optimal: 110 }, height: { min: 100, max: 220, label: "cm", name: "Height", optimal: 170 }, weight: { min: 30, max: 200, label: "kg", name: "Weight", optimal: 70 } }[chartVital]} chartType={chartType} /></div></div></div>}
+      <ReusableModal
+        isOpen={showAddRecordModal}
+        onClose={() => {
+          setShowAddRecordModal(false);
+          setEditingRecord(null);
+        }}
+        mode={editingRecord ? "edit" : "add"}
+        title={editingRecord ? "Edit Nursing Record" : "Add New Nursing Record"}
+        data={formData}
+        fields={modalFields}
+        size="lg"
+        onSave={handleSaveRecord}
+        saveLabel={editingRecord ? "Update Record" : "Save Record"}
+        cancelLabel="Cancel"
+      />
+      {showVitalsChart && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
+            <button
+              onClick={() => setShowVitalsChart(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-red-500 z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-[var(--primary-color)] mb-4 flex items-center gap-2">
+              <BarChart3 className="w-6 h-6" />
+              {chartVital
+                ? `${chartVital.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())} Chart & Analytics`
+                : "Vitals Chart & Analytics"
+              }
+            </h3>
+            <div className="flex flex-wrap gap-2 mb-4 border-b border-gray-200 pb-3">
+              {[
+                { id: "bar", name: "Bar Chart", icon: "📊" },
+                { id: "line", name: "Line Chart", icon: "📈" },
+                { id: "area", name: "Area Chart", icon: "🌄" },
+                { id: "pie", name: "Pie Chart", icon: "🥧" },
+                { id: "radar", name: "Radar Chart", icon: "🕸️" }
+              ].map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setChartType(type.id)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                    chartType === type.id
+                      ? "bg-[var(--primary-color)] text-white"
+                      : "bg-gray-100 text-[var(--primary-color)] hover:bg-gray-200"
+                  }`}
+                >
+                  <span>{type.icon}</span>
+                  <span>{type.name}</span>
+                </button>
+              ))}
+            </div>
+            <div className="h-96 flex flex-col w-full">
+              <VitalsChart
+                vital={chartVital}
+                records={[]}
+                selectedIdx={null}
+                range={{
+                  heartRate: { min: 60, max: 100, label: "bpm", name: "Heart Rate", optimal: 70 },
+                  temperature: { min: 36.1, max: 37.2, label: "°C", name: "Temperature", optimal: 36.5 },
+                  bloodSugar: { min: 70, max: 140, label: "mg/dL", name: "Blood Sugar", optimal: 90 },
+                  bloodPressure: { min: 90, max: 120, label: "mmHg", name: "Blood Pressure", optimal: 110 },
+                  height: { min: 100, max: 220, label: "cm", name: "Height", optimal: 170 },
+                  weight: { min: 30, max: 200, label: "kg", name: "Weight", optimal: 70 }
+                }[chartVital]}
+                chartType={chartType}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,56 @@
 import React, { useState } from "react";
-import { FiFilter, FiX, FiSearch, FiMenu, FiChevronLeft } from "react-icons/fi";
+import { FiFilter, FiX, FiSearch, FiMenu, FiChevronLeft, FiChevronDown } from "react-icons/fi";
+
+const FilterDropdown = ({ filter, activeFilters, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selected = activeFilters[filter.key] || [];
+
+  const handleCheckboxChange = (value) => {
+    const newSelected = selected.includes(value)
+      ? selected.filter((v) => v !== value)
+      : [...selected, value];
+    onChange(filter.key, newSelected);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="input-field peer flex items-center gap-2 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+      >
+        <FiFilter className="text-[var(--primary-color)]" />
+        {filter.label || "Filter"}
+        {selected.length > 0 && (
+          <span className="ml-1 text-xs text-gray-500">({selected.length})</span>
+        )}
+        <FiChevronDown className="ml-1 text-xs" />
+      </button>
+      {isOpen && (
+        <div className="absolute left-0 mt-1 w-48 bg-white border rounded-lg shadow-lg z-10 p-2">
+          {filter.options.map((opt) => (
+            <label key={opt.value} className="flex items-center gap-2 p-1 hover:bg-gray-100 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selected.includes(opt.value)}
+                onChange={() => handleCheckboxChange(opt.value)}
+                className="h-4 w-4"
+              />
+              {opt.label}
+            </label>
+          ))}
+          {selected.length > 0 && (
+            <button
+              onClick={() => onChange(filter.key, [])}
+              className="mt-1 text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+            >
+              <FiX className="text-xs" /> Clear
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const DynamicTable = ({
   columns,
@@ -28,25 +79,19 @@ const DynamicTable = ({
     const matchesSearch = Object.values(row).some((val) =>
       val?.toString().toLowerCase().includes(search.toLowerCase())
     );
-    const matchesCombinedFilter = !activeFilters.combinedFilter || Object.entries(row).some(
-      ([, fieldValue]) =>
-        typeof fieldValue === "string" && fieldValue === activeFilters.combinedFilter
-    );
-    const matchesOtherFilters = Object.entries(activeFilters).every(([key, val]) => {
-      if (!val || key === "combinedFilter") return true;
-      return row[key] === val;
+    const matchesFilters = filters.every((filter) => {
+      const selected = activeFilters[filter.key] || [];
+      if (selected.length === 0) return true;
+      return selected.includes(row[filter.key]);
     });
-    return matchesSearch && matchesCombinedFilter && matchesOtherFilters;
+    return matchesSearch && matchesFilters;
   });
 
   return (
     <div className="space-y-4">
       {/* Tabs (responsive) */}
       {tabs.length > 0 && (
-        <div
-          className="flex items-center justify-between mb-4 overflow-x-auto pb-2
-                    rounded-lg p-2 min-h-[56px] custom-scrollbar"
-        >
+        <div className="flex items-center justify-between mb-4 overflow-x-auto pb-2 rounded-lg p-2 min-h-[56px] custom-scrollbar">
           <div className="flex gap-4 whitespace-nowrap">
             {tabs.map((tab) => (
               <button
@@ -88,11 +133,7 @@ const DynamicTable = ({
 
       {/* Filters and Search (Drawer for Mobile, only if filters exist) */}
       {filters.length > 0 && (
-        <div
-          className={`${
-            isFilterDrawerOpen ? "block" : "hidden"
-          } md:block md:space-y-0 md:flex md:items-center md:gap-2 md:flex-wrap`}
-        >
+        <div className={`${isFilterDrawerOpen ? "block" : "hidden"} md:block md:space-y-0 md:flex md:items-center md:gap-2 md:flex-wrap`}>
           <div className="flex flex-col md:flex-row md:items-center gap-2 p-4 md:p-0 bg-gray-50 md:bg-transparent rounded-lg md:rounded-none">
             {showSearchBar && (
               <div className="relative flex items-center">
@@ -107,32 +148,12 @@ const DynamicTable = ({
               </div>
             )}
             {filters.map((filter) => (
-              <div key={filter.key} className="flex items-center gap-2">
-                <FiFilter className="text-[var(--primary-color)]" />
-                {filter.label || "Filter"}:
-                <select
-                  value={activeFilters[filter.key] || ""}
-                  onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                  className="input-field peer"
-                >
-                  <option value="">All</option>
-                  {filter.options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                {activeFilters[filter.key] && (
-                  <button
-                    type="button"
-                    onClick={() => handleFilterChange(filter.key, "")}
-                    className="text-red-500 hover:text-red-700"
-                    title="Clear filter"
-                  >
-                    <FiX className="text-xs" />
-                  </button>
-                )}
-              </div>
+              <FilterDropdown
+                key={filter.key}
+                filter={filter}
+                activeFilters={activeFilters}
+                onChange={handleFilterChange}
+              />
             ))}
           </div>
         </div>

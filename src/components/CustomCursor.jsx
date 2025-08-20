@@ -11,7 +11,7 @@ export default function CustomCursor() {
   useEffect(() => {
     // Check if the device is mobile
     const checkIfMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+     setIsMobile(window.innerWidth <= 1024);
     };
 
     checkIfMobile();

@@ -79,12 +79,20 @@ const ReusableModal = ({
   useEffect(() => {
     if (isOpen && ["add", "edit"].includes(mode)) {
       const initial = {};
-      fields.forEach((f) => (initial[f.name] = data?.[f.name] ?? ""));
+      fields.forEach((f) => {
+        if (f.type === "checkboxWithInput") {
+          initial[f.name] = data?.[f.name] ?? false;       // checkbox
+          initial[f.inputName] = data?.[f.inputName] ?? ""; // input value
+        } else {
+          initial[f.name] = data?.[f.name] ?? "";
+        }
+      });
       setFormValues(initial);
       setFormErrors({});
       setCurrentFields(fields);
     }
   }, [isOpen, mode, data, fields]);
+
 
   useEffect(() => {
     if (onFieldsUpdate && formValues) {
@@ -154,9 +162,8 @@ const ReusableModal = ({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 50, scale: 0.95 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className={`flex flex-col relative w-full max-h-[90vh] rounded-xl bg-white shadow-xl overflow-hidden ${
-          size === "sm" ? "max-w-md" : size === "md" ? "max-w-3xl" : "max-w-4xl"
-        }`}
+        className={`flex flex-col relative w-full max-h-[90vh] rounded-xl bg-white shadow-xl overflow-hidden ${size === "sm" ? "max-w-md" : size === "md" ? "max-w-3xl" : "max-w-4xl"
+          }`}
       >
         {(mode === "add" || mode === "edit" || mode === "viewProfile") && (
           <div className="sticky top-0 z-20 bg-gradient-to-r from-[#01B07A] to-[#004f3d] rounded-t-xl px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
@@ -180,11 +187,11 @@ const ReusableModal = ({
               {["add", "edit"].includes(mode) && (
                 <div className="space-y-4 sm:space-y-6 mb-2 sm:mb-4">
                   {getFieldRows(currentFields).map((row, i) => (
-                    <div key={i} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-2 sm:mb-4">
+                    <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mb-2 sm:mb-4">
                       {row.map((field) => (
                         <div
                           key={field.name}
-                          className={`col-span-1 ${getColSpanClass(field.colSpan)} flex flex-col`}
+                          className={`col-span-1 ${getColSpanClass(field.colSpan)}`}
                         >
                           {field.type === "checkbox" ? (
                             <label className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm mt-1">
@@ -197,6 +204,29 @@ const ReusableModal = ({
                               />
                               <span>{field.label}</span>
                             </label>
+                          ) : field.type === "checkboxWithInput" ? (
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <label className="flex items-center gap-1 text-xs sm:text-sm whitespace-nowrap">
+                                <input
+                                  type="checkbox"
+                                  name={field.name}
+                                  checked={!!formValues[field.name]}
+                                  onChange={(e) => handleChange(field.name, e.target.checked)}
+                                  className="h-4 w-4 text-blue-600"
+                                />
+                                <span>{field.label}</span>
+                              </label>
+                              {formValues[field.name] && (
+                                <input
+                                  type="text"
+                                  name={field.inputName}
+                                  value={formValues[field.inputName] || ""}
+                                  onChange={(e) => handleChange(field.inputName, e.target.value)}
+                                  className="text-xs sm:text-sm border border-gray-300 rounded-md w-20 placeholder:text-[10px]"
+                                  placeholder={field.inputLabel}
+                                />
+                              )}
+                            </div>
                           ) : field.type === "radio" ? (
                             <div className="space-y-1.5 sm:space-y-2">
                               <p className="font-medium text-xs sm:text-sm mb-1">{field.label}</p>
@@ -245,7 +275,7 @@ const ReusableModal = ({
                                     <ChevronDown size={14} className="sm:size-4" />
                                   </button>
                                   {formValues[`${field.name}Open`] && (
-                                    <div className="absolute z-50 mt-1 max-h-40 sm:max-h-60 w-full overflow-auto rounded bg-white shadow">
+                                    <div className="fixed z-[1000] mt-1  max-h-40 sm:max-h-60  min-w-auto overflow-auto rounded bg-white shadow">
                                       <input
                                         type="text"
                                         placeholder="Search..."
@@ -256,7 +286,7 @@ const ReusableModal = ({
                                             [`${field.name}Search`]: e.target.value,
                                           }))
                                         }
-                                        className=" input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border-b border-gray-100 outline-none"
+                                        className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border-b border-gray-100 outline-none"
                                       />
                                       {field.options
                                         ?.filter((opt) =>
@@ -359,9 +389,8 @@ const ReusableModal = ({
                                     value={formValues[field.name] || ""}
                                     onChange={(e) => handleInputChange(e, field)}
                                     readOnly={field.readonly}
-                                    className={`input-field peer px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${
-                                      field.isDuration ? "w-16 sm:w-24 text-center" : "w-full"
-                                    }`}
+                                    className={`input-field peer px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${field.isDuration ? "w-16 sm:w-24 text-center" : "w-full"
+                                      }`}
                                     placeholder=" "
                                     min={field.min}
                                     max={field.max}
@@ -458,7 +487,7 @@ const ReusableModal = ({
                       <div className="flex items-center gap-2 sm:gap-3">
                         <button
                           onClick={() => signaturePadRef.current?.toDataURL()}
-                          className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-xs sm:text-sm text-white rounded-md hover:bg-blue-700 flex items-center gap-1"
+                          className="px-3 sm:px-4 py-1.5 sm:py-2 edit-btn text-xs sm:text-sm  flex items-center gap-1"
                         >
                           <Save className="w-3.5 h-3.5 sm:size-4" />
                           Save
@@ -525,7 +554,7 @@ const ReusableModal = ({
               {mode !== "viewProfile" && (
                 <button
                   onClick={onClose}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm delete-btn "
                 >
                   {cancelLabel || "Cancel"}
                 </button>
@@ -533,7 +562,7 @@ const ReusableModal = ({
               {["add", "edit"].includes(mode) && (
                 <button
                   onClick={handleSave}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-[#01B07A] text-white rounded-md hover:bg-opacity-90"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm view-btn"
                 >
                   {saveLabel || (mode === "edit" ? "Update" : "Save")}
                 </button>

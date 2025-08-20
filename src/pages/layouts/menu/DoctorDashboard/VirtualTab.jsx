@@ -489,7 +489,7 @@ export default function VirtualTab({ patients, loading, newPatientId }) {
                 },
               });
             }}
-            className="text-blue-600 hover:text-blue-800"
+            className="text-lg text-[var(--primary-color)]"
             style={{ display: "flex", alignItems: "center" }}
           >
             <FiExternalLink />

@@ -39,56 +39,39 @@ function Dashboard() {
   const [profileData, setProfileData] = useState({ name: '', firstName: '', lastName: '', gender: '', dob: '', phone: '', photo: '' });
 
   const basePersonalFields = [
-    { name: 'height', label: 'Height (cm)', type: 'number', colSpan: 1 },
-    { name: 'weight', label: 'Weight (kg)', type: 'number', colSpan: 1 },
-    { name: 'bloodGroup', label: 'Blood Group', type: 'select', colSpan: 1, options: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bg => ({ label: bg, value: bg })) },
-    { name: 'surgeries', label: 'Surgeries', type: 'textarea', colSpan: 1 },
-    { name: 'allergies', label: 'Allergies', type: 'textarea', colSpan: 2 },
-    { name: 'isSmoker', label: 'Do you smoke?', type: 'checkbox', colSpan: 1 },
-    { name: 'isAlcoholic', label: 'Do you consume alcohol?', type: 'checkbox', colSpan: 1 },
-    { name: 'isTobaccoUser', label: 'Do you use tobacco?', type: 'checkbox', colSpan: 1 }
-  ];
-
-  const getPersonalFields = (formValues) => {
-    const fields = [...basePersonalFields];
-    if (formValues.isSmoker) {
-      fields.push({
-        name: 'smokingDuration',
-        label: 'Since (yrs)',
-        type: 'number',
-        colSpan: 1,
-        isDuration: true,
-        min: 0,
-        max: 200,
-        className: 'min-w-[180px] h-12 text-sm px-3 rounded border'
-      });
-    }
-    if (formValues.isAlcoholic) {
-      fields.push({
-        name: 'alcoholDuration',
-        label: 'Since (yrs)',
-        type: 'number',
-        colSpan: 1,
-        isDuration: true,
-        min: 0,
-        max: 200,
-        className: 'min-w-[180px] h-12 text-sm px-3 rounded border'
-      });
-    }
-    if (formValues.isTobaccoUser) {
-      fields.push({
-        name: 'tobaccoDuration',
-        label: 'Since (yrs)',
-        type: 'number',
-        colSpan: 1,
-        isDuration: true,
-        min: 0,
-        max: 200,
-        className: 'min-w-[180px] h-12 text-sm px-3 rounded border'
-      });
-    }
-    return fields;
-  };
+  { name: 'height', label: 'Height (cm)', type: 'number', colSpan: 1 },
+  { name: 'weight', label: 'Weight (kg)', type: 'number', colSpan: 1 },
+  { name: 'bloodGroup', label: 'Blood Group', type: 'select', colSpan: 1, options: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bg => ({ label: bg, value: bg })) },
+  { name: 'surgeries', label: 'Surgeries', type: 'textarea', colSpan: 1 },
+  { name: 'allergies', label: 'Allergies', type: 'textarea', colSpan: 2 },
+  {
+    name: 'isAlcoholic',
+    label: 'Drink alcohol?',
+    type: 'checkboxWithInput',
+    colSpan: 1,
+    inputName: 'alcoholDuration',
+    inputLabel: 'Since (yrs)',
+    inputType: 'number',
+  },
+  {
+    name: ' isSmoker',
+    label: 'Do you smoker?',
+    type: 'checkboxWithInput',
+    colSpan: 1,
+    inputName: 'smokingDuration',
+    inputLabel: 'Since (yrs)',
+    inputType: 'number',
+  },
+  {
+    name: 'isTobaccoUser',
+    label: 'Tobacco Use?',
+    type: 'checkboxWithInput',
+    colSpan: 1,
+    inputName: 'tobaccoDuration',
+    inputLabel: 'Since (yrs)',
+    inputType: 'number',
+  }
+];
 
   const familyFields = [
     { name: 'relation', label: 'Relation', type: 'select', colSpan: 1, options: ['Father', 'Mother', 'Spouse', 'Son', 'Daughter', 'Brother', 'Sister'].map(r => ({ label: r, value: r })) },
@@ -200,7 +183,7 @@ function Dashboard() {
     setModalMode(data && section === 'family' ? 'edit' : 'edit');
     if (section === 'personal') {
       const currentData = userData;
-      setModalFields(getPersonalFields(currentData));
+     setModalFields(basePersonalFields);
       setModalData(currentData);
     } else if (section === 'family') {
       setModalFields(familyFields);
@@ -213,24 +196,21 @@ function Dashboard() {
     if (section === 'family') setEditFamilyMember(data);
   };
 
-  const handleFieldsUpdate = (formValues) => {
-    if (activeSection === 'personal') {
-      return getPersonalFields(formValues);
-    }
-    return modalFields;
-  };
+ const handleFieldsUpdate = (formValues) => {
+  return modalFields;
+};
 
   const handleModalSave = async (formValues) => {
     if (activeSection === 'personal') {
-      const cleanedValues = { ...formValues };
-      if (!formValues.isSmoker) cleanedValues.smokingDuration = '';
-      if (!formValues.isAlcoholic) cleanedValues.alcoholDuration = '';
-      if (!formValues.isTobaccoUser) cleanedValues.tobaccoDuration = '';
-      await saveUserData({ ...userData, ...cleanedValues });
-      setProfileData(prev => ({
-        ...prev,
-        bloodGroup: cleanedValues.bloodGroup || prev.bloodGroup
-      }));
+    const cleanedValues = { ...formValues };
+    if (!formValues.isSmoker) cleanedValues.smokingDuration = '';
+    if (!formValues.isAlcoholic) cleanedValues.alcoholDuration = '';
+    if (!formValues.isTobaccoUser) cleanedValues.tobaccoDuration = '';
+    await saveUserData({ ...userData, ...cleanedValues });
+    setProfileData(prev => ({
+      ...prev,
+      bloodGroup: cleanedValues.bloodGroup || prev.bloodGroup
+    }));
     } else if (activeSection === 'family') {
       const memberData = { ...formValues, email: user.email };
       try {

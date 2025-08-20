@@ -16,7 +16,7 @@ const PageWithLoader = ({ children }) => {
     <div className="relative w-full min-h-screen h-full bg-gradient-to-br from-[#e0f7fa] to-[#ffffff] p-4 sm:p-6">
       {showLoader && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white">
-          {/* Capsule Loader */}
+          {/* Capsule Loader - Smaller Size */}
           <div className="capsule-spin mb-4 sm:mb-6" />
 
           {/* ECG Line */}
@@ -42,22 +42,16 @@ const PageWithLoader = ({ children }) => {
       </div>
 
       {/* CSS for loaders */}
-      <style>{`
+      <style jsx>{`
         .capsule-spin {
-          height: 30px;
-          border-radius: 15px;
+          width: 30px; /* Smaller width */
+          height: 15px; /* Smaller height */
+          border-radius: 7.5px; /* Half of height for pill shape */
+          background: linear-gradient(90deg, #00bcd4, #81d4fa);
           background-size: 200% 100%;
           background-position: right bottom;
           animation: rotateCapsule 1s linear infinite, pulseGlow 1s infinite;
-          box-shadow: 0 0 8px rgba(0,188,212,0.4);
-          /* Responsive width */
-          width: 140px;
-        }
-        @media (min-width: 640px) {
-          .capsule-spin { width: 160px; }
-        }
-        @media (min-width: 768px) {
-          .capsule-spin { width: 200px; }
+          box-shadow: 0 0 8px rgba(0, 188, 212, 0.4);
         }
 
         @keyframes rotateCapsule {
@@ -65,24 +59,18 @@ const PageWithLoader = ({ children }) => {
           50% { transform: rotate(180deg) scale(1.1); }
           100% { transform: rotate(360deg) scale(1); }
         }
+
         @keyframes pulseGlow {
-          0%,100% { box-shadow: 0 0 8px rgba(0,188,212,0.3); }
-          50% { box-shadow: 0 0 15px rgba(0,188,212,0.7); }
+          0%, 100% { box-shadow: 0 0 8px rgba(0, 188, 212, 0.3); }
+          50% { box-shadow: 0 0 15px rgba(0, 188, 212, 0.7); }
         }
 
         .ecg-line {
-          height: 40px;
+          height: 20px; /* Smaller height */
+          width: 150px; /* Smaller width */
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='0,20 30,20 40,5 50,35 60,20 90,20 100,10 110,30 120,20 300,20' fill='none' stroke='%2300bcd4' stroke-width='2' /%3E%3C/svg%3E");
           background-repeat: repeat-x;
           animation: ecgMove 1s linear infinite;
-          /* responsive width */
-          width: 200px;
-        }
-        @media (min-width: 640px) {
-          .ecg-line { width: 250px; }
-        }
-        @media (min-width: 768px) {
-          .ecg-line { width: 300px; }
         }
 
         @keyframes ecgMove {
