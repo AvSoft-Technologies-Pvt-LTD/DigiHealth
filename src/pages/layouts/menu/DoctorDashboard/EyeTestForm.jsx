@@ -1,3 +1,4 @@
+//EyeTestForm.jsx
 import React, { useState, useEffect } from 'react';
 import { Eye, Save, Printer, Plus, Trash2, Edit, Check, X } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -115,10 +116,13 @@ import { toast } from 'react-toastify';
           <h3 className="text-white font-semibold">Eye Test Examination</h3>
         </div>
         <div className="flex items-center gap-3 text-white">
-          <button onClick={handleSave} className="btn btn-primary text-sm">
-            <Save className="w-4 h-4" />
-            Save
-          </button>
+          <button
+  onClick={handleSave}
+  className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"
+>
+  <Save className="w-5 h-5" />
+</button>
+
           <button
             onClick={() => onPrint('eye')}
             className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"

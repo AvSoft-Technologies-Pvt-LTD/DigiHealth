@@ -12,7 +12,7 @@ const AvailableLabs = () => {
   const [locationFilter, setLocationFilter] = useState("");
   const [homeCollectionOnly, setHomeCollectionOnly] = useState(false);
 
-  useEffect(() => { axios.get("https://mocki.io/v1/d5770a08-fead-4268-8dd1-41da555ba331").then((res) => { setLabs(res.data); setFilteredLabs(res.data); }).catch((err) => console.error("Lab API Error:", err)); }, []);
+  useEffect(() => { axios.get("https://mocki.io/v1/af807925-eef5-457a-8fec-5be5bc163549").then((res) => { setLabs(res.data); setFilteredLabs(res.data); }).catch((err) => console.error("Lab API Error:", err)); }, []);
 
   const handleFilter = () => {
     let filtered = [...labs];

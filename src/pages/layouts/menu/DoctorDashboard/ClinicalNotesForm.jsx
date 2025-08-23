@@ -1,7 +1,8 @@
+//ClinicalNotesForm.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { FileText, Save, Printer, Import } from "lucide-react";
-
-
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useOptimizedVoiceRecognition } from "./useOptimizedVoiceRecognition";
 import VoiceButton from "./VoiceButton";
 
@@ -27,7 +28,11 @@ const ClinicalNotesForm = ({ data, onSave, onPrint }) => {
 
   const handleSave = () => {
     onSave("clinical", formData);
-  
+    toast.success("✅ Clinical notes saved successfully!", {
+      position: "top-right",
+      autoClose: 2000,
+      closeOnClick: true,
+    });
   };
 
   const parseClinicalNotesFromSpeech = useCallback((text, confidence, type) => {

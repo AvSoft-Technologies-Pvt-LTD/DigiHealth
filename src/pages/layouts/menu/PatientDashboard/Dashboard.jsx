@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { CircleUser, Heart, Users, ClipboardCheck, Pencil } from 'lucide-react';
-import axios from 'axios';
 import { useSelector } from 'react-redux';
 import DashboardOverview from './DashboardOverview';
 import ReusableModal from '../../../../components/microcomponents/Modal';
 import Healthcard from '../../../../components/Healthcard';
-
-const PERSONAL_API_URL = 'https://680cc0c92ea307e081d4edda.mockapi.io/personalHealthDetails';
-const FAMILY_API_URL = 'https://6808fb0f942707d722e09f1d.mockapi.io/FamilyData';
-const PROFILE_API_URL = 'https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users';
+import {
+  getFamilyMembersByPatient,
+  createFamily,
+  updateFamily,
+  deleteFamily,
+  createPersonalHealth,
+  updatePersonalHealth,
+  getPersonalHealthByPatientId,
+} from '../../../../utils/CrudService';
+import { getHealthConditions, getCoverageTypes, getRelations, getBloodGroups } from '../../../../utils/masterService';
 
 const initialUserData = {
   name: '', email: '', gender: '', phone: '', dob: '', bloodGroup: '', height: '', weight: '',
@@ -17,6 +22,7 @@ const initialUserData = {
   familyHistory: { diabetes: false, cancer: false, heartDisease: false, mentalHealth: false, disability: false },
   familyMembers: [], additionalDetails: { provider: '', policyNumber: '', coverageType: '', startDate: '', endDate: '', coverageAmount: '', primaryHolder: false }
 };
+
 const defaultFamilyMember = { name: '', relation: '', number: '', diseases: [], email: '' };
 
 const getProgressColor = (completion) =>
@@ -33,97 +39,205 @@ function Dashboard() {
   const [modalMode, setModalMode] = useState('edit');
   const [modalData, setModalData] = useState({});
   const [showHealthCardModal, setShowHealthCardModal] = useState(false);
-  const [profileCompletion, setProfileCompletion] = useState(25);
+  const [profileCompletion, setProfileCompletion] = useState(33);
   const [feedbackMessage, setFeedbackMessage] = useState({ show: false, message: '', type: '' });
   const [editFamilyMember, setEditFamilyMember] = useState(null);
   const [profileData, setProfileData] = useState({ name: '', firstName: '', lastName: '', gender: '', dob: '', phone: '', photo: '' });
+  const [loading, setLoading] = useState(true);
+  const [coverageTypes, setCoverageTypes] = useState([]);
+  const [healthConditions, setHealthConditions] = useState([]);
+  const [familyRelations, setFamilyRelations] = useState([]);
+  const [bloodGroups, setBloodGroups] = useState([]);
+  const [hasPersonalHealthData, setHasPersonalHealthData] = useState(false);
 
   const basePersonalFields = [
-  { name: 'height', label: 'Height (cm)', type: 'number', colSpan: 1 },
-  { name: 'weight', label: 'Weight (kg)', type: 'number', colSpan: 1 },
-  { name: 'bloodGroup', label: 'Blood Group', type: 'select', colSpan: 1, options: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bg => ({ label: bg, value: bg })) },
-  { name: 'surgeries', label: 'Surgeries', type: 'textarea', colSpan: 1 },
-  { name: 'allergies', label: 'Allergies', type: 'textarea', colSpan: 2 },
-  {
-    name: 'isAlcoholic',
-    label: 'Drink alcohol?',
-    type: 'checkboxWithInput',
-    colSpan: 1,
-    inputName: 'alcoholDuration',
-    inputLabel: 'Since (yrs)',
-    inputType: 'number',
-  },
-  {
-    name: ' isSmoker',
-    label: 'Do you smoker?',
-    type: 'checkboxWithInput',
-    colSpan: 1,
-    inputName: 'smokingDuration',
-    inputLabel: 'Since (yrs)',
-    inputType: 'number',
-  },
-  {
-    name: 'isTobaccoUser',
-    label: 'Tobacco Use?',
-    type: 'checkboxWithInput',
-    colSpan: 1,
-    inputName: 'tobaccoDuration',
-    inputLabel: 'Since (yrs)',
-    inputType: 'number',
-  }
-];
+    { name: 'height', label: 'Height (cm)', type: 'number', colSpan: 1 },
+    { name: 'weight', label: 'Weight (kg)', type: 'number', colSpan: 1 },
+    { name: 'bloodGroup', label: 'Blood Group', type: 'select', colSpan: 1, options: bloodGroups },
+    { name: 'surgeries', label: 'Surgeries', type: 'textarea', colSpan: 1 },
+    { name: 'allergies', label: 'Allergies', type: 'textarea', colSpan: 2 },
+    {
+      name: 'isAlcoholicUser',
+      label: 'Drink alcohol?',
+      type: 'checkboxWithInput',
+      colSpan: 1,
+      inputName: 'alcoholDuration',
+      inputLabel: 'Since (yrs)',
+      inputType: 'number',
+    },
+    {
+      name: 'isSmokerUser',
+      label: 'Do you smoke?',
+      type: 'checkboxWithInput',
+      colSpan: 1,
+      inputName: 'smokingDuration',
+      inputLabel: 'Since (yrs)',
+      inputType: 'number',
+    },
+    {
+      name: 'isTobaccoUser',
+      label: 'Tobacco Use?',
+      type: 'checkboxWithInput',
+      colSpan: 1,
+      inputName: 'tobaccoDuration',
+      inputLabel: 'Since (yrs)',
+      inputType: 'number',
+    }
+  ];
 
   const familyFields = [
-    { name: 'relation', label: 'Relation', type: 'select', colSpan: 1, options: ['Father', 'Mother', 'Spouse', 'Son', 'Daughter', 'Brother', 'Sister'].map(r => ({ label: r, value: r })) },
+    { name: 'relation', label: 'Relation', type: 'select', colSpan: 1, options: familyRelations },
     { name: 'name', label: 'Name', type: 'text', colSpan: 2 },
     { name: 'number', label: 'Phone Number', type: 'text', colSpan: 1 },
     {
-      name: 'diseases', label: 'Health Conditions', type: 'multiselect', colSpan: 2, options: [
-        'Diabetes', 'Hypertension', 'Cancer', 'Heart Disease', 'Asthma', 'Stroke',
-        "Alzheimer's", 'Arthritis', 'Depression', 'Chronic Kidney Disease',
-        'Osteoporosis', 'Liver Disease', 'Thyroid Disorders'
-      ].map(d => ({ label: d, value: d }))
+      name: 'diseases', label: 'Health Conditions', type: 'multiselect', colSpan: 2, options: healthConditions
     }
   ];
 
   const additionalFields = [
     { name: 'provider', label: 'Insurance Provider', type: 'text', colSpan: 2 },
     { name: 'policyNumber', label: 'Policy Number', type: 'text', colSpan: 1 },
-    {
-      name: 'coverageType', label: 'Coverage Type', type: 'select', colSpan: 1, options: [
-        'Individual', 'Family', 'Group', 'Senior Citizen', 'Critical Illness', 'Accident'
-      ].map(t => ({ label: t, value: t }))
-    },
+    { name: 'coverageType', label: 'Coverage Type', type: 'select', colSpan: 1, options: coverageTypes },
     { name: 'coverageAmount', label: 'Coverage Amount', type: 'number', colSpan: 1 },
     { name: 'primaryHolder', label: 'Primary Holder', type: 'radio', colSpan: 1, options: [{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }] },
     { name: 'startDate', label: 'Start Date', type: 'date', colSpan: 1.5 },
     { name: 'endDate', label: 'End Date', type: 'date', colSpan: 1.5 },
   ];
 
+  // Fetch master data options
   useEffect(() => {
-    const fetchProfileData = async () => {
-      if (!user?.email) return;
+    const fetchOptions = async () => {
       try {
-        const res = await axios.get(`${PROFILE_API_URL}?email=${encodeURIComponent(user.email)}`);
-        const profile = res.data[0];
-        if (profile) {
-          const firstName = profile.firstName || '';
-          const lastName = profile.lastName || '';
-          setProfileData({
-            name: `${firstName} ${lastName}`.trim(),
-            firstName,
-            lastName,
-            dob: profile.dob || '',
-            gender: profile.gender || '',
-            phone: profile.phone || '',
-            photo: profile.photo || null
-          });
-        }
+        const [coverageRes, healthConditionsRes, familyRelationsRes, bloodGroupsRes] = await Promise.all([
+          getCoverageTypes(),
+          getHealthConditions(),
+          getRelations(),
+          getBloodGroups()
+        ]);
+
+        // Map blood groups with ID as value
+        setBloodGroups(
+          bloodGroupsRes.data.map(item => ({
+            label: item.bloodGroupName,
+            value: item.id
+          }))
+        );
+
+        // Map family relations with ID as value
+        setFamilyRelations(
+          familyRelationsRes.data.map(item => ({
+            label: item.relationName,
+            value: item.id
+          }))
+        );
+
+        // Map health conditions with ID as value for proper backend mapping
+        setHealthConditions(
+          healthConditionsRes.data.map(item => ({
+            label: item.healthConditionName,
+            value: item.id // Use ID instead of name for proper backend mapping
+          }))
+        );
+
+        // Map coverage types
+        setCoverageTypes(
+          coverageRes.data.map(item => ({
+            label: item.coverageTypeName,
+            value: item.coverageTypeName
+          }))
+        );
+
       } catch (err) {
-        console.error('Failed to fetch profile data:', err);
+        console.error('Failed to fetch options:', err.response?.data || err.message);
+        showFeedback(`Failed to fetch options: ${err.response?.data?.message || err.message}`, 'error');
       }
     };
-    fetchProfileData();
+
+    fetchOptions();
+  }, []);
+
+  // Set profile data from user
+  useEffect(() => {
+    if (!user?.email) return;
+
+    setProfileData({
+      name: `${user?.firstName || 'Guest'} ${user?.lastName || ''}`.trim(),
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      dob: user?.dob || '',
+      gender: user?.gender || '',
+      phone: user?.phone || '',
+      photo: user?.photo || null
+    });
+  }, [user]);
+
+  // Fetch user data
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.id) return;
+      setLoading(true);
+
+      try {
+        // Fetch family members and personal health data
+        const [familyRes, healthRes] = await Promise.all([
+          getFamilyMembersByPatient(user.id).catch(() => ({ data: [] })),
+          getPersonalHealthByPatientId(user.id).catch(() => null)
+        ]);
+
+        // Map backend family member fields to frontend format
+        const mappedFamilyMembers = familyRes.data.map(member => ({
+          id: member.id,
+          name: member.memberName,
+          relation: member.relationName,
+          relationId: member.relationId,
+          number: member.phoneNumber,
+          diseases: member.healthConditions?.map(hc => hc.healthConditionName) || [],
+          healthConditionIds: member.healthConditions?.map(hc => hc.id) || [],
+        }));
+
+        // Handle personal health data
+        let personalHealthData = {};
+        let hasHealthData = false;
+
+        if (healthRes && healthRes.data) {
+          const userHealthData = healthRes.data;
+          hasHealthData = true;
+          
+          personalHealthData = {
+            id: userHealthData.id,
+            height: userHealthData.height || '',
+            weight: userHealthData.weight || '',
+            bloodGroupId: userHealthData.bloodGroupId,
+            bloodGroupName: userHealthData.bloodGroupName,
+            surgeries: userHealthData.surgeries || '',
+            allergies: userHealthData.allergies || '',
+            isSmokerUser: userHealthData.isSmoker || false,
+            smokingDuration: userHealthData.yearsSmoking || '',
+            isAlcoholicUser: userHealthData.isAlcoholic || false,
+            alcoholDuration: userHealthData.yearsAlcoholic || '',
+            isTobaccoUser: userHealthData.isTobacco || false,
+            tobaccoDuration: userHealthData.yearsTobacco || '',
+          };
+        }
+
+        // Set user data with proper mapping
+        setUserData(prev => ({
+          ...prev,
+          ...personalHealthData,
+          familyMembers: mappedFamilyMembers,
+        }));
+
+        setHasPersonalHealthData(hasHealthData);
+
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        showFeedback('Failed to fetch some data. You can still add new information.', 'warning');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [user]);
 
   const showFeedback = (message, type = 'success') => {
@@ -134,45 +248,121 @@ function Dashboard() {
   const handleEditClick = () => navigate('/patientdashboard/settings');
   const handleGenerateCard = () => setShowHealthCardModal(true);
 
-  const getSectionCompletionStatus = () => ({
-    basic: true,
-    personal: Boolean(userData.height && userData.weight && userData.bloodGroup),
-    family: Array.isArray(userData.familyMembers) && userData.familyMembers.length > 0,
-  });
+ const getSectionCompletionStatus = () => {
+  // Basic Details Completion
+  const basicComplete = Boolean(
+    user?.firstName &&
+    user?.lastName &&
+    user?.dob &&
+    user?.gender &&
+    user?.phone
+  );
+
+  // Personal Health Completion
+  const personalComplete = Boolean(
+    userData.height &&
+    userData.weight &&
+    userData.bloodGroupId
+  );
+
+  // Family Details Completion
+  const familyComplete = Array.isArray(userData.familyMembers) && userData.familyMembers.length > 0;
+
+  return {
+    basic: basicComplete,
+    personal: personalComplete,
+    family: familyComplete,
+  };
+};
+
+useEffect(() => {
+  const completionStatus = getSectionCompletionStatus();
+  const completedSections = Object.values(completionStatus).filter(Boolean).length;
+  const totalSections = Object.keys(completionStatus).length;
+  const completion = Math.round((completedSections / totalSections) * 100);
+  setProfileCompletion(completion);
+}, [userData, user]);
+
 
   const saveUserData = async (updatedData) => {
-    if (!user?.email) return showFeedback('Please login to save data', 'error');
-    const payload = {
-      height: updatedData.height,
-      weight: updatedData.weight,
-      bloodGroup: updatedData.bloodGroup,
-      surgeries: updatedData.surgeries,
-      allergies: updatedData.allergies,
-      isSmoker: updatedData.isSmoker,
-      isAlcoholic: updatedData.isAlcoholic,
-      isTobacco: updatedData.isTobaccoUser,
-      smokingDuration: updatedData.smokingDuration,
-      alcoholDuration: updatedData.alcoholDuration,
-      tobaccoDuration: updatedData.tobaccoDuration,
-      familyHistory: updatedData.familyHistory,
-      email: user.email,
-      name: `${user?.firstName || 'Guest'} ${user?.lastName || ''}`.trim()
-    };
+    if (!user?.id) return showFeedback('Please login to save data', 'error');
+
+    // Validate required fields
+    if (!updatedData.height || !updatedData.weight) {
+      return showFeedback('Height and weight are required', 'error');
+    }
+
+    // Validate blood group selection
+    const bloodGroupId = Number(updatedData.bloodGroup?.value || updatedData.bloodGroup || updatedData.bloodGroupId);
+    if (!bloodGroupId || isNaN(bloodGroupId)) {
+      return showFeedback('Please select a blood group', 'error');
+    }
+
     try {
-      if (!updatedData.id) {
-        const res = await axios.post(PERSONAL_API_URL, payload);
-        const saved = { ...updatedData, id: res.data.id, email: user.email };
-        setUserData(saved);
-        localStorage.setItem('userData', JSON.stringify(saved));
+      const personalHealthData = {
+        height: Number(updatedData.height) || 0,
+        weight: Number(updatedData.weight) || 0,
+        bloodGroupId: bloodGroupId,
+        surgeries: updatedData.surgeries || '',
+        allergies: updatedData.allergies || '',
+        isSmoker: Boolean(updatedData.isSmokerUser),
+        yearsSmoking: updatedData.isSmokerUser ? Number(updatedData.smokingDuration) || 0 : 0,
+        isAlcoholic: Boolean(updatedData.isAlcoholicUser),
+        yearsAlcoholic: updatedData.isAlcoholicUser ? Number(updatedData.alcoholDuration) || 0 : 0,
+        isTobacco: Boolean(updatedData.isTobaccoUser),
+        yearsTobacco: updatedData.isTobaccoUser ? Number(updatedData.tobaccoDuration) || 0 : 0,
+        patientId: Number(user.id),
+      };
+
+      let savedData;
+      
+      if (hasPersonalHealthData) {
+        // Update existing record using patientId
+        const updateRes = await updatePersonalHealth(user.id, personalHealthData);
+        savedData = updateRes.data;
+        showFeedback('Personal health data updated successfully');
       } else {
-        await axios.put(`${PERSONAL_API_URL}/${updatedData.id}`, payload);
-        setUserData(updatedData);
-        localStorage.setItem('userData', JSON.stringify(updatedData));
+        // Create new record
+        try {
+          const createRes = await createPersonalHealth(personalHealthData);
+          savedData = createRes.data;
+          setHasPersonalHealthData(true); // Mark as having data now
+          showFeedback('Personal health data saved successfully');
+        } catch (createErr) {
+          // If creation fails because record exists, try to update
+          if (createErr.response?.status === 409 || createErr.response?.data?.error?.includes('already exists')) {
+            const updateRes = await updatePersonalHealth(user.id, personalHealthData);
+            savedData = updateRes.data;
+            setHasPersonalHealthData(true);
+            showFeedback('Personal health data updated successfully');
+          } else {
+            throw createErr;
+          }
+        }
       }
-      showFeedback('Data saved successfully');
+
+      // Update local state with saved data
+      setUserData(prev => ({
+        ...prev,
+        id: savedData?.id || prev.id,
+        height: savedData?.height || personalHealthData.height,
+        weight: savedData?.weight || personalHealthData.weight,
+        bloodGroupId: savedData?.bloodGroupId || personalHealthData.bloodGroupId,
+        bloodGroupName: savedData?.bloodGroupName || bloodGroups.find(bg => bg.value === personalHealthData.bloodGroupId)?.label,
+        surgeries: savedData?.surgeries || personalHealthData.surgeries,
+        allergies: savedData?.allergies || personalHealthData.allergies,
+        isSmokerUser: savedData?.isSmoker !== undefined ? savedData.isSmoker : personalHealthData.isSmoker,
+        smokingDuration: savedData?.yearsSmoking !== undefined ? savedData.yearsSmoking : personalHealthData.yearsSmoking,
+        isAlcoholicUser: savedData?.isAlcoholic !== undefined ? savedData.isAlcoholic : personalHealthData.isAlcoholic,
+        alcoholDuration: savedData?.yearsAlcoholic !== undefined ? savedData.yearsAlcoholic : personalHealthData.yearsAlcoholic,
+        isTobaccoUser: savedData?.isTobacco !== undefined ? savedData.isTobacco : personalHealthData.isTobacco,
+        tobaccoDuration: savedData?.yearsTobacco !== undefined ? savedData.yearsTobacco : personalHealthData.yearsTobacco,
+      }));
+      
       return true;
-    } catch {
-      showFeedback('Failed to save data', 'error');
+    } catch (err) {
+      console.error('Failed to save:', err.response?.data || err.message);
+      showFeedback(`Failed to save data: ${err.response?.data?.message || err.message}`, 'error');
       return false;
     }
   };
@@ -181,63 +371,177 @@ function Dashboard() {
     setActiveSection(section);
     setShowModal(true);
     setModalMode(data && section === 'family' ? 'edit' : 'edit');
-    if (section === 'personal') {
-      const currentData = userData;
-     setModalFields(basePersonalFields);
-      setModalData(currentData);
-    } else if (section === 'family') {
-      setModalFields(familyFields);
-      setModalData(data || defaultFamilyMember);
-    } else {
-      setModalFields(additionalFields);
-      setModalData(userData.additionalDetails);
-    }
-    setModalTitle(section === 'personal' ? 'Personal Health Details' : section === 'family' ? (data ? 'Edit Family Member' : 'Add Family Member') : 'Additional Details');
-    if (section === 'family') setEditFamilyMember(data);
-  };
 
- const handleFieldsUpdate = (formValues) => {
-  return modalFields;
-};
+    if (section === 'personal') {
+      setModalFields(
+        basePersonalFields.map((field) =>
+          field.name === 'bloodGroup'
+            ? { ...field, options: bloodGroups }
+            : field
+        )
+      );
+      setModalData({
+        height: userData.height || '',
+        weight: userData.weight || '',
+        bloodGroup: userData.bloodGroupId ? bloodGroups.find(bg => bg.value === userData.bloodGroupId) : null,
+        surgeries: userData.surgeries || '',
+        allergies: userData.allergies || '',
+        isAlcoholicUser: userData.isAlcoholicUser || false,
+        alcoholDuration: userData.alcoholDuration || '',
+        isSmokerUser: userData.isSmokerUser || false,
+        smokingDuration: userData.smokingDuration || '',
+        isTobaccoUser: userData.isTobaccoUser || false,
+        tobaccoDuration: userData.tobaccoDuration || '',
+      });
+    } else if (section === 'family') {
+      setModalFields(
+        familyFields.map((field) =>
+          field.name === 'relation'
+            ? { ...field, options: familyRelations }
+            : field.name === 'diseases'
+              ? { ...field, options: healthConditions }
+              : field
+        )
+      );
+
+      // Setup modal data for editing
+      if (data) {
+        console.log('Setting up edit modal for family member:', data);
+        setModalData({
+          name: data.name,
+          relation: data.relationId, // Use relationId for dropdown
+          number: data.number,
+          diseases: data.diseases?.map(diseaseName => {
+            // Find the health condition by name and return proper format
+            const condition = healthConditions.find(hc => hc.label === diseaseName);
+            return condition ? { value: condition.value, label: condition.label } : { value: diseaseName, label: diseaseName };
+          }) || [],
+        });
+        setEditFamilyMember(data); // Set this before opening modal
+      } else {
+        setModalData({
+          ...defaultFamilyMember,
+          relation: familyRelations[0]?.value || '',
+          diseases: [],
+        });
+        setEditFamilyMember(null); // Clear for new member
+      }
+    } else if (section === 'additional') {
+      setModalFields(
+        additionalFields.map((field) =>
+          field.name === 'coverageType'
+            ? { ...field, options: coverageTypes }
+            : field
+        )
+      );
+      setModalData(userData.additionalDetails || {});
+    }
+
+    setModalTitle(
+      section === 'personal'
+        ? 'Personal Health Details'
+        : section === 'family'
+          ? data
+            ? 'Edit Family Member'
+            : 'Add Family Member'
+          : 'Additional Details'
+    );
+  };
 
   const handleModalSave = async (formValues) => {
     if (activeSection === 'personal') {
-    const cleanedValues = { ...formValues };
-    if (!formValues.isSmoker) cleanedValues.smokingDuration = '';
-    if (!formValues.isAlcoholic) cleanedValues.alcoholDuration = '';
-    if (!formValues.isTobaccoUser) cleanedValues.tobaccoDuration = '';
-    await saveUserData({ ...userData, ...cleanedValues });
-    setProfileData(prev => ({
-      ...prev,
-      bloodGroup: cleanedValues.bloodGroup || prev.bloodGroup
-    }));
+      const cleanedValues = { ...formValues };
+      if (!formValues.isSmokerUser) cleanedValues.smokingDuration = '';
+      if (!formValues.isAlcoholicUser) cleanedValues.alcoholDuration = '';
+      if (!formValues.isTobaccoUser) cleanedValues.tobaccoDuration = '';
+      await saveUserData({ ...userData, ...cleanedValues });
     } else if (activeSection === 'family') {
-      const memberData = { ...formValues, email: user.email };
+      // Validate required fields
+      if (!formValues.name || !formValues.relation) {
+        return showFeedback('Name and relation are required', 'error');
+      }
+
+      // Map health condition selections to IDs
+      const healthConditionIds = formValues.diseases?.map(disease => {
+        if (typeof disease === 'object' && disease.value) {
+          return Number(disease.value);
+        }
+        // If it's a string, find the corresponding ID
+        const found = healthConditions.find(hc => hc.label === disease || hc.value === disease);
+        return found ? Number(found.value) : null;
+      }).filter(id => id !== null) || [];
+
+      const memberData = {
+        patientId: Number(user.id),
+        relationId: Number(formValues.relation),
+        memberName: formValues.name.trim(),
+        phoneNumber: formValues.number || '',
+        healthConditionIds: healthConditionIds,
+      };
+
       try {
-        editFamilyMember?.id
-          ? await axios.put(`${FAMILY_API_URL}/${editFamilyMember.id}`, memberData)
-          : await axios.post(FAMILY_API_URL, memberData);
-        const res = await axios.get(`${FAMILY_API_URL}?email=${user.email}`);
-        setUserData(prev => ({ ...prev, familyMembers: res.data }));
-        showFeedback(editFamilyMember ? 'Family member updated' : 'Family member saved');
-      } catch {
-        showFeedback('Failed to save family member', 'error');
+        if (editFamilyMember?.id) {
+          console.log('Updating family member with ID:', editFamilyMember.id, 'Data:', memberData);
+          await updateFamily(editFamilyMember.id, memberData);
+          showFeedback('Family member updated successfully');
+        } else {
+          console.log('Creating new family member:', memberData);
+          await createFamily(memberData);
+          showFeedback('Family member saved successfully');
+        }
+
+        // Refresh family members data
+        const familyRes = await getFamilyMembersByPatient(user.id);
+        const mappedFamilyMembers = familyRes.data.map(member => ({
+          id: member.id,
+          name: member.memberName,
+          relation: member.relationName,
+          relationId: member.relationId,
+          number: member.phoneNumber,
+          diseases: member.healthConditions?.map(hc => hc.healthConditionName) || [],
+          healthConditionIds: member.healthConditions?.map(hc => hc.id) || [],
+        }));
+
+        setUserData(prev => ({
+          ...prev,
+          familyMembers: mappedFamilyMembers,
+        }));
+      } catch (err) {
+        console.error('Error:', err.response?.data || err.message);
+        showFeedback(`Failed to save family member: ${err.response?.data?.message || err.message}`, 'error');
       }
       setEditFamilyMember(null);
     } else if (activeSection === 'additional') {
-      await saveUserData({ ...userData, additionalDetails: formValues });
+      setUserData(prev => ({
+        ...prev,
+        additionalDetails: formValues
+      }));
+      showFeedback('Additional details saved successfully');
     }
     setShowModal(false);
+    setModalData({});
   };
 
   const handleModalDelete = async (formValues) => {
-    if (activeSection === 'family' && formValues?.id) {
-      const deleteUrl = `${FAMILY_API_URL}/${formValues.id}`;
+    if (activeSection === 'family' && (formValues?.id || editFamilyMember?.id)) {
+      const deleteId = formValues?.id || editFamilyMember?.id;
       try {
-        await axios.delete(deleteUrl);
-        const res = await axios.get(`${FAMILY_API_URL}?email=${user.email}`);
-        setUserData(prev => ({ ...prev, familyMembers: res.data }));
-        showFeedback('Family member deleted');
+        await deleteFamily(deleteId);
+
+        // Refresh family members after deletion
+        const familyRes = await getFamilyMembersByPatient(user.id);
+        const mappedFamilyMembers = familyRes.data.map(member => ({
+          id: member.id,
+          name: member.memberName,
+          relation: member.relationName,
+          relationId: member.relationId,
+          number: member.phoneNumber,
+          diseases: member.healthConditions?.map(hc => hc.healthConditionName) || [],
+          healthConditionIds: member.healthConditions?.map(hc => hc.id) || [],
+        }));
+
+        setUserData(prev => ({ ...prev, familyMembers: mappedFamilyMembers }));
+        showFeedback('Family member deleted successfully');
       } catch (err) {
         console.error("Delete failed", err);
         showFeedback('Failed to delete family member', 'error');
@@ -246,41 +550,17 @@ function Dashboard() {
       showFeedback('Invalid data for delete', 'error');
     }
     setShowModal(false);
+    setEditFamilyMember(null);
   };
 
+  // Calculate profile completion
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.email) return showFeedback('Please login to access data', 'error') || navigate('/login');
-      let healthData = JSON.parse(localStorage.getItem('userData'));
-      if (!healthData || healthData.email !== user.email) {
-        try {
-          const res = await axios.get(`${PERSONAL_API_URL}?email=${encodeURIComponent(user.email)}`);
-          healthData = res.data[0] || {
-            ...initialUserData,
-            email: user.email,
-            name: `${user?.firstName || 'Guest'} ${user?.lastName || ''}`.trim()
-          };
-          if (!res.data.length) {
-            const createRes = await axios.post(PERSONAL_API_URL, healthData);
-            healthData.id = createRes.data.id;
-          }
-          const familyRes = await axios.get(`${FAMILY_API_URL}?email=${user.email}`);
-          healthData.familyMembers = familyRes.data;
-          localStorage.setItem('userData', JSON.stringify(healthData));
-        } catch {
-          healthData = { ...initialUserData, email: user.email };
-          localStorage.setItem('userData', JSON.stringify(healthData));
-        }
-      }
-      setUserData(healthData);
-    };
-    fetchData();
-  }, [user, navigate]);
-
-  useEffect(() => {
-    const completed = Object.values(getSectionCompletionStatus()).filter(Boolean).length;
-    setProfileCompletion(Math.round((completed / 3) * 100));
-  }, [userData]);
+    const completionStatus = getSectionCompletionStatus();
+    const completedSections = Object.values(completionStatus).filter(Boolean).length;
+    const totalSections = Object.keys(completionStatus).length;
+    const completion = Math.round((completedSections / totalSections) * 100);
+    setProfileCompletion(completion);
+  }, [userData, user]);
 
   const sections = [
     { id: 'basic', name: 'Basic Details', icon: 'user' },
@@ -291,43 +571,52 @@ function Dashboard() {
 
   const completionStatus = getSectionCompletionStatus();
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[var(--primary-color)]"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-2 sm:p-4">
       {/* Profile Card */}
       <div className="bg-gradient-to-r from-[#0e1630] via-[#1b2545] to-[#038358] text-white p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 shadow-lg w-full">
         <div className="relative w-16 h-16 sm:w-20 sm:h-20">
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 36 36">
-            <circle className="text-gray-300" stroke="currentColor" strokeWidth="2" fill="none" r="16" cx="18" cy="18" />
-            <circle
-              stroke={getProgressColor(profileCompletion || 0)}
-              strokeWidth="2"
-              strokeDasharray="100"
-              strokeDashoffset={100 - (profileCompletion || 0)}
-              strokeLinecap="round"
-              fill="none"
-              r="16"
-              cx="18"
-              cy="18"
-            />
-          </svg>
-          <div className="absolute inset-2 flex items-center justify-center">
-            {profileData?.photo ? (
-              <img src={profileData.photo} alt="Profile" className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <CircleUser className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500" />
-            )}
-          </div>
-          <div className="absolute bottom-0 right-0 bg-yellow-400 text-black px-1.5 py-0.5 text-xs font-bold rounded-full">
-            {profileCompletion}%
-          </div>
-        </div>
+  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 36 36">
+    <circle className="text-gray-300" stroke="currentColor" strokeWidth="2" fill="none" r="16" cx="18" cy="18" />
+    <circle
+      stroke={getProgressColor(profileCompletion || 0)}
+      strokeWidth="2"
+      strokeDasharray="100"
+      strokeDashoffset={100 - (profileCompletion || 0)}
+      strokeLinecap="round"
+      fill="none"
+      r="16"
+      cx="18"
+      cy="18"
+    />
+  </svg>
+  <div className="absolute inset-2 flex items-center justify-center">
+    {profileData?.photo ? (
+      <img src={profileData.photo} alt="Profile" className="w-full h-full object-cover rounded-full" />
+    ) : (
+      <CircleUser className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500" />
+    )}
+  </div>
+  <div className="absolute bottom-0 right-0 bg-yellow-400 text-black px-1.5 py-0.5 text-xs font-bold rounded-full">
+    {profileCompletion}%
+  </div>
+</div>
+
         <div className="flex flex-row flex-wrap gap-1 sm:gap-2 items-center flex-1 min-w-0">
           {[
             { label: "Name", value: `${profileData.firstName || "Guest"} ${profileData.lastName || ""}`.trim() },
             { label: "Date of Birth", value: profileData.dob || "N/A" },
             { label: "Gender", value: profileData.gender || "N/A" },
             { label: "Phone No.", value: profileData.phone || "N/A" },
-            { label: "Blood Group", value: profileData.bloodGroup || "N/A" },
+            { label: "Blood Group", value: userData.bloodGroupName || "N/A" },
           ].map((item, i) => (
             <div key={i} className="flex flex-col whitespace-nowrap text-xs sm:text-sm">
               <span className="text-[#01D48C] truncate">{item.label}</span>
@@ -351,7 +640,7 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Section Tabs (responsive, single row, scrollable on mobile) */}
+      {/* Section Tabs */}
       <div className="mt-4 sm:mt-6 overflow-x-auto custom-scrollbar pb-2">
         <div className="flex gap-2 sm:gap-4 min-w-max">
           {sections.map(({ id, name, icon }) => {
@@ -376,7 +665,9 @@ function Dashboard() {
       {/* Feedback Message */}
       {feedbackMessage.show && (
         <div className={`fixed top-4 right-4 z-50 p-3 sm:p-4 rounded-lg shadow-lg ${
-          feedbackMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          feedbackMessage.type === 'success' ? 'bg-green-100 text-green-800' : 
+          feedbackMessage.type === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
+          'bg-red-100 text-red-800'
         } transition-all duration-300`}>
           {feedbackMessage.message}
         </div>
@@ -393,8 +684,13 @@ function Dashboard() {
         onSave={handleModalSave}
         onChange={(updated) => setModalData(updated)}
         onDelete={handleModalDelete}
-        onFieldsUpdate={handleFieldsUpdate}
-        saveLabel="Save"
+        saveLabel={
+          activeSection === 'personal' 
+            ? hasPersonalHealthData ? 'Update' : 'Save'
+            : activeSection === 'family' && editFamilyMember?.id 
+              ? 'Update' 
+              : 'Save'
+        }
         cancelLabel="Cancel"
         deleteLabel="Delete"
         size="md"

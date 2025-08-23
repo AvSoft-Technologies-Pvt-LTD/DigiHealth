@@ -1,15 +1,42 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  FaPhone,
-  FaVideo,
-  FaUser,
-  FaMicrophone,
-  FaMicrophoneSlash,
-} from "react-icons/fa";
-import { createPortal } from "react-dom";
-import toast, { Toaster } from "react-hot-toast";
-import Videocall from "../../assets/videocalling.avif"; // Replace with the actual path to your image
 
+
+
+import React, { useState, useEffect, useRef } from "react";
+import { FaPhone, FaVideo, FaUser, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
+import { FiVideo } from "react-icons/fi";
+import { createPortal } from "react-dom";
+import toast from "react-hot-toast";
+import Videocall from "../../assets/videocalling.avif";
+
+// Helper: Save blob and context to localStorage
+const saveRecordingToLocalStorage = (blob, key, context) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      localStorage.setItem(key, reader.result);
+      localStorage.setItem(`${key}_context`, context);
+      resolve();
+    };
+    reader.readAsDataURL(blob);
+  });
+};
+
+// Helper: Load blob and context from localStorage
+const loadRecordingFromLocalStorage = (key) => {
+  const dataUrl = localStorage.getItem(key);
+  const context = localStorage.getItem(`${key}_context`);
+  if (!dataUrl) return { blob: null, context: null };
+  const byteString = atob(dataUrl.split(",")[1]);
+  const mimeString = dataUrl.split(",")[0].split(":")[1].split(";")[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return { blob: new Blob([ab], { type: mimeString }), context };
+};
+
+// --- Modal Components ---
 const Modal = ({ show, onClose, children, large, showEndButton }) =>
   show
     ? createPortal(
@@ -41,12 +68,9 @@ const Timer = () => {
     const i = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(i);
   }, []);
-  const f = (s) =>
-    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(
-      2,
-      "0"
-    )}`;
-  return <p className="text-sm text-gray-600">Duration: {f(seconds)}</p>;
+  const formatTime = (s) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  return <p className="text-sm text-gray-600">Duration: {formatTime(seconds)}</p>;
 };
 
 const VideoModal = ({ show, onClose, videoBlob, patientName }) =>
@@ -106,24 +130,30 @@ const VideoModal = ({ show, onClose, videoBlob, patientName }) =>
       )
     : null;
 
-export default function TeleConsultFlow({
-  phone,
-  patientName,
-  onVideoRecorded,
-}) {
-  const [open, setOpen] = useState(false),
-    [step, setStep] = useState(1),
-    [callType, setCallType] = useState(""),
-    [amount, setAmount] = useState(""),
-    [stream, setStream] = useState(null),
-    [participants, setParticipants] = useState([]),
-    [audioEnabled, setAudioEnabled] = useState(true),
-    [error, setError] = useState(""),
-    [mediaRecorder, setMediaRecorder] = useState(null);
+// --- TeleConsultFlow Component ---
+const TeleConsultFlow = ({ phone, patientName, context = "virtual" }) => {
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(1);
+  const [callType, setCallType] = useState("");
+  const [amount, setAmount] = useState("");
+  const [stream, setStream] = useState(null);
+  const [participants, setParticipants] = useState([]);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [error, setError] = useState("");
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [recordedBlob, setRecordedBlob] = useState(null);
+  const [showRecordedVideo, setShowRecordedVideo] = useState(false);
   const chunks = useRef([]);
 
-  const floatLabel =
-    "absolute left-3 text-gray-400 transition-all duration-200 bg-white px-1 pointer-events-none peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-[-0.6rem] peer-focus:text-xs peer-focus:text-[var(--primary-color)] top-[-0.6rem] text-xs";
+  // Load recorded video from localStorage on mount
+  useEffect(() => {
+    const { blob, context: storedContext } = loadRecordingFromLocalStorage(
+      `consultationVideo_${patientName}`
+    );
+    if (blob && storedContext === context) {
+      setRecordedBlob(blob);
+    }
+  }, [patientName, context]);
 
   const reset = () => {
     setStep(1);
@@ -136,8 +166,9 @@ export default function TeleConsultFlow({
     setStream(null);
     setParticipants([]);
     chunks.current = [];
-    if (mediaRecorder && mediaRecorder.state !== "inactive")
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
       mediaRecorder.stop();
+    }
   };
 
   const openCamera = async () => {
@@ -152,9 +183,8 @@ export default function TeleConsultFlow({
       recorder.ondataavailable = (e) => chunks.current.push(e.data);
       recorder.onstop = () => {
         const blob = new Blob(chunks.current, { type: "video/webm" });
-        if (onVideoRecorded) {
-          onVideoRecorded(blob);
-        }
+        setRecordedBlob(blob);
+        saveRecordingToLocalStorage(blob, `consultationVideo_${patientName}`, context);
         toast.success("Consultation recorded successfully!");
       };
       recorder.start();
@@ -180,15 +210,26 @@ export default function TeleConsultFlow({
     reset();
   };
 
+  const floatLabel =
+    "absolute left-3 text-gray-400 transition-all duration-200 bg-white px-1 pointer-events-none peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-[-0.6rem] peer-focus:text-xs peer-focus:text-[var(--primary-color)] top-[-0.6rem] text-xs";
+
   return (
     <>
-      <Toaster position="top-center" />
       <button
         onClick={() => setOpen(true)}
         className="text-[var(--accent-color)] hover:text-[var(--primary-color)] transition"
       >
-        <FaPhone className="rotate-[100deg] text-xl" />
+        <FaPhone className="rotate-[100deg] text-sm" />
       </button>
+      {recordedBlob && (
+        <button
+          onClick={() => setShowRecordedVideo(true)}
+          className="ml-2 text-green-600 hover:text-green-800"
+          title="View Recorded Consultation"
+        >
+          <FiVideo className="text-base" />
+        </button>
+      )}
       <Modal
         show={open}
         onClose={handleEndConsultation}
@@ -196,8 +237,7 @@ export default function TeleConsultFlow({
         showEndButton={step === 3 && callType === "video"}
       >
         <h2 className="h4-heading font-semibold mb-2">Tele Consult</h2>
-        <img src={Videocall} alt="Description of the image" className="w-54 h-54 m-4 mx-auto" />
-        {/* Rest of your component code remains the same */}
+        <img src={Videocall} alt="Consultation" className="w-54 h-54 m-4 mx-auto" />
         {step === 1 && (
           <div className="space-y-4">
             <div>
@@ -348,6 +388,14 @@ export default function TeleConsultFlow({
           </div>
         )}
       </Modal>
+      <VideoModal
+        show={showRecordedVideo}
+        onClose={() => setShowRecordedVideo(false)}
+        videoBlob={recordedBlob}
+        patientName={patientName}
+      />
     </>
   );
-}
+};
+
+export default TeleConsultFlow;

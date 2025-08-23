@@ -1,3 +1,4 @@
+//VitalsForm.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Heart,
@@ -9,10 +10,11 @@ import {
   TrendingUp,
   PieChart,
   Activity,
-  Radar
+  Radar,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
 import { useOptimizedVoiceRecognition } from "./useOptimizedVoiceRecognition";
 import VoiceButton from "./VoiceButton";
 import VitalsChart from "./VitalsChart";
@@ -43,13 +45,22 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
     weight: "",
     timeOfDay: "morning",
   };
+
   const [formData, setFormData] = useState({ ...emptyVitals, ...data });
   const [headerRecordIdx, setHeaderRecordIdx] = useState(null);
   const [warnings, setWarnings] = useState({});
   const [loading, setLoading] = useState(false);
-  const [chartTab, setChartTab] = useState("heartRate");
   const [vitalsRecords, setVitalsRecords] = useState([]);
-  const [selectedRecordIdx, setSelectedRecordIdx] = useState(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("vitalsRecords");
+    if (stored) {
+      const loadedRecords = JSON.parse(stored);
+      setVitalsRecords(loadedRecords);
+      onSave("vitals", { ...formData, vitalsRecords: loadedRecords });
+    }
+    // eslint-disable-next-line
+  }, []);
 
   useEffect(() => {
     if (headerRecordIdx === null) {
@@ -68,20 +79,10 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
     }
   }, [headerRecordIdx, vitalsRecords]);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("vitalsRecords");
-    if (stored) {
-      const loadedRecords = JSON.parse(stored);
-      setVitalsRecords(loadedRecords);
-      // Sync with parent so chart always has data
-      onSave("vitals", { ...formData, vitalsRecords: loadedRecords });
-    }
-    // eslint-disable-next-line
-  }, []);
-
   const validate = (field, value) => {
     const range = vitalRanges[field];
     if (!range) return "";
+
     if (field === "bloodPressure") {
       const [systolic, diastolic] = value.split("/").map(Number);
       if (!systolic || !diastolic) return "Enter as systolic/diastolic";
@@ -89,6 +90,7 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
         return "Out of normal range";
       return "";
     }
+
     if (value === "") return "";
     const num = +value;
     if (isNaN(num)) return "Enter a number";
@@ -101,21 +103,21 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
     setLoading(true);
     try {
       await axios.post(API_URL, { ...formData, email: "demo@demo.com" });
-      // Pass the full records array to the parent
-      onSave("vitals", { ...formData, vitalsRecords: [...vitalsRecords, { ...formData, timestamp: Date.now() }] });
-      
+
       const now = new Date();
       const date = now.toISOString().split("T")[0];
       const time = now.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       });
+
       const newRecord = {
         ...formData,
         timestamp: now.getTime(),
         date,
         time,
       };
+
       setVitalsRecords((prev) => {
         let updated = [...prev, newRecord];
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -123,39 +125,57 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
         localStorage.setItem("vitalsRecords", JSON.stringify(updated));
         return updated;
       });
-      
+
+      onSave("vitals", {
+        ...formData,
+        vitalsRecords: [...vitalsRecords, newRecord],
+      });
+
       setHeaderRecordIdx(null);
       setFormData({ ...emptyVitals });
+
+      // Toastify success notification
       toast.success("✅ Vitals saved successfully!", {
         position: "top-right",
         autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
       });
     } catch (error) {
+      // Toastify error notification
       toast.error("❌ Failed to save vitals!", {
         position: "top-right",
         autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
       });
     }
     setLoading(false);
   };
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     let processedValue = value;
+
     if (name === "timeOfDay") {
       setFormData((p) => ({ ...p, timeOfDay: value }));
       return;
     }
+
     if (name !== "bloodPressure") {
       processedValue = value.replace(/[^0-9.]/g, "");
     }
+
     setFormData((p) => ({ ...p, [name]: processedValue }));
     setWarnings((p) => ({ ...p, [name]: validate(name, processedValue) }));
   };
 
   const parseVitalsFromSpeech = useCallback((text, confidence, type) => {
     const lowerText = text.toLowerCase().trim();
-
     const hrMatch = lowerText.match(
       /(?:heart rate|pulse|hr)(?:\s+is|\s+of|\s+at)?\s+(\d+)/
     );
@@ -259,16 +279,22 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
       realTimeProcessing: true,
     });
 
-  // Get chart icon for vital
   const getVitalIcon = (vital) => {
     switch (vital) {
-      case 'heartRate': return <Heart className="w-4 h-4" />;
-      case 'temperature': return <Activity className="w-4 h-4" />;
-      case 'bloodSugar': return <TrendingUp className="w-4 h-4" />;
-      case 'bloodPressure': return <BarChart3 className="w-4 h-4" />;
-      case 'height': return <Activity className="w-4 h-4" />;
-      case 'weight': return <PieChart className="w-4 h-4" />;
-      default: return <BarChart3 className="w-4 h-4" />;
+      case "heartRate":
+        return <Heart className="w-4 h-4" />;
+      case "temperature":
+        return <Activity className="w-4 h-4" />;
+      case "bloodSugar":
+        return <TrendingUp className="w-4 h-4" />;
+      case "bloodPressure":
+        return <BarChart3 className="w-4 h-4" />;
+      case "height":
+        return <Activity className="w-4 h-4" />;
+      case "weight":
+        return <PieChart className="w-4 h-4" />;
+      default:
+        return <BarChart3 className="w-4 h-4" />;
     }
   };
 
@@ -284,16 +310,13 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
               className="rounded px-1 py-0.5 text-xs bg-white text-[var(--primary-color)] border border-gray-200"
               value={headerRecordIdx === null ? "" : headerRecordIdx}
               onChange={(e) =>
-                setHeaderRecordIdx(
-                  e.target.value === "" ? null : Number(e.target.value)
-                )
+                setHeaderRecordIdx(e.target.value === "" ? null : Number(e.target.value))
               }
             >
               <option value="">Current</option>
               {vitalsRecords.map((rec, idx) => (
                 <option key={rec.timestamp} value={idx}>
-                  {rec.date} {rec.time} (
-                  {rec.timeOfDay === "morning" ? "Morning" : "Evening"})
+                  {rec.date} {rec.time} ({rec.timeOfDay === "morning" ? "Morning" : "Evening"})
                 </option>
               ))}
             </select>
@@ -333,9 +356,7 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
             <div className="flex items-center gap-2 text-white text-sm">
               <span className="animate-pulse">🎤 Listening...</span>
               {confidence > 0 && (
-                <span className="text-xs opacity-75">
-                  ({Math.round(confidence * 100)}%)
-                </span>
+                <span className="text-xs opacity-75">({Math.round(confidence * 100)}%)</span>
               )}
             </div>
           )}
@@ -354,25 +375,23 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
           >
             <Printer className="w-5 h-5" />
           </button>
-     <button
-  onClick={() => {
-    setChartVital("heartRate"); // Set the vital you want to display
-    setIsChartOpen(true); // Open the modal
-  }}
-  className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors flex items-center gap-1 bg-white/10 px-3 py-2 rounded-lg"
->
-  <BarChart3 className="w-4 h-4" />
-  <span className="text-xs font-medium">Charts & Analytics</span>
-</button>
+          <button
+            onClick={() => {
+              setChartVital("heartRate");
+              setIsChartOpen(true);
+            }}
+            className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors flex items-center gap-1 bg-white/10 px-3 py-2 rounded-lg"
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span className="text-xs font-medium">Charts & Analytics</span>
+          </button>
         </div>
       </div>
       <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         {Object.keys(vitalRanges).map((field) => (
           <div key={field} className="space-y-2">
             <label className="block text-sm font-medium text-[var(--primary-color)]">
-              {field
-                .replace(/([A-Z])/g, " $1")
-                .replace(/^./, (c) => c.toUpperCase())}
+              {field.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
             </label>
             <div className="relative">
               <input
@@ -381,9 +400,7 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
                 onChange={handleChange}
                 placeholder={vitalRanges[field].placeholder}
                 className={`input-field ${
-                  formData[field]
-                    ? "bg-green-50 border-green-300 ring-2 ring-green-200"
-                    : ""
+                  formData[field] ? "bg-green-50 border-green-300 ring-2 ring-green-200" : ""
                 }`}
               />
               {formData[field] && (
@@ -401,10 +418,7 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
           </div>
         ))}
       </div>
-      
-    
 
-      {/* Voice Input Display */}
       {transcript && (
         <div className="px-6 pb-6">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -418,7 +432,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
           </div>
         </div>
       )}
-      
     </div>
   );
 };

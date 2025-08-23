@@ -17,6 +17,7 @@ import SecondOpinion from "./SecondOpinion";
 import NursingAndTreatment from "./NursingAndTreatment";
 import GatePassModal from "./GatePassModal";
 import DischargeModal from "./DischargeModal";
+
 const DrRoutes = () => {
   return (
     <Routes>
@@ -27,9 +28,10 @@ const DrRoutes = () => {
        <Route path="form" element={<FormsPage />} />
        <Route path="second-opinion" element={<SecondOpinion/>} />
       <Route path="medical-record" element={<MedicalRecords/>} />
-      <Route path="form/Nursing-and-treatment"element={<NursingAndTreatment />} />
+    <Route path="form/Nursing-and-treatment"element={<NursingAndTreatment />} />
       <Route path="form/Gate-pass" element={<GatePassModal />} />
-      <Route path="form/Disharge-modal" element={<DischargeModal />} />
+	  <Route path="form/Discharge-modal" element={<DischargeModal />} />    
+  
 
 
 <Route path="medical-record-details" element={<MedicalRecordDetails/>} />

@@ -9,6 +9,7 @@ import {
   FaCapsules,
   FaUserClock,
   FaListOl,
+  FaBed, // Import the bed icon
 } from "react-icons/fa";
 
 const modules = [
@@ -17,6 +18,7 @@ const modules = [
   { name: "NewToken", icon: FaUserClock },
   { name: "DisplayToken", icon: FaListOl },
   { name: "QueueStatus", icon: FaUsers },
+  { name: "BedManagement", icon: FaBed }, // Add the new module
 ];
 
 export default function ModulesMenu({ user }) {
@@ -46,6 +48,7 @@ export default function ModulesMenu({ user }) {
     Laboratory: "/labmodule",
     Frontdesk: "/frontdesk",
     QueueStatus: "/queuemanagement",
+    BedroomManagement: "/bedroommanagement", // Add the new route
   };
 
   const handleClick = (name) => {

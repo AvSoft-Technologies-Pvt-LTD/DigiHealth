@@ -1,4 +1,3 @@
-//form
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -9,6 +8,7 @@ import {
   Stethoscope,
   Eye,
   Save,
+  StickyNote,
   Printer,
   User,
   Phone,
@@ -21,10 +21,10 @@ import {
   Bed,
   Activity,
   ArrowLeft,
-  Grid,
+Globe,
+  Image as ImageIcon,
+  Upload,
 } from "lucide-react";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import VitalsForm from "./VitalsForm";
 import ClinicalNotesForm from "./ClinicalNotesForm";
 import LabTestsForm from "./LabResultsForm";
@@ -43,6 +43,13 @@ const formTypes = {
     icon: null,
     color: "from-[var(--primary-color)] to-[var(--accent-color)]",
     description: "Show all forms together",
+  },
+  template: {
+    id: "template",
+    name: "Case",
+    icon: StickyNote,
+    color: "from-[var(--primary-color)] to-[var(--accent-color)]",
+    description: "Annotate medical images",
   },
   vitals: {
     id: "vitals",
@@ -88,20 +95,46 @@ const formTypes = {
   },
 };
 
-const thStyle = "border:1px solid #ddd;padding:10px;background:#f8f9fa;text-align:left;font-weight:bold;";
+const thStyle =
+  "border:1px solid #ddd;padding:10px;background:#f8f9fa;text-align:left;font-weight:bold;";
 const tdStyle = "border:1px solid #ddd;padding:10px;background:#fff;";
 const tableStyle = "width:100%;border-collapse:collapse;margin-top:10px;";
 
 const ChartModal = ({ isOpen, onClose, vital, records, selectedIdx }) => {
   const [chartType, setChartType] = React.useState("bar");
   const vitalRanges = {
-    heartRate: { min: 60, max: 100, label: "bpm", name: "Heart Rate", optimal: 70 },
-    temperature: { min: 36.1, max: 37.2, label: "°C", name: "Temperature", optimal: 36.5 },
-    bloodSugar: { min: 70, max: 140, label: "mg/dL", name: "Blood Sugar", optimal: 90 },
-    bloodPressure: { min: 90, max: 120, label: "mmHg", name: "Blood Pressure", optimal: 110 },
+    heartRate: {
+      min: 60,
+      max: 100,
+      label: "bpm",
+      name: "Heart Rate",
+      optimal: 70,
+    },
+    temperature: {
+      min: 36.1,
+      max: 37.2,
+      label: "°C",
+      name: "Temperature",
+      optimal: 36.5,
+    },
+    bloodSugar: {
+      min: 70,
+      max: 140,
+      label: "mg/dL",
+      name: "Blood Sugar",
+      optimal: 90,
+    },
+    bloodPressure: {
+      min: 90,
+      max: 120,
+      label: "mmHg",
+      name: "Blood Pressure",
+      optimal: 110,
+    },
     height: { min: 100, max: 220, label: "cm", name: "Height", optimal: 170 },
     weight: { min: 30, max: 200, label: "kg", name: "Weight", optimal: 70 },
   };
+
   const chartTypes = [
     { id: "bar", name: "Bar Chart", icon: "📊" },
     { id: "line", name: "Line Chart", icon: "📈" },
@@ -115,12 +148,17 @@ const ChartModal = ({ isOpen, onClose, vital, records, selectedIdx }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fadeIn">
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-3xl relative">
-        <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-red-500">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-500 hover:text-red-500"
+        >
           <X className="w-5 h-5" />
         </button>
         <h3 className="h4-heading mb-4">
           {vital
-            ? `${vital.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())} Chart (7 Days)`
+            ? `${vital
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (c) => c.toUpperCase())} Chart (7 Days)`
             : "Vitals Chart & Records (7 Days)"}
         </h3>
         <div className="flex flex-wrap gap-2 mb-4 border-b border-gray-200 pb-3">
@@ -140,7 +178,13 @@ const ChartModal = ({ isOpen, onClose, vital, records, selectedIdx }) => {
           ))}
         </div>
         <div className="h-96 flex flex-col w-full">
-          <VitalsChart vital={vital} records={records} selectedIdx={selectedIdx} range={vitalRanges[vital]} chartType={chartType} />
+          <VitalsChart
+            vital={vital}
+            records={records}
+            selectedIdx={selectedIdx}
+            range={vitalRanges[vital]}
+            chartType={chartType}
+          />
         </div>
       </div>
     </div>
@@ -150,7 +194,9 @@ const ChartModal = ({ isOpen, onClose, vital, records, selectedIdx }) => {
 function Form() {
   const location = useLocation();
   const navigate = useNavigate();
-  const patient = location.state?.patient || {
+  
+  // Get patient data and assessment data from navigation state or localStorage
+  const patient = location.state?.patient || JSON.parse(localStorage.getItem('currentAssessment') || '{}').patientInfo || {
     name: "Unknown Patient",
     email: "unknown@example.com",
     phone: "N/A",
@@ -159,6 +205,14 @@ function Form() {
     diagnosis: "N/A",
     wardType: "N/A",
   };
+
+  // Get annotated images from state or localStorage
+  const [annotatedImages, setAnnotatedImages] = useState(() => {
+    return location.state?.annotatedImages ||
+           JSON.parse(localStorage.getItem('medicalImages') || '[]') ||
+           [];
+  });
+
   const [activeForm, setActiveForm] = useState("all");
   const [formsData, setFormsData] = useState({});
   const [doctorSignature, setDoctorSignature] = useState(null);
@@ -166,13 +220,217 @@ function Form() {
   const [showPatientDetails, setShowPatientDetails] = useState(true);
   const [isChartOpen, setIsChartOpen] = useState(false);
   const [chartVital, setChartVital] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
   const signaturePadRef = useRef();
   const isIPDPatient = patient?.type?.toLowerCase() === "ipd";
   const printWindowRef = useRef(null);
+const ShareModalContent = ({ onClose, prescriptions, patient }) => {
+  return (
+    <div className="bg-white rounded-lg shadow-2xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="flex justify-between items-center p-6 border-b bg-gradient-to-r from-[#01D48C] to-[#0E1630] text-white">
+        <h3 className="text-xl font-semibold">Prescription Preview</h3>
+        <button
+          onClick={onClose}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          <X size={24} />
+        </button>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+        {/* Left: Preview */}
+        <div className="p-4 rounded-lg flex flex-col items-center">
+          <div className="bg-white border border-[#222] rounded-lg shadow-lg overflow-hidden p-8">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <h2 className="text-xl font-bold text-[#0E1630] mb-1">
+                  Dr. Sheetal S. Shelke
+                </h2>
+                <div className="text-xs text-gray-700 leading-tight">
+                  <div>MBBS, MD</div>
+                  <div>Neurologist</div>
+                </div>
+              </div>
+              <img
+                src="/logo.png"
+                alt="AV Swasthya"
+                className="h-10 w-auto"
+              />
+            </div>
+            <div className="bg-gray-100 rounded px-4 py-2 mb-4 flex flex-wrap gap-4 items-center text-sm">
+              <span>
+                <b>Name:</b>{" "}
+                {patient?.name || "N/A"}
+              </span>
+              <span>
+                <b>Age:</b> {patient?.age || "N/A"}
+              </span>
+              <span>
+                <b>Gender:</b>{" "}
+                {patient?.gender || "N/A"}
+              </span>
+              <span>
+                <b>Contact:</b>{" "}
+                {patient?.phone || "N/A"}
+              </span>
+            </div>
+            <div className="mb-4">
+              <div className="text-[#0E1630] font-semibold mb-2">
+                Prescription
+              </div>
+              <table className="w-full border border-gray-300 text-sm">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 px-2 py-1">
+                      Medicine
+                    </th>
+                    <th className="border border-gray-300 px-2 py-1">
+                      Dosage
+                    </th>
+                    <th className="border border-gray-300 px-2 py-1">
+                      Frequency
+                    </th>
+                    <th className="border border-gray-300 px-2 py-1">
+                      Intake
+                    </th>
+                    <th className="border border-gray-300 px-2 py-1">
+                      Duration
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {prescriptions.map((med, index) => (
+                    <tr key={index}>
+                      <td className="border border-gray-300 px-2 py-1">
+                        {med.drugName || "-"}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1">
+                        {med.dosage || "-"} {med.dosageUnit || ""}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1">
+                        {med.frequency || "-"}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1">
+                        {med.intake || "-"}
+                      </td>
+                      <td className="border border-gray-300 px-2 py-1">
+                        {med.duration ? `${med.duration} day(s)` : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex justify-between items-end border-t pt-4 mt-6">
+              <div className="flex items-center gap-2">
+                <img
+                  src="/logo.png"
+                  alt="AV Swasthya"
+                  className="h-10 w-auto"
+                />
+                <div className="text-xs text-gray-700">
+                  Dharwad, Karnataka, 580001
+                  <br />
+                  +12-345 678 9012
+                </div>
+              </div>
+              <div
+                className="text-xs text-gray-700 text-right"
+                style={{ minWidth: 160 }}
+              >
+                <div className="border-b border-gray-400 mb-1"></div>
+                Doctor's Signature
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Right: Share Options */}
+        <div className="space-y-6">
+          <h4 className="text-lg font-semibold text-[#0E1630]">
+            Share Options
+          </h4>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Globe size={16} />
+              Language
+            </label>
+            <select
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#01D48C]"
+            >
+              <option value="English">English</option>
+              <option value="Hindi">हिंदी (Hindi)</option>
+              <option value="Marathi">मराठी (Marathi)</option>
+              <option value="Gujarati">ગુજરાતી (Gujarati)</option>
+              <option value="Tamil">தமிழ் (Tamil)</option>
+              <option value="Telugu">తెలుగు (Telugu)</option>
+              <option value="Bengali">বাংলা (Bengali)</option>
+              <option value="Kannada">ಕನ್ನಡ (Kannada)</option>
+              <option value="Malayalam">മലയാളം (Malayalam)</option>
+              <option value="Punjabi">ਪੰਜਾਬੀ (Punjabi)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              placeholder="Enter patient's email"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#01D48C]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              WhatsApp Number
+            </label>
+            <input
+              type="tel"
+              placeholder="Enter WhatsApp number"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#01D48C]"
+            />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
+            >
+              <Phone size={16} /> WhatsApp
+            </button>
+            <button
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+            >
+              <Mail size={16} /> Email
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+            >
+              <Printer size={16} /> Print
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
+  // Load assessment data on component mount
   useEffect(() => {
+    const storedAssessment = localStorage.getItem('currentAssessment');
+    const storedImages = localStorage.getItem('medicalImages');
     const storedSignature = localStorage.getItem("doctorSignature");
-    if (storedSignature) setDoctorSignature(storedSignature);
+    
+    if (storedAssessment) {
+      const assessmentData = JSON.parse(storedAssessment);
+      console.log('Loaded assessment data:', assessmentData);
+    }
+    
+    if (storedImages) {
+      const images = JSON.parse(storedImages);
+      setAnnotatedImages(images);
+    }
+    
+    if (storedSignature) {
+      setDoctorSignature(storedSignature);
+    }
   }, []);
 
   const calculateAge = (dob) => {
@@ -181,15 +439,25 @@ function Form() {
     const birthDate = new Date(dob);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    )
+      age--;
     return age;
   };
 
   const getPatientName = () =>
-    patient.name || `${patient.firstName || ""} ${patient.middleName || ""} ${patient.lastName || ""}`.trim() || "Unknown Patient";
+    patient.name ||
+    `${patient.firstName || ""} ${patient.middleName || ""} ${
+      patient.lastName || ""
+    }`.trim() ||
+    "Unknown Patient";
 
   const getPatientAge = () =>
-    patient.age && patient.age !== "N/A" ? patient.age : calculateAge(patient.dob);
+    patient.age && patient.age !== "N/A"
+      ? patient.age
+      : calculateAge(patient.dob);
 
   const getCombinedWardInfo = (patient) => {
     if (!isIPDPatient) return "N/A";
@@ -227,17 +495,52 @@ function Form() {
       const signatureData = signaturePadRef.current.toDataURL();
       setDoctorSignature(signatureData);
       localStorage.setItem("doctorSignature", signatureData);
-      toast.success("Signature saved successfully!");
     }
   };
 
-  const getStyledPrescriptionHTML = (doctor, patient, signature, logoUrl, formContent) => `
+  const handleSaveForm = (formType, data) => {
+    setFormsData((prev) => ({ ...prev, [formType]: data }));
+    localStorage.setItem(
+      "medicalForms",
+      JSON.stringify({ ...formsData, [formType]: data })
+    );
+  };
+
+  // Handle form type button clicks - navigate for template, set active for others
+  const handleFormTypeClick = (formType) => {
+    if (formType === "template") {
+      // Navigate to template route with patient and image data
+      navigate("/doctordashboard/template", {
+        state: {
+          patient,
+          annotatedImages,
+          from: 'form'
+        }
+      });
+    } else {
+      setActiveForm(formType);
+    }
+  };
+
+  const getStyledPrescriptionHTML = (
+    doctor,
+    patient,
+    signature,
+    logoUrl,
+    formContent
+  ) => `
     <div style="width:800px;font-family:'Poppins',sans-serif;padding:40px;box-sizing:border-box;border:2px solid #0e1630;background:#fff;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <h1 style="margin:0;font-size:24px;border-bottom:3px solid #01D48C;color:#0e1630;">${doctor.name}</h1>
-          <p style="margin:2px 0;font-size:14px;color:#0e1630;">${doctor.qualifications}</p>
-          <p style="margin:2px 0;font-size:14px;color:#0e1630;">${doctor.specialization}</p>
+          <h1 style="margin:0;font-size:24px;border-bottom:3px solid #01D48C;color:#0e1630;">${
+            doctor.name
+          }</h1>
+          <p style="margin:2px 0;font-size:14px;color:#0e1630;">${
+            doctor.qualifications
+          }</p>
+          <p style="margin:2px 0;font-size:14px;color:#0e1630;">${
+            doctor.specialization
+          }</p>
         </div>
         <div style="width:80px;height:80px;border-radius:8px;display:flex;align-items:center;justify-content:center;">
           <img src="${AVLogo}" alt="AV Logo" style="width:100%; height:100%; border-radius:8px; object-fit:cover;" />
@@ -248,30 +551,42 @@ function Form() {
           <div style="display:flex;flex-direction:row;gap:32px;width:100%;justify-content:space-between;">
             <div><strong style="border-bottom:1px solid #01D48C;">Name:</strong> ${
               patient?.firstName || patient?.lastName
-                ? `${patient?.firstName || ""} ${patient?.middleName || ""} ${patient?.lastName || ""}`.trim()
+                ? `${patient?.firstName || ""} ${patient?.middleName || ""} ${
+                    patient?.lastName || ""
+                  }`.trim()
                 : patient?.name || "N/A"
             }</div>
             <div><strong style="border-bottom:1px solid #01D48C;">Age:</strong> ${
               patient?.age && patient?.age !== "N/A"
                 ? patient.age
                 : patient?.dob
-                  ? (() => {
-                      const today = new Date();
-                      const birthDate = new Date(patient.dob);
-                      let age = today.getFullYear() - birthDate.getFullYear();
-                      const m = today.getMonth() - birthDate.getMonth();
-                      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-                      return age;
-                    })()
-                  : "N/A"
+                ? (() => {
+                    const today = new Date();
+                    const birthDate = new Date(patient.dob);
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const m = today.getMonth() - birthDate.getMonth();
+                    if (
+                      m < 0 ||
+                      (m === 0 && today.getDate() < birthDate.getDate())
+                    )
+                      age--;
+                    return age;
+                  })()
+                : "N/A"
             }</div>
-            <div><strong style="border-bottom:1px solid #01D48C;">Gender:</strong> ${patient?.gender || "N/A"}</div>
-            <div><strong style="border-bottom:1px solid #01D48C;">Contact:</strong> ${patient?.phone || "N/A"}</div>
+            <div><strong style="border-bottom:1px solid #01D48C;">Gender:</strong> ${
+              patient?.gender || "N/A"
+            }</div>
+            <div><strong style="border-bottom:1px solid #01D48C;">Contact:</strong> ${
+              patient?.phone || "N/A"
+            }</div>
           </div>
         </div>
       </div>
       <div style="position:relative;margin:20px 0;">
-        <div style="position:relative;z-index:1;">${formContent || "<p>No content available.</p>"}</div>
+        <div style="position:relative;z-index:1;">${
+          formContent || "<p>No content available.</p>"
+        }</div>
       </div>
       <div style="margin-top:40px;width:100%;height:100px;background:linear-gradient(to right,#f9f9f9,#f1f1f1);border-top:3px solid #0e1630;display:flex;align-items:center;justify-content:space-between;padding:0 40px;box-sizing:border-box;box-shadow:0 -2px 6px rgba(0,0,0,0.05);">
         <div style="display:flex;align-items:center;">
@@ -293,7 +608,11 @@ function Form() {
           </div>
         </div>
         <div style="text-align:right;">
-          ${signature ? `<img src="${signature}" alt="Signature" style="height:48px;margin-bottom:2px;" />` : '<div style="height:48px;"></div>'}
+          ${
+            signature
+              ? `<img src="${signature}" alt="Signature" style="height:48px;margin-bottom:2px;" />`
+              : '<div style="height:48px;"></div>'
+          }
           <div style="width:160px;margin-left:auto;font-size:16px;color:#444;padding-top:4px;border-top:2px solid #0e1630;">Doctor's Signature</div>
         </div>
       </div>
@@ -303,12 +622,14 @@ function Form() {
   const handlePrintForm = (formType) => {
     const data = formsData[formType];
     if (!data) return;
+
     const doctor = {
       name: "Dr. Sheetal S. Shelke",
       specialization: "Neurologist",
       regNo: "MH123456",
       qualifications: "MBBS, MD",
     };
+
     let formContent = "";
     switch (formType) {
       case "vitals":
@@ -332,8 +653,18 @@ function Form() {
       default:
         formContent = "<p>No content available for this form.</p>";
     }
-    const header = getStyledPrescriptionHTML(doctor, patient, doctorSignature, AVLogo, formContent);
-    if (printWindowRef.current && !printWindowRef.current.closed) printWindowRef.current.close();
+
+    const header = getStyledPrescriptionHTML(
+      doctor,
+      patient,
+      doctorSignature,
+      AVLogo,
+      formContent
+    );
+
+    if (printWindowRef.current && !printWindowRef.current.closed)
+      printWindowRef.current.close();
+
     printWindowRef.current = window.open("", "", "width=800,height=600");
     if (printWindowRef.current) {
       printWindowRef.current.document.write(header);
@@ -349,8 +680,12 @@ function Form() {
       regNo: "MH123456",
       qualifications: "MBBS, MD",
     };
+
     const formsHtml = Object.keys(formsData)
-      .filter((formType) => formsData[formType] && Object.keys(formsData[formType]).length > 0)
+      .filter(
+        (formType) =>
+          formsData[formType] && Object.keys(formsData[formType]).length > 0
+      )
       .map((formType) => {
         const data = formsData[formType];
         switch (formType) {
@@ -370,24 +705,44 @@ function Form() {
             return "";
         }
       })
-      .join('<div class="page-break"></div>');
-    if (!formsHtml) return toast.error("No forms with data to print.");
-    const header = getStyledPrescriptionHTML(doctor, patient, doctorSignature, "", formsHtml);
-    if (printWindowRef.current && !printWindowRef.current.closed) printWindowRef.current.close();
-    printWindowRef.current = window.open("", "", "width=800,height=600");
-    if (printWindowRef.current) {
-      printWindowRef.current.document.write(
-        `<html><head><title>Print All Forms</title><style>body { font-family: 'Poppins', sans-serif; }.page-break { page-break-after: always; }</style></head><body>${header}</body></html>`
-      );
-      printWindowRef.current.document.close();
-      printWindowRef.current.print();
-      toast.success("✅ All forms printed successfully!", { position: "top-right", autoClose: 2000 });
-    }
-  };
+      .join("");
 
-  const handleSaveForm = (formType, data) => {
-    setFormsData((prev) => ({ ...prev, [formType]: data }));
-    localStorage.setItem("medicalForms", JSON.stringify({ ...formsData, [formType]: data }));
+    if (!formsHtml) return;
+
+    const header = getStyledPrescriptionHTML(
+      doctor,
+      patient,
+      doctorSignature,
+      AVLogo,
+      formsHtml
+    );
+
+    if (printWindowRef.current && !printWindowRef.current.closed)
+      printWindowRef.current.close();
+
+    printWindowRef.current = window.open("", "", "width=1000,height=800");
+    if (printWindowRef.current) {
+      printWindowRef.current.document.write(`
+        <html>
+          <head>
+            <title>Print All Forms</title>
+            <style>
+              body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; }
+              table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background: #f8f9fa; font-weight: bold; }
+              .form-section { margin-bottom: 20px; }
+            </style>
+          </head>
+          <body>${header}</body>
+        </html>
+      `);
+      printWindowRef.current.document.close();
+      printWindowRef.current.focus();
+      setTimeout(() => {
+        printWindowRef.current.print();
+      }, 500);
+    }
   };
 
   const commonProps = {
@@ -398,35 +753,44 @@ function Form() {
     setChartVital,
   };
 
-  const renderActiveForm = () =>
-    activeForm === "all" ? (
-      <div className="space-y-8 animate-slideIn">
-        <VitalsForm data={formsData.vitals} {...commonProps} />
-        <PrescriptionForm data={formsData.prescription} {...commonProps} />
-        <ClinicalNotesForm data={formsData.clinical} {...commonProps} />
-        <LabTestsForm data={formsData.lab} {...commonProps} />
-        <EyeTestForm data={formsData.eye} {...commonProps} />
-        <DentalForm data={formsData.dental} {...commonProps} />
-      </div>
-    ) : (
+  const renderActiveForm = () => {
+    if (activeForm === "all") {
+      return (
+        <div className="space-y-8 animate-slideIn">
+          <VitalsForm data={formsData.vitals} {...commonProps} />
+          <PrescriptionForm data={formsData.prescription} {...commonProps} setShowShareModal={setShowShareModal}/>
+          <ClinicalNotesForm data={formsData.clinical} {...commonProps} />
+          <LabTestsForm data={formsData.lab} {...commonProps} />
+          <EyeTestForm data={formsData.eye} {...commonProps} />
+          <DentalForm data={formsData.dental} {...commonProps} />
+        </div>
+      );
+    }
+
+    return (
       {
         vitals: <VitalsForm data={formsData.vitals} {...commonProps} />,
-        prescription: <PrescriptionForm data={formsData.prescription} {...commonProps} />,
-        clinical: <ClinicalNotesForm data={formsData.clinical} {...commonProps} />,
+        prescription: (
+          <PrescriptionForm data={formsData.prescription} {...commonProps} setShowShareModal={setShowShareModal} />
+        ),
+        clinical: (
+          <ClinicalNotesForm data={formsData.clinical} {...commonProps} />
+        ),
         lab: <LabTestsForm data={formsData.lab} {...commonProps} />,
         eye: <EyeTestForm data={formsData.eye} {...commonProps} />,
         dental: <DentalForm data={formsData.dental} {...commonProps} />,
       }[activeForm] || null
     );
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Back to Patient List Button */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className=" sticky top-0 z-10 bg-white">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <button
             onClick={handleBackToPatients}
-    className="flex items-center gap-2 px-4 text-[var(--primary-color)] rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 text-[var(--primary-color)] rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             Back to Patient List
@@ -435,8 +799,8 @@ function Form() {
       </div>
 
       {/* Header */}
-      <header className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] -mb-18 text-white rounded-b-xl shadow-md sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <header className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] min-w-5xl m-6 mt-1 text-white rounded-b-xl shadow-md fixed top-35 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4 ">
           {/* Patient Info Section */}
           {showPatientDetails && (
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -451,24 +815,31 @@ function Form() {
                 </div>
                 {/* Patient Details */}
                 <div>
-                  <h2 className="text-xl font-semibold mb-1">{getPatientName() || "Unknown Patient"}</h2>
+                  <h2 className="text-xl font-semibold mb-1">
+                    {getPatientName() || "Unknown Patient"}
+                  </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1 text-sm">
                     <div>
-                      <span className="font-medium">Contact:</span> {patient?.phone || "N/A"}
+                      <span className="font-medium">Contact:</span>{" "}
+                      {patient?.phone || patient?.contact || "N/A"}
                     </div>
                     <div>
-                      <span className="font-medium">Age:</span> {getPatientAge() || "N/A"}
+                      <span className="font-medium">Age:</span>{" "}
+                      {getPatientAge() || "N/A"}
                     </div>
                     <div>
-                      <span className="font-medium">Gender:</span> {patient?.gender || "N/A"}
+                      <span className="font-medium">Gender:</span>{" "}
+                      {patient?.gender || "N/A"}
                     </div>
                     <div>
-                      <span className="font-medium">Diagnosis:</span> {patient?.diagnosis || "N/A"}
+                      <span className="font-medium">Diagnosis:</span>{" "}
+                      {patient?.diagnosis || "N/A"}
                     </div>
                     {isIPDPatient && (
                       <>
                         <div>
-                          <span className="font-medium">Ward:</span> {getCombinedWardInfo(patient)}
+                          <span className="font-medium">Ward:</span>{" "}
+                          {getCombinedWardInfo(patient)}
                         </div>
                         <div>
                           <span className="font-medium">Status:</span>
@@ -476,9 +847,11 @@ function Form() {
                             className={`px-2 py-0.5 rounded-full text-xs font-medium ml-1 ${
                               patient?.status?.toLowerCase() === "admitted"
                                 ? "bg-green-200 text-green-900"
-                                : patient?.status?.toLowerCase() === "under treatment"
+                                : patient?.status?.toLowerCase() ===
+                                  "under treatment"
                                 ? "bg-yellow-200 text-yellow-900"
-                                : patient?.status?.toLowerCase() === "discharged"
+                                : patient?.status?.toLowerCase() ===
+                                  "discharged"
                                 ? "bg-gray-200 text-gray-900"
                                 : "bg-blue-200 text-blue-900"
                             }`}
@@ -491,55 +864,64 @@ function Form() {
                   </div>
                 </div>
               </div>
-              {/* Quick Links (Right Side) */}
-              <div className="flex-shrink-0 mt-4 md:mt-0">
-                <QuickLinksPanel
-                  isOpen={isMobileMenuOpen}
-                  setActiveForm={setActiveForm}
-                  patient={patient}
-                  onToggle={setIsMobileMenuOpen}
-                />
-              </div>
+
+              {/* Quick Links (Right Side) - Only for IPD */}
+              {isIPDPatient && (
+                <div className="flex-shrink-0 mt-4 md:mt-0">
+                  <QuickLinksPanel
+                    isOpen={isMobileMenuOpen}
+                    setActiveForm={setActiveForm}
+                    patient={patient}
+                    onToggle={setIsMobileMenuOpen}
+                  />
+                </div>
+              )}
             </div>
           )}
+
           {/* Forms Navigation (Tabs) */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mt-6">
-            {/* Form Type Buttons */}
-            <div className="flex flex-wrap gap-2">
-              {Object.values(formTypes).map((formType) => {
-                const Icon = formType.icon;
-                const isActive = activeForm === formType.id;
-                return (
-                  <button
-                    key={formType.id}
-                    onClick={() => setActiveForm(formType.id)}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                      isActive
-                        ? "bg-white text-[#01B07A] shadow-md"
-                        : "bg-white/10 hover:bg-white/20 text-white"
-                    }`}
-                  >
-                    {Icon && <Icon className="w-4 h-4" />}
-                    {formType.name}
-                  </button>
-                );
-              })}
+         <div className="flex items-center justify-between gap-4 mt-6">
+              {/* Form Type Buttons */}
+              <div className="flex flex-wrap gap-2">
+                {Object.values(formTypes).map((formType) => {
+                  const Icon = formType.icon;
+                  const isActive = activeForm === formType.id;
+                  return (
+                    <button
+                      key={formType.id}
+                      onClick={() => handleFormTypeClick(formType.id)}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        isActive
+                          ? "bg-white text-[#01B07A] shadow-md"
+                          : "bg-white/10 hover:bg-white/20 text-white"
+                      }`}
+                    >
+                      {Icon && <Icon className="w-3.5 h-3.5" />}
+                      {formType.name}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Print All Button */}
+              <button
+                onClick={printAllForms}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-[#01B07A] text-xs font-medium hover:shadow-lg transition-all"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                Print All
+              </button>
             </div>
-            {/* Print All Button */}
-            <button
-              onClick={printAllForms}
-              className="flex items-center gap-2 px-4 py-2 rounded-md bg-white text-[#01B07A] text-sm font-medium hover:shadow-lg transition-all"
-            >
-              <Printer className="w-4 h-4" />
-              Print All
-            </button>
-          </div>
         </div>
       </header>
 
       {/* Main content with dynamic margin */}
-      <div className={`max-w-7xl mx-auto px-6 py-8 pt-24 ${isMobileMenuOpen ? "mr-72" : ""} relative z-0`}>
+      <div
+        className={`max-w-7xl mx-auto px-6 py-8 mt-40 ${
+          isMobileMenuOpen ? "mr-72" : ""
+        } relative z-0`}
+      >
         <div className="mb-8">{renderActiveForm()}</div>
+
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 animate-fadeIn">
           <h3 className="h3-heading mb-6">Digital Signature</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -548,24 +930,38 @@ function Form() {
                 <label className="block text-sm font-medium text-[var(--primary-color)] mb-2">
                   Upload Signature:
                 </label>
-                <input type="file" accept="image/*" onChange={handleSignatureUpload} className="input-field" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleSignatureUpload}
+                  className="input-field"
+                />
               </div>
               {doctorSignature && (
                 <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <span className="text-sm font-medium text-blue-800">Preview:</span>
-                  <img src={doctorSignature} alt="Doctor's Signature" className="h-12 border border-blue-300 rounded shadow-sm" />
+                  <span className="text-sm font-medium text-blue-800">
+                    Preview:
+                  </span>
+                  <img
+                    src={doctorSignature}
+                    alt="Doctor's Signature"
+                    className="h-12 border border-blue-300 rounded shadow-sm"
+                  />
                 </div>
               )}
             </div>
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-[var(--primary-color)]">Or Draw Signature:</label>
+              <label className="block text-sm font-medium text-[var(--primary-color)]">
+                Or Draw Signature:
+              </label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
                 <SignatureCanvas
                   ref={signaturePadRef}
                   canvasProps={{
                     width: 400,
                     height: 100,
-                    className: "border border-gray-300 rounded-lg shadow-sm w-full bg-white",
+                    className:
+                      "border border-gray-300 rounded-lg shadow-sm w-full bg-white",
                   }}
                 />
               </div>
@@ -590,6 +986,15 @@ function Form() {
         </div>
       </div>
 
+{showShareModal && (
+  <div className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/40">
+    <ShareModalContent
+      onClose={() => setShowShareModal(false)}
+      prescriptions={formsData.prescription?.prescriptions || []}
+      patient={patient}
+    />
+  </div>
+)}
       <ChartModal
         isOpen={isChartOpen}
         onClose={() => setIsChartOpen(false)}
@@ -597,20 +1002,8 @@ function Form() {
         records={formsData.vitals?.vitalsRecords || []}
         selectedIdx={null}
       />
-
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
     </div>
+    
   );
 }
 
@@ -705,9 +1098,13 @@ const getDentalTemplate = (d) => `
           (p) => `
             <tr>
               <td style="${tdStyle}">${(p.teeth || []).join(", ") || "-"}</td>
-              <td style="${tdStyle}">${(p.problems || []).join(", ") || "-"}</td>
+              <td style="${tdStyle}">${
+            (p.problems || []).join(", ") || "-"
+          }</td>
               <td style="${tdStyle}">${(p.actions || []).join(", ") || "-"}</td>
-              <td style="${tdStyle}">${(p.positions || []).join(", ") || "-"}</td>
+              <td style="${tdStyle}">${
+            (p.positions || []).join(", ") || "-"
+          }</td>
             </tr>
           `
         )
@@ -777,6 +1174,7 @@ const getPrescriptionTemplate = (prescriptions = []) => {
       ? "Right Eye"
       : "",
   }));
+
   return `
     <h4 style="color:#2980b9;">Prescription</h4>
     <table style="${tableStyle}">

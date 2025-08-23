@@ -23,7 +23,7 @@ const LabHome = () => {
   const { searchQuery, setSearchQuery, performSearch } = useSearch();
   const cartRef = useRef(null);
   const btnRefs = useRef({});
-  const MOCK_API_URL = 'https://mocki.io/v1/0aeb8233-e477-46f8-9713-373a90796139';
+  const MOCK_API_URL = 'https://mocki.io/v1/2016f19b-a247-45b2-bd6e-eb15a59a8fbb';
 
   useEffect(() => { setLoading(true); axios.get(MOCK_API_URL).then(res => { const data = res.data[activeTab] || []; setTests(performSearch(data)); setPackages(res.data.packages || []); }).finally(() => setLoading(false)); }, [activeTab, searchQuery]);
 
@@ -46,7 +46,7 @@ const LabHome = () => {
   const renderButton = (item, prefix, pushToCart = false) => {
     const key = `${prefix}${item.id}`;
     const label = addedIds.has(key) ? 'Added' : pushToCart ? 'Book Now' : 'Add';
-    const cls = pushToCart ? 'bg-[var(--primary-color)] text-white hover:bg-[var(--primary-dark)]' : 'bg-gray-200 text-gray-800 hover:bg-gray-300';
+    const cls = pushToCart ? 'bg-[var(--primary-color)] text-white ' : 'bg-gray-200 text-gray-800 hover:bg-gray-300';
     return <button ref={el => (btnRefs.current[key] = el)} className={`${cls} px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors`} onClick={() => handleAdd(item, key, pushToCart)}>{label}</button>;
   };
 
@@ -73,7 +73,7 @@ const LabHome = () => {
                 <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">{t.description}</p>
                 <p className="text-[var(--primary-color)] font-bold text-sm sm:text-base">₹{t.price}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button onClick={() => navigate(`/patientdashboard/lab-tests/test/${t.id}`)} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white text-[var(--primary-color)] border border-[var(--primary-color)] rounded-lg text-xs sm:text-sm font-medium hover:bg-[var(--primary-color)] hover:text-white transition-colors">View</button>
+                  <button onClick={() => navigate(`/patientdashboard/lab-tests/test/${t.id}`)} className="px-3 py-1.5 sm:px-4 sm:py-2 text-[var(--primary-color)] border border-[var(--primary-color)] rounded-lg text-xs sm:text-sm font-medium  transition-colors">View</button>
                   {renderButton(t, 't')}
                   {renderButton(t, 'tb', true)}
                 </div>

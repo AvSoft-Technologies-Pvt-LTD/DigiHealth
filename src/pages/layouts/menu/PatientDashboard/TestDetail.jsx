@@ -14,7 +14,7 @@ const TestDetail = () => {
   const navigate = useNavigate();
   const iconColor = "text-[var(--primary-color)]";
 
-  useEffect(() => { axios.get('https://mocki.io/v1/819026ae-4da2-46a6-9acb-2e9e2c99e019').then((res) => { const found = Array.isArray(res.data) ? res.data.find((i) => i.id.toString() === id) : null; setTest(found); }).catch((err) => console.error('API Error:', err)); }, [id]);
+  useEffect(() => { axios.get('https://mocki.io/v1/fc3393f4-99ab-4b67-aeb8-635c77cd6c49').then((res) => { const found = Array.isArray(res.data) ? res.data.find((i) => i.id.toString() === id) : null; setTest(found); }).catch((err) => console.error('API Error:', err)); }, [id]);
 
   if (!test) return <div className="min-h-screen flex items-center justify-center p-4"><div className="text-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[var(--primary-color)] mx-auto mb-4"></div><p className="text-gray-600 text-sm sm:text-base">Loading test details...</p></div></div>;
 

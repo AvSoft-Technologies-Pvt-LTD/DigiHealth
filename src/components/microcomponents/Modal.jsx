@@ -222,7 +222,7 @@ const ReusableModal = ({
                                   name={field.inputName}
                                   value={formValues[field.inputName] || ""}
                                   onChange={(e) => handleChange(field.inputName, e.target.value)}
-                                  className="text-xs sm:text-sm border border-gray-300 rounded-md w-20 placeholder:text-[10px]"
+                                  className="text-xs sm:text-sm border p-2 sm:p-2.5 border-gray-300 rounded-md w-full min-w-[80px] placeholder:text-[10px] sm:placeholder:text-xs"
                                   placeholder={field.inputLabel}
                                 />
                               )}

@@ -4,172 +4,53 @@ import { SketchPicker } from 'react-color';
 
 const layoutStyles = {
   traditional: {
-    header: {
-      textAlign: 'center',
-      borderRadius: '12px',
-    },
-    footer: {
-      borderTop: '2px solid',
-      textAlign: 'center',
-    },
+    header: { textAlign: 'center', borderRadius: '12px' },
+    footer: { borderTop: '2px solid', textAlign: 'center' },
   },
   modern: {
-    header: {
-      textAlign: 'left',
-      borderRadius: '0',
-      borderLeft: '8px solid',
-    },
-    footer: {
-      borderTop: '4px double',
-      textAlign: 'left',
-    },
+    header: { textAlign: 'left', borderRadius: '0', borderLeft: '8px solid' },
+    footer: { borderTop: '4px double', textAlign: 'left' },
   },
   pediatric: {
-    header: {
-      textAlign: 'center',
-      borderRadius: '20px',
-      border: '4px solid',
-    },
-    footer: {
-      borderTop: '3px dotted',
-      textAlign: 'center',
-    },
+    header: { textAlign: 'center', borderRadius: '20px', border: '4px solid' },
+    footer: { borderTop: '3px dotted', textAlign: 'center' },
   },
   specialist: {
-    header: {
-      textAlign: 'right',
-      borderRadius: '0',
-      borderBottom: '6px solid',
-    },
-    footer: {
-      borderTop: '2px solid',
-      borderBottom: '2px solid',
-      textAlign: 'right',
-    },
+    header: { textAlign: 'right', borderRadius: '0', borderBottom: '6px solid' },
+    footer: { borderTop: '2px solid', borderBottom: '2px solid', textAlign: 'right' },
   },
   luxury: {
-    header: {
-      textAlign: 'center',
-      borderRadius: '0',
-      border: '3px solid',
-      background: 'linear-gradient(135deg, #d97706, #f59e0b)',
-    },
-    footer: {
-      borderTop: '4px double',
-      textAlign: 'center',
-    },
+    header: { textAlign: 'center', borderRadius: '0', border: '3px solid'},
+    footer: { borderTop: '4px double', textAlign: 'center' },
   },
   creative: {
-    header: {
-      textAlign: 'left',
-      borderRadius: '25px 0 25px 0',
-      background: 'linear-gradient(45deg, #8b5cf6, #a78bfa)',
-    },
-    footer: {
-      borderTop: '3px wavy',
-      textAlign: 'center',
-    },
+    header: { textAlign: 'left', borderRadius: '25px 0 25px 0' },
+    footer: { borderTop: '3px wavy', textAlign: 'center' },
   },
   minimalist: {
-    header: {
-      textAlign: 'center',
-      borderRadius: '0',
-      border: '1px solid',
-    },
-    footer: {
-      borderTop: '1px solid',
-      textAlign: 'center',
-    },
+    header: { textAlign: 'center', borderRadius: '0', border: '1px solid' },
+    footer: { borderTop: '1px solid', textAlign: 'center' },
   },
   vintage: {
-    header: {
-      textAlign: 'center',
-      borderRadius: '0',
-      border: '2px dashed',
-    },
-    footer: {
-      borderTop: '2px dashed',
-      textAlign: 'center',
-    },
+    header: { textAlign: 'center', borderRadius: '0', border: '2px dashed' },
+    footer: { borderTop: '2px dashed', textAlign: 'center' },
   },
   futuristic: {
-    header: {
-      textAlign: 'left',
-      borderRadius: '0',
-      borderLeft: '5px solid',
-      background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
-    },
-    footer: {
-      borderTop: '3px solid',
-      textAlign: 'left',
-    },
+    header: { textAlign: 'left', borderRadius: '0', borderLeft: '5px solid'},
+    footer: { borderTop: '3px solid', textAlign: 'left' },
   },
 };
 
 const prescriptionTemplates = {
-  classic: {
-    id: 'classic',
-    name: 'Classic Medical',
-    icon: Stethoscope,
-    preview: 'Traditional medical prescription format',
-    layout: 'traditional',
-  },
-  modern: {
-    id: 'modern',
-    name: 'Modern Healthcare',
-    icon: Heart,
-    preview: 'Clean, modern design with emphasis on readability',
-    layout: 'modern',
-  },
-  pediatric: {
-    id: 'pediatric',
-    name: 'Pediatric Care',
-    icon: Baby,
-    preview: 'Child-friendly design with soft colors',
-    layout: 'pediatric',
-  },
-  specialist: {
-    id: 'specialist',
-    name: 'Specialist Clinic',
-    icon: Brain,
-    preview: 'Professional template for specialist consultations',
-    layout: 'specialist',
-  },
-  minimalist: {
-    id: 'minimalist',
-    name: 'Minimalist Care',
-    icon: Shield,
-    preview: 'Simple and clean design',
-    layout: 'minimalist',
-  },
-  vintage: {
-    id: 'vintage',
-    name: 'Vintage Clinic',
-    icon: Book,
-    preview: 'Retro design with classic elements',
-    layout: 'vintage',
-  },
-  futuristic: {
-    id: 'futuristic',
-    name: 'Futuristic Health',
-    icon: Activity,
-    preview: 'Advanced design with a modern touch',
-    layout: 'futuristic',
-  },
-  luxury: {
-    id: 'luxury',
-    name: 'Luxury Clinic',
-    icon: Crown,
-    preview: 'Premium design with gold accents',
-    layout: 'luxury',
-  },
-  creative: {
-    id: 'creative',
-    name: 'Creative Wellness',
-    icon: Sparkles,
-    preview: 'Artistic design with vibrant colors',
-    layout: 'creative',
-  }
+  classic: { id: 'classic', name: 'Classic Medical', icon: Stethoscope, preview: 'Traditional medical prescription format', layout: 'traditional' },
+  modern: { id: 'modern', name: 'Modern Healthcare', icon: Heart, preview: 'Clean, modern design with emphasis on readability', layout: 'modern' },
+  pediatric: { id: 'pediatric', name: 'Pediatric Care', icon: Baby, preview: 'Child-friendly design with soft colors', layout: 'pediatric' },
+  specialist: { id: 'specialist', name: 'Specialist Clinic', icon: Brain, preview: 'Professional template for specialist consultations', layout: 'specialist' },
+  minimalist: { id: 'minimalist', name: 'Minimalist Care', icon: Shield, preview: 'Simple and clean design', layout: 'minimalist' },
+  vintage: { id: 'vintage', name: 'Vintage Clinic', icon: Book, preview: 'Retro design with classic elements', layout: 'vintage' },
+  futuristic: { id: 'futuristic', name: 'Futuristic Health', icon: Activity, preview: 'Advanced design with a modern touch', layout: 'futuristic' },
+  luxury: { id: 'luxury', name: 'Luxury Clinic', icon: Crown, preview: 'Premium design with gold accents', layout: 'luxury' },
+  creative: { id: 'creative', name: 'Creative Wellness', icon: Sparkles, preview: 'Artistic design with vibrant colors', layout: 'creative' },
 };
 
 const TemplateModal = ({ isOpen, onClose, onSelectTemplate, selectedTemplate, selectedColor, setSelectedColor }) => {
@@ -230,10 +111,7 @@ const TemplateModal = ({ isOpen, onClose, onSelectTemplate, selectedTemplate, se
             {/* Color Display */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Selected Color:</span>
-              <div 
-                className="w-8 h-8 rounded-full border-2 border-gray-300"
-                style={{ backgroundColor: selectedColor }}
-              ></div>
+              <div className="w-8 h-8 rounded-full border-2 border-gray-300" style={{ backgroundColor: selectedColor }}></div>
             </div>
             {/* Color Picker Button and Dropdown */}
             <div className="relative">
@@ -251,14 +129,12 @@ const TemplateModal = ({ isOpen, onClose, onSelectTemplate, selectedTemplate, se
               )}
             </div>
             {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
               <X size={24} className="text-gray-500" />
             </button>
           </div>
         </div>
+
         {/* Template Grid */}
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -267,12 +143,11 @@ const TemplateModal = ({ isOpen, onClose, onSelectTemplate, selectedTemplate, se
               const isSelected = selectedTemplate === template.id;
               const isHovered = hoveredTemplate === template.id;
               const templateStyle = getTemplateStyle(template);
+
               return (
                 <div
                   key={template.id}
-                  className={`relative cursor-pointer transition-all duration-300 transform hover:scale-105 ${
-                    isSelected ? 'ring-4 ring-blue-500' : ''
-                  }`}
+                  className={`relative cursor-pointer transition-all duration-300 transform hover:scale-105 ${isSelected ? 'ring-4 ring-blue-500' : ''}`}
                   onMouseEnter={() => setHoveredTemplate(template.id)}
                   onMouseLeave={() => setHoveredTemplate(null)}
                   onClick={() => onSelectTemplate(template.id)}
@@ -308,15 +183,14 @@ const TemplateModal = ({ isOpen, onClose, onSelectTemplate, selectedTemplate, se
                       )}
                     </div>
                   </div>
-                  {/* Hover Effect: Only border on hover, no blue background */}
-                  {isHovered && (
-                    <div className="absolute inset-0 rounded-xl pointer-events-none border-4 border-blue-500"></div>
-                  )}
+                  {/* Hover Effect */}
+                  {isHovered && <div className="absolute inset-0 rounded-xl pointer-events-none border-4 border-blue-500"></div>}
                 </div>
               );
             })}
           </div>
         </div>
+
         {/* Modal Footer */}
         <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
           <button onClick={onClose} className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors">

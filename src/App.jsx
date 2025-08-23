@@ -40,6 +40,8 @@ import QueueManagement from "./components/QueueManagaement";
 import QueueToken from "./components/Queue-Token";
 import Frontdesk from "./components/FrontendDesk";
 import TokenDisplay from "./components/Token-Display";
+import BedRoomList from "./pages/layouts/menu/DoctorDashboard/BedRoomList"
+import ImageAnnotationCanvas from "./components/microcomponents/ImageAnnotationCanvas";
 
 // Toast
 import { ToastContainer } from "react-toastify";
@@ -151,6 +153,7 @@ const App = () => {
         path="tokendisplay"
         element={<TokenDisplay tokens={tokens} />}
       />
+        <Route path="bedroommanagement" element={<BedRoomList/>}/>
     </>
   );
 
@@ -190,6 +193,7 @@ const App = () => {
           <Route path="/doctordashboard" element={<DashboardLayout />}>
             <Route index element={<Overview />} />
             {sharedRoutes}
+            <Route path="template" element={<ImageAnnotationCanvas />} />
             <Route path="*" element={<DrRoutes />} />
           </Route>
         </Route>

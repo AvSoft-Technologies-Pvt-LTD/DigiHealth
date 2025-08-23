@@ -1,11 +1,9 @@
-//QuickLinks
+//Quick
 import React, { useState } from "react";
 import { ChevronRight, X, Grid3X3 } from "lucide-react";
 import {
   BadgeCheck,
   Stethoscope,
-  ScrollText,
-  FlaskRound,
   LogOut,
   Settings,
 } from "lucide-react";
@@ -22,7 +20,7 @@ const QuickLinksPanel = ({ setActiveForm, patient: propPatient, onToggle }) => {
       age: "N/A",
       gender: "N/A",
       diagnosis: "N/A",
-      type: "OPD",
+      type: "IPD",
     };
   const isIPDPatient = patient?.type?.toLowerCase() === "ipd";
   const [isOpen, setIsOpen] = useState(false);
@@ -58,20 +56,6 @@ const QuickLinksPanel = ({ setActiveForm, patient: propPatient, onToggle }) => {
       bgColor: "bg-blue-50",
       hoverBgColor: "hover:bg-blue-100",
     },
-    {
-      name: "Prescription",
-      icon: ScrollText,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      hoverBgColor: "hover:bg-purple-100",
-    },
-    {
-      name: "Lab Tests/Scans",
-      icon: FlaskRound,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-      hoverBgColor: "hover:bg-orange-100",
-    },
     ...(isIPDPatient
       ? [
           {
@@ -83,31 +67,19 @@ const QuickLinksPanel = ({ setActiveForm, patient: propPatient, onToggle }) => {
           },
         ]
       : []),
-    {
-      name: "Edit Profile",
-      icon: Settings,
-      color: "text-gray-600",
-      bgColor: "bg-gray-50",
-      hoverBgColor: "hover:bg-gray-100",
-    },
+    // {
+    //   name: "Edit Profile",
+    //   icon: Settings,
+    //   color: "text-gray-600",
+    //   bgColor: "bg-gray-50",
+    //   hoverBgColor: "hover:bg-gray-100",
+    // },
   ];
 
   const handleLinkClick = (link) => {
     setSelectedLink(link.name);
     if (link.name === "Nursing & Treatment") {
       navigate("Nursing-and-treatment", { state: { patient } });
-      handleClose();
-      return;
-    }
-    if (link.name === "Prescription") {
-      if (setActiveForm) setActiveForm("prescription");
-      navigate("/doctordashboard/form", { state: { patient } });
-      handleClose();
-      return;
-    }
-    if (link.name === "Lab Tests/Scans") {
-      if (setActiveForm) setActiveForm("lab");
-      navigate("/doctordashboard/form", { state: { patient } });
       handleClose();
       return;
     }
@@ -131,14 +103,15 @@ const QuickLinksPanel = ({ setActiveForm, patient: propPatient, onToggle }) => {
   return (
     <>
       {/* Trigger Button */}
-      <button
-        onClick={handleOpen}
-        className="flex items-center gap-2 px-3 py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--accent-color)] transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:scale-105"
-      >
-        <Grid3X3 className="w-4 h-4" />
-        <span className="hidden sm:inline">Quick Links</span>
-        <ChevronRight className="w-3 h-3" />
-      </button>
+   <button
+  onClick={handleOpen}
+  className="flex items-center gap-2 px-3 py-2 bg-white text-[var(--primary-color)] rounded-lg hover:bg-gray-100 transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:scale-105 border border-gray-200"
+>
+  <Grid3X3 className="w-4 h-4" />
+  <span className="hidden sm:inline">Quick Links</span>
+  <ChevronRight className="w-3 h-3" />
+</button>
+
 
       {/* Overlay */}
       {isOpen && (
@@ -215,10 +188,6 @@ const QuickLinksPanel = ({ setActiveForm, patient: propPatient, onToggle }) => {
                       ? "Generate visitor passes"
                       : link.name === "Nursing & Treatment"
                       ? "View treatment details"
-                      : link.name === "Prescription"
-                      ? "Manage medications"
-                      : link.name === "Lab Tests/Scans"
-                      ? "Order lab tests"
                       : link.name === "Discharge"
                       ? "Process discharge"
                       : "Update settings"}

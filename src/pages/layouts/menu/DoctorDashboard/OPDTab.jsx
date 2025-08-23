@@ -1,7 +1,9 @@
-//opd.jsx
+
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiExternalLink } from "react-icons/fi";
+import { FaNotesMedical } from "react-icons/fa";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import Pagination from "../../../../components/Pagination";
 import TeleConsultFlow from "../../../../components/microcomponents/Call";
@@ -11,9 +13,11 @@ export default function OPDTab({
   loading,
   newPatientId,
   onViewPatient,
+  highlightedPatientId,
 }) {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedRowId, setSelectedRowId] = useState(null);
   const pageSize = 6;
   const totalPages = Math.ceil(patients.length / pageSize);
   const paginatedPatients = patients.slice(
@@ -24,7 +28,7 @@ export default function OPDTab({
   const opdColumns = [
     {
       header: "ID",
-      accessor: "sequentialId", // Use sequential ID instead of actual ID
+      accessor: "sequentialId",
     },
     {
       header: "Name",
@@ -60,11 +64,17 @@ export default function OPDTab({
     {
       header: "Actions",
       cell: (row) => (
-        <div className="flex items-center gap-3">
-          <button onClick={() => handleAddRecord(row)} className="edit-btn">
-            Visit Pad
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleAddRecord(row)}
+            className="text-base p-1"
+          >
+            <FaNotesMedical />
           </button>
-          <TeleConsultFlow phone={row.phone} />
+          <div className="text-sm">
+           <TeleConsultFlow phone={row.phone} patientName={row.name} context="opd" />
+
+          </div>
           <button
             title="View Medical Record"
             onClick={() => {
@@ -107,7 +117,7 @@ export default function OPDTab({
                 },
               });
             }}
-            className="text-lg text-[var(--primary-color)]"
+            className="text-base text-[var(--primary-color)] p-1"
             style={{ display: "flex", alignItems: "center" }}
           >
             <FiExternalLink />
@@ -127,10 +137,20 @@ export default function OPDTab({
     }
   };
 
-  // Row highlighting logic for newly added patients
+  const handleRowClick = (row) => {
+    setSelectedRowId(selectedRowId === row.id ? null : row.id);
+  };
+
   const getRowClassName = (row) => {
+    // Priority: highlighted > new > selected
+    if (row.id === highlightedPatientId) {
+      return "font-bold bg-blue-200 hover:bg-blue-300 transition-colors duration-300 animate-pulse border-2 border-blue-400";
+    }
     if (row.id === newPatientId) {
-      return "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150";
+      return "font-bold bg-green-100 hover:bg-green-200 transition-colors duration-150 animate-pulse";
+    }
+    if (row.id === selectedRowId) {
+      return "font-bold bg-gray-100 hover:bg-gray-200 transition-colors duration-150";
     }
     return "";
   };
@@ -141,6 +161,7 @@ export default function OPDTab({
         columns={opdColumns}
         data={paginatedPatients}
         onCellClick={handleCellClick}
+        onRowClick={handleRowClick}
         filters={[]}
         tabs={[]}
         tabActions={[]}
@@ -158,3 +179,7 @@ export default function OPDTab({
     </div>
   );
 }
+
+
+
+

@@ -30,7 +30,7 @@ const ProductsPage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('https://mocki.io/v1/71313176-f5f5-4af7-984e-cbfe37307bef');
+        const response = await axios.get('https://mocki.io/v1/4995341a-1b6f-4ba5-8d7f-646d8b0ca4eb');
         setProducts(response.data);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -185,9 +185,8 @@ const ProductsPage = () => {
               ref={btnRef}
               onClick={handleAddToCart}
               disabled={!product.inStock}
-              className={`w-full py-1.5 md:py-2 px-1.5 md:px-4 rounded-lg text-[10px] md:text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
-                product.inStock ? 'bg-[var(--primary-color)] text-white hover:bg-[var(--primary-dark)]' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`w-full py-1.5 md:py-2 px-1.5 md:px-4 rounded-lg text-[10px] md:text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${product.inStock ? 'bg-[var(--primary-color)] text-white ' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
             >
               <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
               {product.inStock ? ' Add ' : 'Out of Stock'}
@@ -203,30 +202,45 @@ const ProductsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-white md:hidden">
-          <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="text-lg font-semibold">Menu</h2>
-            <button onClick={() => setIsMenuOpen(false)}>
-              <X className="h-6 w-6" />
-            </button>
-          </div>
-          <div className="p-4 space-y-4">
-            <Link
-              to="/patientdashboard/orders"
-              className="block py-2 text-gray-700 hover:text-[var(--primary-color)] font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Orders
-            </Link>
-            <Link
-              to="/patientdashboard/cartproduct"
-              className="block py-2 text-gray-700 hover:text-[var(--primary-color)] font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Cart
-            </Link>
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Overlay (optional) */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setIsMenuOpen(false)}
+          ></div>
+
+          {/* Half-page drawer */}
+          <div className="absolute left-0 top-0 bottom-0 w-1/2 bg-white shadow-lg transform transition-transform duration-300 ease-in-out">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">Menu</h2>
+              <button onClick={() => setIsMenuOpen(false)}>
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <Link
+                to="/patientdashboard/orders"
+                className="flex items-center space-x-2 py-2 text-gray-700 hover:text-[var(--primary-color)] font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <ShoppingCart className="h-5 w-5" />
+                <span>Orders</span>
+              </Link>
+              <Link
+                to="/patientdashboard/cartproduct"
+                className="relative flex items-center space-x-2 py-2 text-gray-700 hover:text-[var(--primary-color)] font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <ShoppingCart className="h-5 w-5" />
+                <span>Cart</span>
+                {itemCount > 0 && (
+                  <span className="absolute left-8 -top-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
+            </div>
           </div>
         </div>
       )}
@@ -406,11 +420,10 @@ const ProductsPage = () => {
               </div>
             ) : (
               <div
-                className={`${
-                  viewMode === 'grid'
-                    ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 md:gap-4'
-                    : 'space-y-2 sm:space-y-3'
-                }`}
+                className={`${viewMode === 'grid'
+                  ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 md:gap-4'
+                  : 'space-y-2 sm:space-y-3'
+                  }`}
               >
                 {filteredAndSortedProducts.map((product) => (
                   <ProductCard

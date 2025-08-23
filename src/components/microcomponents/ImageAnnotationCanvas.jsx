@@ -1,7 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Upload, Pen, Eraser, Download, RotateCcw, Move, Palette, Printer } from 'lucide-react';
+import { Upload, Pen, Eraser, Download, RotateCcw, Move, Palette, Printer, ArrowLeft } from 'lucide-react';
+import { useLocation, useNavigate } from "react-router-dom";
 
-const ImageAnnotationCanvas = ({ onImageChange }) => {
+const ImageAnnotationCanvas = ({ initialImage, onImageChange }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
   const [uploadedImage, setUploadedImage] = useState(null);
@@ -14,27 +18,72 @@ const ImageAnnotationCanvas = ({ onImageChange }) => {
   const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
   const [imageScale, setImageScale] = useState(1);
 
+  // Get patient data and navigation state
+  const patient = location.state?.patient;
+  const annotatedImages = location.state?.annotatedImages || [];
+  const from = location.state?.from;
+
+  // Load initial image from navigation state or prop
+  useEffect(() => {
+    // Priority: initialImage prop > first image from annotated images > null
+    const imageToLoad = initialImage || 
+                        (annotatedImages.length > 0 ? annotatedImages[0].originalFile : null);
+    
+    if (imageToLoad) {
+      const img = new Image();
+      img.onload = () => {
+        setUploadedImage(img);
+        setImageOffset({ x: 0, y: 0 });
+        setImageScale(1);
+      };
+      img.src = imageToLoad;
+    }
+  }, [initialImage, annotatedImages]);
+
   useEffect(() => {
     if (uploadedImage && canvasRef.current) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
-
-      // Set canvas size to fit the image
-      canvas.width = uploadedImage.width;
-      canvas.height = uploadedImage.height;
+      
+      // Set canvas size to fit the image with some padding
+      const maxWidth = 800;
+      const maxHeight = 600;
+      let { width, height } = uploadedImage;
+      
+      // Scale down if too large
+      const scaleX = maxWidth / width;
+      const scaleY = maxHeight / height;
+      const scale = Math.min(scaleX, scaleY, 1);
+      
+      width *= scale;
+      height *= scale;
+      
+      canvas.width = width;
+      canvas.height = height;
 
       // Clear and set white background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Draw the image
-      ctx.drawImage(uploadedImage, imageOffset.x, imageOffset.y, uploadedImage.width * imageScale, uploadedImage.height * imageScale);
+      ctx.drawImage(uploadedImage, imageOffset.x, imageOffset.y, width * imageScale, height * imageScale);
     }
   }, [uploadedImage, imageOffset, imageScale]);
+
+  const handleBackNavigation = () => {
+    if (from === 'form') {
+      // Navigate back to the form page with patient data
+      navigate(-1);
+    } else {
+      // Default back navigation
+      navigate('/doctordashboard/patients');
+    }
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     const img = new Image();
     img.onload = () => {
       setUploadedImage(img);
@@ -68,8 +117,10 @@ const ImageAnnotationCanvas = ({ onImageChange }) => {
   const handleStart = (e) => {
     e.preventDefault();
     if (!canvasRef.current) return;
+
     const ctx = canvasRef.current.getContext('2d');
     const coords = getCanvasCoordinates(e);
+
     if (currentTool === 'pen' || currentTool === 'eraser') {
       setIsDrawing(true);
       ctx.beginPath();
@@ -83,7 +134,9 @@ const ImageAnnotationCanvas = ({ onImageChange }) => {
   const handleMove = (e) => {
     e.preventDefault();
     if (!canvasRef.current || (!isDrawing && !isDragging)) return;
+
     const ctx = canvasRef.current.getContext('2d');
+
     if (isDrawing) {
       const coords = getCanvasCoordinates(e);
       ctx.strokeStyle = currentTool === 'eraser' ? '#FFFFFF' : brushColor;
@@ -93,11 +146,11 @@ const ImageAnnotationCanvas = ({ onImageChange }) => {
       ctx.lineTo(coords.x, coords.y);
       ctx.stroke();
     } else if (isDragging) {
-      const dx = (e.clientX || e.touches[0].clientX - dragStart.x) * 0.5; // Reduced movement sensitivity
+      const dx = (e.clientX || e.touches[0].clientX - dragStart.x) * 0.5;
       const dy = (e.clientY || e.touches[0].clientY - dragStart.y) * 0.5;
       setDragStart({ x: e.clientX || e.touches[0].clientX, y: e.clientY || e.touches[0].clientY });
       setImageOffset((prev) => ({
-        x: Math.max(-100, Math.min(100, prev.x + dx)), // Limit movement range
+        x: Math.max(-100, Math.min(100, prev.x + dx)),
         y: Math.max(-100, Math.min(100, prev.y + dy))
       }));
     }
@@ -107,6 +160,7 @@ const ImageAnnotationCanvas = ({ onImageChange }) => {
     e.preventDefault();
     if (isDrawing) setIsDrawing(false);
     if (isDragging) setIsDragging(false);
+
     if (onImageChange && canvasRef.current) {
       onImageChange(canvasRef.current.toDataURL());
     }
@@ -116,16 +170,30 @@ const ImageAnnotationCanvas = ({ onImageChange }) => {
     if (canvasRef.current && uploadedImage) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
+      
+      // Calculate canvas dimensions
+      const maxWidth = 800;
+      const maxHeight = 600;
+      let { width, height } = uploadedImage;
+      
+      const scaleX = maxWidth / width;
+      const scaleY = maxHeight / height;
+      const scale = Math.min(scaleX, scaleY, 1);
+      
+      width *= scale;
+      height *= scale;
+      
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Redraw the image
-      ctx.drawImage(uploadedImage, imageOffset.x, imageOffset.y, uploadedImage.width * imageScale, uploadedImage.height * imageScale);
+      ctx.drawImage(uploadedImage, imageOffset.x, imageOffset.y, width * imageScale, height * imageScale);
     }
   };
 
   const handleDownload = () => {
     if (!canvasRef.current) return;
+
     const link = document.createElement('a');
     link.download = `medical-image-${Date.now()}.png`;
     link.href = canvasRef.current.toDataURL('image/png', 1.0);
@@ -134,6 +202,7 @@ const ImageAnnotationCanvas = ({ onImageChange }) => {
 
   const handlePrint = () => {
     if (!canvasRef.current) return;
+
     const canvas = canvasRef.current;
     const dataUrl = canvas.toDataURL('image/png', 1.0);
 
@@ -174,6 +243,7 @@ const ImageAnnotationCanvas = ({ onImageChange }) => {
         </body>
       </html>
     `);
+
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {
@@ -189,171 +259,246 @@ const ImageAnnotationCanvas = ({ onImageChange }) => {
 
   if (!uploadedImage) {
     return (
-      <div className="bg-white rounded-lg border-2 border-[var(--accent-color)] shadow-sm sticky top-0">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2 bg-[var(--accent-color)] text-white rounded-lg hover:bg-[var(--accent-color)]/90 transition-all flex items-center"
-          >
-            <Upload size={16} className="mr-2" />
-            Upload Image
-          </button>
-        </div>
-
-        <div className="p-8">
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-[var(--accent-color)] hover:bg-gray-50 transition-all"
-          >
-            <Upload size={48} className="mx-auto mb-4 text-gray-400" />
-            <p className="text-lg text-gray-600 mb-2">Click to upload medical image</p>
-            <p className="text-sm text-gray-500">Supports JPG, PNG, GIF formats</p>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header with back button */}
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleBackNavigation}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  Back
+                </button>
+                <h1 className="text-xl font-semibold text-gray-900">Medical Image Annotation</h1>
+              </div>
+              {patient && (
+                <div className="text-sm text-gray-600">
+                  Patient: <span className="font-medium">{patient.name}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="hidden"
-        />
+
+        {/* Main content */}
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="bg-white rounded-lg border-2 border-blue-300 shadow-sm">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                <Upload className="mr-2 text-blue-500" size={20} />
+                Upload Medical Image
+              </h3>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all flex items-center"
+              >
+                <Upload size={16} className="mr-2" />
+                Upload Image
+              </button>
+            </div>
+
+            <div className="p-8">
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-50 transition-all"
+              >
+                <Upload size={48} className="mx-auto mb-4 text-gray-400" />
+                <p className="text-lg text-gray-600 mb-2">Click to upload medical image</p>
+                <p className="text-sm text-gray-500">Supports JPG, PNG, GIF formats</p>
+              </div>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border-2 border-[var(--accent-color)] shadow-sm sticky top-0">
-      {/* Header with tools */}
-      <div className="flex flex-wrap items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-          <Upload className="mr-2 text-[var(--accent-color)]" size={20} />
-          Medical Image Annotation
-        </h3>
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Tool Selection */}
-          <div className="flex items-center border rounded-lg overflow-hidden bg-white">
-            {[
-              { tool: 'pen', icon: Pen, label: 'Draw' },
-              { tool: 'eraser', icon: Eraser, label: 'Erase' },
-              { tool: 'move', icon: Move, label: 'Move' }
-            ].map(({ tool, icon: Icon, label }) => (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with back button */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <button
-                key={tool}
-                type="button"
-                onClick={() => setCurrentTool(tool)}
-                className={`p-2 transition-all ${
-                  currentTool === tool
-                    ? 'bg-[var(--accent-color)] text-white'
-                    : 'bg-white hover:bg-gray-50 text-gray-600'
-                }`}
-                title={label}
+                onClick={handleBackNavigation}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <Icon size={16} />
+                <ArrowLeft className="w-5 h-5" />
+                Back to Form
               </button>
-            ))}
-          </div>
-          {/* Color Picker */}
-          <div className="flex items-center space-x-2">
-            <Palette size={16} className="text-gray-600" />
-            <input
-              type="color"
-              value={brushColor}
-              onChange={(e) => setBrushColor(e.target.value)}
-              className="w-8 h-8 border rounded cursor-pointer"
-            />
-          </div>
-          {/* Brush Size */}
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-gray-600">Size:</span>
-            <input
-              type="range"
-              min="1"
-              max="10"
-              value={brushSize}
-              onChange={(e) => setBrushSize(parseInt(e.target.value))}
-              className="w-16"
-            />
-            <span className="text-xs text-gray-600 w-4">{brushSize}</span>
-          </div>
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleResetView}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded transition-all"
-              title="Reset View"
-            >
-              <RotateCcw size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={handleClearCanvas}
-              className="p-2 text-red-600 hover:bg-red-50 rounded transition-all"
-              title="Clear Annotations"
-            >
-              <Eraser size={16} />
-            </button>
+              <h1 className="text-xl font-semibold text-gray-900">Medical Image Annotation</h1>
+            </div>
+            {patient && (
+              <div className="text-sm text-gray-600">
+                Patient: <span className="font-medium">{patient.name}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
-      {/* Canvas Area */}
-      <div className="p-6 bg-gray-50">
-        <div className="flex justify-center">
-          <div className="relative bg-white rounded-lg shadow-lg border">
-            <canvas
-              ref={canvasRef}
-              onMouseDown={handleStart}
-              onMouseMove={handleMove}
-              onMouseUp={handleEnd}
-              onMouseLeave={handleEnd}
-              onTouchStart={handleStart}
-              onTouchMove={handleMove}
-              onTouchEnd={handleEnd}
-              className={`rounded-lg transition-all ${
-                currentTool === 'move' ? 'cursor-move' : 'cursor-crosshair'
-              }`}
-              style={{
-                width: '100%',
-                maxWidth: '100%',
-                height: 'auto',
-              }}
-            />
-          </div>
-        </div>
-      </div>
-      {/* Footer with Download and Print */}
-      <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
-        <div className="text-sm text-gray-600">
-          <span className="font-medium">Tools:</span> Use pen to draw, eraser to remove, move to reposition
-        </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex items-center"
-          >
-            <Download size={16} className="mr-2" />
-            Download
-          </button>
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all flex items-center"
-          >
-            <Printer size={16} className="mr-2" />
-            Print
-          </button>
+      {/* Main content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="bg-white rounded-lg border-2 border-blue-300 shadow-sm">
+          {/* Header with tools */}
+          <div className="flex flex-wrap items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+              <Upload className="mr-2 text-blue-500" size={20} />
+              Medical Image Annotation
+            </h3>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Tool Selection */}
+              <div className="flex items-center border rounded-lg overflow-hidden bg-white">
+                {[
+                  { tool: 'pen', icon: Pen, label: 'Draw' },
+                  { tool: 'eraser', icon: Eraser, label: 'Erase' },
+                  { tool: 'move', icon: Move, label: 'Move' }
+                ].map(({ tool, icon: Icon, label }) => (
+                  <button
+                    key={tool}
+                    type="button"
+                    onClick={() => setCurrentTool(tool)}
+                    className={`p-2 transition-all ${
+                      currentTool === tool
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white hover:bg-gray-50 text-gray-600'
+                    }`}
+                    title={label}
+                  >
+                    <Icon size={16} />
+                  </button>
+                ))}
+              </div>
+
+              {/* Color Picker */}
+              <div className="flex items-center space-x-2">
+                <Palette size={16} className="text-gray-600" />
+                <input
+                  type="color"
+                  value={brushColor}
+                  onChange={(e) => setBrushColor(e.target.value)}
+                  className="w-8 h-8 border rounded cursor-pointer"
+                />
+              </div>
+
+              {/* Brush Size */}
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-gray-600">Size:</span>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={brushSize}
+                  onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                  className="w-16"
+                />
+                <span className="text-xs text-gray-600 w-4">{brushSize}</span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleResetView}
+                  className="p-2 text-gray-600 hover:bg-gray-100 rounded transition-all"
+                  title="Reset View"
+                >
+                  <RotateCcw size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearCanvas}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded transition-all"
+                  title="Clear Annotations"
+                >
+                  <Eraser size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Canvas Area */}
+          <div className="p-6 bg-gray-50">
+            <div className="flex justify-center">
+              <div className="relative bg-white rounded-lg shadow-lg border">
+                <canvas
+                  ref={canvasRef}
+                  onMouseDown={handleStart}
+                  onMouseMove={handleMove}
+                  onMouseUp={handleEnd}
+                  onMouseLeave={handleEnd}
+                  onTouchStart={handleStart}
+                  onTouchMove={handleMove}
+                  onTouchEnd={handleEnd}
+                  className={`rounded-lg transition-all ${
+                    currentTool === 'move' ? 'cursor-move' : 'cursor-crosshair'
+                  }`}
+                  style={{
+                    maxWidth: '100%',
+                    height: 'auto',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Footer with Download and Print */}
+          <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">Tools:</span> Use pen to draw, eraser to remove, move to reposition
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all flex items-center"
+              >
+                <Upload size={16} className="mr-2" />
+                Change Image
+              </button>
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex items-center"
+              >
+                <Download size={16} className="mr-2" />
+                Download
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all flex items-center"
+              >
+                <Printer size={16} className="mr-2" />
+                Print
+              </button>
+            </div>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
         </div>
       </div>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleImageUpload}
-        className="hidden"
-      />
     </div>
   );
 };

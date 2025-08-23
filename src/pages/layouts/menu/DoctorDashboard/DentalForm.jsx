@@ -1,3 +1,4 @@
+//Dental
 import React, { useState, useEffect } from 'react';
 import { Stethoscope, Save, Printer, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -118,10 +119,14 @@ const DENTAL_POSITIONS = [
           </h3>
         </div>
         <div className="flex items-center gap-3 text-white">
-          <button onClick={handleSave} className="btn btn-primary text-sm">
-            <Save className="w-4 h-4" />
-            Save
-          </button>
+      <button
+  onClick={handleSave}
+  className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"
+>
+  <Save className="w-5 h-5" />
+</button>
+
+
           <button
             onClick={() => onPrint('dental')}
             className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"

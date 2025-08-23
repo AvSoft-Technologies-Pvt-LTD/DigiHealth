@@ -1,10 +1,11 @@
+//LabResultsForm.jsx
 import React, { useState, useEffect } from "react";
 import { FlaskRound as Flask, Printer, Trash2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify"; // ⬅️ Only toast used here
 import "react-toastify/dist/ReactToastify.css";
 
-const LAB_TESTS_API = "https://mocki.io/v1/d5e1e24a-f241-4c9a-9dce-8c9f5c1f3f7f";
+const LAB_TESTS_API = "https://mocki.io/v1/dcb67685-f3bb-4037-a56b-ce0aa8a7385b";
 
 const LabResultsForm = ({ data = {}, onSave, onPrint }) => {
   const [labTests, setLabTests] = useState([]);

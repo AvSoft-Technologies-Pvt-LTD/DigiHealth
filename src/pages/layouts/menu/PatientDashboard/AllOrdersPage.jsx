@@ -9,9 +9,10 @@ import {
   Truck,
   MapPin,
   ExternalLink,
-  Search,
+  Search, ChevronLeft,
   ShoppingCart
 } from 'lucide-react';
+
 
 const statusStyles = {
   pending: { text: 'Pending', color: 'bg-yellow-100 text-yellow-700', icon: <Clock className="w-4 h-4 sm:w-5 sm:h-5" /> },
@@ -68,11 +69,24 @@ const AllOrdersPage = () => {
     <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Header with Search */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-0">My Orders</h1>
+        <div className="mb-4 sm:mb-6 md:mb-8 relative">
+          {/* Flex container for all elements */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+            {/* Back to Shopping Button (Left on all screens) */}
+            <Link
+              to="/patientdashboard/shopping"
+              className="inline-flex items-center text-sm sm:text-base text-gray-700 hover:text-[var(--primary-color)] font-medium"
+            >
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
+              <span className="hidden sm:inline">Back to Shopping</span>
+            </Link>
 
-            {/* Search Bar - Responsive */}
+            {/* Page Title (Centered on all screens) */}
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 text-center sm:absolute sm:left-1/2 sm:transform sm:-translate-x-1/2 order-first sm:order-none">
+              My Orders
+            </h1>
+
+            {/* Search Bar (Full width on mobile, right-aligned on larger screens) */}
             <form onSubmit={handleSearch} className="w-full sm:w-64">
               <div className="relative">
                 <input
@@ -87,7 +101,6 @@ const AllOrdersPage = () => {
             </form>
           </div>
         </div>
-
         {/* Empty State - Responsive */}
         {filteredOrders.length === 0 ? (
           <div className="text-center py-12 sm:py-16">

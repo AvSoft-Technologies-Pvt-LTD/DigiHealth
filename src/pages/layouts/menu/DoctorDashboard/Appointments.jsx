@@ -133,7 +133,6 @@ const DoctorAppointments = () => {
       ? ['pending', 'upcoming'].includes(a.status.toLowerCase())
       : a.status.toLowerCase() === tab
   );
-
   const [filteredData, setFilteredData] = useState(tabFiltered);
 
   useEffect(() => {
@@ -180,13 +179,14 @@ const DoctorAppointments = () => {
         doctorName,
         appointmentDate: appt.date,
         appointmentTime: appt.time,
-        type: 'OPD',
+        type: appt.type === 'Physical' ? 'OPD' : 'Virtual',
         isVisible: true,
         consultationStarted: false,
         consultationCompleted: false,
         prescription: '',
         advice: '',
-        movedDate: new Date().toISOString()
+        movedDate: new Date().toISOString(),
+        createdAt: new Date().toISOString()
       };
       console.log('Sending data to API:', patientData);
       const response = await axios.post('https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient', patientData);
@@ -194,13 +194,27 @@ const DoctorAppointments = () => {
         throw new Error('Invalid response from patient creation API');
       }
       toast.update(transferToast, {
-        render: 'Appointment successfully added to OPD list!',
+        render: 'Appointment successfully added to patient list!',
         type: 'success',
         autoClose: 3000
       });
-      const existingIds = JSON.parse(localStorage.getItem("highlightOPDIds") || "[]");
-      localStorage.setItem("highlightOPDIds", JSON.stringify([...new Set([...existingIds, response.data.id])]));
-      navigate('/doctordashboard/patients');
+      
+      // Store highlight information for the target tab
+      const targetTab = appt.type === 'Physical' ? 'OPD' : 'Virtual';
+      localStorage.setItem("highlightPatientId", response.data.id.toString());
+      localStorage.setItem("targetPatientTab", targetTab);
+      localStorage.setItem("appointmentAccepted", "true");
+      localStorage.setItem("acceptedAppointmentType", appt.type);
+      
+      navigate('/doctordashboard/patients', {
+        state: {
+          highlightId: response.data.id,
+          tab: targetTab,
+          autoNavigated: true,
+          appointmentType: appt.type,
+          fromAppointment: true
+        }
+      });
     } catch (error) {
       console.error('Error accepting appointment:', error);
       toast.error(`Failed to accept appointment: ${error.response?.data?.message || error.message}`);
@@ -268,6 +282,13 @@ const DoctorAppointments = () => {
   const handlePatientNameClick = (patient) => {
     setSelectedPatient(patient);
     setIsModalOpen(true);
+  };
+
+  const getRowClassName = (row) => {
+    if (row.status === 'Confirmed') {
+      return 'bg-green-100 hover:bg-green-200';
+    }
+    return '';
   };
 
   const columns = [
@@ -360,6 +381,7 @@ const DoctorAppointments = () => {
           tabs={TABS}
           activeTab={tab}
           onTabChange={setTab}
+          rowClassName={getRowClassName}
         />
         <div className="w-full flex justify-end mt-4">
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
