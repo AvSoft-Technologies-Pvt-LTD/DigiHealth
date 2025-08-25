@@ -1,17 +1,22 @@
 import React, { useState } from "react";
-import { FiFilter, FiX, FiSearch, FiMenu, FiChevronLeft, FiChevronDown } from "react-icons/fi";
+import {
+  FiFilter,
+  FiX,
+  FiSearch,
+  FiMenu,
+  FiChevronLeft,
+  FiChevronDown,
+} from "react-icons/fi";
 
 const FilterDropdown = ({ filter, activeFilters, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selected = activeFilters[filter.key] || [];
-
   const handleCheckboxChange = (value) => {
     const newSelected = selected.includes(value)
       ? selected.filter((v) => v !== value)
       : [...selected, value];
     onChange(filter.key, newSelected);
   };
-
   return (
     <div className="relative">
       <button
@@ -21,14 +26,19 @@ const FilterDropdown = ({ filter, activeFilters, onChange }) => {
         <FiFilter className="text-[var(--primary-color)]" />
         {filter.label || "Filter"}
         {selected.length > 0 && (
-          <span className="ml-1 text-xs text-gray-500">({selected.length})</span>
+          <span className="ml-1 text-xs text-gray-500">
+            ({selected.length})
+          </span>
         )}
         <FiChevronDown className="ml-1 text-xs" />
       </button>
       {isOpen && (
         <div className="absolute left-0 mt-1 w-48 bg-white border rounded-lg shadow-lg z-10 p-2">
           {filter.options.map((opt) => (
-            <label key={opt.value} className="flex items-center gap-2 p-1 hover:bg-gray-100 cursor-pointer">
+            <label
+              key={opt.value}
+              className="flex items-center gap-2 p-1 hover:bg-gray-100 cursor-pointer"
+            >
               <input
                 type="checkbox"
                 checked={selected.includes(opt.value)}
@@ -62,10 +72,19 @@ const DynamicTable = ({
   activeTab,
   onTabChange,
   showSearchBar = true,
+  newRowIds = [],
+  rowClassName,
 }) => {
+  const [hoveredRows, setHoveredRows] = useState([]);
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState({});
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+
+  const handleRowMouseEnter = (rowId) => {
+    if (newRowIds.includes(rowId) && !hoveredRows.includes(rowId)) {
+      setHoveredRows([...hoveredRows, rowId]);
+    }
+  };
 
   const handleTabClick = (tabValue) => {
     onTabChange?.(tabValue);
@@ -110,7 +129,11 @@ const DynamicTable = ({
           {tabActions.length > 0 && (
             <div className="flex gap-3">
               {tabActions.map((action) => (
-                <button key={action.label} onClick={action.onClick} className={action.className}>
+                <button
+                  key={action.label}
+                  onClick={action.onClick}
+                  className={action.className}
+                >
                   {action.label}
                 </button>
               ))}
@@ -133,7 +156,11 @@ const DynamicTable = ({
 
       {/* Filters and Search (Drawer for Mobile, only if filters exist) */}
       {filters.length > 0 && (
-        <div className={`${isFilterDrawerOpen ? "block" : "hidden"} md:block md:space-y-0 md:flex md:items-center md:gap-2 md:flex-wrap`}>
+        <div
+          className={`${
+            isFilterDrawerOpen ? "block" : "hidden"
+          } md:block md:space-y-0 md:flex md:items-center md:gap-2 md:flex-wrap`}
+        >
           <div className="flex flex-col md:flex-row md:items-center gap-2 p-4 md:p-0 bg-gray-50 md:bg-transparent rounded-lg md:rounded-none">
             {showSearchBar && (
               <div className="relative flex items-center">
@@ -180,7 +207,15 @@ const DynamicTable = ({
               </tr>
             ) : (
               filteredData.map((row) => (
-                <tr key={row.id} className="border-t even:bg-gray-50">
+                <tr
+                  key={row.id}
+                  onMouseEnter={() => handleRowMouseEnter(row.id)}
+                  className={`border-t even:bg-gray-50 ${
+                    newRowIds.includes(row.id) && !hoveredRows.includes(row.id)
+                      ? "font-bold bg-[var(--accent-color)] bg-opacity-20"
+                      : ""
+                  } ${rowClassName ? rowClassName(row) : ""}`}
+                >
                   {columns.map((col, i) => (
                     <td
                       key={i}
@@ -189,7 +224,11 @@ const DynamicTable = ({
                           ? "text-[var(--primary-color)] underline cursor-pointer hover:text-[var(--accent-color)]"
                           : ""
                       }`}
-                      onClick={col.clickable ? () => onCellClick?.(row, col) : undefined}
+                      onClick={
+                        col.clickable
+                          ? () => onCellClick?.(row, col)
+                          : undefined
+                      }
                     >
                       {col.cell ? col.cell(row) : row[col.accessor] || "-"}
                     </td>

@@ -1,10 +1,9 @@
-//IPD.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaNotesMedical } from "react-icons/fa";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import Pagination from "../../../../components/Pagination";
-import TeleConsultFlow from "../../../../components/microcomponents/Call"; // Updated import
+import TeleConsultFlow from "../../../../components/microcomponents/Call";
 import { FiExternalLink } from "react-icons/fi";
 
 const OPT = {
@@ -23,6 +22,7 @@ export default function IPDTab({
   patients,
   loading,
   newPatientId,
+  highlightedPatientId, // Added as prop
   onViewPatient,
 }) {
   const navigate = useNavigate();
@@ -33,6 +33,20 @@ export default function IPDTab({
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
+
+  // Define virtualFilters if not passed as prop
+  const virtualFilters = [
+    {
+      key: "status",
+      label: "Status",
+      options: OPT.STATUS.map((status) => ({ value: status, label: status })),
+    },
+    {
+      key: "department",
+      label: "Department",
+      options: OPT.DEPT.map((dept) => ({ value: dept, label: dept })),
+    },
+  ];
 
   const ipdColumns = [
     {
@@ -49,7 +63,9 @@ export default function IPDTab({
           onClick={() => onViewPatient(row)}
         >
           {row.name ||
-            `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`
+            `${row.firstName || ""} ${row.middleName || ""} ${
+              row.lastName || ""
+            }`
               .replace(/\s+/g, " ")
               .trim()}
         </button>
@@ -78,109 +94,89 @@ export default function IPDTab({
       accessor: "ward",
       cell: (row) => row.ward || "N/A",
     },
- {
-  header: "Discharge",
-  accessor: "dischargeDate",
-  cell: (row) => {
-    // Check if dischargeDate is null, undefined, empty, or a number
-    if (!row.dischargeDate || typeof row.dischargeDate === "number") {
-      return "-";
-    }
-    // If it's a valid date string, display it
-    return row.dischargeDate;
-  },
-},
-
-
-   {
-  header: "Actions",
-  cell: (row) => (
-    <div className="flex items-center gap-2"> {/* Reduced gap */}
-      <button
-        onClick={() => handleAddRecord(row)}
-        className=" text-base" /* Adjusted padding and icon size */
-      >
-        <FaNotesMedical className="text-base" /> {/* Smaller icon */}
-      </button>
-      {/* Pass patientName to TeleConsultFlow */}
-      <div className="text-sm">
-        <TeleConsultFlow
-          phone={row.phone}
-          patientName={
-            row.name ||
-            `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`
-              .replace(/\s+/g, " ")
-              .trim()
-          }
-        />
-      </div>
-      <button
-        title="View Medical Record"
-        onClick={() => {
-          let age = "";
-          if (row.dob) {
-            const dobDate = new Date(row.dob);
-            const today = new Date();
-            age = today.getFullYear() - dobDate.getFullYear();
-            const m = today.getMonth() - dobDate.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
-              age--;
-            }
-          }
-          navigate("/doctordashboard/medical-record", {
-            state: {
-              patientName: row.name,
-              email: row.email || "",
-              phone: row.phone || "",
-              gender: row.gender || row.sex || "",
-              temporaryAddress:
-                row.temporaryAddress ||
-                row.addressTemp ||
-                row.address ||
-                "",
-              address:
-                row.address ||
-                row.temporaryAddress ||
-                row.addressTemp ||
-                "",
-              addressTemp:
-                row.addressTemp ||
-                row.temporaryAddress ||
-                row.address ||
-                "",
-              dob: row.dob || "",
-              age: age,
-              bloodType: row.bloodGroup || row.bloodType || "",
-              regNo: row.regNo || "2025/072/0032722",
-              mobileNo: row.mobileNo || row.phone || "",
-              department: row.department || "Ophthalmology",
-              wardType: row.wardType,
-              wardNo: row.wardNo,
-              bedNo: row.bedNo,
-            },
-          });
-        }}
-        className="p-1 text-base text-[var(--primary-color)]" /* Adjusted padding and icon size */
-        style={{ display: "flex", alignItems: "center" }}
-      >
-        <FiExternalLink className="text-base" /> {/* Smaller icon */}
-      </button>
-    </div>
-  ),
-}
-
-  ];
-
-  const ipdFilters = [
     {
-      key: "status",
-      label: "Status",
-      options: OPT.STATUS.map((status) => ({ value: status, label: status })),
+      header: "Discharge",
+      accessor: "dischargeDate",
+      cell: (row) => {
+        if (!row.dischargeDate || typeof row.dischargeDate === "number") {
+          return "-";
+        }
+        return row.dischargeDate;
+      },
     },
     {
-      key: "department",
-      label: "Department",
-      options: OPT.DEPT.map((dept) => ({ value: dept, label: dept })),
+      header: "Actions",
+      cell: (row) => (
+        <div className="flex items-center gap-2">
+          <button onClick={() => handleAddRecord(row)} className="text-base">
+            <FaNotesMedical className="text-base" />
+          </button>
+          <div className="text-sm">
+            <TeleConsultFlow
+              phone={row.phone}
+              patientName={
+                row.name ||
+                `${row.firstName || ""} ${row.middleName || ""} ${
+                  row.lastName || ""
+                }`
+                  .replace(/\s+/g, " ")
+                  .trim()
+              }
+            />
+          </div>
+          <button
+            title="View Medical Record"
+            onClick={() => {
+              let age = "";
+              if (row.dob) {
+                const dobDate = new Date(row.dob);
+                const today = new Date();
+                age = today.getFullYear() - dobDate.getFullYear();
+                const m = today.getMonth() - dobDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+                  age--;
+                }
+              }
+              navigate("/doctordashboard/medical-record", {
+                state: {
+                  patientName: row.name,
+                  email: row.email || "",
+                  phone: row.phone || "",
+                  gender: row.gender || row.sex || "",
+                  temporaryAddress:
+                    row.temporaryAddress ||
+                    row.addressTemp ||
+                    row.address ||
+                    "",
+                  address:
+                    row.address ||
+                    row.temporaryAddress ||
+                    row.addressTemp ||
+                    "",
+                  addressTemp:
+                    row.addressTemp ||
+                    row.temporaryAddress ||
+                    row.address ||
+                    "",
+                  dob: row.dob || "",
+                  age: age,
+                  bloodType: row.bloodGroup || row.bloodType || "",
+                  regNo: row.regNo || "2025/072/0032722",
+                  mobileNo: row.mobileNo || row.phone || "",
+                  department: row.department || "Ophthalmology",
+                  wardType: row.wardType,
+                  wardNo: row.wardNo,
+                  bedNo: row.bedNo,
+                },
+              });
+            }}
+            className="p-1 text-base text-[var(--primary-color)]"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <FiExternalLink className="text-base" />
+          </button>
+        </div>
+      ),
     },
   ];
 
@@ -195,7 +191,10 @@ export default function IPDTab({
   };
 
   const getRowClassName = (row) => {
-    if (row.id === newPatientId) {
+    if (
+      row.sequentialId === newPatientId ||
+      row.sequentialId === highlightedPatientId
+    ) {
       return "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150";
     }
     return "";
@@ -206,8 +205,9 @@ export default function IPDTab({
       <DynamicTable
         columns={ipdColumns}
         data={paginatedPatients}
+        newRowIds={[newPatientId, highlightedPatientId].filter(Boolean)}
         onCellClick={handleCellClick}
-        filters={ipdFilters}
+        filters={virtualFilters}
         tabs={[]}
         tabActions={[]}
         activeTab=""
@@ -224,13 +224,3 @@ export default function IPDTab({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-

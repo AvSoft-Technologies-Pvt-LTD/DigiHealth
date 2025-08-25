@@ -1,54 +1,30 @@
-
-
-
-
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import { FiExternalLink } from "react-icons/fi";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import Pagination from "../../../../components/Pagination";
-import ReusableModal from "../../../../components/microcomponents/Modal";
-import axios from "axios";
 import TeleConsultFlow from "../../../../components/microcomponents/Call";
 import { FaNotesMedical } from "react-icons/fa";
 
-const API = {
-  HD: "https://680cc0c92ea307e081d4edda.mockapi.io/personalHealthDetails",
-  FD: "https://6808fb0f942707d722e09f1d.mockapi.io/FamilyData",
-  HS: "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary",
-};
-
-const VIEW_VIRTUAL_PATIENT_FIELDS = [
-  { key: "name", label: "Patient Name", titleKey: true },
-  { key: "id", label: "Patient ID", subtitleKey: true },
-  { key: "name", label: "Full Name", initialsKey: true },
-  { key: "consultationType", label: "Consultation Type" },
-  { key: "scheduledDateTime", label: "Scheduled Date & Time" },
-  { key: "consultationStatus", label: "Status" },
-  { key: "phone", label: "Phone" },
-  { key: "email", label: "Email" },
-  { key: "duration", label: "Duration (minutes)" },
-  { key: "notes", label: "Notes" },
-];
-
-export default function VirtualTab({ 
-  patients, 
-  loading, 
-  newPatientId, 
-  highlightedPatientId 
+export default function VirtualTab({
+  patients,
+  loading,
+  newPatientId,
+  highlightedPatientId,
+  onViewPatient,
 }) {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const [personalDetails, setPersonalDetails] = useState(null);
-  const [family, setFamily] = useState([]);
-  const [vitals, setVitals] = useState(null);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [modals, setModals] = useState({ viewPatient: false });
   const pageSize = 6;
-  const totalPages = Math.ceil(patients.length / pageSize);
-  const paginatedPatients = patients.slice(
+
+  // Add sequentialId to each patient
+  const patientsWithSequentialId = patients.map((patient, index) => ({
+    ...patient,
+    sequentialId: index + 1,
+  }));
+
+  const totalPages = Math.ceil(patientsWithSequentialId.length / pageSize);
+  const paginatedPatients = patientsWithSequentialId.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -78,14 +54,21 @@ export default function VirtualTab({
           age: age,
           bloodGroup: patient.bloodGroup || "",
           notes: patient.notes || "",
-          address: patient.address || patient.temporaryAddress || patient.addressTemp || "",
+          address:
+            patient.address ||
+            patient.temporaryAddress ||
+            patient.addressTemp ||
+            "",
         },
       },
     });
   };
 
   const virtualColumns = [
-    { header: "ID", accessor: "id" },
+    {
+      header: "ID",
+      accessor: "sequentialId", // Use sequentialId for serial numbering
+    },
     {
       header: "Name",
       accessor: "name",
@@ -93,7 +76,7 @@ export default function VirtualTab({
       cell: (row) => (
         <button
           className="cursor-pointer text-[var(--primary-color)] hover:text-[var(--accent-color)]"
-          onClick={() => viewVirtualPatientDetails(row)}
+          onClick={() => onViewPatient(row)}
         >
           {row.name}
         </button>
@@ -142,7 +125,11 @@ export default function VirtualTab({
           >
             <FaNotesMedical />
           </button>
-         <TeleConsultFlow phone={row.phone} patientName={row.name} context="virtual" />
+          <TeleConsultFlow
+            phone={row.phone}
+            patientName={row.name}
+            context="virtual"
+          />
 
           <button
             title="View Patient Records"
@@ -164,9 +151,20 @@ export default function VirtualTab({
                   phone: row.phone || "",
                   gender: row.gender || row.sex || "",
                   temporaryAddress:
-                    row.temporaryAddress || row.addressTemp || row.address || "",
-                  address: row.address || row.temporaryAddress || row.addressTemp || "",
-                  addressTemp: row.addressTemp || row.temporaryAddress || row.address || "",
+                    row.temporaryAddress ||
+                    row.addressTemp ||
+                    row.address ||
+                    "",
+                  address:
+                    row.address ||
+                    row.temporaryAddress ||
+                    row.addressTemp ||
+                    "",
+                  addressTemp:
+                    row.addressTemp ||
+                    row.temporaryAddress ||
+                    row.address ||
+                    "",
                   dob: row.dob,
                   age: age,
                   consultationType: row.consultationType || "Virtual",
@@ -184,12 +182,11 @@ export default function VirtualTab({
   ];
 
   const getRowClassName = (row) => {
-    // Priority: highlighted > new > selected
-    if (row.id === highlightedPatientId) {
-      return "font-bold bg-blue-200 hover:bg-blue-300 transition-colors duration-300 animate-pulse border-2 border-blue-400";
-    }
-    if (row.id === newPatientId) {
-      return "font-bold bg-green-100 hover:bg-green-200 transition-colors duration-150 animate-pulse";
+    if (
+      row.sequentialId === newPatientId ||
+      row.sequentialId === highlightedPatientId
+    ) {
+      return "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150";
     }
     return "";
   };
@@ -216,72 +213,9 @@ export default function VirtualTab({
     },
   ];
 
-  const openModal = (modalName, data = null) => {
-    setModals((prev) => ({ ...prev, [modalName]: true }));
-    if (modalName === "viewPatient" && data) {
-      setSelectedPatient(data);
-    }
-  };
-
-  const closeModal = (modalName) => {
-    setModals((prev) => ({ ...prev, [modalName]: false }));
-    if (modalName === "viewPatient") {
-      setSelectedPatient(null);
-    }
-  };
-
-  const viewVirtualPatientDetails = async (patient) => {
-    openModal("viewPatient", patient);
-    try {
-      const { data: personalData } = await axios.get(API.HD);
-      const p = personalData.find(
-        (p) =>
-          (p.email || "").trim().toLowerCase() ===
-          (patient.email || "").trim().toLowerCase()
-      );
-      if (p) {
-        setPersonalDetails({
-          height: p.height,
-          weight: p.weight,
-          bloodGroup: p.bloodGroup,
-          surgeries: p.surgeries,
-          allergies: p.allergies,
-          isSmoker: p.isSmoker,
-          isAlcoholic: p.isAlcoholic,
-        });
-      }
-      const { data: familyData } = await axios.get(API.FD);
-      setFamily(
-        familyData.filter(
-          (f) =>
-            (f.email || "").trim().toLowerCase() ===
-            (patient.email || "").trim().toLowerCase()
-        )
-      );
-      const { data: vitalsData } = await axios.get(API.HS);
-      const v = vitalsData.find(
-        (v) =>
-          (v.email || "").trim().toLowerCase() ===
-          (patient.email || "").trim().toLowerCase()
-      );
-      setVitals(
-        v
-          ? {
-              bloodPressure: v.bloodPressure || "Not recorded",
-              heartRate: v.heartRate || "Not recorded",
-              temperature: v.temperature || "Not recorded",
-              bloodSugar: v.bloodSugar || "Not recorded",
-            }
-          : null
-      );
-    } catch (error) {
-      console.error("Error fetching patient details:", error);
-    }
-  };
-
   const handleCellClick = (row, column) => {
     if (column.accessor === "name") {
-      viewVirtualPatientDetails(row);
+      onViewPatient(row);
     }
   };
 
@@ -290,6 +224,7 @@ export default function VirtualTab({
       <DynamicTable
         columns={virtualColumns}
         data={paginatedPatients}
+        newRowIds={[newPatientId, highlightedPatientId].filter(Boolean)}
         onCellClick={handleCellClick}
         filters={virtualFilters}
         tabs={[]}
@@ -305,74 +240,6 @@ export default function VirtualTab({
           onPageChange={setCurrentPage}
         />
       </div>
-      <ReusableModal
-        isOpen={modals.viewPatient}
-        onClose={() => closeModal("viewPatient")}
-        mode="viewProfile"
-        title="Virtual Patient Details"
-        viewFields={VIEW_VIRTUAL_PATIENT_FIELDS}
-        data={selectedPatient || {}}
-        extraContent={
-          <div className="space-y-4">
-            {personalDetails && (
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-green-800 mb-2">
-                  Health Information
-                </h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>Height: {personalDetails.height || "—"} cm</div>
-                  <div>Weight: {personalDetails.weight || "—"} kg</div>
-                  <div>
-                    Blood Group: {personalDetails.bloodGroup || "Not recorded"}
-                  </div>
-                  <div>Allergies: {personalDetails.allergies || "None"}</div>
-                </div>
-              </div>
-            )}
-            {vitals && (
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-blue-800 mb-2">
-                  Latest Vital Signs
-                </h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>BP: {vitals.bloodPressure}</div>
-                  <div>HR: {vitals.heartRate}</div>
-                  <div>Temp: {vitals.temperature}</div>
-                  <div>Sugar: {vitals.bloodSugar}</div>
-                </div>
-              </div>
-            )}
-            {family && family.length > 0 && (
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-purple-800 mb-2">
-                  Family History
-                </h4>
-                <div className="space-y-2">
-                  {family.map((member, i) => (
-                    <div key={i} className="text-sm">
-                      <strong>{member.name}</strong> ({member.relation}) -{" "}
-                      {member.diseases?.join(", ") || "No diseases"}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        }
-      />
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

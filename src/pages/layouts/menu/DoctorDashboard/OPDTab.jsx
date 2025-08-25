@@ -1,5 +1,3 @@
-
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiExternalLink } from "react-icons/fi";
@@ -17,7 +15,6 @@ export default function OPDTab({
 }) {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRowId, setSelectedRowId] = useState(null);
   const pageSize = 6;
   const totalPages = Math.ceil(patients.length / pageSize);
   const paginatedPatients = patients.slice(
@@ -72,8 +69,11 @@ export default function OPDTab({
             <FaNotesMedical />
           </button>
           <div className="text-sm">
-           <TeleConsultFlow phone={row.phone} patientName={row.name} context="opd" />
-
+            <TeleConsultFlow
+              phone={row.phone}
+              patientName={row.name}
+              context="opd"
+            />
           </div>
           <button
             title="View Medical Record"
@@ -137,20 +137,12 @@ export default function OPDTab({
     }
   };
 
-  const handleRowClick = (row) => {
-    setSelectedRowId(selectedRowId === row.id ? null : row.id);
-  };
-
   const getRowClassName = (row) => {
-    // Priority: highlighted > new > selected
-    if (row.id === highlightedPatientId) {
-      return "font-bold bg-blue-200 hover:bg-blue-300 transition-colors duration-300 animate-pulse border-2 border-blue-400";
-    }
-    if (row.id === newPatientId) {
-      return "font-bold bg-green-100 hover:bg-green-200 transition-colors duration-150 animate-pulse";
-    }
-    if (row.id === selectedRowId) {
-      return "font-bold bg-gray-100 hover:bg-gray-200 transition-colors duration-150";
+    if (
+      row.sequentialId === newPatientId ||
+      row.sequentialId === highlightedPatientId
+    ) {
+      return "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150";
     }
     return "";
   };
@@ -160,9 +152,8 @@ export default function OPDTab({
       <DynamicTable
         columns={opdColumns}
         data={paginatedPatients}
+        newRowIds={[newPatientId, highlightedPatientId].filter(Boolean)}
         onCellClick={handleCellClick}
-        onRowClick={handleRowClick}
-        filters={[]}
         tabs={[]}
         tabActions={[]}
         activeTab=""
@@ -179,7 +170,3 @@ export default function OPDTab({
     </div>
   );
 }
-
-
-
-
