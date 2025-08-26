@@ -1,10 +1,12 @@
-
-
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import { 
+  getHospitalDropdown, 
+  getAllMedicalConditions, 
+  getAllMedicalStatus 
+} from "../../../../utils/masterService";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import ReusableModal from "../../../../components/microcomponents/Modal";
 import {
@@ -60,6 +62,110 @@ const DrMedicalRecords = () => {
 
   // State for patient details from /addpatient API
   const [patientDetailsMap, setPatientDetailsMap] = useState({});
+
+  // API data states
+  const [hospitalOptions, setHospitalOptions] = useState([]);
+  const [medicalConditions, setMedicalConditions] = useState([]);
+  const [statusTypes, setStatusTypes] = useState([]);
+  const [apiDataLoading, setApiDataLoading] = useState({
+    hospitals: false,
+    conditions: false,
+    status: false
+  });
+
+  // Fetch master data from APIs
+  useEffect(() => {
+    const fetchMasterData = async () => {
+      try {
+        // Fetch hospitals dropdown
+        setApiDataLoading(prev => ({ ...prev, hospitals: true }));
+        const hospitalsResponse = await getHospitalDropdown();
+        const hospitalsList = hospitalsResponse.data?.map(hospital => ({
+          label: hospital.name || hospital.hospitalName || hospital.label,
+          value: hospital.name || hospital.hospitalName || hospital.value || hospital.id
+        })) || [];
+        setHospitalOptions(hospitalsList);
+        setApiDataLoading(prev => ({ ...prev, hospitals: false }));
+
+        // Fetch medical conditions
+        setApiDataLoading(prev => ({ ...prev, conditions: true }));
+        const conditionsResponse = await getAllMedicalConditions();
+        const conditionsList = conditionsResponse.data?.map(condition => ({
+          label: condition.name || condition.conditionName || condition.label,
+          value: condition.name || condition.conditionName || condition.value || condition.id
+        })) || [];
+        setMedicalConditions(conditionsList);
+        setApiDataLoading(prev => ({ ...prev, conditions: false }));
+
+        // Fetch medical status
+        setApiDataLoading(prev => ({ ...prev, status: true }));
+        const statusResponse = await getAllMedicalStatus();
+        const statusList = statusResponse.data?.map(status => ({
+          label: status.name || status.statusName || status.label,
+          value: status.name || status.statusName || status.value || status.id
+        })) || [];
+        setStatusTypes(statusList);
+        setApiDataLoading(prev => ({ ...prev, status: false }));
+
+      } catch (error) {
+        console.error("Error fetching master data:", error);
+        
+        // Fallback to default data if API fails
+        setHospitalOptions([
+          { label: "AV Hospital", value: "AV Hospital" },
+          { label: "AIIMS Delhi", value: "AIIMS Delhi" },
+          { label: "Fortis Hospital, Gurgaon", value: "Fortis Hospital, Gurgaon" },
+          { label: "Apollo Hospital, Chennai", value: "Apollo Hospital, Chennai" },
+          { label: "Medanta – The Medicity, Gurgaon", value: "Medanta – The Medicity, Gurgaon" },
+          { label: "Max Super Speciality Hospital, Delhi", value: "Max Super Speciality Hospital, Delhi" },
+          { label: "Narayana Health, Bangalore", value: "Narayana Health, Bangalore" },
+          { label: "Kokilaben Dhirubhai Ambani Hospital, Mumbai", value: "Kokilaben Dhirubhai Ambani Hospital, Mumbai" },
+          { label: "Lilavati Hospital, Mumbai", value: "Lilavati Hospital, Mumbai" },
+          { label: "Sir Ganga Ram Hospital, Delhi", value: "Sir Ganga Ram Hospital, Delhi" },
+          { label: "Christian Medical College, Vellore", value: "Christian Medical College, Vellore" },
+          { label: "Manipal Hospital, Bangalore", value: "Manipal Hospital, Bangalore" },
+          { label: "Jaslok Hospital, Mumbai", value: "Jaslok Hospital, Mumbai" },
+          { label: "BLK Super Speciality Hospital, Delhi", value: "BLK Super Speciality Hospital, Delhi" },
+          { label: "Care Hospitals, Hyderabad", value: "Care Hospitals, Hyderabad" },
+          { label: "Amrita Hospital, Kochi", value: "Amrita Hospital, Kochi" },
+          { label: "Ruby Hall Clinic, Pune", value: "Ruby Hall Clinic, Pune" },
+          { label: "Columbia Asia Hospital, Bangalore", value: "Columbia Asia Hospital, Bangalore" },
+          { label: "Hinduja Hospital, Mumbai", value: "Hinduja Hospital, Mumbai" },
+          { label: "D.Y. Patil Hospital, Navi Mumbai", value: "D.Y. Patil Hospital, Navi Mumbai" },
+          { label: "Tata Memorial Hospital, Mumbai", value: "Tata Memorial Hospital, Mumbai" },
+          { label: "Apollo Gleneagles Hospital, Kolkata", value: "Apollo Gleneagles Hospital, Kolkata" },
+          { label: "Wockhardt Hospitals, Mumbai", value: "Wockhardt Hospitals, Mumbai" },
+          { label: "SevenHills Hospital, Mumbai", value: "SevenHills Hospital, Mumbai" },
+          { label: "KIMS Hospital, Hyderabad", value: "KIMS Hospital, Hyderabad" },
+          { label: "Global Hospitals, Chennai", value: "Global Hospitals, Chennai" },
+          { label: "Yashoda Hospitals, Hyderabad", value: "Yashoda Hospitals, Hyderabad" },
+          { label: "Sunshine Hospital, Hyderabad", value: "Sunshine Hospital, Hyderabad" },
+          { label: "BM Birla Heart Research Centre, Kolkata", value: "BM Birla Heart Research Centre, Kolkata" },
+          { label: "Religare SRL Diagnostics, Mumbai", value: "Religare SRL Diagnostics, Mumbai" },
+          { label: "Sankara Nethralaya, Chennai", value: "Sankara Nethralaya, Chennai" },
+        ]);
+        
+        setMedicalConditions([
+          { label: "Diabetic Disease", value: "Diabetic" },
+          { label: "BP (Blood Pressure)", value: "BP" },
+          { label: "Heart Disease", value: "Heart" },
+          { label: "Asthma Disease", value: "Asthma" },
+        ]);
+        
+        setStatusTypes([
+          { label: "Active", value: "Active" },
+          { label: "Treated", value: "Treated" },
+          { label: "Recovered", value: "Recovered" },
+          { label: "Discharged", value: "Discharged" },
+          { label: "Consulted", value: "Consulted" }
+        ]);
+      } finally {
+        setApiDataLoading(prev => ({ hospitals: false, conditions: false, status: false }));
+      }
+    };
+
+    fetchMasterData();
+  }, []);
 
   // Fetch all medical records from API using axios
   useEffect(() => {
@@ -165,21 +271,6 @@ const DrMedicalRecords = () => {
 
     setPatientDetailsMap(patientMap);
   };
-
-  const statusTypes = [
-    "Active",
-    "Treated",
-    "Recovered",
-    "Discharged",
-    "Consulted",
-  ];
-
-  const medicalConditions = [
-    { label: "Diabetic Disease", value: "Diabetic" },
-    { label: "BP (Blood Pressure)", value: "BP" },
-    { label: "Heart Disease", value: "Heart" },
-    { label: "Asthma Disease", value: "Asthma" },
-  ];
 
   const updateState = (updates) =>
     setState((prev) => ({ ...prev, ...updates }));
@@ -604,39 +695,8 @@ const DrMedicalRecords = () => {
       name: "hospitalName",
       label: "Hospital Name",
       type: "select",
-      options: [
-        { label: "AV Hospital", value: "AV Hospital" },
-        { label: "AIIMS Delhi", value: "AIIMS Delhi" },
-        { label: "Fortis Hospital, Gurgaon", value: "Fortis Hospital, Gurgaon" },
-        { label: "Apollo Hospital, Chennai", value: "Apollo Hospital, Chennai" },
-        { label: "Medanta – The Medicity, Gurgaon", value: "Medanta – The Medicity, Gurgaon" },
-        { label: "Max Super Speciality Hospital, Delhi", value: "Max Super Speciality Hospital, Delhi" },
-        { label: "Narayana Health, Bangalore", value: "Narayana Health, Bangalore" },
-        { label: "Kokilaben Dhirubhai Ambani Hospital, Mumbai", value: "Kokilaben Dhirubhai Ambani Hospital, Mumbai" },
-        { label: "Lilavati Hospital, Mumbai", value: "Lilavati Hospital, Mumbai" },
-        { label: "Sir Ganga Ram Hospital, Delhi", value: "Sir Ganga Ram Hospital, Delhi" },
-        { label: "Christian Medical College, Vellore", value: "Christian Medical College, Vellore" },
-        { label: "Manipal Hospital, Bangalore", value: "Manipal Hospital, Bangalore" },
-        { label: "Jaslok Hospital, Mumbai", value: "Jaslok Hospital, Mumbai" },
-        { label: "BLK Super Speciality Hospital, Delhi", value: "BLK Super Speciality Hospital, Delhi" },
-        { label: "Care Hospitals, Hyderabad", value: "Care Hospitals, Hyderabad" },
-        { label: "Amrita Hospital, Kochi", value: "Amrita Hospital, Kochi" },
-        { label: "Ruby Hall Clinic, Pune", value: "Ruby Hall Clinic, Pune" },
-        { label: "Columbia Asia Hospital, Bangalore", value: "Columbia Asia Hospital, Bangalore" },
-        { label: "Hinduja Hospital, Mumbai", value: "Hinduja Hospital, Mumbai" },
-        { label: "D.Y. Patil Hospital, Navi Mumbai", value: "D.Y. Patil Hospital, Navi Mumbai" },
-        { label: "Tata Memorial Hospital, Mumbai", value: "Tata Memorial Hospital, Mumbai" },
-        { label: "Apollo Gleneagles Hospital, Kolkata", value: "Apollo Gleneagles Hospital, Kolkata" },
-        { label: "Wockhardt Hospitals, Mumbai", value: "Wockhardt Hospitals, Mumbai" },
-        { label: "SevenHills Hospital, Mumbai", value: "SevenHills Hospital, Mumbai" },
-        { label: "KIMS Hospital, Hyderabad", value: "KIMS Hospital, Hyderabad" },
-        { label: "Global Hospitals, Chennai", value: "Global Hospitals, Chennai" },
-        { label: "Yashoda Hospitals, Hyderabad", value: "Yashoda Hospitals, Hyderabad" },
-        { label: "Sunshine Hospital, Hyderabad", value: "Sunshine Hospital, Hyderabad" },
-        { label: "BM Birla Heart Research Centre, Kolkata", value: "BM Birla Heart Research Centre, Kolkata" },
-        { label: "Religare SRL Diagnostics, Mumbai", value: "Religare SRL Diagnostics, Mumbai" },
-        { label: "Sankara Nethralaya, Chennai", value: "Sankara Nethralaya, Chennai" },
-      ],
+      options: hospitalOptions,
+      loading: apiDataLoading.hospitals
     },
     { name: "chiefComplaint", label: "Chief Complaint", type: "text" },
     {
@@ -644,12 +704,14 @@ const DrMedicalRecords = () => {
       label: "Medical Conditions",
       type: "multiselect",
       options: medicalConditions,
+      loading: apiDataLoading.conditions
     },
     {
       name: "status",
       label: "Status",
       type: "select",
-      options: statusTypes.map((s) => ({ label: s, value: s })),
+      options: statusTypes,
+      loading: apiDataLoading.status
     },
     ...({
       OPD: [{ name: "dateOfVisit", label: "Date of Visit", type: "date" }],
@@ -699,7 +761,7 @@ const DrMedicalRecords = () => {
     {
       key: "status",
       label: "Status",
-      options: statusTypes.map((status) => ({ value: status, label: status })),
+      options: statusTypes,
     }
   ];
 
@@ -764,7 +826,8 @@ const DrMedicalRecords = () => {
         </div>
       ),
       onClick: () => updateState({ showAddModal: true }),
-      className: "btn btn-primary"
+      className: "btn btn-primary",
+      disabled: Object.values(apiDataLoading).some(loading => loading)
     }
   ];
 
@@ -791,6 +854,7 @@ const DrMedicalRecords = () => {
   };
 
   const consentStats = getConsentStats();
+  const isDataLoading = loading || Object.values(apiDataLoading).some(loading => loading);
 
   return (
     <div className="p-6 space-y-6">
@@ -862,6 +926,9 @@ const DrMedicalRecords = () => {
           <Search size={24} className="text-[var(--primary-color)]" />
           <div>
             <h2 className="h4-heading">Medical Records History</h2>
+            {isDataLoading && (
+              <p className="text-sm text-gray-500">Loading master data...</p>
+            )}
           </div>
         </div>
       </div>
@@ -879,10 +946,23 @@ const DrMedicalRecords = () => {
 
       {/* If loading or error, show message above the table */}
       {loading && (
-        <div className="text-center py-8">Loading medical records...</div>
+        <div className="text-center py-8">
+          <div className="flex items-center justify-center gap-2">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--primary-color)]"></div>
+            Loading medical records...
+          </div>
+        </div>
       )}
       {fetchError && (
-        <div className="text-center text-red-600 py-8">{fetchError}</div>
+        <div className="text-center text-red-600 py-8">
+          <p>{fetchError}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       )}
 
       {getCurrentTabData().length === 0 && !loading && !fetchError && (

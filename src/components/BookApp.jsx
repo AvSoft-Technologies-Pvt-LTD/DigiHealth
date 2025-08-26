@@ -1,10 +1,9 @@
-
-
 import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight, FaMapMarkerAlt, FaStethoscope, FaCalendarAlt, FaClock, FaUser, FaHospital } from 'react-icons/fa';
+import { getHospitalDropdown } from '../utils/masterService';
 
 const symptomSpecialtyMap = {
   fever: ["General Physician", "Pediatrics", "Pathology", "Psychiatry", "Oncology"],
@@ -96,6 +95,8 @@ const MultiStepForm = () => {
       pincodeError: "",
       doctorType: sessionStorage.getItem('formState_doctorType') || suggestedValues.doctorType,
       hospitalName: sessionStorage.getItem('formState_hospitalName') || "",
+      hospitals: [], // New state for hospitals list
+      hospitalsLoading: false, // New state for loading status
       minPrice: sessionStorage.getItem('formState_minPrice') || "",
       maxPrice: sessionStorage.getItem('formState_maxPrice') || "",
       selectedDate: "",
@@ -133,9 +134,30 @@ const MultiStepForm = () => {
     });
   };
 
+  // Function to fetch hospitals
+  const fetchHospitals = async () => {
+    try {
+      updateState({ hospitalsLoading: true });
+      const response = await getHospitalDropdown();
+      updateState({ 
+        hospitals: response.data || [],
+        hospitalsLoading: false 
+      });
+    } catch (error) {
+      console.error("Failed to fetch hospitals:", error);
+      updateState({ 
+        hospitals: [],
+        hospitalsLoading: false 
+      });
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Fetch hospitals
+        await fetchHospitals();
+        
         const doctorsRes = await axios.get("https://mocki.io/v1/da035b8d-40ae-4ba7-af7e-b4b286685e97");
         updateState({ doctors: doctorsRes.data || [], loadingCities: false });
         
@@ -742,7 +764,7 @@ const MultiStepForm = () => {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2v8a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div>
@@ -759,14 +781,27 @@ const MultiStepForm = () => {
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                   <FaHospital className="text-emerald-500 text-xs" />
                   Hospital (Optional)
+                  {state.hospitalsLoading && (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-500"></div>
+                  )}
                 </label>
-                <input
-                  type="text"
+                <select
                   value={state.hospitalName}
                   onChange={e => updateState({ hospitalName: e.target.value })}
-                  placeholder="Enter hospital name"
-                  className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
-                />
+                  className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  disabled={state.hospitalsLoading}
+                >
+                  <option value="">Select Hospital (Optional)</option>
+                  {Array.isArray(state.hospitals) &&
+                    state.hospitals.map((hospital) => (
+                      <option key={hospital.id} value={hospital.hospitalName}>
+                        {hospital.hospitalName}
+                      </option>
+                    ))}
+                </select>
+                {state.hospitals.length === 0 && !state.hospitalsLoading && (
+                  <p className="text-xs text-slate-500">No hospitals available</p>
+                )}
               </div>
             )}
             <div className={`space-y-2 w-full ${state.consultationType === "Physical" ? "md:w-1/2" : ""}`}>
@@ -963,7 +998,7 @@ const MultiStepForm = () => {
                 }`}>
                   {state.consultationType === "Virtual" ? (
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2v8a2 2 0 002 2z" />
                     </svg>
                   ) : (
                     <FaMapMarkerAlt className="w-3 h-3" />

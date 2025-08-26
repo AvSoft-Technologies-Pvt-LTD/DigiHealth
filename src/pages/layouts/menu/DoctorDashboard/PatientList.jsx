@@ -1,3 +1,4 @@
+//patientList(API)
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -26,12 +27,17 @@ import VirtualTab from "./VirtualTab";
 import ReusableModal from "../../../../components/microcomponents/Modal";
 import axios from "axios";
 import { useSelector } from "react-redux";
+// Import the API functions
+import {
+  getPersonalHealthByPatientId,
+  getFamilyMembersByPatient,
+} from "../../../../utils/CrudService";
 
 const API = {
   FORM: "https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient",
   USERS: "https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users",
   PERSONAL_HEALTH:
-    "https://680cc0c92ea307e081d4edda.mockapi.io/personalHealthDetails",
+    "https://680cc0c2ea307e081d4edda.mockapi.io/personalHealthDetails",
   FAMILY_DATA: "https://6808fb0f942707d722e09f1d.mockapi.io/FamilyData",
   VITAL_SIGNS: "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary",
 };
@@ -325,6 +331,7 @@ const IPD_FINAL_FIELDS = [
   },
 ];
 
+// Updated PatientViewSections component to handle the new API structure
 const PatientViewSections = ({
   data,
   personalHealthDetails,
@@ -349,12 +356,20 @@ const PatientViewSections = ({
         title: "Personal Health Details",
         data: personalHealthDetails
           ? {
-              Height: `${personalHealthDetails.height} cm`,
-              Weight: `${personalHealthDetails.weight} kg`,
+              Height: `${personalHealthDetails.height || "N/A"} cm`,
+              Weight: `${personalHealthDetails.weight || "N/A"} kg`,
+              "Blood Group": personalHealthDetails.bloodGroupName || "N/A",
               Allergies: personalHealthDetails.allergies || "None",
               Surgeries: personalHealthDetails.surgeries || "None",
               Smoking: personalHealthDetails.isSmoker ? "Yes" : "No",
+              "Years Smoking": personalHealthDetails.isSmoker ? 
+                (personalHealthDetails.yearsSmoking || "Not specified") : "N/A",
               Alcohol: personalHealthDetails.isAlcoholic ? "Yes" : "No",
+              "Years Alcohol": personalHealthDetails.isAlcoholic ? 
+                (personalHealthDetails.yearsAlcoholic || "Not specified") : "N/A",
+              Tobacco: personalHealthDetails.isTobacco ? "Yes" : "No",
+              "Years Tobacco": personalHealthDetails.isTobacco ? 
+                (personalHealthDetails.yearsTobacco || "Not specified") : "N/A",
             }
           : null,
       },
@@ -383,19 +398,21 @@ const PatientViewSections = ({
         ) : section.isArray ? (
           section.data?.length > 0 ? (
             section.data.map((member, i) => (
-              <div key={i} className="p-2 bg-gray-50 rounded text-sm">
+              <div key={i} className="p-2 bg-gray-50 rounded text-sm mb-2">
                 <p>
-                  <strong>{member.name}</strong> ({member.relation})
+                  <strong>{member.memberName}</strong> ({member.relationName})
                 </p>
                 <p>
-                  <strong>Diseases:</strong>{" "}
-                  {member.diseases?.join(", ") || "None"}
+                  <strong>Phone:</strong> {member.phoneNumber || "Not provided"}
                 </p>
-                {member.age && (
-                  <p>
-                    <strong>Age:</strong> {member.age}
-                  </p>
-                )}
+                <p>
+                  <strong>Health Conditions:</strong>{" "}
+                  {member.healthConditions?.length > 0
+                    ? member.healthConditions
+                        .map((condition) => condition.healthConditionName)
+                        .join(", ")
+                    : "None reported"}
+                </p>
               </div>
             ))
           ) : (
@@ -677,31 +694,91 @@ export default function PatientList() {
     }
   };
 
-  const fetchPatientDetails = async (patientEmail) => {
-    if (!patientEmail) return;
+  // Updated fetchPatientDetails function with improved error handling and data structure
+  const fetchPatientDetails = async (patientId) => {
+    if (!patientId) {
+      console.warn("No patientId provided to fetchPatientDetails");
+      return;
+    }
+    
     setDetailsLoading(true);
     try {
+      console.log("Fetching patient details for ID:", patientId);
+      
+      // Fetch personal health details
+      const personalHealthPromise = getPersonalHealthByPatientId(patientId)
+        .then(response => {
+          console.log("Personal health response:", response);
+          return response;
+        })
+        .catch(error => {
+          console.warn("Personal health fetch failed:", error);
+          return { data: null };
+        });
+
+      // Fetch family members
+      const familyMembersPromise = getFamilyMembersByPatient(patientId)
+        .then(response => {
+          console.log("Family members response:", response);
+          return response;
+        })
+        .catch(error => {
+          console.warn("Family members fetch failed:", error);
+          return { data: [] };
+        });
+
+      // Fetch vital signs (keeping existing mock implementation)
+      const vitalSignsPromise = axios.get(API.VITAL_SIGNS)
+        .then(response => response)
+        .catch(error => {
+          console.warn("Vital signs fetch failed:", error);
+          return { data: [] };
+        });
+
+      // Wait for all promises to resolve
       const [personalRes, familyRes, vitalRes] = await Promise.all([
-        axios.get(API.PERSONAL_HEALTH),
-        axios.get(API.FAMILY_DATA),
-        axios.get(API.VITAL_SIGNS),
+        personalHealthPromise,
+        familyMembersPromise,
+        vitalSignsPromise,
       ]);
-      const email = patientEmail.toLowerCase().trim();
-      setPersonalHealthDetails(
-        personalRes.data.find((p) => p.email?.toLowerCase().trim() === email) ||
-          null
-      );
-      setFamilyHistory(
-        familyRes.data.filter((f) => f.email?.toLowerCase().trim() === email) ||
-          []
-      );
-      setVitalSigns(
-        vitalRes.data.find((v) => v.email?.toLowerCase().trim() === email) ||
-          null
-      );
+
+      // Set personal health details
+      if (personalRes.data) {
+        console.log("Setting personal health details:", personalRes.data);
+        setPersonalHealthDetails(personalRes.data);
+      } else {
+        setPersonalHealthDetails(null);
+      }
+
+      // Set family history
+      if (Array.isArray(familyRes.data)) {
+        console.log("Setting family history:", familyRes.data);
+        setFamilyHistory(familyRes.data);
+      } else {
+        setFamilyHistory([]);
+      }
+
+      // Set vital signs (keep existing logic for email matching)
+      const patientEmail = selectedPatient?.email?.toLowerCase().trim();
+      if (patientEmail && Array.isArray(vitalRes.data)) {
+        const matchingVitalSigns = vitalRes.data.find(
+          (v) => v.email?.toLowerCase().trim() === patientEmail
+        );
+        setVitalSigns(matchingVitalSigns || null);
+      } else {
+        setVitalSigns(null);
+      }
+
+      toast.success("Patient details loaded successfully!");
+
     } catch (error) {
       console.error("Error fetching patient details:", error);
-      toast.error("Failed to fetch patient details");
+      toast.error("Failed to fetch some patient details");
+      
+      // Reset to default values
+      setPersonalHealthDetails(null);
+      setFamilyHistory([]);
+      setVitalSigns(null);
     } finally {
       setDetailsLoading(false);
     }
@@ -805,10 +882,20 @@ export default function PatientList() {
     setFormData(data);
   };
 
+  // Updated handleViewPatient to pass patientId and handle the flow better
   const handleViewPatient = (patient) => {
+    console.log("Viewing patient:", patient);
     setSelectedPatient(patient);
     openModal("viewPatient");
-    fetchPatientDetails(patient.email);
+    
+    // Use the patient ID to fetch details
+    const patientId = patient.id || patient.patientId;
+    if (patientId) {
+      fetchPatientDetails(patientId);
+    } else {
+      console.error("No patient ID found for patient:", patient);
+      toast.error("Unable to load patient details: Missing patient ID");
+    }
   };
 
   const handleEditPatient = (patient) => {
