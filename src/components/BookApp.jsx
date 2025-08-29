@@ -1,9 +1,12 @@
+//book app in components
 import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight, FaMapMarkerAlt, FaStethoscope, FaCalendarAlt, FaClock, FaUser, FaHospital } from 'react-icons/fa';
 import { getHospitalDropdown } from '../utils/masterService';
+import { ChevronDown } from "lucide-react";
+
 
 const symptomSpecialtyMap = {
   fever: ["General Physician", "Pediatrics", "Pathology", "Psychiatry", "Oncology"],
@@ -135,22 +138,36 @@ const MultiStepForm = () => {
   };
 
   // Function to fetch hospitals
-  const fetchHospitals = async () => {
-    try {
-      updateState({ hospitalsLoading: true });
-      const response = await getHospitalDropdown();
-      updateState({ 
-        hospitals: response.data || [],
-        hospitalsLoading: false 
-      });
-    } catch (error) {
-      console.error("Failed to fetch hospitals:", error);
-      updateState({ 
-        hospitals: [],
-        hospitalsLoading: false 
-      });
-    }
-  };
+ const fetchHospitals = async () => {
+  const collator = new Intl.Collator(undefined, { sensitivity: "base" });
+  const byLabelAsc = (a, b) => collator.compare(String(a.label || ""), String(b.label || ""));
+
+  try {
+    updateState({ hospitalsLoading: true });
+    const response = await getHospitalDropdown();
+
+    const options = (response?.data ?? [])
+      .map(h => {
+        const label = h?.name || h?.hospitalName || h?.label || "";
+        const value = h?.id ?? label; // prefer stable id
+        return { label, value };
+      })
+      .filter(o => o.label)
+      .sort(byLabelAsc);
+
+    updateState({
+      hospitalsOptions: options,     // ✅ store options for the UI
+      hospitalsLoading: false
+    });
+  } catch (error) {
+    console.error("Failed to fetch hospitals:", error);
+    updateState({
+      hospitalsOptions: [],
+      hospitalsLoading: false
+    });
+  }
+};
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -774,47 +791,118 @@ const MultiStepForm = () => {
               </div>
             </div>
           )}
+<div className="flex flex-col md:flex-row gap-4 w-full">
+  {state.consultationType === "Physical" && (
+    <div className="space-y-2 w-full md:w-1/2">
+      <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+        <FaHospital className="text-emerald-500 text-xs" />
+        Hospital (Optional)
+        {state.hospitalsLoading && (
+          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-500"></div>
+        )}
+      </label>
 
-          <div className="flex flex-col md:flex-row gap-4 w-full">
-            {state.consultationType === "Physical" && (
-              <div className="space-y-2 w-full md:w-1/2">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                  <FaHospital className="text-emerald-500 text-xs" />
-                  Hospital (Optional)
-                  {state.hospitalsLoading && (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-500"></div>
+      {/* === Searchable dropdown (select replacement) === */}
+      <div className="relative">
+        {(() => {
+          const normalizeText = (s) =>
+            String(s ?? "")
+              .normalize("NFKD")
+              .replace(/\p{Diacritic}/gu, "")
+              .replace(/[‐-–—]/g, "-")
+              .replace(/\s+/g, " ")
+              .trim()
+              .toLowerCase();
+
+          const openKey = "hospitalDropdownOpen";
+          const searchKey = "hospitalDropdownSearch";
+
+          const open = !!state[openKey];
+          const searchVal = state[searchKey] || "";
+          const normSearch = normalizeText(searchVal);
+
+          const opts = Array.isArray(state.hospitalsOptions) ? state.hospitalsOptions : [];
+
+          const filtered = opts.filter(o =>
+            normalizeText(o.label).includes(normSearch)
+          );
+
+          // derive button label from selected name (fallback to placeholder)
+          const buttonLabel = state.hospitalName ? state.hospitalName : "Select Hospital (Optional)";
+
+          return (
+            <>
+              <button
+                type="button"
+                disabled={state.hospitalsLoading}
+                onClick={() =>
+                  updateState({
+                    [openKey]: !open,
+                    [searchKey]: ""
+                  })
+                }
+                className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white disabled:bg-slate-100 disabled:cursor-not-allowed flex justify-between items-center"
+              >
+                <span className="truncate">{buttonLabel}</span>
+                <ChevronDown className="w-4 h-4 text-slate-500" />
+              </button>
+
+              {open && (
+                <div className="absolute z-[1000] mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white shadow border border-slate-200">
+                  <input
+                    type="text"
+                    placeholder="Search hospitals..."
+                    value={searchVal}
+                    onChange={(e) => updateState({ [searchKey]: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border-b border-slate-100 outline-none"
+                  />
+
+                  {filtered.length === 0 && (
+                    <div className="px-4 py-2 text-sm text-slate-500">No results</div>
                   )}
-                </label>
-                <select
-                  value={state.hospitalName}
-                  onChange={e => updateState({ hospitalName: e.target.value })}
-                  className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
-                  disabled={state.hospitalsLoading}
-                >
-                  <option value="">Select Hospital (Optional)</option>
-                  {Array.isArray(state.hospitals) &&
-                    state.hospitals.map((hospital) => (
-                      <option key={hospital.id} value={hospital.hospitalName}>
-                        {hospital.hospitalName}
-                      </option>
-                    ))}
-                </select>
-                {state.hospitals.length === 0 && !state.hospitalsLoading && (
-                  <p className="text-xs text-slate-500">No hospitals available</p>
-                )}
-              </div>
-            )}
-            <div className={`space-y-2 w-full ${state.consultationType === "Physical" ? "md:w-1/2" : ""}`}>
-              <label className="text-sm font-medium text-slate-700">Symptoms</label>
-              <input
-                type="text"
-                value={state.symptoms}
-                onChange={handleSymptomsChange}
-                placeholder="Describe your symptoms"
-                className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
-              />
-            </div>
-          </div>
+
+                  {filtered.map(opt => (
+                    <div
+                      key={String(opt.value)}
+                      onClick={() => {
+                        // save both id and label
+                        updateState({
+                          hospitalId: opt.value,
+                          hospitalName: opt.label,
+                          [openKey]: false
+                        });
+                      }}
+                      className="px-4 py-2 hover:bg-slate-50 cursor-pointer text-sm"
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          );
+        })()}
+      </div>
+
+      {(!state.hospitalsOptions || state.hospitalsOptions.length === 0) &&
+        !state.hospitalsLoading && (
+          <p className="text-xs text-slate-500">No hospitals available</p>
+      )}
+    </div>
+  )}
+
+  <div className={`space-y-2 w-full ${state.consultationType === "Physical" ? "md:w-1/2" : ""}`}>
+    <label className="text-sm font-medium text-slate-700">Symptoms</label>
+    <input
+      type="text"
+      value={state.symptoms}
+      onChange={handleSymptomsChange}
+      placeholder="Describe your symptoms"
+      className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
+    />
+  </div>
+</div>
+
 
           {safeSpecialties.length > 0 && (
             <div className="space-y-3">

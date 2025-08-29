@@ -1,4 +1,3 @@
-//VitalsForm.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Heart,
@@ -14,12 +13,13 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Import Toastify CSS
+import "react-toastify/dist/ReactToastify.css";
 import { useOptimizedVoiceRecognition } from "./useOptimizedVoiceRecognition";
 import VoiceButton from "./VoiceButton";
 import VitalsChart from "./VitalsChart";
 
 const API_URL = "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary";
+const VITALS_POST_API = "https://689887d3ddf05523e55f1e6c.mockapi.io/vitals";
 
 const vitalRanges = {
   heartRate: { min: 60, max: 100, label: "bpm", placeholder: "e.g. 72" },
@@ -35,7 +35,7 @@ const vitalRanges = {
   weight: { min: 30, max: 200, label: "kg", placeholder: "e.g. 65" },
 };
 
-const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) => {
+const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hospitalName, ptemail }) => {
   const emptyVitals = {
     heartRate: "",
     temperature: "",
@@ -45,22 +45,47 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
     weight: "",
     timeOfDay: "morning",
   };
-
   const [formData, setFormData] = useState({ ...emptyVitals, ...data });
   const [headerRecordIdx, setHeaderRecordIdx] = useState(null);
   const [warnings, setWarnings] = useState({});
   const [loading, setLoading] = useState(false);
   const [vitalsRecords, setVitalsRecords] = useState([]);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("vitalsRecords");
-    if (stored) {
-      const loadedRecords = JSON.parse(stored);
-      setVitalsRecords(loadedRecords);
-      onSave("vitals", { ...formData, vitalsRecords: loadedRecords });
+  // Fetch vitals from server on mount
+  const fetchVitals = async () => {
+    if (!ptemail || !hospitalName) return;
+    try {
+      const response = await axios.get(VITALS_POST_API, {
+        params: {
+          ptemail: ptemail,
+          hospitalName: hospitalName,
+        },
+      });
+      const serverRecords = response.data || [];
+      const stored = localStorage.getItem("vitalsRecords");
+      const localRecords = stored ? JSON.parse(stored) : [];
+      // Merge and deduplicate by timestamp
+      const allRecords = [...serverRecords, ...localRecords];
+      const uniqueRecords = allRecords.reduce((acc, rec) => {
+        if (!acc.some(r => r.timestamp === rec.timestamp)) {
+          acc.push(rec);
+        }
+        return acc;
+      }, []);
+      // Sort by timestamp (newest first)
+      const sortedRecords = uniqueRecords.sort((a, b) => b.timestamp - a.timestamp);
+      setVitalsRecords(sortedRecords);
+      localStorage.setItem("vitalsRecords", JSON.stringify(sortedRecords));
+      onSave("vitals", { ...formData, vitalsRecords: sortedRecords });
+    } catch (error) {
+      console.error("Error fetching vitals:", error);
+      toast.error("Failed to fetch vitals from server");
     }
-    // eslint-disable-next-line
-  }, []);
+  };
+
+  useEffect(() => {
+    fetchVitals();
+  }, [ptemail, hospitalName]);
 
   useEffect(() => {
     if (headerRecordIdx === null) {
@@ -82,7 +107,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
   const validate = (field, value) => {
     const range = vitalRanges[field];
     if (!range) return "";
-
     if (field === "bloodPressure") {
       const [systolic, diastolic] = value.split("/").map(Number);
       if (!systolic || !diastolic) return "Enter as systolic/diastolic";
@@ -90,7 +114,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
         return "Out of normal range";
       return "";
     }
-
     if (value === "") return "";
     const num = +value;
     if (isNaN(num)) return "Enter a number";
@@ -99,25 +122,37 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
     return "";
   };
 
+  const postVitals = async (vitalsData) => {
+    try {
+      const response = await axios.post(VITALS_POST_API, {
+        ...vitalsData,
+        hospitalName: hospitalName || "Unknown Hospital",
+        ptemail: ptemail || "unknown@example.com",
+      });
+      toast.success("🔧 Vitals saved to server!");
+      return response.data;
+    } catch (error) {
+      toast.error("❌ Failed to save vitals");
+      console.error("Error saving vitals:", error);
+    }
+  };
+
   const save = async () => {
     setLoading(true);
     try {
       await axios.post(API_URL, { ...formData, email: "demo@demo.com" });
-
       const now = new Date();
       const date = now.toISOString().split("T")[0];
       const time = now.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       });
-
       const newRecord = {
         ...formData,
         timestamp: now.getTime(),
         date,
         time,
       };
-
       setVitalsRecords((prev) => {
         let updated = [...prev, newRecord];
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -125,16 +160,13 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
         localStorage.setItem("vitalsRecords", JSON.stringify(updated));
         return updated;
       });
-
+      await postVitals(newRecord);
       onSave("vitals", {
         ...formData,
         vitalsRecords: [...vitalsRecords, newRecord],
       });
-
       setHeaderRecordIdx(null);
       setFormData({ ...emptyVitals });
-
-      // Toastify success notification
       toast.success("✅ Vitals saved successfully!", {
         position: "top-right",
         autoClose: 2000,
@@ -143,8 +175,9 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
         pauseOnHover: true,
         draggable: true,
       });
+      // Refetch to ensure UI is up-to-date
+      await fetchVitals();
     } catch (error) {
-      // Toastify error notification
       toast.error("❌ Failed to save vitals!", {
         position: "top-right",
         autoClose: 3000,
@@ -160,16 +193,13 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
   const handleChange = (e) => {
     const { name, value } = e.target;
     let processedValue = value;
-
     if (name === "timeOfDay") {
       setFormData((p) => ({ ...p, timeOfDay: value }));
       return;
     }
-
     if (name !== "bloodPressure") {
       processedValue = value.replace(/[^0-9.]/g, "");
     }
-
     setFormData((p) => ({ ...p, [name]: processedValue }));
     setWarnings((p) => ({ ...p, [name]: validate(name, processedValue) }));
   };
@@ -189,7 +219,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
         }));
       }
     }
-
     const tempMatch = lowerText.match(
       /(?:temperature|temp)(?:\s+is|\s+of|\s+at)?\s+(\d+\.?\d*)/
     );
@@ -203,7 +232,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
         }));
       }
     }
-
     const bsMatch = lowerText.match(
       /(?:blood sugar|glucose|sugar level)(?:\s+is|\s+of|\s+at)?\s+(\d+)/
     );
@@ -217,7 +245,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
         }));
       }
     }
-
     const bpMatch = lowerText.match(
       /(?:blood pressure|bp)(?:\s+is|\s+of|\s+at)?\s+(\d+)\s*(?:over|\/)\s*(\d+)/
     );
@@ -238,7 +265,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
         }));
       }
     }
-
     const weightMatch = lowerText.match(
       /(?:weight|weighs)(?:\s+is|\s+of|\s+at)?\s+(\d+\.?\d*)/
     );
@@ -252,7 +278,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
         }));
       }
     }
-
     const heightMatch = lowerText.match(
       /(?:height|tall)(?:\s+is|\s+of|\s+at)?\s+(\d+\.?\d*)/
     );
@@ -418,7 +443,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital }) =>
           </div>
         ))}
       </div>
-
       {transcript && (
         <div className="px-6 pb-6">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

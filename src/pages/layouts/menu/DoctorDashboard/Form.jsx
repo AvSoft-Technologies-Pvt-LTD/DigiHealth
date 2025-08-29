@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -126,7 +127,6 @@ const ChartModal = ({ isOpen, onClose, vital, records, selectedIdx }) => {
     { id: "pie", name: "Pie Chart", icon: "🥧" },
     { id: "radar", name: "Radar Chart", icon: "🕸️" },
   ];
-
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fadeIn">
@@ -390,10 +390,12 @@ const Form = () => {
       patient.lastName || ""
     }`.trim() ||
     "Unknown Patient";
+
   const getPatientAge = () =>
     patient.age && patient.age !== "N/A"
       ? patient.age
       : calculateAge(patient.dob);
+
   const getCombinedWardInfo = () => {
     if (!isIPDPatient) return "N/A";
     const wardType = patient?.wardType || "";
@@ -405,6 +407,7 @@ const Form = () => {
   };
 
   const handleBackToPatients = () => navigate("/doctordashboard/patients");
+
   const handleSignatureUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -418,10 +421,12 @@ const Form = () => {
       reader.readAsDataURL(file);
     }
   };
+
   const handleClearSignature = () => {
     if (signaturePadRef.current) signaturePadRef.current.clear();
     setDoctorSignature(null);
   };
+
   const handleSaveSignature = () => {
     if (signaturePadRef.current) {
       const signatureData = signaturePadRef.current.toDataURL();
@@ -429,6 +434,7 @@ const Form = () => {
       localStorage.setItem("doctorSignature", signatureData);
     }
   };
+
   const handleSaveForm = (formType, data) => {
     setFormsData((prev) => ({ ...prev, [formType]: data }));
     localStorage.setItem(
@@ -436,6 +442,7 @@ const Form = () => {
       JSON.stringify({ ...formsData, [formType]: data })
     );
   };
+
   const handleFormTypeClick = (formType) => {
     if (formType === "template") {
       navigate("/doctordashboard/template", {
@@ -569,18 +576,39 @@ const Form = () => {
     setIsChartOpen,
     setChartVital,
   };
+
   const renderActiveForm = () => {
     if (activeForm === "all") {
       return (
         <div className="space-y-8 animate-slideIn">
-          <VitalsForm data={formsData.vitals} {...commonProps} />
-          <PrescriptionForm
+  <VitalsForm
+          data={formsData.vitals}
+          {...commonProps}
+          hospitalName="AV Hospital"
+          ptemail={patient.email || "default@example.com"}
+        />          <PrescriptionForm
             data={formsData.prescription}
             {...commonProps}
             setShowShareModal={setShowShareModal}
+            doctorName="Dr. Kavya Patil"
           />
-          <ClinicalNotesForm data={formsData.clinical} {...commonProps} />
-          <LabTestsForm data={formsData.lab} {...commonProps} />
+  <ClinicalNotesForm
+  data={formsData.clinical}
+  onSave={handleSaveForm}
+  onPrint={handlePrintForm}
+  ptemail={patient.email || "default_patient@example.com"}
+  hospitalname="AV Hospital"
+  drEmail="dr.sheetal@example.com"
+  drname="Dr. Sheetal S. Shelke"
+  patientname={getPatientName()}
+  diagnosis={patient.diagnosis || "N/A"}
+  type={patient.type || "OPD"}
+/>
+
+          <LabTestsForm data={formsData.lab} {...commonProps}  
+          {...commonProps}
+          hospitalName="AV Hospital"
+          ptemail={patient.email || "default@example.com"} />
           <EyeTestForm data={formsData.eye} {...commonProps} />
           <DentalForm data={formsData.dental} {...commonProps} />
         </div>
@@ -588,18 +616,39 @@ const Form = () => {
     }
     return (
       {
-        vitals: <VitalsForm data={formsData.vitals} {...commonProps} />,
+        vitals: <VitalsForm
+          data={formsData.vitals}
+          {...commonProps}
+          hospitalName="AV Hospital"
+          ptemail={patient.email || "default@example.com"}
+        />,
         prescription: (
           <PrescriptionForm
             data={formsData.prescription}
             {...commonProps}
             setShowShareModal={setShowShareModal}
+            doctorName="Dr. Kavya Patil"
           />
         ),
         clinical: (
-          <ClinicalNotesForm data={formsData.clinical} {...commonProps} />
+     <ClinicalNotesForm
+  data={formsData.clinical}
+  onSave={handleSaveForm}
+  onPrint={handlePrintForm}
+  ptemail={patient.email || "default_patient@example.com"}
+  hospitalname="AV Hospital"
+  drEmail="dr.sheetal@example.com"
+  drname="Dr. Sheetal S. Shelke"
+  patientname={getPatientName()}
+  diagnosis={patient.diagnosis || "N/A"}
+  type={patient.type || "OPD"}
+/>
+
         ),
-        lab: <LabTestsForm data={formsData.lab} {...commonProps} />,
+        lab: <LabTestsForm data={formsData.lab} {...commonProps}  
+          {...commonProps}
+          hospitalName="AV Hospital"
+          ptemail={patient.email || "default@example.com"} />,
         eye: <EyeTestForm data={formsData.eye} {...commonProps} />,
         dental: <DentalForm data={formsData.dental} {...commonProps} />,
       }[activeForm] || null
@@ -619,7 +668,8 @@ const Form = () => {
           </button>
         </div>
       </div>
-<header className="sticky top-0 z-50 bg-gradient-to-r from-[#01B07A] to-[#1A223F] max-w-[120rem] mx-auto mt-1 text-white rounded-b-xl shadow-md">        <div className="max-w-7xl mx-auto px-6 py-4">
+      <header className="sticky top-0 z-50 bg-gradient-to-r from-[#01B07A] to-[#1A223F] max-w-[120rem] mx-auto mt-1 text-white rounded-b-xl shadow-md">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           {showPatientDetails && (
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center gap-4">

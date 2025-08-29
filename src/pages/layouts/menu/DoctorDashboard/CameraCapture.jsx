@@ -1,12 +1,4 @@
 
-
-
-
-
-
-
-
-
 import React, { useRef, useState, useEffect } from 'react';
 import { Camera, X, RotateCcw, Check, Crop } from 'lucide-react';
 

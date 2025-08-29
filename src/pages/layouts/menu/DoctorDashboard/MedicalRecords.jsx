@@ -1,12 +1,9 @@
+
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
-import { 
-  getHospitalDropdown, 
-  getAllMedicalConditions, 
-  getAllMedicalStatus 
-} from "../../../../utils/masterService";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import ReusableModal from "../../../../components/microcomponents/Modal";
 import {
@@ -23,9 +20,7 @@ import {
 const DrMedicalRecords = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = useSelector((state) => state.auth.user); // Fetch user from Redux store
-  
-  // Get patient data passed from OPD component
+  const user = useSelector((state) => state.auth.user);
   const patientDataFromOPD = location.state?.patientData || location.state || {};
   const patientNameFromOPD = location.state?.patientName || patientDataFromOPD?.name || "";
   const patientEmailFromOPD = location.state?.email || patientDataFromOPD?.email || "";
@@ -41,6 +36,15 @@ const DrMedicalRecords = () => {
     hiddenIds: [],
   });
 
+  const [medicalData, setMedicalData] = useState({
+    OPD: [],
+    IPD: [],
+    Virtual: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [patientDetailsMap, setPatientDetailsMap] = useState({});
+
   const getInitials = (name) => {
     if (!name) return "";
     return name
@@ -48,126 +52,17 @@ const DrMedicalRecords = () => {
       .map((n) => n[0])
       .join("")
       .toUpperCase();
-  }; // Helper function to get initials from name
+  };
 
-  // State for medical records
-  const [medicalData, setMedicalData] = useState({
-    OPD: [],
-    IPD: [],
-    Virtual: []
-  });
+  // Helper function to check if a record belongs to the selected patient
+  const isRecordForSelectedPatient = (record) => {
+    const patientEmail = patientEmailFromOPD;
+    const patientPhone = patientPhoneFromOPD;
+    const recordEmail = record.email || record.patientEmail || record.Email;
+    const recordPhone = record.phone || record.phoneNumber || record.Phone;
+    return recordEmail === patientEmail || recordPhone === patientPhone;
+  };
 
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
-
-  // State for patient details from /addpatient API
-  const [patientDetailsMap, setPatientDetailsMap] = useState({});
-
-  // API data states
-  const [hospitalOptions, setHospitalOptions] = useState([]);
-  const [medicalConditions, setMedicalConditions] = useState([]);
-  const [statusTypes, setStatusTypes] = useState([]);
-  const [apiDataLoading, setApiDataLoading] = useState({
-    hospitals: false,
-    conditions: false,
-    status: false
-  });
-
-  // Fetch master data from APIs
-  useEffect(() => {
-    const fetchMasterData = async () => {
-      try {
-        // Fetch hospitals dropdown
-        setApiDataLoading(prev => ({ ...prev, hospitals: true }));
-        const hospitalsResponse = await getHospitalDropdown();
-        const hospitalsList = hospitalsResponse.data?.map(hospital => ({
-          label: hospital.name || hospital.hospitalName || hospital.label,
-          value: hospital.name || hospital.hospitalName || hospital.value || hospital.id
-        })) || [];
-        setHospitalOptions(hospitalsList);
-        setApiDataLoading(prev => ({ ...prev, hospitals: false }));
-
-        // Fetch medical conditions
-        setApiDataLoading(prev => ({ ...prev, conditions: true }));
-        const conditionsResponse = await getAllMedicalConditions();
-        const conditionsList = conditionsResponse.data?.map(condition => ({
-          label: condition.name || condition.conditionName || condition.label,
-          value: condition.name || condition.conditionName || condition.value || condition.id
-        })) || [];
-        setMedicalConditions(conditionsList);
-        setApiDataLoading(prev => ({ ...prev, conditions: false }));
-
-        // Fetch medical status
-        setApiDataLoading(prev => ({ ...prev, status: true }));
-        const statusResponse = await getAllMedicalStatus();
-        const statusList = statusResponse.data?.map(status => ({
-          label: status.name || status.statusName || status.label,
-          value: status.name || status.statusName || status.value || status.id
-        })) || [];
-        setStatusTypes(statusList);
-        setApiDataLoading(prev => ({ ...prev, status: false }));
-
-      } catch (error) {
-        console.error("Error fetching master data:", error);
-        
-        // Fallback to default data if API fails
-        setHospitalOptions([
-          { label: "AV Hospital", value: "AV Hospital" },
-          { label: "AIIMS Delhi", value: "AIIMS Delhi" },
-          { label: "Fortis Hospital, Gurgaon", value: "Fortis Hospital, Gurgaon" },
-          { label: "Apollo Hospital, Chennai", value: "Apollo Hospital, Chennai" },
-          { label: "Medanta – The Medicity, Gurgaon", value: "Medanta – The Medicity, Gurgaon" },
-          { label: "Max Super Speciality Hospital, Delhi", value: "Max Super Speciality Hospital, Delhi" },
-          { label: "Narayana Health, Bangalore", value: "Narayana Health, Bangalore" },
-          { label: "Kokilaben Dhirubhai Ambani Hospital, Mumbai", value: "Kokilaben Dhirubhai Ambani Hospital, Mumbai" },
-          { label: "Lilavati Hospital, Mumbai", value: "Lilavati Hospital, Mumbai" },
-          { label: "Sir Ganga Ram Hospital, Delhi", value: "Sir Ganga Ram Hospital, Delhi" },
-          { label: "Christian Medical College, Vellore", value: "Christian Medical College, Vellore" },
-          { label: "Manipal Hospital, Bangalore", value: "Manipal Hospital, Bangalore" },
-          { label: "Jaslok Hospital, Mumbai", value: "Jaslok Hospital, Mumbai" },
-          { label: "BLK Super Speciality Hospital, Delhi", value: "BLK Super Speciality Hospital, Delhi" },
-          { label: "Care Hospitals, Hyderabad", value: "Care Hospitals, Hyderabad" },
-          { label: "Amrita Hospital, Kochi", value: "Amrita Hospital, Kochi" },
-          { label: "Ruby Hall Clinic, Pune", value: "Ruby Hall Clinic, Pune" },
-          { label: "Columbia Asia Hospital, Bangalore", value: "Columbia Asia Hospital, Bangalore" },
-          { label: "Hinduja Hospital, Mumbai", value: "Hinduja Hospital, Mumbai" },
-          { label: "D.Y. Patil Hospital, Navi Mumbai", value: "D.Y. Patil Hospital, Navi Mumbai" },
-          { label: "Tata Memorial Hospital, Mumbai", value: "Tata Memorial Hospital, Mumbai" },
-          { label: "Apollo Gleneagles Hospital, Kolkata", value: "Apollo Gleneagles Hospital, Kolkata" },
-          { label: "Wockhardt Hospitals, Mumbai", value: "Wockhardt Hospitals, Mumbai" },
-          { label: "SevenHills Hospital, Mumbai", value: "SevenHills Hospital, Mumbai" },
-          { label: "KIMS Hospital, Hyderabad", value: "KIMS Hospital, Hyderabad" },
-          { label: "Global Hospitals, Chennai", value: "Global Hospitals, Chennai" },
-          { label: "Yashoda Hospitals, Hyderabad", value: "Yashoda Hospitals, Hyderabad" },
-          { label: "Sunshine Hospital, Hyderabad", value: "Sunshine Hospital, Hyderabad" },
-          { label: "BM Birla Heart Research Centre, Kolkata", value: "BM Birla Heart Research Centre, Kolkata" },
-          { label: "Religare SRL Diagnostics, Mumbai", value: "Religare SRL Diagnostics, Mumbai" },
-          { label: "Sankara Nethralaya, Chennai", value: "Sankara Nethralaya, Chennai" },
-        ]);
-        
-        setMedicalConditions([
-          { label: "Diabetic Disease", value: "Diabetic" },
-          { label: "BP (Blood Pressure)", value: "BP" },
-          { label: "Heart Disease", value: "Heart" },
-          { label: "Asthma Disease", value: "Asthma" },
-        ]);
-        
-        setStatusTypes([
-          { label: "Active", value: "Active" },
-          { label: "Treated", value: "Treated" },
-          { label: "Recovered", value: "Recovered" },
-          { label: "Discharged", value: "Discharged" },
-          { label: "Consulted", value: "Consulted" }
-        ]);
-      } finally {
-        setApiDataLoading(prev => ({ hospitals: false, conditions: false, status: false }));
-      }
-    };
-
-    fetchMasterData();
-  }, []);
-
-  // Fetch all medical records from API using axios
   useEffect(() => {
     const fetchAllRecords = async () => {
       setLoading(true);
@@ -176,44 +71,35 @@ const DrMedicalRecords = () => {
         const response = await axios.get(
           "https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec"
         );
-        // API returns an array of records, each with type: OPD, IPD, or Virtual
         const opd = [];
         const ipd = [];
         const virtual = [];
-
         response.data.forEach((rec) => {
-          if (rec.type === "OPD") opd.push(rec);
-          else if (rec.type === "IPD") ipd.push(rec);
-          else if (rec.type === "Virtual") virtual.push(rec);
+          if (isRecordForSelectedPatient(rec)) {
+            if (rec.type === "OPD") opd.push(rec);
+            else if (rec.type === "IPD") ipd.push(rec);
+            else if (rec.type === "Virtual") virtual.push(rec);
+          }
         });
-
         setMedicalData({ OPD: opd, IPD: ipd, Virtual: virtual });
-
-        // Fetch patient details for all records
-        await fetchPatientDetailsForRecords(response.data);
+        await fetchPatientDetailsForRecords([...opd, ...ipd, ...virtual]);
       } catch (err) {
         setFetchError("Failed to fetch medical records.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchAllRecords();
   }, []);
 
-  // Fetch patient details from /addpatient API for all records
   const fetchPatientDetailsForRecords = async (records) => {
     const patientMap = {};
-    
     for (const record of records) {
       try {
-        // Try to fetch by phone first, then by email, then by patientId
         const phone = record.phone || record.phoneNumber || record.Phone;
         const email = record.email || record.patientEmail || record.Email;
         const patientId = record.patientId || record.id;
         let patientDetails = null;
-        
-        // Try fetching by phone
         if (phone) {
           try {
             const phoneResponse = await axios.get(
@@ -228,8 +114,6 @@ const DrMedicalRecords = () => {
             console.log("Phone lookup failed for:", phone);
           }
         }
-
-        // If phone lookup failed, try email
         if (!patientDetails && email) {
           try {
             const emailResponse = await axios.get(
@@ -244,8 +128,6 @@ const DrMedicalRecords = () => {
             console.log("Email lookup failed for:", email);
           }
         }
-
-        // If email lookup failed, try patientId
         if (!patientDetails && patientId) {
           try {
             const idResponse = await axios.get(
@@ -260,40 +142,37 @@ const DrMedicalRecords = () => {
             console.log("ID lookup failed for:", patientId);
           }
         }
-
         if (patientDetails) {
-          patientMap[record.id] = patientDetails;
+          patientMap[record.id] = {
+            ...patientDetails,
+            hospitalName: record.hospitalName,
+          };
         }
       } catch (error) {
         console.error("Error fetching patient details for record:", record.id, error);
       }
     }
-
     setPatientDetailsMap(patientMap);
   };
 
-  const updateState = (updates) =>
-    setState((prev) => ({ ...prev, ...updates }));
+  const statusTypes = ["Active", "Treated", "Recovered", "Discharged", "Consulted"];
+  const medicalConditions = [
+    { label: "Diabetic Disease", value: "Diabetic" },
+    { label: "BP (Blood Pressure)", value: "BP" },
+    { label: "Heart Disease", value: "Heart" },
+    { label: "Asthma Disease", value: "Asthma" },
+  ];
 
-  // When navigating to details, always pass the exact values from the API (no formatting)
-  // Always pass the correct patientName, email, and phone from the API record
+  const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
+
   const handleViewDetails = (record) => {
-    // Get patient details from the map
     const patientDetails = patientDetailsMap[record.id];
-    
-    // Priority: OPD data > patient details from API > record data
-    const patientName = patientNameFromOPD || 
-      (patientDetails 
-      ? `${patientDetails.firstName || ''} ${patientDetails.lastName || ''}`.trim()
-      : record.patientName || record.name || '');
-    
+    const patientName = patientNameFromOPD || (patientDetails ? `${patientDetails.firstName || ''} ${patientDetails.lastName || ''}`.trim() : record.patientName || record.name || '');
     const email = patientEmailFromOPD || patientDetails?.email || record.email || record.patientEmail || record.Email || '';
     const phone = patientPhoneFromOPD || patientDetails?.phone || record.phone || record.phoneNumber || record.Phone || '';
     const gender = patientGenderFromOPD || patientDetails?.gender || record.gender || record.sex || '';
     const dob = patientDobFromOPD || patientDetails?.dob || record.dob || '';
     const diagnosis = patientDiagnosisFromOPD || patientDetails?.diagnosis || record.diagnosis || record.chiefComplaint || '';
-
-    // Extract first name and last name - prioritize patientDetails
     let firstName, lastName;
     if (patientNameFromOPD) {
       const nameParts = patientNameFromOPD.split(" ");
@@ -313,7 +192,6 @@ const DrMedicalRecords = () => {
       firstName = "Guest";
       lastName = "";
     }
-
     const patientData = {
       ...record,
       patientName,
@@ -333,14 +211,12 @@ const DrMedicalRecords = () => {
       }),
       firstName,
       lastName,
-      // Include patient details from /addpatient API
       patientDetails,
-      // Include OPD patient data
       opdPatientData: patientDataFromOPD,
       dob,
-      diagnosis
+      diagnosis,
+      hospitalName: patientDetails?.hospitalName || record.hospitalName || "AV Hospital",
     };
-
     navigate("/doctordashboard/medical-record-details", {
       state: {
         selectedRecord: {
@@ -357,17 +233,14 @@ const DrMedicalRecords = () => {
         gender,
         dob,
         diagnosis,
-        patientName, // Ensure patientName is passed
-        patientDetails, // Pass the full patient details
-        // Ensure phone number is always passed for consistent patient lookup
+        patientName,
+        patientDetails,
         patientPhone: phone,
-        // Pass additional identifiers for robust patient matching
         patientEmail: email,
         patientId: record.id || record.patientId || '',
-        // Pass the record type for context
         recordType: record.type || state.activeTab,
-        // Pass OPD patient data
-        opdPatientData: patientDataFromOPD
+        opdPatientData: patientDataFromOPD,
+        hospitalName: patientDetails?.hospitalName || record.hospitalName || "AV Hospital",
       },
     });
   };
@@ -383,33 +256,29 @@ const DrMedicalRecords = () => {
   };
 
   const handleAddRecord = async (formData) => {
-    // Ensure type is set for the new record and tab
     const recordType = formData.type || state.activeTab;
-    
-    // Extract first and last names from user data
     const userFirstName = user?.firstName || "Guest";
     const userLastName = user?.lastName || "";
     const fullPatientName = `${userFirstName} ${userLastName}`.trim();
-    
     const newRecord = {
-      id: Date.now(), // Generate unique ID
+      id: Date.now(),
       ...formData,
       type: recordType,
       patientName: fullPatientName,
-      firstName: userFirstName, // Store separately for easier access
-      lastName: userLastName, // Store separately for easier access
+      firstName: userFirstName,
+      lastName: userLastName,
       age: user?.age ? `${user.age} years` : "N/A",
       sex: user?.gender || "Not specified",
       phone: formData.phoneNumber || user?.phone || "Not provided",
       email: formData.email || user?.email || "Not provided",
       phoneConsent: formData.phoneConsent || false,
       address: user?.address || "Not provided",
-      isVerified: true, // Always set to true for doctor-created records
+      isVerified: true,
       hasDischargeSummary: recordType === "IPD",
-      isNewlyAdded: true, // Mark as newly added
-      createdBy: "doctor", // Mark as created by doctor
-      hiddenByPatient: false, // Initialize as not hidden by patient
-      hospitalName: formData.hospitalName || "AV Hospital", // Default to AV Hospital if not specified
+      isNewlyAdded: true,
+      createdBy: "doctor",
+      hiddenByPatient: false,
+      hospitalName: formData.hospitalName || "AV Hospital",
       vitals: {
         bloodPressure: "N/A",
         heartRate: "N/A",
@@ -420,15 +289,11 @@ const DrMedicalRecords = () => {
         weight: "N/A",
       },
     };
-
     try {
-      // Post to API to save the record
       const response = await axios.post(
         "https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec",
         newRecord
       );
-
-      // Update local state with the response data (which includes the API-generated ID)
       setMedicalData(prev => {
         const updated = {
           ...prev,
@@ -437,7 +302,6 @@ const DrMedicalRecords = () => {
             response.data
           ]
         };
-        // Save to localStorage as backup
         try {
           localStorage.setItem("medicalData", JSON.stringify(updated));
         } catch (e) {
@@ -445,14 +309,10 @@ const DrMedicalRecords = () => {
         }
         return updated;
       });
-
-      // Try to fetch patient details for the new record
       try {
         const phone = newRecord.phone || newRecord.phoneNumber;
         const email = newRecord.email;
-        
         let patientDetails = null;
-        
         if (phone) {
           try {
             const phoneResponse = await axios.get(
@@ -465,7 +325,6 @@ const DrMedicalRecords = () => {
             console.log("Phone lookup failed for new record");
           }
         }
-
         if (!patientDetails && email) {
           try {
             const emailResponse = await axios.get(
@@ -478,24 +337,21 @@ const DrMedicalRecords = () => {
             console.log("Email lookup failed for new record");
           }
         }
-
         if (patientDetails) {
           setPatientDetailsMap(prev => ({
             ...prev,
-            [response.data.id]: patientDetails
+            [response.data.id]: {
+              ...patientDetails,
+              hospitalName: newRecord.hospitalName,
+            }
           }));
         }
       } catch (error) {
         console.error("Error fetching patient details for new record:", error);
       }
-
       updateState({ showAddModal: false });
-      
-      // Navigate to the newly created record's details page
       const phone = newRecord.phone || newRecord.phoneNumber;
       const email = newRecord.email;
-      
-      // Navigate to details page with the new record data
       navigate("/doctordashboard/medical-record-details", {
         state: {
           selectedRecord: {
@@ -509,23 +365,17 @@ const DrMedicalRecords = () => {
           lastName: userLastName,
           email: email,
           phone: phone,
-          patientDetails: null, // Will be fetched in MedicalRecordDetails
-          // Ensure phone number is always passed for consistent patient lookup
+          patientDetails: null,
           patientPhone: phone,
-          // Pass additional identifiers for robust patient matching
           patientEmail: email,
           patientId: response.data.id,
-          // Pass the record type for context
           recordType: recordType,
-          // Mark as newly created
-          isNewlyCreated: true
+          isNewlyCreated: true,
+          hospitalName: newRecord.hospitalName,
         },
       });
-      
-      console.log("Record added successfully with phone consent:", formData.phoneConsent);
     } catch (error) {
       console.error("Error adding record:", error);
-      // Fallback to local storage if API fails
       setMedicalData(prev => {
         const updated = {
           ...prev,
@@ -541,13 +391,9 @@ const DrMedicalRecords = () => {
         }
         return updated;
       });
-
       updateState({ showAddModal: false });
-      
-      // Navigate to details page even if API fails
       const phone = newRecord.phone || newRecord.phoneNumber;
       const email = newRecord.email;
-      
       navigate("/doctordashboard/medical-record-details", {
         state: {
           selectedRecord: {
@@ -566,33 +412,19 @@ const DrMedicalRecords = () => {
           patientEmail: email,
           patientId: newRecord.id,
           recordType: recordType,
-          isNewlyCreated: true
+          isNewlyCreated: true,
+          hospitalName: newRecord.hospitalName,
         },
       });
     }
   };
 
   const createColumns = (type) => {
-    // Replace 'diagnosis' with 'chiefComplaint' in all record types
     const baseFields = {
       OPD: ["hospitalName", "type", "chiefComplaint", "dateOfVisit", "status"],
-      IPD: [
-        "hospitalName",
-        "type",
-        "chiefComplaint",
-        "dateOfAdmission",
-        "dateOfDischarge",
-        "status",
-      ],
-      Virtual: [
-        "hospitalName",
-        "type",
-        "chiefComplaint",
-        "dateOfConsultation",
-        "status",
-      ],
+      IPD: ["hospitalName", "type", "chiefComplaint", "dateOfAdmission", "dateOfDischarge", "status"],
+      Virtual: ["hospitalName", "type", "chiefComplaint", "dateOfConsultation", "status"],
     };
-
     const fieldLabels = {
       hospitalName: "Hospital",
       type: "Type",
@@ -603,9 +435,7 @@ const DrMedicalRecords = () => {
       dateOfConsultation: "Date of Consultation",
       status: "Status",
     };
-
     const typeColors = { OPD: "purple", IPD: "blue", Virtual: "indigo" };
-
     return [
       ...baseFields[type].map((key) => ({
         header: fieldLabels[key],
@@ -614,7 +444,6 @@ const DrMedicalRecords = () => {
           if (key === "hospitalName") {
             return (
               <div className="flex items-center gap-2">
-                {/* Show green checkmark based on multiple conditions */}
                 {(row.isVerified === true ||
                   row.hasDischargeSummary === true ||
                   row.phoneConsent === true ||
@@ -668,26 +497,34 @@ const DrMedicalRecords = () => {
     ];
   };
 
-  // Filter records for the current tab, and add chiefComplaint fallback
-  // Show only records that meet the criteria for the green checkmark
   const getCurrentTabData = () => {
-    return (medicalData[state.activeTab] || [])
-      // First filter out records hidden by patient - doctor should not see these at all
+    const allRecords = (medicalData[state.activeTab] || [])
       .filter((record) => !record.hiddenByPatient)
-      // Show all records that are not hidden by patient (regardless of verification status)
       .map((record) => {
         const chiefComplaint = record.chiefComplaint || record.diagnosis || "";
         const patientDetails = patientDetailsMap[record.id];
-        
         return {
           ...record,
           chiefComplaint,
-          // Add patient name from /addpatient API if available
-          displayPatientName: patientDetails 
+          displayPatientName: patientDetails
             ? `${patientDetails.firstName || ''} ${patientDetails.lastName || ''}`.trim()
-            : record.patientName || record.name || 'Unknown Patient'
+            : record.patientName || record.name || 'Unknown Patient',
+          hospitalName: patientDetails?.hospitalName || record.hospitalName || "AV Hospital",
         };
       });
+    const sortedRecords = allRecords.sort((a, b) => {
+      const dateA = a.dateOfVisit || a.dateOfAdmission || a.dateOfConsultation || "1970-01-01";
+      const dateB = b.dateOfVisit || b.dateOfAdmission || b.dateOfConsultation || "1970-01-01";
+      return new Date(dateB) - new Date(dateA);
+    });
+    const latestRecordsMap = {};
+    sortedRecords.forEach((record) => {
+      const hospitalName = record.hospitalName;
+      if (!latestRecordsMap[hospitalName]) {
+        latestRecordsMap[hospitalName] = record;
+      }
+    });
+    return Object.values(latestRecordsMap);
   };
 
   const getFormFields = (recordType) => [
@@ -695,8 +532,39 @@ const DrMedicalRecords = () => {
       name: "hospitalName",
       label: "Hospital Name",
       type: "select",
-      options: hospitalOptions,
-      loading: apiDataLoading.hospitals
+      options: [
+        { label: "AV Hospital", value: "AV Hospital" },
+        { label: "AIIMS Delhi", value: "AIIMS Delhi" },
+        { label: "Fortis Hospital, Gurgaon", value: "Fortis Hospital, Gurgaon" },
+        { label: "Apollo Hospital, Chennai", value: "Apollo Hospital, Chennai" },
+        { label: "Medanta – The Medicity, Gurgaon", value: "Medanta – The Medicity, Gurgaon" },
+        { label: "Max Super Speciality Hospital, Delhi", value: "Max Super Speciality Hospital, Delhi" },
+        { label: "Narayana Health, Bangalore", value: "Narayana Health, Bangalore" },
+        { label: "Kokilaben Dhirubhai Ambani Hospital, Mumbai", value: "Kokilaben Dhirubhai Ambani Hospital, Mumbai" },
+        { label: "Lilavati Hospital, Mumbai", value: "Lilavati Hospital, Mumbai" },
+        { label: "Sir Ganga Ram Hospital, Delhi", value: "Sir Ganga Ram Hospital, Delhi" },
+        { label: "Christian Medical College, Vellore", value: "Christian Medical College, Vellore" },
+        { label: "Manipal Hospital, Bangalore", value: "Manipal Hospital, Bangalore" },
+        { label: "Jaslok Hospital, Mumbai", value: "Jaslok Hospital, Mumbai" },
+        { label: "BLK Super Speciality Hospital, Delhi", value: "BLK Super Speciality Hospital, Delhi" },
+        { label: "Care Hospitals, Hyderabad", value: "Care Hospitals, Hyderabad" },
+        { label: "Amrita Hospital, Kochi", value: "Amrita Hospital, Kochi" },
+        { label: "Ruby Hall Clinic, Pune", value: "Ruby Hall Clinic, Pune" },
+        { label: "Columbia Asia Hospital, Bangalore", value: "Columbia Asia Hospital, Bangalore" },
+        { label: "Hinduja Hospital, Mumbai", value: "Hinduja Hospital, Mumbai" },
+        { label: "D.Y. Patil Hospital, Navi Mumbai", value: "D.Y. Patil Hospital, Navi Mumbai" },
+        { label: "Tata Memorial Hospital, Mumbai", value: "Tata Memorial Hospital, Mumbai" },
+        { label: "Apollo Gleneagles Hospital, Kolkata", value: "Apollo Gleneagles Hospital, Kolkata" },
+        { label: "Wockhardt Hospitals, Mumbai", value: "Wockhardt Hospitals, Mumbai" },
+        { label: "SevenHills Hospital, Mumbai", value: "SevenHills Hospital, Mumbai" },
+        { label: "KIMS Hospital, Hyderabad", value: "KIMS Hospital, Hyderabad" },
+        { label: "Global Hospitals, Chennai", value: "Global Hospitals, Chennai" },
+        { label: "Yashoda Hospitals, Hyderabad", value: "Yashoda Hospitals, Hyderabad" },
+        { label: "Sunshine Hospital, Hyderabad", value: "Sunshine Hospital, Hyderabad" },
+        { label: "BM Birla Heart Research Centre, Kolkata", value: "BM Birla Heart Research Centre, Kolkata" },
+        { label: "Religare SRL Diagnostics, Mumbai", value: "Religare SRL Diagnostics, Mumbai" },
+        { label: "Sankara Nethralaya, Chennai", value: "Sankara Nethralaya, Chennai" },
+      ],
     },
     { name: "chiefComplaint", label: "Chief Complaint", type: "text" },
     {
@@ -704,14 +572,12 @@ const DrMedicalRecords = () => {
       label: "Medical Conditions",
       type: "multiselect",
       options: medicalConditions,
-      loading: apiDataLoading.conditions
     },
     {
       name: "status",
       label: "Status",
       type: "select",
-      options: statusTypes,
-      loading: apiDataLoading.status
+      options: statusTypes.map((s) => ({ label: s, value: s })),
     },
     ...({
       OPD: [{ name: "dateOfVisit", label: "Date of Visit", type: "date" }],
@@ -730,11 +596,11 @@ const DrMedicalRecords = () => {
     {
       name: "phoneNumber",
       label: "Register Phone Number",
-      type: "te",
+      type: "text",
       hasInlineCheckbox: true,
       inlineCheckbox: {
         name: "phoneConsent",
-        label: "sync with patient number"
+        label: "Sync with patient number"
       }
     },
   ];
@@ -744,16 +610,21 @@ const DrMedicalRecords = () => {
     value: key,
   }));
 
-  // Filter options based on records with phone consent only, not hidden by patient, and not created by patient
   const filters = [
     {
       key: "hospitalName",
       label: "Hospital",
-      options: [...new Set(Object.values(medicalData).flatMap((records) =>
-        records
-          .filter(record => !record.hiddenByPatient) // Only show hospitals from visible records
-          .map((record) => record.hospitalName)
-      ))].map(hospital => ({
+      options: [
+        ...new Set(
+          Object.values(medicalData)
+            .flatMap((records) =>
+              records
+                .filter((record) => !record.hiddenByPatient)
+                .map((record) => record.hospitalName || "Unknown Hospital")
+            )
+            .filter(Boolean)
+        )
+      ].map((hospital) => ({
         value: hospital,
         label: hospital,
       })),
@@ -761,11 +632,10 @@ const DrMedicalRecords = () => {
     {
       key: "status",
       label: "Status",
-      options: statusTypes,
+      options: statusTypes.map((status) => ({ value: status, label: status })),
     }
   ];
 
-  // Always use selected record from navigation state if present, else fallback to first record in tab, else fallback default
   let selectedRecord;
   if (location.state) {
     if (location.state.selectedRecord) {
@@ -782,7 +652,6 @@ const DrMedicalRecords = () => {
     }
   }
 
-  // If we have OPD patient data but no selected record, create a mock record for display
   if (!selectedRecord && patientNameFromOPD) {
     selectedRecord = {
       patientName: patientNameFromOPD,
@@ -799,10 +668,7 @@ const DrMedicalRecords = () => {
     };
   }
 
-  // Get patient details for the selected record
   const selectedPatientDetails = selectedRecord ? patientDetailsMap[selectedRecord.id] : null;
-
-  // Calculate age from dob (prefer selectedPatientDetails.dob, fallback to selectedRecord.dob)
   let calculatedAge = null;
   let dob = patientDobFromOPD || selectedPatientDetails?.dob || selectedRecord?.dob;
   if (dob) {
@@ -816,7 +682,6 @@ const DrMedicalRecords = () => {
     calculatedAge = age + ' years';
   }
 
-  // Tab actions for the Add Record button
   const tabActions = [
     {
       label: (
@@ -826,15 +691,24 @@ const DrMedicalRecords = () => {
         </div>
       ),
       onClick: () => updateState({ showAddModal: true }),
-      className: "btn btn-primary",
-      disabled: Object.values(apiDataLoading).some(loading => loading)
+      className: "btn btn-primary"
     }
   ];
 
-  // Get statistics for records with phone consent, not hidden by patient, and not created by patient
+  const fetchPatientRecords = async () => {
+    try {
+      const response = await axios.get(
+        "https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec"
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching patient records:", error);
+      return [];
+    }
+  };
+
   const getConsentStats = () => {
     const allRecords = Object.values(medicalData).flat();
-    // Filter out records hidden by patient from all calculations
     const visibleToDoctor = allRecords.filter(record => !record.hiddenByPatient);
     const verifiedRecords = visibleToDoctor.filter(record =>
       record.isVerified === true ||
@@ -842,9 +716,8 @@ const DrMedicalRecords = () => {
       record.phoneConsent === true ||
       record.createdBy === "doctor"
     );
-    const visibleRecords = visibleToDoctor; // Show all visible records to doctor
-    const totalRecords = visibleToDoctor.length; // Use visible records as total for doctor
-
+    const visibleRecords = visibleToDoctor;
+    const totalRecords = visibleToDoctor.length;
     return {
       withConsent: verifiedRecords.length,
       visible: visibleRecords.length,
@@ -854,26 +727,22 @@ const DrMedicalRecords = () => {
   };
 
   const consentStats = getConsentStats();
-  const isDataLoading = loading || Object.values(apiDataLoading).some(loading => loading);
 
   return (
     <div className="p-6 space-y-6">
-      {/* Back Button */}
       <button
         className="mb-4 inline-flex items-center"
         onClick={() => navigate("/doctordashboard/patients")}
       >
         <ArrowLeft size={20} /> <span className="ms-2 font-medium">Back to Patient List</span>
       </button>
-
-      {/* Patient summary card */}
       {selectedRecord && (
         <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-6 mb-6 text-white">
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             <div className="relative h-20 w-20 shrink-0">
               <div className="flex h-full w-full items-center justify-center rounded-full bg-white text-2xl font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2 text-[#01B07A]">
                 {getInitials(
-                  patientNameFromOPD || (selectedPatientDetails 
+                  patientNameFromOPD || (selectedPatientDetails
                     ? `${selectedPatientDetails.firstName || ''} ${selectedPatientDetails.lastName || ''}`.trim()
                     : selectedRecord.patientName || selectedRecord.name || "")
                 )}
@@ -881,7 +750,7 @@ const DrMedicalRecords = () => {
             </div>
             <div className="flex-1">
               <h3 className="text-2xl font-bold mb-4">
-                {patientNameFromOPD || (selectedPatientDetails 
+                {patientNameFromOPD || (selectedPatientDetails
                   ? `${selectedPatientDetails.firstName || ''} ${selectedPatientDetails.lastName || ''}`.trim()
                   : selectedRecord.patientName || selectedRecord.name || "--")}
               </h3>
@@ -891,7 +760,7 @@ const DrMedicalRecords = () => {
                   <div>Gender: {patientGenderFromOPD || selectedRecord.gender || selectedRecord.sex || selectedPatientDetails?.gender || selectedPatientDetails?.sex || "--"}</div>
                 </div>
                 <div className="space-y-1">
-                  <div>Hospital: {selectedRecord.hospitalName || "AV Hospital"}</div>
+                  <div>Hospital: {selectedPatientDetails?.hospitalName || selectedRecord.hospitalName || "AV Hospital"}</div>
                   <div>
                     Visit Date: {
                       (() => {
@@ -906,7 +775,6 @@ const DrMedicalRecords = () => {
                       })()
                     }
                   </div>
-                  {/* Display Ward Type for IPD records */}
                   {(selectedPatientDetails?.type === "IPD" || selectedRecord.type === "IPD") && (
                     <div>Ward Type: {selectedRecord.wardType || "--"}</div>
                   )}
@@ -920,20 +788,14 @@ const DrMedicalRecords = () => {
           </div>
         </div>
       )}
-
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Search size={24} className="text-[var(--primary-color)]" />
           <div>
             <h2 className="h4-heading">Medical Records History</h2>
-            {isDataLoading && (
-              <p className="text-sm text-gray-500">Loading master data...</p>
-            )}
           </div>
         </div>
       </div>
-
-      {/* Always show tabs and Add Record button, even if no data */}
       <DynamicTable
         columns={createColumns(state.activeTab)}
         data={getCurrentTabData()}
@@ -943,28 +805,12 @@ const DrMedicalRecords = () => {
         activeTab={state.activeTab}
         onTabChange={(tab) => updateState({ activeTab: tab })}
       />
-
-      {/* If loading or error, show message above the table */}
       {loading && (
-        <div className="text-center py-8">
-          <div className="flex items-center justify-center gap-2">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--primary-color)]"></div>
-            Loading medical records...
-          </div>
-        </div>
+        <div className="text-center py-8">Loading medical records...</div>
       )}
       {fetchError && (
-        <div className="text-center text-red-600 py-8">
-          <p>{fetchError}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-2 px-4 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
+        <div className="text-center text-red-600 py-8">{fetchError}</div>
       )}
-
       {getCurrentTabData().length === 0 && !loading && !fetchError && (
         <div className="text-center py-8 text-gray-600">
           <div className="flex flex-col items-center gap-4">
@@ -978,8 +824,6 @@ const DrMedicalRecords = () => {
           </div>
         </div>
       )}
-
-      {/* Add Record Modal */}
       <ReusableModal
         isOpen={state.showAddModal}
         onClose={() => updateState({ showAddModal: false })}

@@ -649,14 +649,17 @@ const filters=[
   {key:"location",label:"Location",options:[{value:"Main Desk",label:"Main Desk"},{value:"VIP Desk",label:"VIP Desk"}]}
 ];
 
-export default function FrontDeskLoginReport(){
-  const [animated,setAnim]=useState([]);
+export default function FrontDeskLoginReport() {
+  const [animated, setAnim] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState("January 2025");
-  const stats=calcStats(sampleLogins);
+  const stats = calcStats(sampleLogins);
 
-  const click=i=>{setAnim(p=>[...p,i]);setTimeout(()=>setAnim(p=>p.filter(x=>x!==i)),700);}
+  const click = (i) => {
+    setAnim(p => [...p, i]);
+    setTimeout(() => setAnim(p => p.filter(x => x !== i)), 700);
+  };
 
   const handleCellClick = (row, col) => {
     if (col.accessor === "staffName") {
@@ -670,31 +673,34 @@ export default function FrontDeskLoginReport(){
     setSelectedEmployee(null);
   };
 
-  const Stat=({icon:Icon,lbl,val,sub,col,idx})=>(
-    <div className={`card-stat ${col} cursor-pointer ${animated.includes(idx)?"card-animate-pulse":""}`} onClick={()=>click(idx)}>
+  const Stat = ({ icon: Icon, lbl, val, sub, col, idx }) => (
+    <div
+      className={`card-stat ${col} cursor-pointer ${animated.includes(idx) ? "card-animate-pulse" : ""} w-full sm:w-auto`}
+      onClick={() => click(idx)}
+    >
       <div className="flex justify-between">
         <div>
           <p className="card-stat-label">{lbl}</p>
           <p className="card-stat-count">{val}</p>
           {sub && <p className="text-xs text-gray-500">{sub}</p>}
         </div>
-        <div className={`card-icon ${col==="card-border-primary"?"card-icon-primary":"card-icon-accent"}`}>
-          <Icon className="w-6 h-6 text-white"/>
+        <div className={`card-icon ${col === "card-border-primary" ? "card-icon-primary" : "card-icon-accent"}`}>
+          <Icon className="w-6 h-6 text-white" />
         </div>
       </div>
     </div>
   );
 
   const exportCSV = (d) => {
-    let headers = ["Staff","EmpID","Date","In","Out","Tokens","Patients","Status","Shift"];
+    let headers = ["Staff", "EmpID", "Date", "In", "Out", "Tokens", "Patients", "Status", "Shift"];
     let csv = [
       headers.join(","),
-      ...d.map(r=>[
-        r.staffName,r.employeeId,r.loginDate,r.loginTime,r.logoutTime,
-        r.tokensGenerated,r.patientsServed,r.status,r.shift
+      ...d.map(r => [
+        r.staffName, r.employeeId, r.loginDate, r.loginTime, r.logoutTime,
+        r.tokensGenerated, r.patientsServed, r.status, r.shift
       ].join(","))
     ].join("\n");
-    let blob = new Blob([csv],{type:"text/csv"});
+    let blob = new Blob([csv], { type: "text/csv" });
     let url = URL.createObjectURL(blob);
     let a = document.createElement("a");
     a.href = url;
@@ -703,51 +709,44 @@ export default function FrontDeskLoginReport(){
     URL.revokeObjectURL(url);
   };
 
-  // Helper to get weekday name for a given day number in the selected month/year
-  function getWeekday(monthStr, dayNum) {
-    // monthStr: "January 2025"
+  const getWeekday = (monthStr, dayNum) => {
     const [monthName, year] = monthStr.split(" ");
-    const monthIndex = ["January","February","March","April","May","June","July","August","September","October","November","December"].indexOf(monthName);
+    const monthIndex = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].indexOf(monthName);
     const date = new Date(Number(year), monthIndex, dayNum);
     return date.toLocaleDateString("en-US", { weekday: "long" });
-  }
+  };
 
-  // Get available months from monthlyData
-  // Get available months for selected employee
   const availableMonths = selectedEmployee ? Object.keys(monthlyData[selectedEmployee.id].months) : [];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen animate-fadeIn">
-      
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen animate-fadeIn">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="h2-heading flex gap-3 items-center">
-            <UserClock className="text-[var(--primary-color)] w-8 h-8"/>
+          <h1 className="h4-heading flex gap-3 items-center text-lg sm:text-l">
+            <UserClock className="text-[var(--primary-color)] w-6 h-6 sm:w-8 sm:h-8" />
             <span className="shimmer-text">Front Desk Login Report</span>
           </h1>
-          <p className="paragraph">Monitor staff logins & performance (Click on staff name for detailed view)</p>
+          <p className="paragraph text-sm sm:text-base">Monitor staff logins & performance (Click on staff name for detailed view)</p>
         </div>
-
-        {/* Standalone Export Button */}
         <button
           onClick={() => exportCSV(sampleLogins)}
-          className="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg shadow hover:opacity-90 transition"
+          className="px-3 py-2 sm:px-4 sm:py-2 bg-[var(--primary-color)] text-white rounded-lg shadow hover:opacity-90 transition w-full sm:w-auto"
         >
           Export CSV
         </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Stat icon={Users} lbl="Active Staff" val={stats.active} sub={`${stats.uniq} total`} col="card-border-primary" idx={0}/>
-        <Stat icon={Clock} lbl="Login Sessions" val={stats.total} sub={`Avg ${stats.avgH}h`} col="card-border-accent" idx={1}/>
-        <Stat icon={Ticket} lbl="Tokens" val={stats.tokens} sub={`Avg ${stats.avgT}/staff`} col="card-border-primary" idx={2}/>
-        <Stat icon={TrendingUp} lbl="Patients Served" val={stats.pats} sub={`${stats.eff}% efficiency`} col="card-border-accent" idx={3}/>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Stat icon={Users} lbl="Active Staff" val={stats.active} sub={`${stats.uniq} total`} col="card-border-primary" idx={0} />
+        <Stat icon={Clock} lbl="Login Sessions" val={stats.total} sub={`Avg ${stats.avgH}h`} col="card-border-accent" idx={1} />
+        <Stat icon={Ticket} lbl="Tokens" val={stats.tokens} sub={`Avg ${stats.avgT}/staff`} col="card-border-primary" idx={2} />
+        <Stat icon={TrendingUp} lbl="Patients Served" val={stats.pats} sub={`${stats.eff}% efficiency`} col="card-border-accent" idx={3} />
       </div>
 
       {/* Dynamic Table */}
-      <div className="rounded-lg animate-slideUp">
+      <div className="rounded-lg animate-slideUp overflow-x-auto">
         <DynamicTable
           title="Staff Login Records"
           columns={cols}
@@ -760,205 +759,203 @@ export default function FrontDeskLoginReport(){
 
       {/* Employee Details Modal */}
       {showModal && selectedEmployee && (
-        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 modal-fadeIn">
-          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto modal-slideUp">
+        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 modal-fadeIn">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl mx-auto max-h-[90vh] overflow-y-auto modal-slideUp">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-[var(--primary-color)] text-white p-6 rounded-t-lg flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[var(--accent-color)] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  {selectedEmployee.staffName.split(' ').map(n=>n[0]).join('')}
+            <div className="sticky top-0 bg-[var(--primary-color)] text-white p-4 sm:p-6 rounded-t-lg flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[var(--accent-color)] rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg">
+                  {selectedEmployee.staffName.split(' ').map(n => n[0]).join('')}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">{selectedEmployee.staffName}</h2>
-                  <p className="text-gray-200">{selectedEmployee.employeeId} • {selectedEmployee.position}</p>
+                  <h2 className="text-lg sm:text-2xl font-bold">{selectedEmployee.staffName}</h2>
+                  <p className="text-gray-200 text-sm sm:text-base">{selectedEmployee.employeeId} • {selectedEmployee.position}</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={closeModal}
-                className="text-white hover:text-gray-300 transition-colors"
+                className="text-white hover:text-gray-300 transition-colors p-1"
               >
-                <X className="w-6 h-6"/>
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
 
-            <div className="p-6 space-y-8">
+            <div className="p-4 sm:p-6 space-y-6">
               {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="detail-item primary">
-                  <div className="detail-label">Department</div>
-                  <div className="detail-value flex items-center gap-2">
-                    <Building className="w-4 h-4"/>
+                  <div className="detail-label text-sm sm:text-base">Department</div>
+                  <div className="detail-value flex items-center gap-2 text-sm sm:text-base">
+                    <Building className="w-4 h-4" />
                     {selectedEmployee.department}
                   </div>
                 </div>
                 <div className="detail-item accent">
-                  <div className="detail-label">Position</div>
-                  <div className="detail-value flex items-center gap-2">
-                    <Award className="w-4 h-4"/>
+                  <div className="detail-label text-sm sm:text-base">Position</div>
+                  <div className="detail-value flex items-center gap-2 text-sm sm:text-base">
+                    <Award className="w-4 h-4" />
                     {selectedEmployee.position}
                   </div>
                 </div>
                 <div className="detail-item primary">
-                  <div className="detail-label">Location</div>
-                  <div className="detail-value flex items-center gap-2">
-                    <MapPin className="w-4 h-4"/>
+                  <div className="detail-label text-sm sm:text-base">Location</div>
+                  <div className="detail-value flex items-center gap-2 text-sm sm:text-base">
+                    <MapPin className="w-4 h-4" />
                     {selectedEmployee.location}
                   </div>
                 </div>
                 <div className="detail-item accent">
-                  <div className="detail-label">Phone</div>
-                  <div className="detail-value flex items-center gap-2">
-                    <Phone className="w-4 h-4"/>
+                  <div className="detail-label text-sm sm:text-base">Phone</div>
+                  <div className="detail-value flex items-center gap-2 text-sm sm:text-base">
+                    <Phone className="w-4 h-4" />
                     {selectedEmployee.phone}
                   </div>
                 </div>
                 <div className="detail-item primary">
-                  <div className="detail-label">Email</div>
-                  <div className="detail-value flex items-center gap-2">
-                    <Mail className="w-4 h-4"/>
+                  <div className="detail-label text-sm sm:text-base">Email</div>
+                  <div className="detail-value flex items-center gap-2 text-sm sm:text-base">
+                    <Mail className="w-4 h-4" />
                     {selectedEmployee.email}
                   </div>
                 </div>
                 <div className="detail-item accent">
-                  <div className="detail-label">Rating</div>
-                  <div className="detail-value flex items-center gap-2">
-                    <Star className="w-4 h-4"/>
+                  <div className="detail-label text-sm sm:text-base">Rating</div>
+                  <div className="detail-value flex items-center gap-2 text-sm sm:text-base">
+                    <Star className="w-4 h-4" />
                     {selectedEmployee.rating}/5.0
                   </div>
                 </div>
               </div>
 
               {/* Today's Performance */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-[var(--primary-color)] mb-4 flex items-center gap-2">
-                  <Activity className="w-5 h-5"/>
+              <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold text-[var(--primary-color)] mb-3 sm:mb-4 flex items-center gap-2">
+                  <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
                   Today's Performance ({selectedEmployee.loginDate})
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white p-4 rounded-lg border-l-4 border-green-500">
-                    <div className="text-sm text-gray-600">Login Time</div>
-                    <div className="text-lg font-semibold text-green-600">{selectedEmployee.loginTime}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-green-500">
+                    <div className="text-xs sm:text-sm text-gray-600">Login Time</div>
+                    <div className="text-base sm:text-lg font-semibold text-green-600">{selectedEmployee.loginTime}</div>
                   </div>
-                  <div className="bg-white p-4 rounded-lg border-l-4 border-red-500">
-                    <div className="text-sm text-gray-600">Logout Time</div>
-                    <div className="text-lg font-semibold text-red-600">{selectedEmployee.logoutTime}</div>
+                  <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-red-500">
+                    <div className="text-xs sm:text-sm text-gray-600">Logout Time</div>
+                    <div className="text-base sm:text-lg font-semibold text-red-600">{selectedEmployee.logoutTime}</div>
                   </div>
-                  <div className="bg-white p-4 rounded-lg border-l-4 border-blue-500">
-                    <div className="text-sm text-gray-600">Working Hours</div>
-                    <div className="text-lg font-semibold text-blue-600">{selectedEmployee.workingHours}</div>
+                  <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-blue-500">
+                    <div className="text-xs sm:text-sm text-gray-600">Working Hours</div>
+                    <div className="text-base sm:text-lg font-semibold text-blue-600">{selectedEmployee.workingHours}</div>
                   </div>
-                  <div className="bg-white p-4 rounded-lg border-l-4 border-[var(--accent-color)]">
-                    <div className="text-sm text-gray-600">Efficiency</div>
-                    <div className="text-lg font-semibold text-[var(--accent-color)]">{selectedEmployee.efficiency}%</div>
+                  <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-[var(--accent-color)]">
+                    <div className="text-xs sm:text-sm text-gray-600">Efficiency</div>
+                    <div className="text-base sm:text-lg font-semibold text-[var(--accent-color)]">{selectedEmployee.efficiency}%</div>
                   </div>
                 </div>
               </div>
 
               {/* Monthly Summary */}
               {monthlyData[selectedEmployee.id] && monthlyData[selectedEmployee.id].months[selectedMonth] && (
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-[var(--primary-color)] mb-4 flex items-center gap-2">
-                    <Calendar className="w-5 h-5"/>
+                <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                  <h3 className="text-lg sm:text-xl font-bold text-[var(--primary-color)] mb-3 sm:mb-4 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
                     Monthly Summary - {selectedMonth}
                   </h3>
+
                   {/* Monthly Stats Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-lg border-l-4 border-[var(--primary-color)]">
-                      <div className="text-sm text-gray-600">Attendance</div>
-                      <div className="text-lg font-semibold text-[var(--primary-color)]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-[var(--primary-color)]">
+                      <div className="text-xs sm:text-sm text-gray-600">Attendance</div>
+                      <div className="text-base sm:text-lg font-semibold text-[var(--primary-color)]">
                         {monthlyData[selectedEmployee.id].months[selectedMonth].presentDays}/{monthlyData[selectedEmployee.id].months[selectedMonth].totalDays} days
                       </div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border-l-4 border-[var(--accent-color)]">
-                      <div className="text-sm text-gray-600">Total Hours</div>
-                      <div className="text-lg font-semibold text-[var(--accent-color)]">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-[var(--accent-color)]">
+                      <div className="text-xs sm:text-sm text-gray-600">Total Hours</div>
+                      <div className="text-base sm:text-lg font-semibold text-[var(--accent-color)]">
                         {monthlyData[selectedEmployee.id].months[selectedMonth].totalHours}
                       </div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border-l-4 border-purple-500">
-                      <div className="text-sm text-gray-600">Total Tokens</div>
-                      <div className="text-lg font-semibold text-purple-600">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-purple-500">
+                      <div className="text-xs sm:text-sm text-gray-600">Total Tokens</div>
+                      <div className="text-base sm:text-lg font-semibold text-purple-600">
                         {monthlyData[selectedEmployee.id].months[selectedMonth].totalTokens}
                       </div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg border-l-4 border-orange-500">
-                      <div className="text-sm text-gray-600">Total Patients</div>
-                      <div className="text-lg font-semibold text-orange-600">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-orange-500">
+                      <div className="text-xs sm:text-sm text-gray-600">Total Patients</div>
+                      <div className="text-base sm:text-lg font-semibold text-orange-600">
                         {monthlyData[selectedEmployee.id].months[selectedMonth].totalPatients}
                       </div>
                     </div>
                   </div>
 
                   {/* Additional Monthly Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Avg Daily Hours</div>
-                      <div className="text-lg font-semibold text-[var(--primary-color)]">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg">
+                      <div className="text-xs sm:text-sm text-gray-600">Avg Daily Hours</div>
+                      <div className="text-base sm:text-lg font-semibold text-[var(--primary-color)]">
                         {monthlyData[selectedEmployee.id].months[selectedMonth].avgDailyHours}
                       </div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Overtime Hours</div>
-                      <div className="text-lg font-semibold text-orange-600">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg">
+                      <div className="text-xs sm:text-sm text-gray-600">Overtime Hours</div>
+                      <div className="text-base sm:text-lg font-semibold text-orange-600">
                         {monthlyData[selectedEmployee.id].months[selectedMonth].overtimeHours}
                       </div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Monthly Efficiency</div>
-                      <div className="text-lg font-semibold text-[var(--accent-color)]">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg">
+                      <div className="text-xs sm:text-sm text-gray-600">Monthly Efficiency</div>
+                      <div className="text-base sm:text-lg font-semibold text-[var(--accent-color)]">
                         {monthlyData[selectedEmployee.id].months[selectedMonth].efficiency}%
                       </div>
                     </div>
                   </div>
 
                   {/* Attendance Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Late Arrivals</div>
-                      <div className="text-lg font-semibold text-red-600">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg">
+                      <div className="text-xs sm:text-sm text-gray-600">Late Arrivals</div>
+                      <div className="text-base sm:text-lg font-semibold text-red-600">
                         {monthlyData[selectedEmployee.id].months[selectedMonth].lateArrivals} times
                       </div>
                     </div>
-                    <div className="bg-white p-4 rounded-lg">
-                      <div className="text-sm text-gray-600">Early Departures</div>
-                      <div className="text-lg font-semibold text-red-600">
+                    <div className="bg-white p-3 sm:p-4 rounded-lg">
+                      <div className="text-xs sm:text-sm text-gray-600">Early Departures</div>
+                      <div className="text-base sm:text-lg font-semibold text-red-600">
                         {monthlyData[selectedEmployee.id].months[selectedMonth].earlyDepartures} times
                       </div>
                     </div>
                   </div>
 
-                  {/* Weekly Breakdown */}
                   {/* Monthly Daily Status Breakdown */}
-                  <div className="bg-white rounded-lg p-4 mt-6">
-                    <h4 className="font-semibold text-[var(--primary-color)] mb-3 flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4"/>
+                  <div className="bg-white rounded-lg p-3 sm:p-4 mt-4">
+                    <h4 className="font-semibold text-[var(--primary-color)] mb-2 sm:mb-3 flex items-center gap-2">
+                      <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
                       Daily Calendar Breakdown
                     </h4>
-                    {/* Month Selector */}
-                    <div className="mb-4">
-                      <label className="mr-2 font-semibold">Select Month:</label>
+                    <div className="mb-3">
+                      <label className="mr-2 font-semibold text-sm sm:text-base">Select Month:</label>
                       <select
                         value={selectedMonth}
                         onChange={e => setSelectedMonth(e.target.value)}
-                        className="border rounded px-2 py-1"
+                        className="border rounded px-2 py-1 text-sm w-full sm:w-auto"
                       >
                         {availableMonths.map(m => (
                           <option key={m} value={m}>{m}</option>
                         ))}
                       </select>
                     </div>
-                    <div className="grid grid-cols-6 gap-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2">
                       {(() => {
                         if (!selectedEmployee) return null;
                         const empMonthData = monthlyData[selectedEmployee.id].months[selectedMonth];
                         if (!empMonthData) return null;
-                        // Pick first N days for late arrivals, early departures, and on leave for demo
                         const lateArrivals = empMonthData.lateArrivals || 0;
                         const earlyDepartures = empMonthData.earlyDepartures || 0;
                         const onLeave = empMonthData.onLeave || 0;
-                        const lateDays = Array.from({length: lateArrivals}, (_, i) => i); // 0-based idx
-                        const earlyDays = Array.from({length: earlyDepartures}, (_, i) => i + lateArrivals); // next N days
-                        const leaveDays = Array.from({length: onLeave}, (_, i) => i + lateArrivals + earlyDepartures); // next N days
+                        const lateDays = Array.from({ length: lateArrivals }, (_, i) => i);
+                        const earlyDays = Array.from({ length: earlyDepartures }, (_, i) => i + lateArrivals);
+                        const leaveDays = Array.from({ length: onLeave }, (_, i) => i + lateArrivals + earlyDepartures);
                         return empMonthData.dailyStatus.map((d, idx) => {
                           const weekday = getWeekday(selectedMonth, d.day);
                           let isLate = lateDays.includes(idx);
@@ -982,29 +979,33 @@ export default function FrontDeskLoginReport(){
                                 ? "border-yellow-500"
                                 : "border-red-400";
                           return (
-                            <div key={idx} className={`p-2 rounded text-center text-xs font-semibold flex flex-col items-center justify-center ${colorClass} border ${borderClass}`} style={{minHeight:'70px'}}>
-                              <div className="font-bold">{weekday}</div>
-                              <div>{d.day}</div>
+                            <div
+                              key={idx}
+                              className={`p-1 sm:p-2 rounded text-center text-xs font-semibold flex flex-col items-center justify-center ${colorClass} border ${borderClass}`}
+                              style={{ minHeight: '60px' }}
+                            >
+                              <div className="font-bold text-[10px] sm:text-xs">{weekday.slice(0, 3)}</div>
+                              <div className="text-xs sm:text-sm">{d.day}</div>
                               {hasTimes ? (
-                                <div className="mt-1">
-                                  <span className="inline-flex items-center gap-1 text-green-700"><Clock className="w-3 h-3"/>In: {d.loginTime}</span><br/>
-                                  <span className="inline-flex items-center gap-1 text-red-700"><Clock className="w-3 h-3"/>Out: {d.logoutTime}</span>
+                                <div className="mt-1 text-[10px] sm:text-xs">
+                                  <span className="inline-flex items-center gap-1 text-green-700"><Clock className="w-2 h-2 sm:w-3 sm:h-3" />In: {d.loginTime}</span><br />
+                                  <span className="inline-flex items-center gap-1 text-red-700"><Clock className="w-2 h-2 sm:w-3 sm:h-3" />Out: {d.logoutTime}</span>
                                 </div>
                               ) : isLate ? (
                                 <div className="mt-1">
-                                  <span className="px-2 py-1 rounded bg-red-300 text-white">Late Arrival</span>
+                                  <span className="px-1 py-0.5 sm:px-2 sm:py-1 rounded bg-red-300 text-white text-[10px] sm:text-xs">Late</span>
                                 </div>
                               ) : isEarly ? (
                                 <div className="mt-1">
-                                  <span className="px-2 py-1 rounded bg-red-500 text-white">Early Departure</span>
+                                  <span className="px-1 py-0.5 sm:px-2 sm:py-1 rounded bg-red-500 text-white text-[10px] sm:text-xs">Early</span>
                                 </div>
                               ) : isLeave ? (
                                 <div className="mt-1">
-                                  <span className="px-2 py-1 rounded bg-yellow-300 text-yellow-900">On Leave</span>
+                                  <span className="px-1 py-0.5 sm:px-2 sm:py-1 rounded bg-yellow-300 text-yellow-900 text-[10px] sm:text-xs">Leave</span>
                                 </div>
                               ) : (
                                 <div className="mt-1">
-                                  <span className="px-2 py-1 rounded bg-red-200 text-red-700">Not Available</span>
+                                  <span className="px-1 py-0.5 sm:px-2 sm:py-1 rounded bg-red-200 text-red-700 text-[10px] sm:text-xs">Absent</span>
                                 </div>
                               )}
                             </div>

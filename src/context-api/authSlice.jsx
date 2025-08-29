@@ -21,7 +21,6 @@ export const registerUser = createAsyncThunk(
     }
   }
 );
-
 // Login with Email & Password
 export const loginUser = createAsyncThunk(
   'auth/loginUser',

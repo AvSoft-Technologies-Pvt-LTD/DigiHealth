@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from "react";
 import { Camera, Eye, EyeOff } from "lucide-react";
 import axios from "axios";
@@ -9,7 +7,7 @@ import { useSelector } from 'react-redux';
 const tabOptions = ["Basic Information", "Professional Details", "Address", "Change Password"];
 
 const DoctorProfileSettings = () => {
-  const user = useSelector((state) => state.auth.user); // Get logged-in user from Redux
+  const user = useSelector((state) => state.auth.user);
   const [activeTab, setActiveTab] = useState("Basic Information");
   const [formData, setFormData] = useState({
     firstName: "",
@@ -50,12 +48,13 @@ const DoctorProfileSettings = () => {
     }));
   };
 
-  // Fetch user data from API using the logged-in user's email
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users?email=${encodeURIComponent(user?.email)}`);
+        const response = await axios.get(
+          `https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users?email=${encodeURIComponent(user?.email)}`
+        );
         const users = response.data;
         if (users.length === 0) {
           throw new Error("User not found");
@@ -142,7 +141,10 @@ const DoctorProfileSettings = () => {
         }
         payload.password = formData.newPassword;
       }
-      await axios.put(`https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users/${userId}`, payload);
+      await axios.put(
+        `https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users/${userId}`,
+        payload
+      );
       setIsEditMode(false);
     } catch (err) {
       console.error("Error updating user data:", err);
@@ -154,7 +156,7 @@ const DoctorProfileSettings = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl mx-auto p-6">
+      <div className="max-w-5xl mx-auto p-4">
         <div className="flex justify-center items-center h-40">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[var(--accent-color)]"></div>
         </div>
@@ -164,7 +166,7 @@ const DoctorProfileSettings = () => {
 
   if (error) {
     return (
-      <div className="max-w-5xl mx-auto p-6">
+      <div className="max-w-5xl mx-auto p-4">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
           <strong className="font-bold">Error!</strong>
           <span className="block sm:inline"> {error}</span>
@@ -174,19 +176,19 @@ const DoctorProfileSettings = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="h2-heading">
+    <div className="max-w-5xl mx-auto p-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold">
           Profile: {formData.firstName} {formData.lastName}
         </h2>
         {activeTab !== "Change Password" && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             {isEditMode ? (
               <>
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="btn btn-primary"
+                  className="btn btn-primary w-full sm:w-auto"
                   disabled={isLoading}
                 >
                   {isLoading ? "Saving..." : "Save"}
@@ -194,7 +196,7 @@ const DoctorProfileSettings = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditMode(false)}
-                  className="btn btn-secondary"
+                  className="btn btn-secondary w-full sm:w-auto"
                 >
                   Cancel
                 </button>
@@ -203,7 +205,7 @@ const DoctorProfileSettings = () => {
               <button
                 type="button"
                 onClick={() => setIsEditMode(true)}
-                className="btn btn-secondary"
+                className="btn btn-secondary w-full sm:w-auto"
               >
                 Edit
               </button>
@@ -212,19 +214,18 @@ const DoctorProfileSettings = () => {
         )}
       </div>
 
-      <div className="flex gap-6 mb-6 border-b border-gray-200">
+      <div className="flex overflow-x-auto pb-2 mb-6 border-b border-gray-200">
         {tabOptions.map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            className={`pb-3 px-2 text-sm font-semibold bg-transparent border-none outline-none border-b-4 transition-all duration-200
+            className={`whitespace-nowrap pb-3 px-2 text-sm font-semibold bg-transparent border-none outline-none border-b-4 transition-all duration-200
               ${
                 activeTab === tab
                   ? "border-[var(--accent-color)] text-[var(--accent-color)]"
                   : "border-transparent text-gray-500 hover:text-[var(--primary-color)] hover:border-[var(--accent-color)]"
-              }
-            `}
+              }`}
             style={{ background: "none" }}
           >
             {tab}
@@ -233,8 +234,8 @@ const DoctorProfileSettings = () => {
       </div>
 
       {activeTab === "Basic Information" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white rounded-xl p-6 shadow-lg animate-slideIn">
-          <div className="md:col-span-2 space-y-4">
+        <div className="grid grid-cols-1 gap-6 bg-white rounded-xl p-4 shadow-lg animate-slideIn">
+          <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { label: "First Name", name: "firstName" },
@@ -253,7 +254,7 @@ const DoctorProfileSettings = () => {
                 />
               ))}
             </div>
-            <div className="mt-2 flex gap-6 items-center">
+            <div className="mt-2 flex flex-wrap gap-4 items-center">
               <label className="block text-sm font-medium">Roles:</label>
               {["Admin", "User", "Doctor"].map((role) => (
                 <label key={role} className="flex items-center gap-2 text-sm">
@@ -275,7 +276,7 @@ const DoctorProfileSettings = () => {
                 value={formData.accountStatus}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
-                className="input-field"
+                className="input-field w-full"
               >
                 {["active", "inactive"].map((status) => (
                   <option key={status} value={status}>
@@ -284,19 +285,19 @@ const DoctorProfileSettings = () => {
                 ))}
               </select>
             </div>
-            <div className="mt-6 text-sm text-gray-600">
+            <div className="mt-4 text-sm text-gray-600">
               <strong>Storage:</strong> {formData.storageUsed}MB of 1900MB used
             </div>
           </div>
           <div className="flex flex-col items-center justify-center gap-4">
-            <div className="w-28 h-28 rounded-full overflow-hidden ring-2 ring-[var(--primary-color)]">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden ring-2 ring-[var(--primary-color)]">
               <img src={avatar || avtarImg} alt="Profile" className="w-full h-full object-cover" />
             </div>
             {isEditMode && (
               <>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="btn btn-primary text-sm px-4 py-2"
+                  className="btn btn-primary text-sm px-4 py-2 w-full sm:w-auto"
                 >
                   Upload New Photo
                 </button>
@@ -314,7 +315,7 @@ const DoctorProfileSettings = () => {
       )}
 
       {activeTab === "Professional Details" && (
-        <div className="bg-white rounded-xl p-6 shadow-lg space-y-4 animate-slideIn">
+        <div className="bg-white rounded-xl p-4 shadow-lg space-y-4 animate-slideIn">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { label: "Qualification", name: "qualification" },
@@ -336,7 +337,7 @@ const DoctorProfileSettings = () => {
       )}
 
       {activeTab === "Address" && (
-        <div className="bg-white rounded-xl p-6 shadow-lg space-y-4 animate-slideIn">
+        <div className="bg-white rounded-xl p-4 shadow-lg space-y-4 animate-slideIn">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { label: "Address", name: "address" },
@@ -358,7 +359,7 @@ const DoctorProfileSettings = () => {
       )}
 
       {activeTab === "Change Password" && (
-        <div className="bg-white rounded-xl p-6 shadow-lg space-y-4 max-w-xl animate-slideIn">
+        <div className="bg-white rounded-xl p-4 shadow-lg space-y-4 max-w-xl animate-slideIn">
           {[
             { label: "Current Password", name: "currentPassword", type: "password" },
             { label: "New Password", name: "newPassword", type: "password" },
@@ -378,7 +379,7 @@ const DoctorProfileSettings = () => {
             <button
               type="button"
               onClick={handleSave}
-              className="btn btn-primary"
+              className="btn btn-primary w-full sm:w-auto"
               disabled={isLoading}
             >
               {isLoading ? "Saving..." : "Save"}
@@ -386,7 +387,7 @@ const DoctorProfileSettings = () => {
             <button
               type="button"
               onClick={() => setIsEditMode(false)}
-              className="btn btn-secondary"
+              className="btn btn-secondary w-full sm:w-auto"
             >
               Cancel
             </button>
@@ -398,14 +399,14 @@ const DoctorProfileSettings = () => {
 };
 
 const Input = ({ label, name, value, onChange, disabled = false, type = "text" }) => (
-  <div className="relative floating-input" data-placeholder={label}>
+  <div className="relative floating-input w-full" data-placeholder={label}>
     <input
       type={type}
       name={name}
       value={value}
       onChange={onChange}
       disabled={disabled}
-      className={`input-field peer ${disabled ? "bg-gray-100" : "bg-white"}`}
+      className={`input-field peer w-full ${disabled ? "bg-gray-100" : "bg-white"}`}
       placeholder=" "
       autoComplete="off"
     />
@@ -413,13 +414,13 @@ const Input = ({ label, name, value, onChange, disabled = false, type = "text" }
 );
 
 const PasswordInput = ({ label, name, value, onChange, showPassword, togglePasswordVisibility }) => (
-  <div className="relative floating-input" data-placeholder={label}>
+  <div className="relative floating-input w-full" data-placeholder={label}>
     <input
       type={showPassword ? "text" : "password"}
       name={name}
       value={value}
       onChange={onChange}
-      className="input-field peer bg-white"
+      className="input-field peer w-full bg-white"
       placeholder=" "
       autoComplete="off"
     />

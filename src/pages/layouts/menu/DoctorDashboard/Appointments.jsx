@@ -40,7 +40,7 @@ const splitName = (fullName) => {
   };
 };
 
-const DoctorAppointments = () => {
+const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => {
   const user = useSelector((state) => state.auth.user);
   const [appointments, setAppointments] = useState([]);
   const [tab, setTab] = useState('pending');
@@ -283,7 +283,9 @@ const DoctorAppointments = () => {
     setSelectedPatient(patient);
     setIsModalOpen(true);
   };
-
+const displayTabs = !showOnlyPending;
+  const displaySearchBar = !showOnlyPending;
+  const displayFilters = !showOnlyPending;
   const getRowClassName = (row) => {
     if (row.status === 'Confirmed') {
       return 'bg-green-100 hover:bg-green-200';
@@ -372,17 +374,18 @@ const DoctorAppointments = () => {
   return (
     <div>
       <ToastContainer position="top-right" autoClose={3000} theme="colored" />
-      <div className='p-6'>
-        <h4 className="h4-heading mb-6">Appointments</h4>
-        <DynamicTable
-          columns={columns}
-          data={current}
-          filters={filters}
-          tabs={TABS}
-          activeTab={tab}
-          onTabChange={setTab}
-          rowClassName={getRowClassName}
-        />
+       <div className={isOverview ? "p-0" : "p-2 sm:p-4 md:p-6"}>
+      {!showOnlyPending && !isOverview && <h4 className=""></h4>}
+      <DynamicTable
+        columns={columns}
+        data={current}
+        filters={displayFilters ? filters : []}
+        tabs={displayTabs ? TABS : []}
+        activeTab={tab}
+        onTabChange={setTab}
+        showSearchBar={displaySearchBar}
+        rowClassName={getRowClassName}
+      />
         <div className="w-full flex justify-end mt-4">
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>

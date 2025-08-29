@@ -1,13 +1,15 @@
-//LabResultsForm.jsx
+
+
 import React, { useState, useEffect } from "react";
 import { FlaskRound as Flask, Printer, Trash2 } from "lucide-react";
 import axios from "axios";
-import { toast } from "react-toastify"; // ⬅️ Only toast used here
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const LAB_TESTS_API = "https://mocki.io/v1/dcb67685-f3bb-4037-a56b-ce0aa8a7385b";
+const LAB_TEST_POST_API = "https://689887d3ddf05523e55f1e6c.mockapi.io/labtestdr";
 
-const LabResultsForm = ({ data = {}, onSave, onPrint }) => {
+const LabResultsForm = ({ data = {}, onSave, onPrint, hospitalName, ptemail }) => {
   const [labTests, setLabTests] = useState([]);
   const [selectedTests, setSelectedTests] = useState(data.selectedTests || []);
   const [search, setSearch] = useState("");
@@ -37,12 +39,27 @@ const LabResultsForm = ({ data = {}, onSave, onPrint }) => {
     );
   }, [search, labTests]);
 
+  const postLabTests = async (tests) => {
+    try {
+      const response = await axios.post(LAB_TEST_POST_API, {
+        selectedTests: tests,
+        hospitalName: hospitalName || "Unknown Hospital",
+        ptemail: ptemail || "unknown@example.com",
+      });
+      toast.success("🔧 Lab tests saved to server!");
+      return response.data;
+    } catch (error) {
+      toast.error("❌ Failed to save lab tests");
+      console.error("Error saving lab tests:", error);
+    }
+  };
+
   const handleSelectTest = (t) => {
     setHighlightedTest(t);
     setSearch(t.name);
   };
 
-  const handleAddTest = () => {
+  const handleAddTest = async () => {
     if (
       highlightedTest &&
       !selectedTests.find((t) => t.code === highlightedTest.code)
@@ -50,16 +67,18 @@ const LabResultsForm = ({ data = {}, onSave, onPrint }) => {
       const updated = [...selectedTests, highlightedTest];
       setSelectedTests(updated);
       onSave?.("lab", { ...data, selectedTests: updated });
+      await postLabTests(updated);
       toast.success("✅ Lab test added successfully!");
     }
     setSearch("");
     setHighlightedTest(null);
   };
 
-  const removeTest = (code) => {
+  const removeTest = async (code) => {
     const removedTest = selectedTests.find((t) => t.code === code);
     const updated = selectedTests.filter((t) => t.code !== code);
     setSelectedTests(updated);
+    await postLabTests(updated);
     toast.error(`❌ ${removedTest?.name || "Test"} removed`);
   };
 
@@ -114,7 +133,6 @@ const LabResultsForm = ({ data = {}, onSave, onPrint }) => {
                 </button>
               )}
             </div>
-
             {search &&
               (results.length > 0 ? (
                 <div className="border border-gray-200 rounded-lg bg-white mt-2 max-h-32 overflow-auto shadow-lg">

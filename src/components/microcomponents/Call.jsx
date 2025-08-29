@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState, useEffect, useRef } from "react";
 import { FaPhone, FaVideo, FaUser, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 import { FiVideo } from "react-icons/fi";
@@ -8,32 +10,43 @@ import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import Videocall from "../../assets/videocalling.avif";
 
-// Helper: Save blob and context to localStorage
-const saveRecordingToLocalStorage = (blob, key, context) => {
+// Helper: Save blob, context, and metadata to localStorage
+const saveRecordingToLocalStorage = (blob, key, context, metadata) => {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       localStorage.setItem(key, reader.result);
       localStorage.setItem(`${key}_context`, context);
+      localStorage.setItem(`${key}_metadata`, JSON.stringify(metadata));
       resolve();
     };
     reader.readAsDataURL(blob);
   });
 };
 
-// Helper: Load blob and context from localStorage
+// Helper: Load blob, context, and metadata from localStorage
 const loadRecordingFromLocalStorage = (key) => {
   const dataUrl = localStorage.getItem(key);
   const context = localStorage.getItem(`${key}_context`);
-  if (!dataUrl) return { blob: null, context: null };
-  const byteString = atob(dataUrl.split(",")[1]);
-  const mimeString = dataUrl.split(",")[0].split(":")[1].split(";")[0];
-  const ab = new ArrayBuffer(byteString.length);
-  const ia = new Uint8Array(ab);
-  for (let i = 0; i < byteString.length; i++) {
-    ia[i] = byteString.charCodeAt(i);
+  const metadataStr = localStorage.getItem(`${key}_metadata`);
+  if (!dataUrl) return { blob: null, context: null, metadata: null };
+  try {
+    const byteString = atob(dataUrl.split(",")[1]);
+    const mimeString = dataUrl.split(",")[0].split(":")[1].split(";")[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return {
+      blob: new Blob([ab], { type: mimeString }),
+      context,
+      metadata: metadataStr ? JSON.parse(metadataStr) : null,
+    };
+  } catch (error) {
+    console.error("Failed to decode data URL from localStorage:", error);
+    return { blob: null, context: null, metadata: null };
   }
-  return { blob: new Blob([ab], { type: mimeString }), context };
 };
 
 // --- Modal Components ---
@@ -131,7 +144,7 @@ const VideoModal = ({ show, onClose, videoBlob, patientName }) =>
     : null;
 
 // --- TeleConsultFlow Component ---
-const TeleConsultFlow = ({ phone, patientName, context = "virtual" }) => {
+const TeleConsultFlow = ({ phone, patientName, context = "virtual", patientEmail, hospitalName }) => {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [callType, setCallType] = useState("");
@@ -144,16 +157,6 @@ const TeleConsultFlow = ({ phone, patientName, context = "virtual" }) => {
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [showRecordedVideo, setShowRecordedVideo] = useState(false);
   const chunks = useRef([]);
-
-  // Load recorded video from localStorage on mount
-  useEffect(() => {
-    const { blob, context: storedContext } = loadRecordingFromLocalStorage(
-      `consultationVideo_${patientName}`
-    );
-    if (blob && storedContext === context) {
-      setRecordedBlob(blob);
-    }
-  }, [patientName, context]);
 
   const reset = () => {
     setStep(1);
@@ -184,7 +187,14 @@ const TeleConsultFlow = ({ phone, patientName, context = "virtual" }) => {
       recorder.onstop = () => {
         const blob = new Blob(chunks.current, { type: "video/webm" });
         setRecordedBlob(blob);
-        saveRecordingToLocalStorage(blob, `consultationVideo_${patientName}`, context);
+        const metadata = {
+          patientEmail,
+          hospitalName,
+          timestamp: Date.now(),
+          type: context,
+        };
+        const key = `consultationVideo_${patientEmail}_${hospitalName}_${Date.now()}`;
+        saveRecordingToLocalStorage(blob, key, context, metadata);
         toast.success("Consultation recorded successfully!");
       };
       recorder.start();

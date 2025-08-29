@@ -61,6 +61,7 @@ const InitialAssessment = () => {
   const [templateFields, setTemplateFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   // Existing state
   const [selectedPracticeType, setSelectedPracticeType] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
@@ -71,7 +72,9 @@ const InitialAssessment = () => {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [selectedColor, setSelectedColor] = useState("#2563eb");
+
   const fileInputRef = useRef(null);
+
   const [patientInfo, setPatientInfo] = useState({
     patientId: "",
     name: "",
@@ -82,6 +85,7 @@ const InitialAssessment = () => {
     referredBy: "",
     consultingDoctor: "Dr. Sheetal Shelke, BHMS",
   });
+
   const [vitals, setVitals] = useState({
     temperature: "",
     pulse: "",
@@ -92,6 +96,7 @@ const InitialAssessment = () => {
     weight: "",
     bmi: "",
   });
+
   // Remove loading state for practice type/specialty switching
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -122,7 +127,6 @@ const InitialAssessment = () => {
     }
   }, [selectedSpecialty]);
 
-  // Remove setLoading from loadSpecializations and loadTemplateFields
   const loadPracticeTypes = async () => {
     try {
       setInitialLoading(true);
@@ -190,7 +194,6 @@ const InitialAssessment = () => {
     setFormData({});
   };
 
-  // Get current specialty info
   const getCurrentSpecialty = () => {
     const practiceType = practiceTypes.find(
       (pt) => pt.id.toString() === selectedPracticeType
@@ -198,7 +201,6 @@ const InitialAssessment = () => {
     const specialization = specializations.find(
       (sp) => sp.id.toString() === selectedSpecialty
     );
-
     return {
       title: specialization?.name || "Assessment",
       icon: iconMapping[specialization?.code] || iconMapping.default,
@@ -240,24 +242,19 @@ const InitialAssessment = () => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64String = reader.result.split(",")[1];
-
-      // Create a new image object with metadata
       const newImage = {
         id: Date.now(),
-        originalFile: reader.result, // Full data URL for display
+        originalFile: reader.result,
         base64: base64String,
         timestamp: new Date().toISOString(),
         specialty: selectedSpecialty,
         fileName: file.name,
         size: file.size,
-        apiLink: "", // Placeholder for API response
+        apiLink: "",
       };
-
-      // Send base64 to API (optional)
       try {
         const response = await fetch(
           "https://6899921cfed141b96b9fea9a.mockapi.io/template",
@@ -267,7 +264,6 @@ const InitialAssessment = () => {
             body: JSON.stringify({ image: base64String }),
           }
         );
-
         if (response.ok) {
           const result = await response.json();
           newImage.apiLink = result.image || result.link || "";
@@ -275,23 +271,12 @@ const InitialAssessment = () => {
       } catch (err) {
         console.log("API upload failed, storing locally");
       }
-
-      // Store image in state and localStorage
       setAnnotatedImages((prev) => [...prev, newImage]);
       const storedImages = JSON.parse(
         localStorage.getItem("medicalImages") || "[]"
       );
       storedImages.push(newImage);
       localStorage.setItem("medicalImages", JSON.stringify(storedImages));
-
-      // Navigate to annotation tool with the new image
-      navigate("/image-annotation", {
-        state: {
-          image: newImage,
-          patientInfo,
-          specialty: selectedSpecialty,
-        },
-      });
     };
     reader.readAsDataURL(file);
   };
@@ -501,8 +486,7 @@ const InitialAssessment = () => {
 
   const generatePrintTemplate = () => {
     const currentTemplate = prescriptionTemplates[selectedTemplate];
-    const currentLayout =
-      layoutStyles[currentTemplate.layout] || layoutStyles.traditional;
+    const currentLayout = layoutStyles[currentTemplate.layout] || layoutStyles.traditional;
 
     const printContent = `
       <!DOCTYPE html>
@@ -522,62 +506,97 @@ const InitialAssessment = () => {
             font-size: 14px;
           }
           .header {
-            background-color: ${selectedColor};
-            color: white;
-            padding: 30px;
-            margin-bottom: 30px;
-            text-align: center;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: ${selectedColor} !important;
+            color: white !important;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: ${currentLayout.header.textAlign};
+            border-radius: ${currentLayout.header.borderRadius};
+            ${currentLayout.header.borderLeft ? `border-left: ${currentLayout.header.borderLeft} !important;` : ""}
+            ${currentLayout.header.border ? `border: ${currentLayout.header.border} !important;` : ""}
+            ${currentLayout.header.borderBottom ? `border-bottom: ${currentLayout.header.borderBottom} !important;` : ""}
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
-          .hospital-name { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-          .doctor-name { font-size: 20px; margin-bottom: 5px; }
-          .hospital-address { font-size: 14px; opacity: 0.9; margin-bottom: 15px; }
-          .form-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+          .hospital-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+          }
+          .doctor-name {
+            font-size: 18px;
+            margin-bottom: 4px;
+          }
+          .hospital-address {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+          }
+          .form-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+          }
           .patient-info {
             background: #f8fafc;
-            border: 2px solid ${selectedColor};
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 25px;
+            border: 1px solid ${selectedColor} !important;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
           }
           .patient-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
           }
           .section {
-            margin-bottom: 25px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
           }
           .section-header {
-            background: ${selectedColor};
-            color: white;
-            padding: 15px 20px;
+            background: ${selectedColor} !important;
+            color: white !important;
+            padding: 10px 15px;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 14px;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
-          .section-content { padding: 20px; }
+          .section-content {
+            padding: 15px;
+          }
           .field-value {
-            border: 2px solid #e5e7eb;
-            padding: 12px 15px;
-            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 10px 12px;
+            border-radius: 6px;
             background: #fafafa;
-            min-height: 80px;
-            margin-bottom: 15px;
+            min-height: 60px;
+            margin-bottom: 10px;
             white-space: pre-wrap;
+          }
+          .footer {
+            border-top: ${currentLayout.footer.borderTop} !important;
+            padding-top: 20px;
+            text-align: ${currentLayout.footer.textAlign};
+            margin-top: 20px;
+          }
+          @media print {
+            .header, .section-header {
+              background-color: ${selectedColor} !important;
+              color: white !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
           }
         </style>
       </head>
       <body>
         <div class="header">
           <div class="hospital-name">AVSwasthya Hospital System</div>
-          <div class="doctor-name">${
-            patientInfo.consultingDoctor || "Dr. Sample Name"
-          }</div>
+          <div class="doctor-name">${patientInfo.consultingDoctor || "Dr. Sample Name"}</div>
           <div class="hospital-address">123 Medical Street, Healthcare City, HC 12345</div>
           <div class="form-title">${template.title}</div>
         </div>
@@ -590,35 +609,39 @@ const InitialAssessment = () => {
             <div><strong>Gender:</strong> ${patientInfo.gender || ""}</div>
             <div><strong>Contact:</strong> ${patientInfo.contact || ""}</div>
             <div><strong>Address:</strong> ${patientInfo.address || ""}</div>
-            <div><strong>Referred By:</strong> ${
-              patientInfo.referredBy || ""
-            }</div>
+            <div><strong>Referred By:</strong> ${patientInfo.referredBy || ""}</div>
           </div>
         </div>
+
         ${templateFields
           .map(
             (field) => `
-          <div class="section">
-            <div class="section-header">${field.label || field.name}</div>
-            <div class="section-content">
-              <div class="field-value">${formData[field.id] || ""}</div>
+            <div class="section">
+              <div class="section-header">${field.label || field.name}</div>
+              <div class="section-content">
+                <div class="field-value">${formData[field.id] || ""}</div>
+              </div>
             </div>
-          </div>
-        `
+          `
           )
           .join("")}
+
         ${
           handwrittenNotes
             ? `
-          <div class="section">
-            <div class="section-header">Additional Notes</div>
-            <div class="section-content">
-              <div class="field-value">${handwrittenNotes}</div>
+            <div class="section">
+              <div class="section-header">Additional Notes</div>
+              <div class="section-content">
+                <div class="field-value">${handwrittenNotes}</div>
+              </div>
             </div>
-          </div>
-        `
+          `
             : ""
         }
+
+        <div class="footer">
+          <p>Signature: ___________</p>
+        </div>
       </body>
       </html>
     `;
@@ -649,7 +672,6 @@ const InitialAssessment = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Use initialLoading for the very first load only
   if (initialLoading) {
     return (
       <div className="min-h-screen bg-accent flex items-center justify-center font-sans">
@@ -684,7 +706,6 @@ const InitialAssessment = () => {
   return (
     <div className="min-h-screen font-sans text-primary">
       <div className="container mx-auto px-4 py-8">
-        {/* Error Banner */}
         {error && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center">
             <AlertCircle className="w-5 h-5 text-yellow-600 mr-3 flex-shrink-0" />
@@ -696,21 +717,31 @@ const InitialAssessment = () => {
             </div>
           </div>
         )}
-        {/* Header */}
+
         <div
-          className="bg-white rounded-xl shadow-lg p-6 mb-8 border-l-4"
-          style={{ borderLeftColor: selectedColor }}
+          className="bg-white rounded-xl shadow-lg p-6 mb-8"
+          style={{
+            backgroundColor:"#01D48C",
+            color: "white",
+            textAlign: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.textAlign || "center",
+            borderRadius: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.borderRadius || "12px",
+            borderLeft: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.borderLeft || "none",
+            border: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.border || "none",
+            borderBottom: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.borderBottom || "none",
+          }}
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center mb-4 lg:mb-0">
               <div
                 className="p-3 rounded-lg mr-4"
-                style={{ backgroundColor: selectedColor }}
+
               >
                 <IconComponent className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="h3-heading">{template.title}</h1>
+                <h1 className="h3-heading" style={{ fontSize: 28, fontWeight: 700 }}>
+                  {template.title}
+                </h1>
                 <p className="paragraph">
                   {template.category} Department - Comprehensive medical
                   evaluation form
@@ -738,8 +769,8 @@ const InitialAssessment = () => {
             </div>
           </div>
         </div>
+
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Dynamic Practice Type & Specialty Selector */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
             <h4 className="h3-heading mb-4 flex items-center">
               <Settings
@@ -805,7 +836,7 @@ const InitialAssessment = () => {
               </div>
             )}
           </div>
-          {/* Image Upload Section */}
+
           {showImageUpload && (
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center mb-4">
@@ -865,20 +896,6 @@ const InitialAssessment = () => {
                             {specialtyTemplates[image.specialty]?.title ||
                               image.specialty}
                           </p>
-                          <button
-                            onClick={() =>
-                              navigate("/image-annotation", {
-                                state: {
-                                  image,
-                                  patientInfo,
-                                  specialty: image.specialty,
-                                },
-                              })
-                            }
-                            className="mt-2 text-xs text-blue-600 hover:underline"
-                          >
-                            Annotate
-                          </button>
                         </div>
                       </div>
                     ))}
@@ -888,7 +905,6 @@ const InitialAssessment = () => {
             </div>
           )}
 
-          {/* Patient Information */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center mb-6">
               <User className="w-6 h-6 mr-3" style={{ color: selectedColor }} />
@@ -1015,7 +1031,7 @@ const InitialAssessment = () => {
               </div>
             </div>
           </div>
-          {/* Dynamic Assessment Sections */}
+
           {templateFields.length > 0 ? (
             templateFields.map((field, index) => (
               <div key={field.id} className="bg-white rounded-xl shadow-lg p-6">
@@ -1041,7 +1057,7 @@ const InitialAssessment = () => {
               </p>
             </div>
           ) : null}
-          {/* Additional Notes */}
+
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center mb-4">
               <PenTool className="w-6 h-6 text-purple-500 mr-3" />
@@ -1056,7 +1072,7 @@ const InitialAssessment = () => {
               onChange={(e) => setHandwrittenNotes(e.target.value)}
             />
           </div>
-          {/* Action Buttons */}
+
           <div className="flex flex-wrap gap-4 justify-center">
             <button
               type="submit"
@@ -1084,7 +1100,7 @@ const InitialAssessment = () => {
             </button>
           </div>
         </form>
-        {/* Template Modal */}
+
         {showTemplateModal && (
           <TemplateModal
             isOpen={showTemplateModal}

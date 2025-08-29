@@ -1848,10 +1848,7 @@ export default function PatientList() {
   );
 
   return (
-    <div className="p-4">
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold">Patients</h2>
-      </div>
+    <div className="p-2 sm:p-4 md:p-2">
       <div className="flex items-center justify-between mb-4">
         <div className="flex gap-4">
           {tabs.map((tab) => (

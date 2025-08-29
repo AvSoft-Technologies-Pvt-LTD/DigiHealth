@@ -1,159 +1,817 @@
-import React, { useState } from "react";
+
+
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+import axios from "axios";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import DocsReader from "../../../../components/DocsReader";
-import { useSelector } from "react-redux";
-import { ArrowLeft, FileText, Pill, TestTube, CreditCard, Activity, Heart, Thermometer, CheckCircle, AlertTriangle, Printer, Stethoscope, Upload, FileCheck, X, Video, Receipt } from "lucide-react";
-const MedicalRecordDetails = () => {
-      const user = useSelector((state) => state.auth.user); 
+import {
+  ArrowLeft,
+  FileText,
+  Pill,
+  TestTube,
+  CreditCard,
+  Activity,
+  Heart,
+  Thermometer,
+  CheckCircle,
+  AlertTriangle,
+  Printer,
+  Stethoscope,
+  Video,
+  Receipt,
+} from "lucide-react";
+import { createPortal } from "react-dom";
 
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+          <h3 className="font-bold">Something went wrong.</h3>
+          <p>{this.state.error?.message}</p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="mt-2 px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200"
+          >
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Helper: Load blob, context, and metadata from localStorage
+const loadRecordingFromLocalStorage = (key) => {
+  const dataUrl = localStorage.getItem(key);
+  const metadataStr = localStorage.getItem(`${key}_metadata`);
+  if (!dataUrl) {
+    return { blob: null, context: null, metadata: null };
+  }
+  try {
+    if (!dataUrl.startsWith("data:")) {
+      console.error("Invalid data URL format in localStorage:", dataUrl);
+      return { blob: null, context: null, metadata: null };
+    }
+    const byteString = atob(dataUrl.split(",")[1]);
+    const mimeString = dataUrl.split(",")[0].split(":")[1].split(";")[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return {
+      blob: new Blob([ab], { type: mimeString }),
+      context: null,
+      metadata: metadataStr ? JSON.parse(metadataStr) : null,
+    };
+  } catch (error) {
+    console.error("Failed to decode data URL from localStorage:", error);
+    return { blob: null, context: null, metadata: null };
+  }
+};
+
+const VideoPlaybackModal = ({ show, onClose, videoBlob, metadata }) =>
+  show
+    ? createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="relative bg-white p-6 rounded-xl w-[90%] max-w-4xl max-h-[90vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold">Consultation Recording</h3>
+              <p className="text-sm text-gray-600">
+                Recorded on: {metadata?.timestamp ? new Date(metadata.timestamp).toLocaleString() : "N/A"}
+              </p>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="bg-black rounded-lg overflow-hidden mb-4">
+              {!videoBlob ? (
+                <div className="w-full h-96 flex items-center justify-center text-white">
+                  <p>No video recording available.</p>
+                </div>
+              ) : (
+                <video
+                  controls
+                  className="w-full h-96 object-contain"
+                  src={URL.createObjectURL(videoBlob)}
+                  onError={(e) => {
+                    console.error("Video playback error:", e);
+                    e.target.error = null;
+                    e.target.src = "";
+                  }}
+                >
+                  <p className="text-center text-white p-8">Unable to load video recording.</p>
+                </video>
+              )}
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )
+    : null;
+
+const PatientMedicalRecordDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const user = useSelector((state) => state.auth.user);
   const selectedRecord = location.state?.selectedRecord;
-  const fromHealthCard = location.state?.fromHealthCard;
-  const [state, setState] = useState({ detailsActiveTab: "medical-records", billingActiveTab: "pharmacy" });
-  const [uploadedFiles, setUploadedFiles] = useState({ knownCaseFiles: [], vitalsFiles: [], dischargeSummaryFiles: [], prescriptionFiles: [], labTestFiles: [], pharmacyBillingFiles: [], labBillingFiles: [], hospitalBillingFiles: [], videoFiles: [] });
+  const patientName = location.state?.patientName || selectedRecord?.patientName || selectedRecord?.name || "";
+  const email = location.state?.email || selectedRecord?.email || "";
+  const phone = location.state?.phone || selectedRecord?.phone || "";
+  const gender = location.state?.gender || selectedRecord?.gender || selectedRecord?.sex || "";
+  const dob = location.state?.dob || selectedRecord?.dob || "";
+  const diagnosis = location.state?.diagnosis || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "";
+  const firstName = location.state?.firstName || "";
+  const lastName = location.state?.lastName || "";
+  const patientDetails = location.state?.patientDetails || null;
+  const opdPatientData = location.state?.opdPatientData || {};
+  const displayPatientName = opdPatientData?.name || patientName || "Guest Patient";
+  const displayEmail = opdPatientData?.email || email || selectedRecord?.ptemail || "";
+  const displayPhone = opdPatientData?.phone || phone || "";
+  const displayGender = opdPatientData?.gender || gender || "";
+  const displayDob = opdPatientData?.dob || dob || "";
+  const displayDiagnosis = opdPatientData?.diagnosis || diagnosis || "";
+  const displayAge = opdPatientData?.age || "";
+  const hospitalName = selectedRecord?.hospitalname || selectedRecord?.hospitalName || "AV Hospital";
+  const ptemail = selectedRecord?.ptemail || displayEmail;
+
+  const [state, setState] = useState({
+    detailsActiveTab: "medical-records",
+    billingActiveTab: "pharmacy",
+  });
+  const [clinicalNotes, setClinicalNotes] = useState(null);
+  const [prescriptionData, setPrescriptionData] = useState([]);
+  const [labTestsData, setLabTestsData] = useState([]);
+  const [vitalsData, setVitalsData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [videoRecordings, setVideoRecordings] = useState([]);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [selectedVideoBlob, setSelectedVideoBlob] = useState(null);
+  const [selectedVideoMetadata, setSelectedVideoMetadata] = useState(null);
+
   const mockData = {
-    medicalDetails: { chiefComplaint: "High fever with chills, body ache, and headache for 3 days", pastHistory: "No significant past medical or surgical history. No known allergies.", diagnosis: "Dengue Fever (Confirmed by NS1 Antigen and IgM positive)", treatmentGiven: "IV fluids, Paracetamol for fever, complete bed rest, platelet monitoring", doctorsNotes: "Patient responded well to treatment. Platelet count stabilized.", initialAssessment: "Patient appears weak, febrile, and dehydrated.", systematicExamination: "Mild hepatomegaly, no signs of rash or bleeding.", investigations: "CBC, Dengue NS1 Antigen, Dengue IgM/IgG, Platelet Count.", treatmentAdvice: "Maintain hydration, avoid NSAIDs, and monitor platelet count daily.", dischargeSummary: "Patient admitted with dengue fever, treated with supportive care. Patient is stable and ready for discharge." },
-    prescriptionsData: [{ id: 1, date: "02/07/2025", doctorName: "Dr. Rajesh Kumar", medicines: "Paracetamol 500mg - 1 tablet TID for 5 days", instructions: "Take after meals. Maintain adequate fluid intake." }, { id: 2, date: "03/07/2025", doctorName: "Dr. Rajesh Kumar", medicines: "Doxycycline 100mg - 1 capsule BID for 7 days", instructions: "Take with plenty of water. Avoid dairy products." }],
-    labTestsData: [{ id: 1, date: "01/07/2025", testName: "Complete Blood Count (CBC)", result: "WBC: 12,000, RBC: 4.2, Platelets: 85,000", normalRange: "WBC: 4,000-11,000, RBC: 4.5-5.5, Platelets: 150,000-450,000", status: "Abnormal" }, { id: 2, date: "01/07/2025", testName: "Dengue NS1 Antigen", result: "Positive", normalRange: "Negative", status: "Abnormal" }],
-    billingData: { pharmacy: [{ id: 1, medicineName: "Paracetamol 500mg", quantity: 15, unitPrice: 2.5, totalPrice: 37.5, date: "02/07/2025" }], labs: [{ id: 1, testName: "Complete Blood Count (CBC)", cost: 350.0, date: "01/07/2025", paymentStatus: "Paid" }], hospital: [{ id: 1, billType: "Room Charges (5 days)", amount: 2500.0, paymentMode: "Insurance", status: "Paid", billDate: "06/07/2025" }] },
-    videoConsultationData: [{ id: 1, date: "05/07/2025", time: "10:30 AM", duration: "45 minutes", doctorName: "Dr. Rajesh Kumar", consultationType: "Follow-up", recordingAvailable: true, notes: "Patient discussed symptoms and treatment progress. Advised continued medication." }, { id: 2, date: "03/07/2025", time: "02:15 PM", duration: "30 minutes", doctorName: "Dr. Priya Sharma", consultationType: "Initial Consultation", recordingAvailable: false, notes: "Initial assessment completed. Prescribed medication and lifestyle changes." }],
+    medicalDetails: {
+      chiefComplaint: "High fever with chills, body ache, and headache for 3 days",
+      pastHistory: "No significant past medical or surgical history. No known allergies.",
+      diagnosis: "Dengue Fever (Confirmed by NS1 Antigen and IgM positive)",
+      treatmentGiven: "IV fluids, Paracetamol for fever, complete bed rest, platelet monitoring",
+      doctorsNotes: "Patient responded well to treatment. Platelet count stabilized.",
+      initialAssessment: "Patient appears weak, febrile, and dehydrated.",
+      systematicExamination: "Mild hepatomegaly, no signs of rash or bleeding.",
+      investigations: "CBC, Dengue NS1 Antigen, Dengue IgM/IgG, Platelet Count.",
+      treatmentAdvice: "Maintain hydration, avoid NSAIDs, and monitor platelet count daily.",
+      dischargeSummary: "Patient admitted with dengue fever, treated with supportive care. Patient is stable and ready for discharge.",
+    },
+    prescriptionsData: [],
+    billingData: {
+      pharmacy: [
+        {
+          id: 1,
+          medicineName: "Paracetamol 500mg",
+          quantity: 15,
+          unitPrice: 2.5,
+          totalPrice: 37.5,
+          date: "02/07/2025",
+        },
+      ],
+      labs: [
+        {
+          id: 1,
+          testName: "Complete Blood Count (CBC)",
+          cost: 350.0,
+          date: "01/07/2025",
+          paymentStatus: "Paid",
+        },
+      ],
+      hospital: [
+        {
+          id: 1,
+          billType: "Room Charges (5 days)",
+          amount: 2500.0,
+          paymentMode: "Insurance",
+          status: "Paid",
+          billDate: "06/07/2025",
+        },
+      ],
+    },
+    vitalsData: {
+      bloodPressure: "120/80 mmHg",
+      heartRate: "80 bpm",
+      temperature: "98.6°F",
+      spO2: "98%",
+      respiratoryRate: "16 bpm",
+      height: "170 cm",
+      weight: "65 kg",
+    },
+    videoConsultationData: [],
   };
-  const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
-  const getInitials = (name) => name ? name.split(" ").map((n) => n[0]).join("").toUpperCase() : "NA";
-  const handleSecondOpinion = () => { const recordToPass = { ...selectedRecord, medicalDetails: mockData.medicalDetails, prescriptionsData: mockData.prescriptionsData, labTestsData: mockData.labTestsData }; navigate("/patientdashboard/second-opinion", { state: { selectedRecord: recordToPass } }); };
-  const handleBack = () => { if (fromHealthCard) { navigate("/medical-records"); } else { navigate("/patientdashboard/medical-records"); } };
-  const printLabTest = (labTest) => { const printContents = `<div><h3>Lab Test Report</h3><p><strong>Date:</strong> ${labTest.date}</p><p><strong>Test Name:</strong> ${labTest.testName}</p><p><strong>Result:</strong> ${labTest.result}</p><p><strong>Normal Range:</strong> ${labTest.normalRange}</p><p><strong>Status:</strong> ${labTest.status}</p></div>`; const WinPrint = window.open("", "", "width=900,height=650"); WinPrint.document.write(`<html><head><title>Lab Test Print</title></head><body>${printContents}</body></html>`); WinPrint.document.close(); WinPrint.print(); WinPrint.close(); };
-  const handleFileUpload = (event, section) => { const files = Array.from(event.target.files); const validFiles = files.filter((file) => { const validTypes = ["image/jpeg", "image/png", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"]; return validTypes.includes(file.type); }); if (validFiles.length !== files.length) { alert("Some files were not uploaded. Only .jpg, .png, .pdf, .docx, and .txt files are allowed."); } setUploadedFiles((prev) => ({ ...prev, [section]: [...prev[section], ...validFiles] })); };
-  const handleRemoveFile = (section, fileIndex) => { setUploadedFiles((prev) => ({ ...prev, [section]: prev[section].filter((_, index) => index !== fileIndex) })); };
-  const renderUploadSection = (sectionKey, title) => { if (!selectedRecord?.isNewlyAdded) return null; const files = uploadedFiles[sectionKey] || []; return (<div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-4 mb-4"><h4 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">{title}</h4><div className="border-2 border-dashed border-blue-300 rounded-lg p-2 sm:p-4 text-center"><DocsReader /></div>{files.length > 0 && (<div className="mt-2 space-y-1">{files.map((file, index) => (<div key={index} className="flex items-center justify-between bg-white rounded-lg border border-blue-200 p-1 sm:p-2 text-xs sm:text-sm"><span className="text-sm font-medium text-blue-800 truncate">{file.name}</span><button onClick={() => handleRemoveFile(sectionKey, index)} className="text-red-600 hover:text-red-800" title="Remove"><X size={14} /></button></div>))}</div>)}</div>); };
-  const renderTabContent = () => { if (selectedRecord?.isNewlyAdded) { switch (state.detailsActiveTab) { case "medical-records": return (<div>{renderUploadSection("vitalsFiles", "Upload Vital Signs Records")}{renderUploadSection("knownCaseFiles", "Upload Medical Information")}{selectedRecord.type === "IPD" && renderUploadSection("dischargeSummaryFiles", "Upload Discharge Summary")}</div>); case "prescriptions": return renderUploadSection("prescriptionFiles", "Upload Prescription"); case "lab-tests": return renderUploadSection("labTestFiles", "Upload Lab Test Report"); case "billing": const uploadInfo = getBillingUploadSection(); return renderUploadSection(uploadInfo.key, uploadInfo.title); case "video": return renderUploadSection("videoFiles", "Upload Video Consultation Records"); default: return null; } } const tabContentMap = { "medical-records": (<div className="space-y-4"><div className="flex justify-between items-center mb-4"><div className="flex items-center gap-2"><FileText size={18} className="text-[var(--primary-color)]" /><h3 className="text-lg sm:text-xl font-bold">Medical Information</h3></div><button className="view-btn text-xs sm:text-sm">View Original</button></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{[{ label: "Chief Complaint", value: mockData.medicalDetails.chiefComplaint }, { label: "Past History", value: mockData.medicalDetails.pastHistory }, { label: "Initial Assessment", value: mockData.medicalDetails.initialAssessment }, { label: "Systematic/Local Examination", value: mockData.medicalDetails.systematicExamination }, { label: "Investigations", value: mockData.medicalDetails.investigations }, { label: "Treatment / Advice", value: mockData.medicalDetails.treatmentAdvice }, { label: "Treatment Given", value: mockData.medicalDetails.treatmentGiven }, { label: "Final Diagnosis", value: mockData.medicalDetails.diagnosis }, { label: "Doctor's Notes", value: mockData.medicalDetails.doctorsNotes }].map((item, index) => (<div key={index} className="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 hover:shadow-md transition-shadow text-xs sm:text-sm"><div className="font-bold text-gray-600 mb-1">{item.label}</div><div className="text-gray-800">{item.value}</div></div>))}</div>{selectedRecord?.type === "IPD" && (<div className="mt-4"><div className="flex items-center gap-2 mb-4"><FileCheck size={18} className="text-green-600" /><h3 className="text-lg sm:text-xl font-bold">Discharge Summary</h3></div><div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 text-xs sm:text-sm"><div className="font-bold text-gray-600 mb-1">Summary</div><div className="text-gray-800">{mockData.medicalDetails.dischargeSummary}</div></div></div>)}</div>),
-    prescriptions: (<div className="space-y-4"><div className="flex items-center gap-2 mb-4"><Pill size={18} className="text-purple-600" /><h4 className="text-lg sm:text-xl font-bold">Prescribed Medications</h4></div><DynamicTable columns={[{ header: "Date", accessor: "date" }, { header: "Doctor Name", accessor: "doctorName" }, { header: "Medicines", accessor: "medicines" }, { header: "Instructions", accessor: "instructions" }]} data={mockData.prescriptionsData} /></div>),
-    "lab-tests": (<div className="space-y-4"><div className="flex items-center gap-2 mb-4"><TestTube size={18} className="text-orange-600" /><h4 className="text-lg sm:text-xl font-bold">Test Results History</h4></div><DynamicTable columns={[{ header: "Date", accessor: "date" }, { header: "Test Name", accessor: "testName" }, { header: "Result", accessor: "result" }, { header: "Normal Range", accessor: "normalRange" }, { header: "Status", accessor: "status", cell: (row) => (<span className={`text-xs sm:text-sm font-semibold px-2 py-1 rounded-full ${row.status === "Normal" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>{row.status === "Normal" ? <CheckCircle size={12} className="inline mr-1" /> : <AlertTriangle size={12} className="inline mr-1" />}{row.status}</span>) }, { header: "Print", accessor: "print", cell: (row) => (<button className="edit-btn flex items-center gap-1 text-xs sm:text-sm" onClick={() => printLabTest(row)}><Printer size={14} /> Print</button>) }]} data={mockData.labTestsData} /></div>),
-    billing: (<div className="space-y-4"><div className="flex items-center gap-2 mb-4"><Receipt size={18} className="text-orange-600" /><h4 className="text-lg sm:text-xl font-bold">Billing History</h4></div><DynamicTable columns={( () => { const columnMaps = { pharmacy: [{ header: "Medicine Name", accessor: "medicineName" }, { header: "Quantity", accessor: "quantity" }, { header: "Unit Price (₹)", accessor: "unitPrice" }, { header: "Total Price (₹)", accessor: "totalPrice" }, { header: "Date", accessor: "date" }], labs: [{ header: "Test Name", accessor: "testName" }, { header: "Cost (₹)", accessor: "cost" }, { header: "Date", accessor: "date" }, { header: "Payment Status", accessor: "paymentStatus", cell: (row) => (<span className={`text-xs sm:text-sm font-semibold px-2 py-1 rounded-full ${row.paymentStatus === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>{row.paymentStatus}</span>) }], hospital: [{ header: "Bill Type", accessor: "billType" }, { header: "Amount (₹)", accessor: "amount" }, { header: "Payment Mode", accessor: "paymentMode" }, { header: "Status", accessor: "status", cell: (row) => (<span className={`text-xs sm:text-sm font-semibold px-2 py-1 rounded-full ${row.status === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>{row.status}</span>) }, { header: "Bill Date", accessor: "billDate" }] }; return columnMaps[state.billingActiveTab]; })()} data={mockData.billingData[state.billingActiveTab]} tabs={[ { value: "pharmacy", label: "Pharmacy" }, { value: "labs", label: "Labs" }, { value: "hospital", label: "Hospital Bills" } ]} activeTab={state.billingActiveTab} onTabChange={(tab) => updateState({ billingActiveTab: tab })} filters={[ { key: "paymentStatus", label: "Payment Status", options: [ { value: "Paid", label: "Paid" }, { value: "Unpaid", label: "Unpaid" } ] } ]} /></div>),
-    video: (<div className="space-y-4"><div className="flex items-center gap-2 mb-4"><Video size={18} className="text-indigo-600" /><h4 className="text-lg sm:text-xl font-bold">Video Consultation History</h4></div><DynamicTable columns={[{ header: "Date", accessor: "date" }, { header: "Time", accessor: "time" }, { header: "Duration", accessor: "duration" }, { header: "Doctor Name", accessor: "doctorName" }, { header: "Consultation Type", accessor: "consultationType" }, { header: "Recording", accessor: "recordingAvailable", cell: (row) => (<span className={`text-xs sm:text-sm font-semibold px-2 py-1 rounded-full ${row.recordingAvailable ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}`}>{row.recordingAvailable ? "Available" : "Not Available"}</span>) }, { header: "Notes", accessor: "notes" }, { header: "Actions", accessor: "actions", cell: (row) => (<div className="flex gap-1">{row.recordingAvailable && (<button className="edit-btn flex items-center gap-1 text-xs sm:text-sm"><Video size={14} /> View Recording</button>)}</div>) }]} data={mockData.videoConsultationData} /></div>),
+
+  const calculateAge = (dob, appointmentDate) => {
+    if (!dob || !appointmentDate) return "N/A";
+    const dobDate = new Date(dob);
+    const appointmentDateObj = new Date(appointmentDate);
+    let age = appointmentDateObj.getFullYear() - dobDate.getFullYear();
+    const monthDiff = appointmentDateObj.getMonth() - dobDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && appointmentDateObj.getDate() < dobDate.getDate())) {
+      age--;
+    }
+    return `${age} years`;
   };
-  return tabContentMap[state.detailsActiveTab] || null; };
-  const getBillingUploadSection = () => { switch (state.billingActiveTab) { case "pharmacy": return { key: "pharmacyBillingFiles", title: "Upload Pharmacy Bills" }; case "labs": return { key: "labBillingFiles", title: "Upload Lab Bills" }; case "hospital": return { key: "hospitalBillingFiles", title: "Upload Hospital Bills" }; default: return { key: "pharmacyBillingFiles", title: "Upload Pharmacy Bills" }; } };
-  if (!selectedRecord) { return (<div className="p-4"><div className="text-center text-gray-500 text-sm sm:text-base">No record selected. Please go back and select a record.</div></div>); }
-  const baseTabs = [ { id: "medical-records", label: "Medical Records", icon: FileText }, { id: "prescriptions", label: "Prescriptions", icon: Pill }, { id: "lab-tests", label: "Lab/Scan", icon: TestTube }, { id: "billing", label: "Billing", icon: CreditCard } ];
-  const detailsTabs = selectedRecord?.type === "Virtual" ? [...baseTabs, { id: "video", label: "Video", icon: Video }] : baseTabs;
-  return (
-    <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
-      <button onClick={handleBack} className="flex items-center gap-1 hover:text-[var(--accent-color)] transition-colors text-gray-600 text-xs sm:text-sm">
-        <ArrowLeft size={16} />
-        <span className="font-medium">Back to Medical Records</span>
-      </button>
-      {selectedRecord?.isNewlyAdded && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-4 mb-3 sm:mb-4">
-          <div className="flex items-center gap-1 sm:gap-2 text-blue-800">
-            <Upload size={16} />
-            <span className="font-medium text-xs sm:text-sm">New Hospital Record</span>
-          </div>
-          <p className="text-xs sm:text-sm text-blue-700 mt-1">
-            This is a newly added hospital record. You can upload files in the relevant sections below.
-          </p>
-        </div>
-      )}
-      <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-3 sm:p-4 lg:p-6 mb-3 sm:mb-4 text-white">
-        <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4">
-          <div className="relative h-12 w-12 sm:h-16 sm:w-16 shrink-0">
-            <div className="flex h-full w-full items-center justify-center rounded-full bg-white text-base sm:text-2xl font-bold uppercase shadow-inner ring-2 ring-white ring-offset-2 text-[#01B07A]">
-              {getInitials(`${user?.firstName || ""} ${user?.lastName || ""}`.trim())}
+
+  const calculatedAge = displayAge || calculateAge(displayDob, selectedRecord?.dateOfVisit || selectedRecord?.dateOfAdmission || selectedRecord?.dateOfConsultation);
+
+  const getInitials = (name) => {
+    if (!name) return "NA";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
+  const fetchClinicalNotes = async () => {
+    if (!hospitalName || !ptemail) {
+      setClinicalNotes(mockData.medicalDetails);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(
+        `https://68abfd0c7a0bbe92cbb8d633.mockapi.io/clinicalnote?hospitalName=${encodeURIComponent(
+          hospitalName
+        )}&ptemail=${encodeURIComponent(ptemail)}`
+      );
+      if (response.data.length > 0) {
+        const sortedNotes = [...response.data].sort((a, b) => b.id - a.id);
+        setClinicalNotes(sortedNotes[0]);
+      } else {
+        setError("No clinical notes found for this patient and hospital.");
+        setClinicalNotes(mockData.medicalDetails);
+      }
+    } catch (err) {
+      setError("Failed to fetch clinical notes.");
+      setClinicalNotes(mockData.medicalDetails);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPrescriptions = async () => {
+    if (!displayEmail) {
+      setPrescriptionData([]);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(
+        `https://68abfd0c7a0bbe92cbb8d633.mockapi.io/prescription?patientEmail=${encodeURIComponent(displayEmail)}`
+      );
+      if (response.data.length > 0) {
+        const formattedData = response.data.map((prescription) => ({
+          id: prescription.id,
+          date: prescription.date,
+          doctorName: prescription.doctorName || "Dr. Rajesh Kumar",
+          medicines: prescription.prescriptions
+            .map((med) => `${med.drugName} ${med.strength} - ${med.dosage} ${med.dosageUnit} ${med.frequency} for ${med.duration} days`)
+            .join(", "),
+          instructions: prescription.prescriptions
+            .map((med) => `Take ${med.intake}.`)
+            .join(" "),
+        }));
+        setPrescriptionData(formattedData);
+      } else {
+        setPrescriptionData([]);
+      }
+    } catch (err) {
+      setPrescriptionData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchLabTests = async () => {
+    if (!hospitalName || !ptemail) {
+      setLabTestsData([]);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(
+        `https://689887d3ddf05523e55f1e6c.mockapi.io/labtestdr?hospitalName=${encodeURIComponent(
+          hospitalName
+        )}&ptemail=${encodeURIComponent(ptemail)}`
+      );
+      if (response.data.length > 0) {
+        const formattedData = response.data.map((labTest, index) => ({
+          id: index + 1,
+          date: new Date().toLocaleDateString(),
+          testName: labTest.selectedTests.map((test) => test.name).join(", "),
+          result: labTest.result || "Pending",
+          normalRange: labTest.normalRange || "N/A",
+          status: labTest.status || "Pending",
+        }));
+        setLabTestsData(formattedData);
+      } else {
+        setLabTestsData([]);
+      }
+    } catch (err) {
+      setLabTestsData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchVitalsData = async () => {
+    if (!ptemail || !hospitalName) {
+      setVitalsData(mockData.vitalsData);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(
+        `https://689887d3ddf05523e55f1e6c.mockapi.io/vitals?ptemail=${encodeURIComponent(
+          ptemail
+        )}&hospitalName=${encodeURIComponent(hospitalName)}`
+      );
+      if (response.data.length > 0) {
+        const sortedVitals = [...response.data].sort((a, b) => b.timestamp - a.timestamp);
+        setVitalsData(sortedVitals[0]);
+      } else {
+        setVitalsData(mockData.vitalsData);
+      }
+    } catch (err) {
+      setVitalsData(mockData.vitalsData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchVideoRecordings = () => {
+    const videoKeys = Object.keys(localStorage).filter((key) =>
+      key.startsWith(`consultationVideo_${displayEmail}_${hospitalName}`)
+    );
+    const videos = videoKeys.map((key) => {
+      const result = loadRecordingFromLocalStorage(key);
+      return {
+        key,
+        blob: result.blob,
+        metadata: result.metadata,
+      };
+    });
+    return videos
+      .filter((video) => video.blob !== null && video.metadata)
+      .map((video, index) => ({
+        id: index + 1,
+        date: new Date(video.metadata.timestamp).toLocaleString(),
+        type: video.metadata.type || "N/A",
+        doctorName: video.metadata.doctorName || "dr Kavya Patil",
+        videoBlob: video.blob,
+        metadata: video.metadata,
+      }))
+      .sort((a, b) => b.metadata.timestamp - a.metadata.timestamp);
+  };
+
+  useEffect(() => {
+    fetchClinicalNotes();
+    fetchLabTests();
+    fetchVitalsData();
+    setVideoRecordings(fetchVideoRecordings());
+  }, [hospitalName, displayEmail]);
+
+  useEffect(() => {
+    fetchPrescriptions();
+  }, [displayEmail]);
+
+  const handleBack = () => {
+    navigate("/patientdashboard/medical-record", {
+      state: {
+        selectedRecord: selectedRecord,
+        patientName: displayPatientName,
+        email: displayEmail,
+        phone: displayPhone,
+        gender: displayGender,
+        dob: displayDob,
+        diagnosis: displayDiagnosis,
+        patientDetails: patientDetails,
+        opdPatientData: location.state?.opdPatientData || {},
+      },
+    });
+  };
+
+  const printLabTest = (labTest) => {
+    const printContents = `
+      <div>
+        <h3>Lab Test Report</h3>
+        <p><strong>Date:</strong> ${labTest.date}</p>
+        <p><strong>Test Name:</strong> ${labTest.testName}</p>
+        <p><strong>Result:</strong> ${labTest.result}</p>
+        <p><strong>Normal Range:</strong> ${labTest.normalRange}</p>
+        <p><strong>Status:</strong> ${labTest.status}</p>
+      </div>
+    `;
+    const WinPrint = window.open("", "", "width=900,height=650");
+    WinPrint.document.write(`
+      <html>
+        <head><title>Lab Test Print</title></head>
+        <body>${printContents}</body>
+      </html>
+    `);
+    WinPrint.document.close();
+    WinPrint.print();
+    WinPrint.close();
+  };
+
+  const renderTabContent = () => {
+    const tabContentMap = {
+      "medical-records": (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <FileText size={24} className="text-[var(--primary-color)]" />
+              <h3 className="h4-heading">Medical Information</h3>
             </div>
           </div>
-          <div className="flex-1">
-            <h3 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2">
-              {user.firstName} {user.lastName}
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-1 gap-x-3 sm:gap-x-4 text-xs sm:text-sm">
-              <div className="space-y-1">
-                <div>Age: {selectedRecord.age}</div>
-                <div>Gender: {user.gender}</div>
+          {loading ? (
+            <div className="text-center py-8">Loading clinical notes...</div>
+          ) : error ? (
+            <div className="text-center text-gray-600 py-8">{error}</div>
+          ) : clinicalNotes ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                { label: "Chief Complaint", value: clinicalNotes.chiefComplaint || clinicalNotes.chiefcomplaint || "N/A" },
+                { label: "Past History", value: clinicalNotes.pastHistory || clinicalNotes.History || "N/A" },
+                { label: "Advice", value: clinicalNotes.treatmentAdvice || clinicalNotes.Advice || "N/A" },
+                { label: "Plan", value: clinicalNotes.Plan || "N/A" },
+              ].map((item, index) => (
+                <div key={index} className="bg-white p-6 rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="font-bold text-sm text-gray-600 mb-2">{item.label}</div>
+                  <div className="text-gray-800 text-sm">{item.value}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-gray-600 py-8">
+              No clinical notes found for this patient and hospital.
+            </div>
+          )}
+          {selectedRecord?.type === "IPD" && (
+            <div className="mt-6">
+              <div className="flex items-center gap-3 mb-6">
+                <FileText size={24} className="text-green-600" />
+                <h3 className="h3-heading">Discharge Summary</h3>
               </div>
-              <div className="space-y-1">
-                <div>Hospital: {selectedRecord.hospitalName}</div>
-                <div>
-                  Visit Date:{" "}
-                  {selectedRecord.dateOfVisit ||
-                    selectedRecord.dateOfAdmission ||
-                    selectedRecord.dateOfConsultation}
+              <div className="bg-white p-6 rounded-xl border border-gray-100">
+                <div className="font-bold text-sm text-gray-600 mb-2">Summary</div>
+                <div className="text-gray-800 text-sm">
+                  {clinicalNotes?.dischargeSummary || "N/A"}
                 </div>
               </div>
-              <div className="space-y-1">
-                <div>Diagnosis: {selectedRecord.diagnosis}</div>
-                <div>K/C/O: {selectedRecord["K/C/O"] ?? "--"}</div>
-              </div>
             </div>
+          )}
+        </div>
+      ),
+      "prescriptions": (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Pill size={20} className="text-purple-600" />
+            <h4 className="h4-heading">Prescribed Medications</h4>
           </div>
+          {loading ? (
+            <div className="text-center py-8">Loading prescriptions...</div>
+          ) : prescriptionData.length > 0 ? (
+            <DynamicTable
+              columns={[
+                { header: "Date", accessor: "date" },
+                { header: "Doctor Name", accessor: "doctorName" },
+                { header: "Medicines", accessor: "medicines" },
+                { header: "Instructions", accessor: "instructions" },
+              ]}
+              data={prescriptionData}
+            />
+          ) : (
+            <div className="text-center text-gray-600 py-8">
+              No prescriptions found for this patient.
+            </div>
+          )}
+        </div>
+      ),
+      "lab-tests": (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 mb-6">
+            <TestTube size={24} className="text-orange-600" />
+            <h4 className="h4-heading">Test Results History</h4>
+          </div>
+          {loading ? (
+            <div className="text-center py-8">Loading lab tests...</div>
+          ) : error ? (
+            <div className="text-center text-gray-600 py-8">{error}</div>
+          ) : labTestsData.length > 0 ? (
+            <DynamicTable
+              columns={[
+                { header: "Date", accessor: "date" },
+                { header: "Test Name", accessor: "testName" },
+                { header: "Result", accessor: "result" },
+                { header: "Normal Range", accessor: "normalRange" },
+                {
+                  header: "Status",
+                  accessor: "status",
+                  cell: (row) => (
+                    <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                      row.status === "Normal" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                    }`}>
+                      {row.status === "Normal" ? <CheckCircle size={12} className="inline mr-1" /> : <AlertTriangle size={12} className="inline mr-1" />}
+                      {row.status}
+                    </span>
+                  ),
+                },
+                {
+                  header: "Print",
+                  accessor: "print",
+                  cell: (row) => (
+                    <button className="edit-btn flex items-center gap-1" onClick={() => printLabTest(row)}>
+                      <Printer size={14} /> Print
+                    </button>
+                  ),
+                },
+              ]}
+              data={labTestsData}
+            />
+          ) : (
+            <div className="text-center text-gray-600 py-8">No lab tests found.</div>
+          )}
+        </div>
+      ),
+      "billing": (
+        <div className="space-y-6">
+          <DynamicTable
+            columns={(() => {
+              const columnMaps = {
+                pharmacy: [
+                  { header: "Medicine Name", accessor: "medicineName" },
+                  { header: "Quantity", accessor: "quantity" },
+                  { header: "Unit Price (₹)", accessor: "unitPrice" },
+                  { header: "Total Price (₹)", accessor: "totalPrice" },
+                  { header: "Date", accessor: "date" },
+                ],
+                labs: [
+                  { header: "Test Name", accessor: "testName" },
+                  { header: "Cost (₹)", accessor: "cost" },
+                  { header: "Date", accessor: "date" },
+                  {
+                    header: "Payment Status",
+                    accessor: "paymentStatus",
+                    cell: (row) => (
+                      <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                        row.paymentStatus === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {row.paymentStatus}
+                      </span>
+                    ),
+                  },
+                ],
+                hospital: [
+                  { header: "Bill Type", accessor: "billType" },
+                  { header: "Amount (₹)", accessor: "amount" },
+                  { header: "Payment Mode", accessor: "paymentMode" },
+                  {
+                    header: "Status",
+                    accessor: "status",
+                    cell: (row) => (
+                      <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                        row.status === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {row.status}
+                      </span>
+                    ),
+                  },
+                  { header: "Bill Date", accessor: "billDate" },
+                ],
+              };
+              return columnMaps[state.billingActiveTab];
+            })()}
+            data={mockData.billingData[state.billingActiveTab]}
+            tabs={[
+              { value: "pharmacy", label: "Pharmacy" },
+              { value: "labs", label: "Labs" },
+              { value: "hospital", label: "Hospital Bills" },
+            ]}
+            activeTab={state.billingActiveTab}
+            onTabChange={(tab) => setState((prev) => ({ ...prev, billingActiveTab: tab }))}
+            filters={[
+              {
+                key: "paymentStatus",
+                label: "Payment Status",
+                options: [
+                  { value: "Paid", label: "Paid" },
+                  { value: "Unpaid", label: "Unpaid" },
+                ],
+              },
+            ]}
+          />
+        </div>
+      ),
+      "video": (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Video size={24} className="text-indigo-600" />
+            <h4 className="h4-heading">Video Consultation History</h4>
+          </div>
+          {videoRecordings.length > 0 ? (
+            <DynamicTable
+              columns={[
+                { header: "ID", accessor: "id" },
+                { header: "Date", accessor: "date" },
+                { header: "Type", accessor: "type" },
+                { header: "Doctor Name", accessor: "doctorName" },
+                {
+                  header: "Actions",
+                  accessor: "actions",
+                  cell: (row) => (
+                    <button
+                      className="edit-btn flex items-center gap-1"
+                      onClick={() => {
+                        if (row.videoBlob) {
+                          setSelectedVideoBlob(row.videoBlob);
+                          setSelectedVideoMetadata(row.metadata);
+                          setShowVideoModal(true);
+                        } else {
+                          alert("Video recording is not available.");
+                        }
+                      }}
+                    >
+                      <Video size={14} /> View Recording
+                    </button>
+                  ),
+                },
+              ]}
+              data={videoRecordings}
+            />
+          ) : (
+            <div className="text-center text-gray-600 py-8">
+              No video recordings found.
+            </div>
+          )}
+        </div>
+      ),
+    };
+    return tabContentMap[state.detailsActiveTab] || null;
+  };
+
+  if (!selectedRecord) {
+    return (
+      <div className="p-6">
+        <div className="text-center text-gray-500">
+          No record selected. Please go back and select a record.
         </div>
       </div>
-      {!selectedRecord?.isNewlyAdded && (
-        <div className="space-y-3 sm:space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Activity size={16} className="text-green-600" />
-              <h3 className="text-base sm:text-lg font-bold">Vitals Summary</h3>
+    );
+  }
+
+  const detailsTabs = [
+    { id: "medical-records", label: "Medical Records", icon: FileText },
+    { id: "prescriptions", label: "Prescriptions", icon: Pill },
+    { id: "lab-tests", label: "Lab/Scan", icon: TestTube },
+    { id: "billing", label: "Billing", icon: CreditCard },
+    { id: "video", label: "Video", icon: Video },
+  ];
+
+  return (
+    <ErrorBoundary>
+      <div className="p-6 space-y-6">
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600"
+        >
+          <ArrowLeft size={20} />
+          <span className="font-medium">Back to Medical Records</span>
+        </button>
+
+        <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-3 sm:p-4 lg:p-6 mb-3 sm:mb-4 text-white">
+          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4">
+            <div className="relative h-12 w-12 sm:h-16 sm:w-16 shrink-0">
+              <div className="flex h-full w-full items-center justify-center rounded-full bg-white text-base sm:text-2xl font-bold uppercase shadow-inner ring-2 ring-white ring-offset-2 text-[#01B07A]">
+                {getInitials(`${user?.firstName || ""} ${user?.lastName || ""}`.trim())}
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2">
+                {user.firstName} {user.lastName}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-1 gap-x-3 sm:gap-x-4 text-xs sm:text-sm">
+                <div className="space-y-1">
+                  <div>Age: {selectedRecord.age}</div>
+                  <div>Gender: {user.gender}</div>
+                </div>
+                <div className="space-y-1">
+                  <div>Hospital: {selectedRecord.hospitalName}</div>
+                  <div>
+                    Visit Date:{" "}
+                    {selectedRecord.dateOfVisit ||
+                      selectedRecord.dateOfAdmission ||
+                      selectedRecord.dateOfConsultation}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div>Diagnosis: {selectedRecord.diagnosis}</div>
+                  <div>K/C/O: {selectedRecord["K/C/O"] ?? "--"}</div>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-1 sm:gap-2">
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Activity size={20} className="text-green-600" />
+              <h3 className="h4-heading">Vitals Summary</h3>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
             {[
-              { key: "bloodPressure", icon: Heart, color: "red", label: "Blood Pressure" },
-              { key: "heartRate", icon: Activity, color: "blue", label: "Heart Rate" },
-              { key: "temperature", icon: Thermometer, color: "orange", label: "Temperature" },
-              { key: "spO2", icon: null, color: "emerald", label: "SpO2" },
-              { key: "respiratoryRate", icon: null, color: "violet", label: "Respiratory Rate" },
-              { key: "height", icon: null, color: "cyan", label: "Height" },
-              { key: "weight", icon: null, color: "amber", label: "Weight" },
-            ].map(({ key, icon: Icon, color, label }) => (
-              <div key={key} className={`bg-${color}-50 border-l-4 border-${color}-500 p-1 sm:p-2 rounded-lg shadow-md`}>
+              { key: "bloodPressure", icon: Heart, color: "red", label: "Blood Pressure", value: vitalsData?.bloodPressure || "--" },
+              { key: "heartRate", icon: Activity, color: "blue", label: "Heart Rate", value: vitalsData?.heartRate || "--" },
+              { key: "temperature", icon: Thermometer, color: "orange", label: "Temperature", value: vitalsData?.temperature || "--" },
+              { key: "spO2", icon: null, color: "emerald", label: "SpO2", value: vitalsData?.spO2 || "--" },
+              { key: "respiratoryRate", icon: null, color: "violet", label: "Respiratory Rate", value: vitalsData?.respiratoryRate || "--" },
+              { key: "height", icon: null, color: "cyan", label: "Height", value: vitalsData?.height || "--" },
+              { key: "weight", icon: null, color: "amber", label: "Weight", value: vitalsData?.weight || "--" },
+            ].map(({ key, icon: Icon, color, label, value }) => (
+              <div key={key} className={`bg-${color}-50 border-l-4 border-${color}-500 p-3 rounded-lg shadow-md`}>
                 <div className="flex items-center gap-1 mb-1">
-                  {Icon && <Icon size={14} className={`text-${color}-500`} />}
-                  <span className={`text-xs font-medium text-${color}-700`}>
-                    {label}
-                  </span>
+                  {Icon && <Icon size={16} className={`text-${color}-500`} />}
+                  <span className={`text-xs font-medium text-${color}-700`}>{label}</span>
                 </div>
-                <div className={`text-xs sm:text-sm font-semibold text-${color}-800`}>
-                  {selectedRecord?.vitals?.[key] ?? "--"}
+                <div className={`text-base font-semibold text-${color}-800`}>
+                  {value}
                 </div>
               </div>
             ))}
           </div>
         </div>
-      )}
-      <div className="flex flex-wrap border-gray-200 mb-3 sm:mb-4">
-        {detailsTabs.map((tab) => {
-          const IconComponent = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => updateState({ detailsActiveTab: tab.id })}
-              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 font-medium transition-colors duration-300 whitespace-nowrap ${
-                state.detailsActiveTab === tab.id
-                  ? "border-b-2 text-[var(--primary-color)] border-[var(--primary-color)]"
-                  : "text-gray-500 hover:text-[var(--accent-color)]"
-              }`}
-            >
-              <IconComponent size={14} />
-              <span className="text-xs sm:text-sm">{tab.label}</span>
-            </button>
-          );
-        })}
-        {selectedRecord?.type && !selectedRecord?.isNewlyAdded && !fromHealthCard && (
-          <div className="flex-1 flex justify-end">
-            <button
-              onClick={handleSecondOpinion}
-              className="btn btn-primary text-white px-2 sm:px-4 py-1 sm:py-2 text-xs flex items-center gap-1 hover:opacity-90 transition-opacity"
-            >
-              <Stethoscope size={14} />
-              <span className="text-xs sm:text-sm">Second Opinion</span>
-            </button>
-          </div>
-        )}
+
+        <div className="flex border-gray-200 mb-6">
+          {detailsTabs.map((tab) => {
+            const IconComponent = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setState((prev) => ({ ...prev, detailsActiveTab: tab.id }))}
+                className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors duration-300 ${
+                  state.detailsActiveTab === tab.id
+                    ? "border-b-2 text-[var(--primary-color)] border-[var(--primary-color)]"
+                    : "text-gray-500 hover:text-[var(--accent-color)]"
+                }`}
+              >
+                <IconComponent size={18} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="animate-slide-fade-in">{renderTabContent()}</div>
+
+        <VideoPlaybackModal
+          show={showVideoModal}
+          onClose={() => setShowVideoModal(false)}
+          videoBlob={selectedVideoBlob}
+          metadata={selectedVideoMetadata}
+        />
       </div>
-      <div className="animate-slide-fade-in">{renderTabContent()}</div>
-    </div>
+    </ErrorBoundary>
   );
 };
-export default MedicalRecordDetails;
+
+export default PatientMedicalRecordDetails;
