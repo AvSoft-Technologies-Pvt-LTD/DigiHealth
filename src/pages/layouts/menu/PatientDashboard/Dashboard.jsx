@@ -106,53 +106,48 @@ function Dashboard() {
 
   // Fetch master data options
   useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [coverageRes, healthConditionsRes, familyRelationsRes, bloodGroupsRes] = await Promise.all([
-          getCoverageTypes(),
-          getHealthConditions(),
-          getRelations(),
-          getBloodGroups()
-        ]);
+   const fetchOptions = async () => {
+  try {
+    const [coverageRes, healthConditionsRes, familyRelationsRes, bloodGroupsRes] = await Promise.all([
+      getCoverageTypes().catch(() => ({ data: [] })),
+      getHealthConditions().catch(() => ({ data: [] })),
+      getRelations().catch(() => ({ data: [] })),
+      getBloodGroups().catch(() => ({ data: [] })),
+    ]);
 
-        // Map blood groups with ID as value
-        setBloodGroups(
-          bloodGroupsRes.data.map(item => ({
-            label: item.bloodGroupName,
-            value: item.id
-          }))
-        );
+    // Map responses safely
+    setBloodGroups(
+      bloodGroupsRes.data?.map((item) => ({
+        label: item.bloodGroupName || 'Unknown',
+        value: item.id,
+      })) || []
+    );
 
-        // Map family relations with ID as value
-        setFamilyRelations(
-          familyRelationsRes.data.map(item => ({
-            label: item.relationName,
-            value: item.id
-          }))
-        );
+    setFamilyRelations(
+      familyRelationsRes.data?.map((item) => ({
+        label: item.relationName || 'Unknown',
+        value: item.id,
+      })) || []
+    );
 
-        // Map health conditions with ID as value for proper backend mapping
-        setHealthConditions(
-          healthConditionsRes.data.map(item => ({
-            label: item.healthConditionName,
-            value: item.id // Use ID instead of name for proper backend mapping
-          }))
-        );
+    setHealthConditions(
+      healthConditionsRes.data?.map((item) => ({
+        label: item.healthConditionName || 'Unknown',
+        value: item.id,
+      })) || []
+    );
 
-        // Map coverage types
-        setCoverageTypes(
-          coverageRes.data.map(item => ({
-            label: item.coverageTypeName,
-            value: item.coverageTypeName
-          }))
-        );
-
-      } catch (err) {
-        console.error('Failed to fetch options:', err.response?.data || err.message);
-        showFeedback(`Failed to fetch options: ${err.response?.data?.message || err.message}`, 'error');
-      }
-    };
-
+    setCoverageTypes(
+      coverageRes.data?.map((item) => ({
+        label: item.coverageTypeName || 'Unknown',
+        value: item.coverageTypeName,
+      })) || []
+    );
+  } catch (err) {
+    console.error('Failed to fetch options:', err);
+    showFeedback('Failed to load dropdown options. Please try again.', 'error');
+  }
+};
     fetchOptions();
   }, []);
 
@@ -173,70 +168,60 @@ function Dashboard() {
 
   // Fetch user data
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.id) return;
-      setLoading(true);
+   const fetchData = async () => {
+  if (!user?.id) return;
+  setLoading(true);
+  try {
+    const [familyRes, healthRes] = await Promise.all([
+      getFamilyMembersByPatient(user.id).catch(() => ({ data: [] })),
+      getPersonalHealthByPatientId(user.id).catch(() => ({ data: null })),
+    ]);
 
-      try {
-        // Fetch family members and personal health data
-        const [familyRes, healthRes] = await Promise.all([
-          getFamilyMembersByPatient(user.id).catch(() => ({ data: [] })),
-          getPersonalHealthByPatientId(user.id).catch(() => null)
-        ]);
+    // Map family members safely
+    const mappedFamilyMembers = familyRes.data?.map((member) => ({
+      id: member.id,
+      name: member.memberName || 'Unknown',
+      relation: member.relationName || 'Unknown',
+      relationId: member.relationId,
+      number: member.phoneNumber || '',
+      diseases: member.healthConditions?.map((hc) => hc.healthConditionName) || [],
+      healthConditionIds: member.healthConditions?.map((hc) => hc.id) || [],
+    })) || [];
 
-        // Map backend family member fields to frontend format
-        const mappedFamilyMembers = familyRes.data.map(member => ({
-          id: member.id,
-          name: member.memberName,
-          relation: member.relationName,
-          relationId: member.relationId,
-          number: member.phoneNumber,
-          diseases: member.healthConditions?.map(hc => hc.healthConditionName) || [],
-          healthConditionIds: member.healthConditions?.map(hc => hc.id) || [],
-        }));
+    // Map personal health data safely
+    let personalHealthData = {};
+    if (healthRes.data) {
+      personalHealthData = {
+        id: healthRes.data.id,
+        height: healthRes.data.height || '',
+        weight: healthRes.data.weight || '',
+        bloodGroupId: healthRes.data.bloodGroupId,
+        bloodGroupName: healthRes.data.bloodGroupName || '',
+        surgeries: healthRes.data.surgeries || '',
+        allergies: healthRes.data.allergies || '',
+        isSmokerUser: healthRes.data.isSmoker || false,
+        smokingDuration: healthRes.data.yearsSmoking || '',
+        isAlcoholicUser: healthRes.data.isAlcoholic || false,
+        alcoholDuration: healthRes.data.yearsAlcoholic || '',
+        isTobaccoUser: healthRes.data.isTobacco || false,
+        tobaccoDuration: healthRes.data.yearsTobacco || '',
+      };
+    }
 
-        // Handle personal health data
-        let personalHealthData = {};
-        let hasHealthData = false;
+    setUserData((prev) => ({
+      ...prev,
+      ...personalHealthData,
+      familyMembers: mappedFamilyMembers,
+    }));
 
-        if (healthRes && healthRes.data) {
-          const userHealthData = healthRes.data;
-          hasHealthData = true;
-          
-          personalHealthData = {
-            id: userHealthData.id,
-            height: userHealthData.height || '',
-            weight: userHealthData.weight || '',
-            bloodGroupId: userHealthData.bloodGroupId,
-            bloodGroupName: userHealthData.bloodGroupName,
-            surgeries: userHealthData.surgeries || '',
-            allergies: userHealthData.allergies || '',
-            isSmokerUser: userHealthData.isSmoker || false,
-            smokingDuration: userHealthData.yearsSmoking || '',
-            isAlcoholicUser: userHealthData.isAlcoholic || false,
-            alcoholDuration: userHealthData.yearsAlcoholic || '',
-            isTobaccoUser: userHealthData.isTobacco || false,
-            tobaccoDuration: userHealthData.yearsTobacco || '',
-          };
-        }
-
-        // Set user data with proper mapping
-        setUserData(prev => ({
-          ...prev,
-          ...personalHealthData,
-          familyMembers: mappedFamilyMembers,
-        }));
-
-        setHasPersonalHealthData(hasHealthData);
-
-      } catch (err) {
-        console.error('Failed to fetch data:', err);
-        showFeedback('Failed to fetch some data. You can still add new information.', 'warning');
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    setHasPersonalHealthData(!!healthRes.data);
+  } catch (err) {
+    console.error('Failed to fetch data:', err);
+    showFeedback('Failed to load your data. Some features may be limited.', 'warning');
+  } finally {
+    setLoading(false);
+  }
+};
     fetchData();
   }, [user]);
 
@@ -383,7 +368,7 @@ useEffect(() => {
       setModalData({
         height: userData.height || '',
         weight: userData.weight || '',
-        bloodGroup: userData.bloodGroupId ? bloodGroups.find(bg => bg.value === userData.bloodGroupId) : null,
+      bloodGroup: userData.bloodGroupId || '',
         surgeries: userData.surgeries || '',
         allergies: userData.allergies || '',
         isAlcoholicUser: userData.isAlcoholicUser || false,
@@ -610,7 +595,7 @@ useEffect(() => {
   </div>
 </div>
 
-        <div className="flex flex-row flex-wrap gap-1 sm:gap-2 items-center flex-1 min-w-0">
+        <div className="flex flex-row flex-wrap gap-2 sm:gap-2 items-center flex-1 min-w-0">
           {[
             { label: "Name", value: `${profileData.firstName || "Guest"} ${profileData.lastName || ""}`.trim() },
             { label: "Date of Birth", value: profileData.dob || "N/A" },

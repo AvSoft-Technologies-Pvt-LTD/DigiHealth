@@ -615,8 +615,10 @@ const MultiStepForm = () => {
   const safeSpecialties = state.specialties || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-4 px-3">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen  px-5">
+  <div className="w-full">
+
+
         {/* Compact Header */}
         <div className="text-center mb-6">
           
@@ -904,68 +906,74 @@ const MultiStepForm = () => {
 </div>
 
 
-          {safeSpecialties.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-slate-700">Suggested Specialties</h3>
-              <div className="flex flex-wrap gap-2">
-                {safeSpecialties.map(spec => (
-                  <button
-                    key={spec}
-                    onClick={() => updateState({ specialty: spec })}
-                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 transform hover:scale-105 ${
-                      state.specialty === spec
-                        ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                  >
-                    {spec}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+       {safeSpecialties.length > 0 && (
+  <div className="space-y-3">
+    <h3 className="text-sm font-medium text-slate-700">Suggested Specialties</h3>
+    <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2">
+      {safeSpecialties.map((spec) => (
+        <button
+          key={spec}
+          onClick={() => updateState({ specialty: spec })}
+          className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+            state.specialty === spec
+              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          }`}
+        >
+          {spec}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
 
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium text-slate-700">Doctor Panel</h3>
-            <div className="flex flex-wrap gap-2">
-              {["All", "Our Medical Expert", "Hospital Affiliated", "Consultant Doctor"].map(type => (
-                <button
-                  key={type}
-                  onClick={() => updateState({ doctorType: type })}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 transform hover:scale-105 ${
-                    state.doctorType === type
-                      ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          </div>
+         <div className="space-y-4">
+  {/* Doctor Panel */}
+  <h3 className="text-base font-medium text-slate-700">Doctor Panel</h3>
+  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+    {["All", "Our Medical Expert", "Hospital Affiliated", "Consultant Doctor"].map((type) => (
+      <button
+        key={type}
+        onClick={() => updateState({ doctorType: type })}
+        className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+          state.doctorType === type
+            ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
+            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+        }`}
+      >
+        {type}
+      </button>
+    ))}
+  </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2 w-full">
-              <label className="text-sm font-medium text-slate-700">Min Fees (₹)</label>
-              <input
-                type="number"
-                value={state.minPrice}
-                onChange={e => updateState({ minPrice: e.target.value })}
-                placeholder="Minimum price"
-                className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
-              />
-            </div>
-            <div className="space-y-2 w-full">
-              <label className="text-sm font-medium text-slate-700">Max Fees (₹)</label>
-              <input
-                type="number"
-                value={state.maxPrice}
-                onChange={e => updateState({ maxPrice: e.target.value })}
-                placeholder="Maximum price"
-                className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
-              />
-            </div>
-          </div>
+  {/* Fee Filters */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {/* Min Fees */}
+    <div className="space-y-2 w-full">
+      <label className="text-sm font-medium text-slate-700">Min Fees (₹)</label>
+      <input
+        type="number"
+        value={state.minPrice}
+        onChange={(e) => updateState({ minPrice: e.target.value })}
+        placeholder="Minimum price"
+        className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
+      />
+    </div>
+
+    {/* Max Fees */}
+    <div className="space-y-2 w-full">
+      <label className="text-sm font-medium text-slate-700">Max Fees (₹)</label>
+      <input
+        type="number"
+        value={state.maxPrice}
+        onChange={(e) => updateState({ maxPrice: e.target.value })}
+        placeholder="Maximum price"
+        className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
+      />
+    </div>
+  </div>
+</div>
+
 
           <div className="space-y-4">
             {safeFilteredDoctors.length > 0 ? (

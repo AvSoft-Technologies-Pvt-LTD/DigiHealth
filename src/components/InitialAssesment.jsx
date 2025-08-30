@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 import {
   Calendar,
   User,
@@ -38,7 +41,6 @@ import {
   getSpecializationsByPracticeType,
 } from "../utils/masterService";
 
-// Default icon mapping for fallback
 const iconMapping = {
   ayurveda: Leaf,
   homeopathy: FlaskConical,
@@ -54,15 +56,12 @@ const iconMapping = {
 };
 
 const InitialAssessment = () => {
-  // State for dynamic data
   const [practiceTypes, setPracticeTypes] = useState([]);
   const [specializations, setSpecializations] = useState([]);
   const [specialtyTemplates, setSpecialtyTemplates] = useState({});
   const [templateFields, setTemplateFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Existing state
   const [selectedPracticeType, setSelectedPracticeType] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [formData, setFormData] = useState({});
@@ -72,8 +71,8 @@ const InitialAssessment = () => {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [selectedColor, setSelectedColor] = useState("#2563eb");
-
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const [patientInfo, setPatientInfo] = useState({
     patientId: "",
@@ -97,10 +96,8 @@ const InitialAssessment = () => {
     bmi: "",
   });
 
-  // Remove loading state for practice type/specialty switching
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // Load initial data
   useEffect(() => {
     (async () => {
       await loadPracticeTypes();
@@ -108,7 +105,6 @@ const InitialAssessment = () => {
     })();
   }, []);
 
-  // Load specializations when practice type changes
   useEffect(() => {
     if (selectedPracticeType) {
       loadSpecializations(selectedPracticeType);
@@ -118,7 +114,6 @@ const InitialAssessment = () => {
     }
   }, [selectedPracticeType]);
 
-  // Load template fields when specialty changes
   useEffect(() => {
     if (selectedSpecialty) {
       loadTemplateFields(selectedSpecialty);
@@ -242,6 +237,7 @@ const InitialAssessment = () => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64String = reader.result.split(",")[1];
@@ -255,221 +251,43 @@ const InitialAssessment = () => {
         size: file.size,
         apiLink: "",
       };
+
       try {
-        const response = await fetch(
-          "https://6899921cfed141b96b9fea9a.mockapi.io/template",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ image: base64String }),
-          }
-        );
+        const response = await fetch("https://6899921cfed141b96b9fea9a.mockapi.io/template", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64String }),
+        });
+
         if (response.ok) {
           const result = await response.json();
           newImage.apiLink = result.image || result.link || "";
+          toast.success("Image uploaded successfully to server!");
+        } else {
+          toast.error("Failed to upload image to server.");
         }
       } catch (err) {
         console.log("API upload failed, storing locally");
+        toast.success("Image uploaded locally!");
       }
+
       setAnnotatedImages((prev) => [...prev, newImage]);
-      const storedImages = JSON.parse(
-        localStorage.getItem("medicalImages") || "[]"
-      );
+      const storedImages = JSON.parse(localStorage.getItem("medicalImages") || "[]");
       storedImages.push(newImage);
       localStorage.setItem("medicalImages", JSON.stringify(storedImages));
     };
     reader.readAsDataURL(file);
   };
 
-  const renderFormSection = (section) => {
-    switch (section.fieldType || section.type) {
-      case "textarea":
-        return (
-          <div key={section.id} className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {section.label || section.name}{" "}
-              {section.required && <span className="text-red-500">*</span>}
-            </label>
-            <textarea
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent min-h-24 resize-none transition-all duration-200"
-              placeholder={`Enter ${(
-                section.label || section.name
-              ).toLowerCase()}`}
-              value={formData[section.id] || ""}
-              onChange={(e) => handleInputChange(section.id, e.target.value)}
-              required={section.required}
-            />
-          </div>
-        );
-      case "checklist":
-        return (
-          <div key={section.id} className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              {section.label || section.name}
-            </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {(section.options || section.fieldOptions || []).map((option) => (
-                <label
-                  key={option.value || option}
-                  className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all cursor-pointer border hover:border-accent"
-                >
-                  <input
-                    type="checkbox"
-                    className="mr-3 w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-accent"
-                    onChange={(e) => {
-                      const currentValues = formData[section.id] || [];
-                      const value = option.value || option;
-                      if (e.target.checked) {
-                        handleInputChange(section.id, [
-                          ...currentValues,
-                          value,
-                        ]);
-                      } else {
-                        handleInputChange(
-                          section.id,
-                          currentValues.filter((v) => v !== value)
-                        );
-                      }
-                    }}
-                  />
-                  <span className="text-sm text-gray-700">
-                    {option.label || option}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        );
-      case "radio":
-        return (
-          <div key={section.id} className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              {section.label || section.name}
-            </label>
-            <div className="space-y-2">
-              {(section.options || section.fieldOptions || []).map((option) => (
-                <label
-                  key={option.value || option}
-                  className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all cursor-pointer border hover:border-accent"
-                >
-                  <input
-                    type="radio"
-                    name={section.id}
-                    className="mr-3 w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-accent"
-                    onChange={() =>
-                      handleInputChange(section.id, option.value || option)
-                    }
-                  />
-                  <span className="text-sm text-gray-700">
-                    {option.label || option}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        );
-      case "text":
-      case "input":
-        return (
-          <div key={section.id} className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {section.label || section.name}{" "}
-              {section.required && <span className="text-red-500">*</span>}
-            </label>
-            <input
-              type="text"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
-              placeholder={`Enter ${(
-                section.label || section.name
-              ).toLowerCase()}`}
-              value={formData[section.id] || ""}
-              onChange={(e) => handleInputChange(section.id, e.target.value)}
-              required={section.required}
-            />
-          </div>
-        );
-      case "number":
-        return (
-          <div key={section.id} className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {section.label || section.name}{" "}
-              {section.required && <span className="text-red-500">*</span>}
-            </label>
-            <input
-              type="number"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
-              placeholder={`Enter ${(
-                section.label || section.name
-              ).toLowerCase()}`}
-              value={formData[section.id] || ""}
-              onChange={(e) => handleInputChange(section.id, e.target.value)}
-              required={section.required}
-              min={section.min}
-              max={section.max}
-            />
-          </div>
-        );
-      case "date":
-        return (
-          <div key={section.id} className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {section.label || section.name}{" "}
-              {section.required && <span className="text-red-500">*</span>}
-            </label>
-            <input
-              type="date"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
-              value={formData[section.id] || ""}
-              onChange={(e) => handleInputChange(section.id, e.target.value)}
-              required={section.required}
-            />
-          </div>
-        );
-      case "pain-scale":
-        return (
-          <div key={section.id} className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Pain Scale (0-10)
-            </label>
-            <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-4 border">
-              <span className="text-xs text-gray-600 mr-2">No Pain</span>
-              {[...Array(11)].map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${
-                    formData[section.id] === i
-                      ? "bg-red-500 text-white shadow-lg"
-                      : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                  }`}
-                  onClick={() => handleInputChange(section.id, i)}
-                >
-                  {i}
-                </button>
-              ))}
-              <span className="text-xs text-gray-600 ml-2">Severe</span>
-            </div>
-          </div>
-        );
-      default:
-        return (
-          <div key={section.id} className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {section.label || section.name}{" "}
-              {section.required && <span className="text-red-500">*</span>}
-            </label>
-            <textarea
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent min-h-24 resize-none transition-all duration-200"
-              placeholder={`Enter ${(
-                section.label || section.name
-              ).toLowerCase()}`}
-              value={formData[section.id] || ""}
-              onChange={(e) => handleInputChange(section.id, e.target.value)}
-              required={section.required}
-            />
-          </div>
-        );
-    }
+  const navigateToAnnotation = (image) => {
+    navigate("/image-annotation", {
+      state: {
+        initialImage: image.originalFile,
+        patient: patientInfo,
+        annotatedImages: annotatedImages,
+        from: "form",
+      },
+    });
   };
 
   const handleSubmit = (e) => {
@@ -487,7 +305,6 @@ const InitialAssessment = () => {
   const generatePrintTemplate = () => {
     const currentTemplate = prescriptionTemplates[selectedTemplate];
     const currentLayout = layoutStyles[currentTemplate.layout] || layoutStyles.traditional;
-
     const printContent = `
       <!DOCTYPE html>
       <html lang="en">
@@ -600,7 +417,6 @@ const InitialAssessment = () => {
           <div class="hospital-address">123 Medical Street, Healthcare City, HC 12345</div>
           <div class="form-title">${template.title}</div>
         </div>
-
         <div class="patient-info">
           <h4>Patient Information</h4>
           <div class="patient-grid">
@@ -612,7 +428,6 @@ const InitialAssessment = () => {
             <div><strong>Referred By:</strong> ${patientInfo.referredBy || ""}</div>
           </div>
         </div>
-
         ${templateFields
           .map(
             (field) => `
@@ -625,7 +440,6 @@ const InitialAssessment = () => {
           `
           )
           .join("")}
-
         ${
           handwrittenNotes
             ? `
@@ -638,14 +452,12 @@ const InitialAssessment = () => {
           `
             : ""
         }
-
         <div class="footer">
           <p>Signature: ___________</p>
         </div>
       </body>
       </html>
     `;
-
     return printContent;
   };
 
@@ -705,6 +517,7 @@ const InitialAssessment = () => {
 
   return (
     <div className="min-h-screen font-sans text-primary">
+      <ToastContainer position="top-right" autoClose={2000} />
       <div className="container mx-auto px-4 py-8">
         {error && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center">
@@ -717,11 +530,10 @@ const InitialAssessment = () => {
             </div>
           </div>
         )}
-
         <div
           className="bg-white rounded-xl shadow-lg p-6 mb-8"
           style={{
-            backgroundColor:"#01D48C",
+            backgroundColor: "#01D48C",
             color: "white",
             textAlign: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.textAlign || "center",
             borderRadius: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.borderRadius || "12px",
@@ -732,10 +544,7 @@ const InitialAssessment = () => {
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center mb-4 lg:mb-0">
-              <div
-                className="p-3 rounded-lg mr-4"
-
-              >
+              <div className="p-3 rounded-lg mr-4">
                 <IconComponent className="w-8 h-8 text-white" />
               </div>
               <div>
@@ -743,40 +552,34 @@ const InitialAssessment = () => {
                   {template.title}
                 </h1>
                 <p className="paragraph">
-                  {template.category} Department - Comprehensive medical
-                  evaluation form
+                  {template.category} Department - Comprehensive medical evaluation form
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => setShowTemplateModal(true)}
-                className="btn btn-secondary"
+                className="btn btn-primary"
                 type="button"
               >
-                <Settings className="w-4 h-4 mr-2" />
+                <Settings className="w-4 h-4" />
                 Templates
               </button>
               <button
                 onClick={() => setShowImageUpload(!showImageUpload)}
                 className="btn btn-primary"
-                style={{ backgroundColor: selectedColor }}
                 type="button"
               >
-                <Upload className="w-4 h-4 mr-2" />
+                <Upload className="w-4 h-4" />
                 Upload Template
               </button>
             </div>
           </div>
         </div>
-
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
             <h4 className="h3-heading mb-4 flex items-center">
-              <Settings
-                className="w-5 h-5 mr-2"
-                style={{ color: selectedColor }}
-              />
+              <Settings className="w-5 h-5 mr-2" style={{ color: selectedColor }} />
               Select Medical System & Specialty
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -805,9 +608,7 @@ const InitialAssessment = () => {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent font-semibold"
                   value={selectedSpecialty}
                   onChange={(e) => handleSpecialtyChange(e.target.value)}
-                  disabled={
-                    !selectedPracticeType || specializations.length === 0
-                  }
+                  disabled={!selectedPracticeType || specializations.length === 0}
                 >
                   <option value="">Select Specialty</option>
                   {specializations.map((spec) => (
@@ -821,10 +622,7 @@ const InitialAssessment = () => {
             {selectedPracticeType && selectedSpecialty && (
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center text-sm text-gray-600">
-                  <div
-                    className="w-3 h-3 rounded-full mr-2"
-                    style={{ backgroundColor: selectedColor }}
-                  ></div>
+                  <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: selectedColor }}></div>
                   <span className="font-medium">Selected:</span>
                   <span className="ml-2">
                     {template.category} → {template.title}
@@ -836,14 +634,11 @@ const InitialAssessment = () => {
               </div>
             )}
           </div>
-
           {showImageUpload && (
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center mb-4">
                 <ImageIcon className="w-6 h-6 text-green-500 mr-3" />
-                <h4 className="text-lg font-semibold text-gray-900">
-                  Medical Images
-                </h4>
+                <h4 className="text-lg font-semibold text-gray-900">Medical Images</h4>
               </div>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <input
@@ -872,10 +667,7 @@ const InitialAssessment = () => {
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {annotatedImages.map((image) => (
-                      <div
-                        key={image.id}
-                        className="border rounded-lg p-3 bg-gray-50"
-                      >
+                      <div key={image.id} className="border rounded-lg p-3 bg-gray-50">
                         <div className="w-full h-32 bg-gray-200 rounded-lg mb-2 overflow-hidden">
                           <img
                             src={image.originalFile}
@@ -884,19 +676,21 @@ const InitialAssessment = () => {
                           />
                         </div>
                         <div className="text-sm text-gray-600">
-                          <p className="font-medium truncate">
-                            {image.fileName}
+                          <p className="font-medium truncate">{image.fileName}</p>
+                          <p>
+                            Uploaded: {new Date(image.timestamp).toLocaleDateString()}
                           </p>
                           <p>
-                            Uploaded:{" "}
-                            {new Date(image.timestamp).toLocaleDateString()}
-                          </p>
-                          <p>
-                            Specialty:{" "}
-                            {specialtyTemplates[image.specialty]?.title ||
-                              image.specialty}
+                            Specialty: {specialtyTemplates[image.specialty]?.title || image.specialty}
                           </p>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => navigateToAnnotation(image)}
+                          className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                        >
+                          Annotate
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -904,13 +698,10 @@ const InitialAssessment = () => {
               )}
             </div>
           )}
-
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center mb-6">
               <User className="w-6 h-6 mr-3" style={{ color: selectedColor }} />
-              <h4 className="text-lg font-semibold text-gray-900">
-                Patient Information
-              </h4>
+              <h4 className="text-lg font-semibold text-gray-900">Patient Information</h4>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
@@ -921,9 +712,7 @@ const InitialAssessment = () => {
                   type="text"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                   value={patientInfo.patientId}
-                  onChange={(e) =>
-                    handlePatientInfoChange("patientId", e.target.value)
-                  }
+                  onChange={(e) => handlePatientInfoChange("patientId", e.target.value)}
                   placeholder="Enter patient ID"
                 />
               </div>
@@ -936,9 +725,7 @@ const InitialAssessment = () => {
                   required
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                   value={patientInfo.name}
-                  onChange={(e) =>
-                    handlePatientInfoChange("name", e.target.value)
-                  }
+                  onChange={(e) => handlePatientInfoChange("name", e.target.value)}
                   placeholder="Enter patient name"
                 />
               </div>
@@ -950,9 +737,7 @@ const InitialAssessment = () => {
                   type="number"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                   value={patientInfo.age}
-                  onChange={(e) =>
-                    handlePatientInfoChange("age", e.target.value)
-                  }
+                  onChange={(e) => handlePatientInfoChange("age", e.target.value)}
                   placeholder="Age"
                 />
               </div>
@@ -963,9 +748,7 @@ const InitialAssessment = () => {
                 <select
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                   value={patientInfo.gender}
-                  onChange={(e) =>
-                    handlePatientInfoChange("gender", e.target.value)
-                  }
+                  onChange={(e) => handlePatientInfoChange("gender", e.target.value)}
                 >
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
@@ -981,9 +764,7 @@ const InitialAssessment = () => {
                   type="tel"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                   value={patientInfo.contact}
-                  onChange={(e) =>
-                    handlePatientInfoChange("contact", e.target.value)
-                  }
+                  onChange={(e) => handlePatientInfoChange("contact", e.target.value)}
                   placeholder="Phone number"
                 />
               </div>
@@ -995,9 +776,7 @@ const InitialAssessment = () => {
                   type="text"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                   value={patientInfo.consultingDoctor}
-                  onChange={(e) =>
-                    handlePatientInfoChange("consultingDoctor", e.target.value)
-                  }
+                  onChange={(e) => handlePatientInfoChange("consultingDoctor", e.target.value)}
                   placeholder="Doctor name"
                 />
               </div>
@@ -1009,9 +788,7 @@ const InitialAssessment = () => {
                   type="text"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                   value={patientInfo.address}
-                  onChange={(e) =>
-                    handlePatientInfoChange("address", e.target.value)
-                  }
+                  onChange={(e) => handlePatientInfoChange("address", e.target.value)}
                   placeholder="Complete address"
                 />
               </div>
@@ -1023,15 +800,12 @@ const InitialAssessment = () => {
                   type="text"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                   value={patientInfo.referredBy}
-                  onChange={(e) =>
-                    handlePatientInfoChange("referredBy", e.target.value)
-                  }
+                  onChange={(e) => handlePatientInfoChange("referredBy", e.target.value)}
                   placeholder="Referring doctor/clinic"
                 />
               </div>
             </div>
           </div>
-
           {templateFields.length > 0 ? (
             templateFields.map((field, index) => (
               <div key={field.id} className="bg-white rounded-xl shadow-lg p-6">
@@ -1057,7 +831,6 @@ const InitialAssessment = () => {
               </p>
             </div>
           ) : null}
-
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center mb-4">
               <PenTool className="w-6 h-6 text-purple-500 mr-3" />
@@ -1072,7 +845,6 @@ const InitialAssessment = () => {
               onChange={(e) => setHandwrittenNotes(e.target.value)}
             />
           </div>
-
           <div className="flex flex-wrap gap-4 justify-center">
             <button
               type="submit"
@@ -1100,7 +872,6 @@ const InitialAssessment = () => {
             </button>
           </div>
         </form>
-
         {showTemplateModal && (
           <TemplateModal
             isOpen={showTemplateModal}

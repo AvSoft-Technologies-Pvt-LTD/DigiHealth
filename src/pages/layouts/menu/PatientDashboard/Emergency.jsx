@@ -1,5 +1,4 @@
-// Emergency.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -18,6 +17,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useNavigate } from "react-router-dom";
 import PaymentGatewayPage from "../../../../components/microcomponents/PaymentGatway";
+import { getHospitalDropdown } from "../../../../utils/masterService";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -29,8 +29,18 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+};
+
 const Emergency = () => {
-  // All your existing state and ref declarations remain the same
   const [step, setStep] = useState(0);
   const [type, setType] = useState("");
   const [typeSearch, setTypeSearch] = useState("");
@@ -46,6 +56,34 @@ const Emergency = () => {
   const [dropLocationSearch, setDropLocationSearch] = useState("");
   const [showDropLocationDropdown, setShowDropLocationDropdown] = useState(false);
   const dropLocationRef = useRef(null);
+  const [hospitals, setHospitals] = useState([]);
+  const [selectedHospital, setSelectedHospital] = useState("");
+  const [selectedHospitalId, setSelectedHospitalId] = useState("");
+  const [hospitalSearch, setHospitalSearch] = useState("");
+  const debouncedHospitalSearch = useDebounce(hospitalSearch, 300);
+  const [showHospitalDropdown, setShowHospitalDropdown] = useState(false);
+  const hospitalRef = useRef(null);
+
+const filteredHospitals = useMemo(() => {
+  if (!debouncedHospitalSearch.trim()) return hospitals;
+  return hospitals.filter((hospital) =>
+    hospital.hospitalName?.toLowerCase().includes(debouncedHospitalSearch.toLowerCase())
+  );
+}, [hospitals, debouncedHospitalSearch]);
+
+  const hospitalMap = useMemo(() => {
+    const m = {};
+    for (const hospital of hospitals) {
+      m[String(hospital.id)] = hospital.hospitalName;
+    }
+    return m;
+  }, [hospitals]);
+
+  const resolveHospitalLabel = (val) => {
+    if (val == null) return "";
+    return hospitalMap[String(val)] || String(val);
+  };
+
   const [equip, setEquip] = useState([]);
   const [date, setDate] = useState(new Date());
   const [pickup, setPickup] = useState("");
@@ -87,7 +125,110 @@ const Emergency = () => {
   const BOOKING_API_URL = "https://mocki.io/v1/a5267894-5dcd-4423-b13d-6bbcf17509c6";
   const navigate = useNavigate();
 
-  // All your existing functions remain the same
+ const fetchHospitals = async () => {
+  try {
+    const response = await getHospitalDropdown();
+    const sortedHospitals = (response.data || []).sort((a, b) =>
+      a.hospitalName.localeCompare(b.hospitalName)
+    );
+    setHospitals(sortedHospitals);
+  } catch (error) {
+    console.error("Failed to load hospitals:", error);
+    toast.error("Failed to load hospitals");
+  }
+};
+
+
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      () => setCurrentLocation("Dharwad"),
+      (e) => {
+        setCurrentLocation("Dharwad");
+      }
+    );
+    fetchHospitals();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(BOOKING_API_URL);
+        setData(res.data);
+      } catch (e) {
+        toast.error("Failed to load booking data");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showEquip && equipRef.current && !equipRef.current.contains(e.target))
+        setShowEquip(false);
+      if (
+        showTypeDropdown &&
+        typeRef.current &&
+        !typeRef.current.contains(e.target)
+      )
+        setShowTypeDropdown(false);
+      if (
+        showCatDropdown &&
+        catRef.current &&
+        !catRef.current.contains(e.target)
+      )
+        setShowCatDropdown(false);
+      if (
+        showPickupDropdown &&
+        pickupRef.current &&
+        !pickupRef.current.contains(e.target)
+      )
+        setShowPickupDropdown(false);
+      if (
+        showDropLocationDropdown &&
+        dropLocationRef.current &&
+        !dropLocationRef.current.contains(e.target)
+      )
+        setShowDropLocationDropdown(false);
+      if (
+        showHospitalDropdown &&
+        hospitalRef.current &&
+        !hospitalRef.current.contains(e.target)
+      )
+        setShowHospitalDropdown(false);
+      if (
+        showSuggestions &&
+        searchRef.current &&
+        !searchRef.current.contains(e.target)
+      ) {
+        setTimeout(() => {
+          setShowSuggestions(false);
+        }, 150);
+      }
+      if (
+        showLocationSuggestions &&
+        mapSearchRef.current &&
+        !mapSearchRef.current.contains(e.target)
+      ) {
+        setTimeout(() => {
+          setShowLocationSuggestions(false);
+        }, 150);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [
+    showEquip,
+    showSuggestions,
+    showTypeDropdown,
+    showCatDropdown,
+    showPickupDropdown,
+    showDropLocationDropdown,
+    showHospitalDropdown,
+    showLocationSuggestions,
+  ]);
+
   const MapClickHandler = () => {
     useMapEvents({
       click: (e) => {
@@ -121,7 +262,6 @@ const Emergency = () => {
           reverseGeocode(...pos);
         },
         (err) => {
-          console.error("Error:", err);
           toast.error("Unable to get current location");
         }
       );
@@ -152,7 +292,6 @@ const Emergency = () => {
       setLocationSuggestions(suggestions);
       setShowLocationSuggestions(suggestions.length > 0);
     } catch (e) {
-      console.error("Failed to fetch location suggestions:", e);
       setLocationSuggestions([]);
       setShowLocationSuggestions(false);
     }
@@ -194,7 +333,6 @@ const Emergency = () => {
         setAddressForm((p) => ({ ...p, locality: data[0].display_name }));
       } else toast.error("Location not found");
     } catch (e) {
-      console.error("Search failed:", e);
       toast.error("Search failed");
     } finally {
       setIsSearching(false);
@@ -204,117 +342,8 @@ const Emergency = () => {
   const saveAddress = () => {
     if (!addressForm.name || !addressForm.phone)
       return toast.error("Please fill in your name and phone number");
-    console.log("Saved address:", {
-      ...addressForm,
-      coordinates: markerPosition,
-    });
     toast.success("Address saved successfully!");
     setShowLocationPopup(false);
-  };
-
-  useEffect(() => {
-    navigator.geolocation?.getCurrentPosition(
-      () => setCurrentLocation("Dharwad"),
-      (e) => {
-        console.log("Denied:", e);
-        setCurrentLocation("Dharwad");
-      }
-    );
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(BOOKING_API_URL);
-        setData(res.data);
-        console.log("Loaded data:", res.data);
-      } catch (e) {
-        console.error("Fetch error:", e);
-        toast.error("Failed to load booking data");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (showEquip && equipRef.current && !equipRef.current.contains(e.target))
-        setShowEquip(false);
-      if (
-        showTypeDropdown &&
-        typeRef.current &&
-        !typeRef.current.contains(e.target)
-      )
-        setShowTypeDropdown(false);
-      if (
-        showCatDropdown &&
-        catRef.current &&
-        !catRef.current.contains(e.target)
-      )
-        setShowCatDropdown(false);
-      if (
-        showPickupDropdown &&
-        pickupRef.current &&
-        !pickupRef.current.contains(e.target)
-      )
-        setShowPickupDropdown(false);
-      if (
-        showDropLocationDropdown &&
-        dropLocationRef.current &&
-        !dropLocationRef.current.contains(e.target)
-      )
-        setShowDropLocationDropdown(false);
-      if (
-        showSuggestions &&
-        searchRef.current &&
-        !searchRef.current.contains(e.target)
-      ) {
-        setTimeout(() => {
-          setShowSuggestions(false);
-        }, 150);
-      }
-      if (
-        showLocationSuggestions &&
-        mapSearchRef.current &&
-        !mapSearchRef.current.contains(e.target)
-      ) {
-        setTimeout(() => {
-          setShowLocationSuggestions(false);
-        }, 150);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [
-    showEquip,
-    showSuggestions,
-    showTypeDropdown,
-    showCatDropdown,
-    showPickupDropdown,
-    showDropLocationDropdown,
-    showLocationSuggestions,
-  ]);
-
-  useEffect(() => {
-    if (hasSearched && searchQuery) searchAmbulances(searchQuery);
-  }, [selectedFilter]);
-
-  const getIcon = (name, size = 20) => {
-    const icons = {
-      Activity: Lucide.Activity,
-      Ambulance: Lucide.Ambulance,
-      Heart: Lucide.Heart,
-      HeartPulse: Lucide.HeartPulse,
-      Cylinder: Lucide.Cylinder,
-      Bed: Lucide.Bed,
-      Lungs: Lucide.Settings,
-      Wheelchair: Lucide.Armchair,
-      ActivitySquare: Lucide.ActivitySquare,
-      Zap: Lucide.Zap,
-    };
-    return React.createElement(icons[name] || Lucide.Activity, { size });
   };
 
   const generateSuggestions = (query) => {
@@ -518,6 +547,22 @@ const Emergency = () => {
 
   const handleFilterChange = (f) => setSelectedFilter(f);
 
+  const getIcon = (name, size = 20) => {
+    const icons = {
+      Activity: Lucide.Activity,
+      Ambulance: Lucide.Ambulance,
+      Heart: Lucide.Heart,
+      HeartPulse: Lucide.HeartPulse,
+      Cylinder: Lucide.Cylinder,
+      Bed: Lucide.Bed,
+      Lungs: Lucide.Settings,
+      Wheelchair: Lucide.Armchair,
+      ActivitySquare: Lucide.ActivitySquare,
+      Zap: Lucide.Zap,
+    };
+    return React.createElement(icons[name] || Lucide.Activity, { size });
+  };
+
   const getAmbulanceTypeIcon = (type) =>
     ({
       ICU: <Lucide.Heart className="text-red-600" size={24} />,
@@ -549,6 +594,8 @@ const Emergency = () => {
     equipment: equip,
     pickupLocation: data.locations.find((l) => l.id === pickup)?.name,
     dropLocation: data.locations.find((l) => l.id === dropLocation)?.name,
+    hospitalLocation: selectedHospital,
+    hospitalId: selectedHospitalId,
     date: format(date, "yyyy-MM-dd"),
     totalAmount: calculateEquipmentTotal(),
   });
@@ -560,6 +607,9 @@ const Emergency = () => {
     setEquip([]);
     setPickup("");
     setDropLocation("");
+    setSelectedHospital("");
+    setSelectedHospitalId("");
+    setHospitalSearch("");
     setDate(new Date());
   };
 
@@ -599,7 +649,6 @@ const Emergency = () => {
   };
 
   const handlePaymentFailure = (error) => {
-    console.error("Payment Failure:", error);
     toast.error(`Payment failed: ${error.reason}. Please try again or use a different payment method.`);
     setShowPaymentGateway(false);
   };
@@ -607,7 +656,7 @@ const Emergency = () => {
   const renderNearbyAmbulanceView = () => (
     <div className="w-full min-h-screen bg-gray-50 py-4 px-2 sm:py-8 sm:px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
             <div className="flex items-center gap-4">
               <div
@@ -657,14 +706,14 @@ const Emergency = () => {
                         setFilteredAmbulances([]);
                         setHasSearched(false);
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 bg-white shadow-sm hover:shadow-md rounded-full w-5 h-5 flex items-center justify-center transition-all duration-200 text-xs sm:text-sm"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 bg-white rounded-full w-5 h-5 flex items-center justify-center transition-all duration-200 text-xs sm:text-sm"
                     >
                       ✕
                     </button>
                   )}
                 </div>
                 {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                  <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
                     {suggestions.map((suggestion, index) => (
                       <button
                         key={`${suggestion.type}-${suggestion.value}-${index}`}
@@ -694,8 +743,8 @@ const Emergency = () => {
                             {suggestion.value}
                           </div>
                           {suggestion.location && (
-                            <div className="text-xs sm:text-sm text-gray-500 truncate">
-                              {suggestion.location}
+                            <div className="text-xs sm:text-sm text-gray-500 flex items-center gap-1">
+                              <span className="truncate">{suggestion.location}</span>
                               {suggestion.available !== undefined && (
                                 <span
                                   className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${
@@ -774,7 +823,7 @@ const Emergency = () => {
               {filteredAmbulances.map((ambulance) => (
                 <div
                   key={ambulance.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                  className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors"
                 >
                   <div className="p-4 sm:p-6">
                     <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
@@ -853,7 +902,7 @@ const Emergency = () => {
           </div>
         )}
         {searchLoading && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
+          <div className="bg-white rounded-xl border border-gray-200 p-8 sm:p-12 text-center">
             <Lucide.Loader2
               className="animate-spin mx-auto mb-3 sm:mb-4 text-green-500 size-6 sm:size-8"
               size={32}
@@ -865,7 +914,7 @@ const Emergency = () => {
           filteredAmbulances.length === 0 &&
           hasSearched &&
           searchQuery && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
+            <div className="bg-white rounded-xl border border-gray-200 p-8 sm:p-12 text-center">
               <Lucide.AlertCircle
                 className="mx-auto mb-3 sm:mb-4 text-gray-400 size-6 sm:size-8"
                 size={32}
@@ -893,7 +942,7 @@ const Emergency = () => {
 
   const renderLocationPopup = () => (
     <div className="fixed inset-0 backdrop-blur-sm bg-white/10 z-50 overflow-y-auto p-2 sm:p-4">
-      <div className="mx-auto max-w-full sm:max-w-4xl bg-white rounded-lg shadow-xl h-[95vh] sm:h-[90vh] flex flex-col mt-2 sm:mt-4">
+      <div className="mx-auto max-w-full sm:max-w-4xl bg-white rounded-lg border border-gray-300 h-[95vh] sm:h-[90vh] flex flex-col mt-2 sm:mt-4">
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
             Enter complete address
@@ -908,7 +957,7 @@ const Emergency = () => {
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 relative">
             <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 z-[9999] pointer-events-auto">
-              <div className="bg-white rounded-lg shadow-lg p-2 sm:p-3 w-full max-w-full sm:max-w-3xl mx-auto">
+              <div className="bg-white rounded-lg border border-gray-300 p-2 sm:p-3 w-full max-w-full sm:max-w-3xl mx-auto">
                 <div className="flex gap-1.5 sm:gap-2" ref={mapSearchRef}>
                   <div className="flex-1 relative">
                     <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -924,7 +973,7 @@ const Emergency = () => {
                     />
                     {showLocationSuggestions &&
                       locationSuggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
                           {locationSuggestions.map((suggestion) => (
                             <button
                               key={suggestion.id}
@@ -966,7 +1015,7 @@ const Emergency = () => {
             </div>
             <button
               onClick={getCurrentLocation}
-              className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 z-10 px-3 py-1.5 sm:px-4 sm:py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center gap-1.5 sm:gap-2 shadow-lg text-xs sm:text-sm"
+              className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 z-10 px-3 py-1.5 sm:px-4 sm:py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
             >
               <Lucide.MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Go to current location
@@ -1123,74 +1172,205 @@ const Emergency = () => {
       return (
         <div className="w-full space-y-4 sm:space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div className="w-full relative" ref={pickupRef}>
+              <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
+                Pickup Location
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search pickup location"
+                  value={pickupSearch}
+                  onChange={(e) => setPickupSearch(e.target.value)}
+                  onFocus={() => setShowPickupDropdown(true)}
+                  className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
+                  readOnly={!!pickup && !showPickupDropdown}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPickupDropdown(!showPickupDropdown)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <Lucide.ChevronDown
+                    className={`transition-transform duration-200 ${showPickupDropdown ? 'rotate-180' : ''}`}
+                    size={16}
+                  />
+                </button>
+              </div>
+              {showPickupDropdown &&
+                data.locations &&
+                data.locations.length > 0 && (
+                  <div className="absolute z-[999] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto">
+                    {data.locations
+                      .filter((item) =>
+                        item.name
+                          .toLowerCase()
+                          .includes(pickupSearch.toLowerCase())
+                      )
+                      .map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => {
+                            setPickup(item.id);
+                            setPickupSearch(item.name);
+                            setShowPickupDropdown(false);
+                          }}
+                          className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0"
+                        >
+                          {item.name}
+                        </div>
+                      ))}
+                  </div>
+                )}
+            </div>
+           <div className="w-full relative" ref={hospitalRef}>
+  <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
+    Hospital Location
+  </label>
+  <div className="relative">
+    <input
+      type="text"
+      placeholder="Search hospital..."
+      value={hospitalSearch}
+      onChange={(e) => {
+        setHospitalSearch(e.target.value);
+        setShowHospitalDropdown(true);
+      }}
+      onFocus={() => setShowHospitalDropdown(true)}
+      className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
+    />
+    <button
+      type="button"
+      onClick={() => setShowHospitalDropdown(!showHospitalDropdown)}
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    >
+      <Lucide.ChevronDown
+        className={`transition-transform duration-200 ${showHospitalDropdown ? 'rotate-180' : ''}`}
+        size={16}
+      />
+    </button>
+  </div>
+  {showHospitalDropdown && (
+    <div className="absolute z-[999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-hidden">
+      <div className="max-h-48 overflow-y-auto">
+        {filteredHospitals.map((hospital) => (
+          <div
+            key={hospital.id}
+            onClick={() => {
+              setSelectedHospital(hospital.hospitalName);
+              setSelectedHospitalId(hospital.id);
+              setShowHospitalDropdown(false);
+              setHospitalSearch(hospital.hospitalName);
+            }}
+            className="px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs sm:text-sm text-gray-900"
+          >
+            {hospital.hospitalName}
+          </div>
+        ))}
+        {filteredHospitals.length === 0 && (
+          <div className="px-3 py-4 text-center text-gray-500 text-xs sm:text-sm">
+            No hospitals found
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+</div>
+
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="w-full relative" ref={typeRef}>
               <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
                 Select Ambulance Type
               </label>
-              <input
-                type="text"
-                placeholder="Search ambulance type"
-                value={typeSearch}
-                onChange={(e) => setTypeSearch(e.target.value)}
-                onFocus={() => setShowTypeDropdown(true)}
-                className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
-                readOnly={!!type && !showTypeDropdown}
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search ambulance type"
+                  value={typeSearch}
+                  onChange={(e) => setTypeSearch(e.target.value)}
+                  onFocus={() => setShowTypeDropdown(true)}
+                  className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
+                  readOnly={!!type && !showTypeDropdown}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <Lucide.ChevronDown
+                    className={`transition-transform duration-200 ${showTypeDropdown ? 'rotate-180' : ''}`}
+                    size={16}
+                  />
+                </button>
+              </div>
               {showTypeDropdown && (
-                <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg">
+                <div className="absolute z-[999] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto">
                   {data.ambulanceTypes
                     .filter((item) =>
                       item.name.toLowerCase().includes(typeSearch.toLowerCase())
                     )
                     .map((item) => (
-                      <li
+                      <div
                         key={item.id}
                         onClick={() => {
                           setType(item.id);
                           setTypeSearch(item.name);
                           setShowTypeDropdown(false);
                         }}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-100 text-xs sm:text-sm"
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0"
                       >
                         {item.name}
-                      </li>
+                      </div>
                     ))}
-                </ul>
+                </div>
               )}
             </div>
             <div className="w-full relative" ref={catRef}>
               <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
                 Select Category
               </label>
-              <input
-                type="text"
-                placeholder="Search category"
-                value={catSearch}
-                onChange={(e) => setCatSearch(e.target.value)}
-                onFocus={() => setShowCatDropdown(true)}
-                className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
-                readOnly={!!cat && !showCatDropdown}
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search category"
+                  value={catSearch}
+                  onChange={(e) => setCatSearch(e.target.value)}
+                  onFocus={() => setShowCatDropdown(true)}
+                  className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
+                  readOnly={!!cat && !showCatDropdown}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCatDropdown(!showCatDropdown)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <Lucide.ChevronDown
+                    className={`transition-transform duration-200 ${showCatDropdown ? 'rotate-180' : ''}`}
+                    size={16}
+                  />
+                </button>
+              </div>
               {showCatDropdown && (
-                <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg">
+                <div className="absolute z-[999] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto">
                   {data.categories
                     .filter((item) =>
                       item.name.toLowerCase().includes(catSearch.toLowerCase())
                     )
                     .map((item) => (
-                      <li
+                      <div
                         key={item.id}
                         onClick={() => {
                           setCat(item.id);
                           setCatSearch(item.name);
                           setShowCatDropdown(false);
                         }}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-100 text-xs sm:text-sm"
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0"
                       >
                         {item.name}
-                      </li>
+                      </div>
                     ))}
-                </ul>
+                </div>
               )}
             </div>
           </div>
@@ -1209,14 +1389,17 @@ const Emergency = () => {
                     ? "Select equipment"
                     : `${equip.length} items selected`}
                 </span>
-                <Lucide.ChevronDown size={14} className="sm:size-5" />
+                <Lucide.ChevronDown
+                  className={`transition-transform duration-200 ${showEquip ? 'rotate-180' : ''}`}
+                  size={14}
+                />
               </button>
               {showEquip && (
-                <div className="absolute z-[9999] mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-auto">
+                <div className="absolute z-[999] mt-1 w-full bg-white border border-gray-200 rounded-lg max-h-48 overflow-auto">
                   {data.equipment.map((item) => (
                     <label
                       key={item.id}
-                      className="flex items-center justify-between px-2.5 py-1.5 sm:px-3 sm:py-2 cursor-pointer hover:bg-gray-50"
+                      className="flex items-center justify-between px-2.5 py-1.5 sm:px-3 sm:py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                     >
                       <div className="flex items-center">
                         <input
@@ -1262,86 +1445,6 @@ const Emergency = () => {
                 className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
                 dateFormat="yyyy-MM-dd"
               />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="w-full relative" ref={pickupRef}>
-              <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
-                Pickup Location
-              </label>
-              <input
-                type="text"
-                placeholder="Search pickup location"
-                value={pickupSearch}
-                onChange={(e) => setPickupSearch(e.target.value)}
-                onFocus={() => setShowPickupDropdown(true)}
-                className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
-                readOnly={!!pickup && !showPickupDropdown}
-              />
-              {showPickupDropdown &&
-                data.locations &&
-                data.locations.length > 0 && (
-                  <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg">
-                    {data.locations
-                      .filter((item) =>
-                        item.name
-                          .toLowerCase()
-                          .includes(pickupSearch.toLowerCase())
-                      )
-                      .map((item) => (
-                        <li
-                          key={item.id}
-                          onClick={() => {
-                            setPickup(item.id);
-                            setPickupSearch(item.name);
-                            setShowPickupDropdown(false);
-                          }}
-                          className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-100 text-xs sm:text-sm"
-                        >
-                          {item.name}
-                        </li>
-                      ))}
-                  </ul>
-                )}
-            </div>
-            <div className="w-full relative" ref={dropLocationRef}>
-              <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
-                Drop Location
-              </label>
-              <input
-                type="text"
-                placeholder="Search drop location"
-                value={dropLocationSearch}
-                onChange={(e) => setDropLocationSearch(e.target.value)}
-                onFocus={() => setShowDropLocationDropdown(true)}
-                className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
-                readOnly={!!dropLocation && !showDropLocationDropdown}
-              />
-              {showDropLocationDropdown &&
-                data.locations &&
-                data.locations.length > 0 && (
-                  <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg">
-                    {data.locations
-                      .filter((item) =>
-                        item.name
-                          .toLowerCase()
-                          .includes(dropLocationSearch.toLowerCase())
-                      )
-                      .map((item) => (
-                        <li
-                          key={item.id}
-                          onClick={() => {
-                            setDropLocation(item.id);
-                            setDropLocationSearch(item.name);
-                            setShowDropLocationDropdown(false);
-                          }}
-                          className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-100 text-xs sm:text-sm"
-                        >
-                          {item.name}
-                        </li>
-                      ))}
-                  </ul>
-                )}
             </div>
           </div>
         </div>
@@ -1397,11 +1500,10 @@ const Emergency = () => {
               </div>
               <div className="flex justify-between items-center py-1.5 sm:py-2">
                 <span className="text-gray-600 font-medium text-xs sm:text-sm">
-                  Drop Location:
+                  Hospital Location:
                 </span>
                 <span className="font-semibold text-gray-800 text-xs sm:text-sm">
-                  {data.locations.find((l) => l.id === dropLocation)?.name ||
-                    "Not specified"}
+                  {selectedHospital || "Not specified"}
                 </span>
               </div>
             </div>
@@ -1513,7 +1615,6 @@ const Emergency = () => {
       </>
     );
   }
-
   return (
     <div className="w-full min-h-screen bg-gray-50 py-4 px-2 sm:py-8 sm:px-4">
       <ToastContainer
@@ -1535,7 +1636,7 @@ const Emergency = () => {
           onPaymentFailure={handlePaymentFailure}
         />
       ) : (
-        <div className="max-w-full sm:max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="max-w-full sm:max-w-6xl mx-auto bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gray-800">
             <div className="flex items-center gap-2.5 sm:gap-3">
               <div
@@ -1570,7 +1671,7 @@ const Emergency = () => {
                     <div
                       className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full mb-1.5 sm:mb-2 transition-all ${
                         step === index || step > index
-                          ? "text-white shadow-lg"
+                          ? "text-white"
                           : "bg-gray-200 text-gray-600 border border-gray-300"
                       }`}
                       style={
