@@ -1,8 +1,7 @@
 
 
-
-
 import React, { useState, useRef, useEffect } from "react";
+import axios from "axios";
 import {
   Pill,
   Save,
@@ -62,7 +61,12 @@ const PrescriptionForm = ({
   address,
   showShareModal,
   setShowShareModal,
-  doctorName, // Add doctorName prop
+  doctorName,
+  hospitalName,
+  ptemail,
+  drEmail,
+  diagnosis,
+  type,
 }) => {
   const [prescriptions, setPrescriptions] = useState(
     data?.prescriptions || [{ ...defaultMedicine }]
@@ -103,54 +107,59 @@ const PrescriptionForm = ({
     }
   };
 
-  const handleSave = async () => {
-    if (!email || !phone) {
-      toast.error("❌ Email and phone are required.", {
-        position: "top-right",
-        autoClose: 2000,
-        closeOnClick: true,
-      });
-      return;
-    }
-    const prescriptionPayload = {
-      prescriptions,
-      date: new Date().toLocaleDateString(),
-      patientName: patientName || patient?.name || patient?.patientName || "Unknown",
-      patientEmail: email,
-      patientPhone: phone,
-      patientGender: gender,
-      patientAge: age,
-      doctorName: doctorName || "Dr. Kavya Patil", // Include doctorName
-      type: "prescription",
-    };
+  const postPrescriptionToMockAPI = async (prescriptionPayload) => {
     try {
-      const response = await fetch(
+      const now = new Date();
+      const currentTimestamp = now.toISOString();
+      const payload = {
+        createdAt: currentTimestamp,
+        name: patientName || patient?.name || "Unknown Patient",
+        avatar: "https://avatars.githubusercontent.com/u/15015373",
+        prescriptions: prescriptionPayload.prescriptions,
+        patientEmail: email,
+        doctorName: doctorName || "Dr. Kavya Patil",
+        doctorEmail: drEmail || "dr.sheetal@example.com",
+        hospitalName: hospitalName || "AV Hospital",
+      };
+      const response = await axios.post(
         "https://68abfd0c7a0bbe92cbb8d633.mockapi.io/prescription",
+        payload,
         {
-          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(prescriptionPayload),
         }
       );
-      if (!response.ok) {
+      if (response.status >= 200 && response.status < 300) {
+        return response.data;
+      } else {
         throw new Error(`API failed: ${response.status}`);
       }
-      const result = await response.json();
+    } catch (error) {
+      console.error("MockAPI Error:", error);
+      throw error;
+    }
+  };
+
+  const handleSave = async () => {
+    const prescriptionPayload = {
+      prescriptions,
+    };
+    try {
+      const result = await postPrescriptionToMockAPI(prescriptionPayload);
       setIsSaved(true);
       setPrescriptionId(result.id);
       setIsEdit(false);
       if (onSave) {
         onSave("prescription", { prescriptions, id: result.id });
       }
-      toast.success("✅ Prescription saved successfully!", {
+      toast.success("✅ Prescription saved successfully to MockAPI!", {
         position: "top-right",
         autoClose: 2000,
         closeOnClick: true,
       });
     } catch (error) {
-      console.error("API Error:", error);
+      console.error("MockAPI Error:", error);
       toast.error(`❌ ${error.message}`, {
         position: "top-right",
         autoClose: 2000,
@@ -170,40 +179,37 @@ const PrescriptionForm = ({
     }
     const prescriptionPayload = {
       prescriptions,
-      date: new Date().toLocaleDateString(),
-      patientName: patientName || patient?.name || patient?.patientName || "Unknown",
+      patientName: patientName || patient?.name || "Unknown Patient",
       patientEmail: email,
-      patientPhone: phone,
-      patientGender: gender,
-      patientAge: age,
-      doctorName: doctorName || "Dr. Kavya Patil", // Include doctorName
-      type: "prescription",
+      doctorName: doctorName || "Dr. Kavya Patil",
+      doctorEmail: drEmail || "dr.sheetal@example.com",
+      hospitalName: hospitalName || "AV Hospital",
     };
     try {
-      const response = await fetch(
+      const response = await axios.put(
         `https://68abfd0c7a0bbe92cbb8d633.mockapi.io/prescription/${prescriptionId}`,
+        prescriptionPayload,
         {
-          method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(prescriptionPayload),
         }
       );
-      if (!response.ok) {
+      if (response.status >= 200 && response.status < 300) {
+        setIsEdit(false);
+        if (onSave) {
+          onSave("prescription", { prescriptions, id: prescriptionId });
+        }
+        toast.success("✅ Prescription updated successfully!", {
+          position: "top-right",
+          autoClose: 2000,
+          closeOnClick: true,
+        });
+      } else {
         throw new Error(`API failed: ${response.status}`);
       }
-      setIsEdit(false);
-      if (onSave) {
-        onSave("prescription", { prescriptions, id: prescriptionId });
-      }
-      toast.success("✅ Prescription updated successfully!", {
-        position: "top-right",
-        autoClose: 2000,
-        closeOnClick: true,
-      });
     } catch (error) {
-      console.error("API Error:", error);
+      console.error("MockAPI Error:", error);
       toast.error(`❌ ${error.message}`, {
         position: "top-right",
         autoClose: 2000,
@@ -236,9 +242,9 @@ const PrescriptionForm = ({
   };
 
   const generateWhatsAppMessage = () => {
-    let message = `*Prescription from AV Hospital*\n`;
-    message += `*Patient:* ${patientName || patient?.name || patient?.patientName || "---"}\n`;
-    message += `*Doctor:* ${doctorName || "Dr. Kavya Patil"}\n`; // Include doctorName
+    let message = `*Prescription from ${hospitalName || "AV Hospital"}*\n`;
+    message += `*Patient:* ${patientName || patient?.name || "---"}\n`;
+    message += `*Doctor:* ${doctorName || "Dr. Kavya Patil"}\n`;
     message += `*Date:* ${new Date().toLocaleDateString()}\n\n`;
     message += `*Prescribed Medicines:*\n`;
     prescriptions.forEach((med, index) => {
@@ -260,47 +266,130 @@ const PrescriptionForm = ({
     }
   };
 
+  const handleEdit = () => {
+    setIsEdit(true);
+  };
+
+  const handleCancel = () => {
+    setPrescriptions(data?.prescriptions || [{ ...defaultMedicine }]);
+    setIsEdit(false);
+  };
+
   return (
     <>
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-slideIn">
-        <div className="sub-heading px-6 py-4 flex justify-between items-center bg-[var(--primary-color)]">
-          <div className="flex items-center gap-3">
-            <Pill className="text-xl text-white" />
-            <h3 className="text-white font-semibold">Prescription</h3>
-          </div>
-          <div className="flex items-center gap-3 text-white">
-            <button
-              onClick={openShareModal}
-              className="hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-colors"
-              title="Share Prescription"
-            >
-              <Share2 className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => onPrint && onPrint("prescription")}
-              className="hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-colors"
-              title="Print Prescription"
-            >
-              <Printer className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 6px;
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #a8a8a8;
+        }
+        @media (min-width: 768px) {
+          .desktop-view {
+            display: block;
+          }
+          .mobile-view {
+            display: none;
+          }
+        }
+        @media (max-width: 767px) {
+          .desktop-view {
+            display: none;
+          }
+          .mobile-view {
+            display: block;
+          }
+        }
+      `}</style>
+      <div
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: "0.5rem",
+          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+          border: "1px solid #e5e7eb",
+          overflow: "hidden",
+          width: "100%",
+          maxWidth: "100%",
+        }}
+      >
+     <div
+  style={{
+    backgroundColor: "var(--primary-color)",
+    padding: "0.75rem 1rem",
+    display: "flex",
+    flexDirection: "row", // row layout
+    justifyContent: "space-between", // space between title+icon and buttons
+    alignItems: "center", // vertically align center
+    width: "100%",
+  }}
+>
+  {/* Left Section - Icon + Title */}
+  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+    <Pill style={{ color: "#fff", width: "1.25rem", height: "1.25rem" }} />
+    <h3 style={{ color: "#fff", fontWeight: "600", fontSize: "1rem" }}>
+      Prescription
+    </h3>
+  </div>
+
+  {/* Right Section - Buttons */}
+  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+    <button
+      onClick={openShareModal}
+      style={{
+        backgroundColor: "transparent",
+        border: "none",
+        color: "#fff",
+        padding: "0.5rem",
+        borderRadius: "0.5rem",
+        cursor: "pointer",
+      }}
+      title="Share Prescription"
+    >
+      <Share2 style={{ width: "1.25rem", height: "1.25rem" }} />
+    </button>
+    <button
+      onClick={() => onPrint && onPrint("prescription")}
+      style={{
+        backgroundColor: "transparent",
+        border: "none",
+        color: "#fff",
+        padding: "0.5rem",
+        borderRadius: "0.5rem",
+        cursor: "pointer",
+      }}
+      title="Print Prescription"
+    >
+      <Printer style={{ width: "1.25rem", height: "1.25rem" }} />
+    </button>
+  </div>
+</div>
+
+
         {capturedImage && (
-          <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          <div style={{ margin: "1rem", padding: "1rem", backgroundColor: "#f9fafb", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }}>
+            <h3 style={{ fontSize: "0.875rem", fontWeight: "600", color: "#374151", marginBottom: "0.5rem" }}>
               Attached Documents
             </h3>
-            <div className="flex gap-4 items-center">
-              <div className="text-center">
-                <p className="text-xs text-gray-500 mb-2">Patient Photo</p>
+            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.5rem" }}>Patient Photo</p>
                 <img
                   src={capturedImage}
                   alt="Patient"
-                  className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                  style={{ width: "6rem", height: "6rem", objectFit: "cover", borderRadius: "0.5rem", border: "1px solid #d1d5db" }}
                 />
                 <button
                   onClick={() => setCapturedImage(null)}
-                  className="text-xs text-red-500 hover:text-red-700 mt-1"
+                  style={{ color: "#ef4444", fontSize: "0.75rem", marginTop: "0.25rem", cursor: "pointer" }}
                 >
                   Remove
                 </button>
@@ -308,26 +397,32 @@ const PrescriptionForm = ({
             </div>
           </div>
         )}
-        <div className="p-6">
-          <div className="overflow-x-auto">
-            <table className="w-full border border-gray-200 rounded-lg text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Medicine</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Dosage</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Frequency</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Intake</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Duration (days)</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Actions</th>
+        <div style={{ padding: "1rem" }}>
+          <div className="desktop-view">
+            <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "1rem" }}>
+              <thead>
+                <tr style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+                  <th style={{ padding: "0.75rem", textAlign: "left", fontSize: "0.875rem", fontWeight: "600" }}>Medicine</th>
+                  <th style={{ padding: "0.75rem", textAlign: "left", fontSize: "0.875rem", fontWeight: "600" }}>Dosage</th>
+                  <th style={{ padding: "0.75rem", textAlign: "left", fontSize: "0.875rem", fontWeight: "600" }}>Frequency</th>
+                  <th style={{ padding: "0.75rem", textAlign: "left", fontSize: "0.875rem", fontWeight: "600" }}>Intake</th>
+                  <th style={{ padding: "0.75rem", textAlign: "left", fontSize: "0.875rem", fontWeight: "600" }}>Duration (days)</th>
+                  {isEdit && <th style={{ padding: "0.75rem", textAlign: "left", fontSize: "0.875rem", fontWeight: "600" }}>Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {prescriptions.map((med, i) => (
-                  <tr key={i} className="border-t border-gray-200">
-                    <td className="px-4 py-3 relative">
+                  <tr key={i} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                    <td style={{ padding: "0.75rem" }}>
                       <input
                         type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                        }}
                         placeholder="Search or enter drug name"
                         value={med.drugName}
                         onChange={(e) => {
@@ -340,7 +435,21 @@ const PrescriptionForm = ({
                         disabled={!isEdit}
                       />
                       {activeInputIndex === i && drugSuggestions.length > 0 && (
-                        <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1">
+                        <ul
+                          style={{
+                            position: "absolute",
+                            zIndex: 10,
+                            width: "200px",
+                            backgroundColor: "#fff",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "0.5rem",
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                            maxHeight: "160px",
+                            overflowY: "auto",
+                            marginTop: "0.25rem",
+                            fontSize: "0.875rem",
+                          }}
+                        >
                           {drugSuggestions.map((drug) => (
                             <li
                               key={drug.id}
@@ -350,7 +459,11 @@ const PrescriptionForm = ({
                                 handleChange(i, "strength", drug.strength || "");
                                 setDrugSuggestions([]);
                               }}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                              style={{
+                                padding: "0.5rem 0.75rem",
+                                cursor: "pointer",
+                                borderBottom: "1px solid #e5e7eb",
+                              }}
                             >
                               <strong>{drug.name}</strong> ({drug.strength}, {drug.form})
                             </li>
@@ -358,11 +471,17 @@ const PrescriptionForm = ({
                         </ul>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                    <td style={{ padding: "0.75rem" }}>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
                         <input
                           type="number"
-                          className="w-16 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
+                          style={{
+                            width: "60px",
+                            padding: "0.5rem",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "0.5rem",
+                            fontSize: "0.875rem",
+                          }}
                           placeholder="Qty"
                           min="1"
                           value={med.dosage}
@@ -370,7 +489,13 @@ const PrescriptionForm = ({
                           disabled={!isEdit}
                         />
                         <select
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
+                          style={{
+                            width: "100px",
+                            padding: "0.5rem",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "0.5rem",
+                            fontSize: "0.875rem",
+                          }}
                           value={med.dosageUnit}
                           onChange={(e) => handleChange(i, "dosageUnit", e.target.value)}
                           disabled={!isEdit}
@@ -384,9 +509,15 @@ const PrescriptionForm = ({
                         </select>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td style={{ padding: "0.75rem" }}>
                       <select
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                        }}
                         value={med.frequency}
                         onChange={(e) => handleChange(i, "frequency", e.target.value)}
                         disabled={!isEdit}
@@ -399,9 +530,15 @@ const PrescriptionForm = ({
                         ))}
                       </select>
                     </td>
-                    <td className="px-4 py-3">
+                    <td style={{ padding: "0.75rem" }}>
                       <select
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                        }}
                         value={med.intake}
                         onChange={(e) => handleChange(i, "intake", e.target.value)}
                         disabled={!isEdit}
@@ -413,10 +550,16 @@ const PrescriptionForm = ({
                         ))}
                       </select>
                     </td>
-                    <td className="px-4 py-3">
+                    <td style={{ padding: "0.75rem" }}>
                       <input
                         type="number"
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
+                        style={{
+                          width: "60px",
+                          padding: "0.5rem",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                        }}
                         placeholder="Days"
                         min="1"
                         value={med.duration}
@@ -424,70 +567,300 @@ const PrescriptionForm = ({
                         disabled={!isEdit}
                       />
                     </td>
-                    <td className="px-4 py-3">
-                      {isEdit && (
+                    {isEdit && (
+                      <td style={{ padding: "0.75rem" }}>
                         <button
                           onClick={() => removePrescription(i)}
-                          className="text-red-500 hover:text-red-700"
+                          style={{ color: "#ef4444", padding: "0.25rem", cursor: "pointer" }}
                           title="Remove"
                         >
-                          <Trash2 className="w-5 h-5" />
+                          <Trash2 style={{ width: "1rem", height: "1rem" }} />
                         </button>
-                      )}
-                    </td>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {isEdit && (
-            <div className="mt-4">
-              <button
-                onClick={addPrescription}
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm"
+          <div className="mobile-view">
+            {prescriptions.map((med, i) => (
+              <div
+                key={i}
+                style={{
+                  backgroundColor: "#f9fafb",
+                  borderRadius: "0.5rem",
+                  padding: "1rem",
+                  border: "1px solid #e5e7eb",
+                  marginBottom: "1rem",
+                }}
               >
-                <Plus className="w-4 h-4" />
-                Add Medicine
-              </button>
-            </div>
-          )}
-          <div className="flex justify-end gap-3 mt-6">
-            {!isSaved ? (
-              <button
-                onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm"
-              >
-                <Save className="w-4 h-4" />
-                Save Prescription
-              </button>
-            ) : isEdit ? (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                  <span style={{ fontSize: "0.875rem", fontWeight: "500", color: "#374151" }}>
+                    Medicine {i + 1}
+                  </span>
+                  {isEdit && (
+                    <button
+                      onClick={() => removePrescription(i)}
+                      style={{ color: "#ef4444", padding: "0.25rem", cursor: "pointer" }}
+                      title="Remove"
+                    >
+                      <Trash2 style={{ width: "1rem", height: "1rem" }} />
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div style={{ position: "relative" }}>
+                    <label style={{ display: "block", fontSize: "0.75rem", fontWeight: "500", color: "#374151", marginBottom: "0.25rem" }}>
+                      Medicine Name
+                    </label>
+                    <input
+                      type="text"
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "0.5rem",
+                        fontSize: "0.875rem",
+                      }}
+                      placeholder="Search or enter drug name"
+                      value={med.drugName}
+                      onChange={(e) => {
+                        handleChange(i, "drugName", e.target.value);
+                        fetchDrugSuggestions(e.target.value);
+                        setActiveInputIndex(i);
+                      }}
+                      onFocus={() => setActiveInputIndex(i)}
+                      onBlur={() => setTimeout(() => setDrugSuggestions([]), 200)}
+                      disabled={!isEdit}
+                    />
+                    {activeInputIndex === i && drugSuggestions.length > 0 && (
+                      <ul
+                        style={{
+                          position: "absolute",
+                          zIndex: 10,
+                          width: "100%",
+                          backgroundColor: "#fff",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "0.5rem",
+                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                          maxHeight: "160px",
+                          overflowY: "auto",
+                          marginTop: "0.25rem",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        {drugSuggestions.map((drug) => (
+                          <li
+                            key={drug.id}
+                            onClick={() => {
+                              handleChange(i, "drugName", drug.name);
+                              handleChange(i, "form", drug.form || "");
+                              handleChange(i, "strength", drug.strength || "");
+                              setDrugSuggestions([]);
+                            }}
+                            style={{
+                              padding: "0.5rem 0.75rem",
+                              cursor: "pointer",
+                              borderBottom: "1px solid #e5e7eb",
+                            }}
+                          >
+                            <strong>{drug.name}</strong> ({drug.strength}, {drug.form})
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.75rem", fontWeight: "500", color: "#374151", marginBottom: "0.25rem" }}>
+                      Dosage
+                    </label>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "0.5rem",
+                        width: "100%",
+                        flexWrap: "nowrap",
+                      }}
+                    >
+                      <input
+                        type="number"
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          padding: "0.5rem",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                        }}
+                        placeholder="Qty"
+                        min="1"
+                        value={med.dosage}
+                        onChange={(e) => handleChange(i, "dosage", +e.target.value)}
+                        disabled={!isEdit}
+                      />
+                      <select
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          padding: "0.5rem",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                        }}
+                        value={med.dosageUnit}
+                        onChange={(e) => handleChange(i, "dosageUnit", e.target.value)}
+                        disabled={!isEdit}
+                      >
+                        <option value="Tablet">Tablet</option>
+                        <option value="Capsule">Capsule</option>
+                        <option value="ml">ml</option>
+                        <option value="gm">gm</option>
+                        <option value="mg">mg</option>
+                        <option value="Drops">Drops</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.75rem", fontWeight: "500", color: "#374151", marginBottom: "0.25rem" }}>
+                      Frequency
+                    </label>
+                    <select
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "0.5rem",
+                        fontSize: "0.875rem",
+                      }}
+                      value={med.frequency}
+                      onChange={(e) => handleChange(i, "frequency", e.target.value)}
+                      disabled={!isEdit}
+                    >
+                      <option value="">Select frequency</option>
+                      {frequencyOptions.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.75rem", fontWeight: "500", color: "#374151", marginBottom: "0.25rem" }}>
+                        Intake
+                      </label>
+                      <select
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.875rem",
+                        }}
+                        value={med.intake}
+                        onChange={(e) => handleChange(i, "intake", e.target.value)}
+                        disabled={!isEdit}
+                      >
+                        {intakeOptions.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.75rem", fontWeight: "500", color: "#374151", marginBottom: "0.25rem" }}>
+                        Duration (days)
+                      </label>
+                      <input
+                        type="number"
+                        style={{
+                          width: "100%",
+                          padding: "0.5rem",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "0.5rem",
+                          fontSize: "0.85rem",
+                        }}
+                        placeholder="Days"
+                        min="1"
+                        value={med.duration}
+                        onChange={(e) => handleChange(i, "duration", +e.target.value)}
+                        disabled={!isEdit}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 w-full">
+            {isEdit && (
               <>
-                <button
-                  onClick={handleUpdate}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm"
-                >
-                  <Check className="w-4 h-4" />
-                  Update
-                </button>
-                <button
-                  onClick={() => {
-                    setPrescriptions(data?.prescriptions || [{ ...defaultMedicine }]);
-                    setIsEdit(false);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm"
-                >
-                  <X className="w-4 h-4" />
-                  Cancel
-                </button>
+                <div className="mb-2 w-full flex justify-start">
+                  <button
+                    onClick={addPrescription}
+                    className="flex items-center justify-center gap-2 px-6 py-3
+                               bg-[var(--primary-color)] text-white rounded-lg
+                               text-sm md:text-base
+                               w-full md:w-auto md:max-w-[200px]"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Medicine
+                  </button>
+                </div>
+                {!isSaved ? (
+                  <div className="mb-4 w-full flex justify-end">
+                    <button
+                      onClick={handleSave}
+                      className="flex items-center justify-center gap-2 px-6 py-3
+                                 bg-[var(--primary-color)] text-white rounded-lg
+                                 text-sm md:text-base
+                                 w-full md:w-auto md:max-w-[500px]"
+                    >
+                      <Save className="w-4 h-4" />
+                      Save Prescription
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col md:flex-row gap-2 justify-end items-center w-full mt-2">
+                    <button
+                      onClick={handleUpdate}
+                      className="flex items-center justify-center gap-2 px-6 py-3
+                                 bg-green-500 text-white rounded-lg
+                                 text-sm md:text-base
+                                 w-full md:w-auto md:max-w-[200px]"
+                    >
+                      <Check className="w-4 h-4" />
+                      Update
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="flex items-center justify-center gap-2 px-6 py-3
+                                 bg-gray-600 text-white rounded-lg
+                                 text-sm md:text-base
+                                 w-full md:w-auto md:max-w-[200px]"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </>
-            ) : (
-              <button
-                onClick={() => setIsEdit(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-opacity-90 transition-colors text-sm"
-              >
-                <Edit className="w-4 h-4" />
-                Edit Prescription
-              </button>
+            )}
+            {!isEdit && isSaved && (
+              <div className="w-full flex justify-end mt-2">
+                <button
+                  onClick={handleEdit}
+                  className="flex items-center justify-center gap-2 px-6 py-3
+                             bg-[var(--primary-color)] text-white rounded-lg
+                             text-sm md:text-base
+                             w-full md:w-auto md:max-w-[200px]"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit Prescription
+                </button>
+              </div>
             )}
           </div>
         </div>

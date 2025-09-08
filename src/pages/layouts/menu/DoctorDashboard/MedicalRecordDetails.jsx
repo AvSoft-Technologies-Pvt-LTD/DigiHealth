@@ -1,12 +1,4 @@
 
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -38,7 +30,6 @@ import {
   Receipt,
 } from "lucide-react";
 
-// Error Boundary Component
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -69,7 +60,6 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Helper: Load blob, context, and metadata from localStorage
 const loadRecordingFromLocalStorage = (key) => {
   const dataUrl = localStorage.getItem(key);
   const metadataStr = localStorage.getItem(`${key}_metadata`);
@@ -666,240 +656,292 @@ const MedicalRecordDetails = () => {
           return null;
       }
     }
+   const tabContentMap = {
+  "medical-records": (
+    <div className="space-y-6">
+      {/* Header */}
+   <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-3">
+  {/* Left Section */}
+  <div className="flex items-center gap-2 md:gap-3">
+    <FileText
+      size={18}
+      className="md:size-[24px] text-[var(--primary-color)]"
+    />
+    <h3 className="text-base sm:text-lg md:text-xl font-semibold">
+      Medical Information
+    </h3>
+  </div>
 
-    const tabContentMap = {
-      "medical-records": (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <FileText size={24} className="text-[var(--primary-color)]" />
-              <h3 className="h4-heading">Medical Information</h3>
+  {/* Button Section */}
+  <button className="px-3 py-1 bg-[var(--primary-color)] text-white rounded-lg hover:opacity-90 transition-opacity text-sm self-start md:self-auto">
+    View Original
+  </button>
+</div>
+
+
+
+
+      {/* Loading / Error / Content */}
+      {loading ? (
+        <div className="text-center py-8">Loading clinical notes...</div>
+      ) : error ? (
+        <div className="text-center text-gray-600 py-8">{error}</div>
+      ) : clinicalNotes ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+          {[
+            { label: "Chief Complaint", value: clinicalNotes.chiefComplaint || clinicalNotes.chiefcomplaint || "N/A" },
+            { label: "Past History", value: clinicalNotes.pastHistory || clinicalNotes.History || "N/A" },
+            { label: "Advice", value: clinicalNotes.treatmentAdvice || clinicalNotes.Advice || "N/A" },
+            { label: "Plan", value: clinicalNotes.Plan || "N/A" },
+          ].map((item, index) => (
+            <div
+              key={index}
+              className="bg-white p-4 sm:p-6 rounded-xl border border-gray-100 hover:shadow-md transition-shadow"
+            >
+              <div className="font-bold text-sm text-gray-600 mb-2">{item.label}</div>
+              <div className="text-gray-800 text-sm break-words">{item.value}</div>
             </div>
-            <button className="view-btn">View Original</button>
-          </div>
-          {loading ? (
-            <div className="text-center py-8">Loading clinical notes...</div>
-          ) : error ? (
-            <div className="text-center text-gray-600 py-8">{error}</div>
-          ) : clinicalNotes ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[
-                { label: "Chief Complaint", value: clinicalNotes.chiefComplaint || clinicalNotes.chiefcomplaint || "N/A" },
-                { label: "Past History", value: clinicalNotes.pastHistory || clinicalNotes.History || "N/A" },
-                { label: "Advice", value: clinicalNotes.treatmentAdvice || clinicalNotes.Advice || "N/A" },
-                { label: "Plan", value: clinicalNotes.Plan || "N/A" },
-              ].map((item, index) => (
-                <div key={index} className="bg-white p-6 rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
-                  <div className="font-bold text-sm text-gray-600 mb-2">{item.label}</div>
-                  <div className="text-gray-800 text-sm">{item.value}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center text-gray-600 py-8">
-              No clinical notes found for this patient and hospital.
-            </div>
-          )}
-          {selectedRecord?.type === "IPD" && (
-            <div className="mt-6">
-              <div className="flex items-center gap-3 mb-6">
-                <FileCheck size={24} className="text-green-600" />
-                <h3 className="h3-heading">Discharge Summary</h3>
-              </div>
-              <div className="bg-white p-6 rounded-xl border border-gray-100">
-                <div className="font-bold text-sm text-gray-600 mb-2">Summary</div>
-                <div className="text-gray-800 text-sm">
-                  {clinicalNotes?.dischargeSummary || "N/A"}
-                </div>
-              </div>
-            </div>
-          )}
+          ))}
         </div>
-      ),
-      "prescriptions": (
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-6">
-            <Pill size={20} className="text-purple-600" />
-            <h4 className="h4-heading">Prescribed Medications</h4>
-          </div>
-          {loading ? (
-            <div className="text-center py-8">Loading prescriptions...</div>
-          ) : prescriptionData.length > 0 ? (
-            <DynamicTable
-              columns={[
-                { header: "Date", accessor: "date" },
-                { header: "Doctor Name", accessor: "doctorName" },
-                { header: "Medicines", accessor: "medicines" },
-                { header: "Instructions", accessor: "instructions" },
-              ]}
-              data={prescriptionData}
-            />
-          ) : (
-            <div className="text-center text-gray-600 py-8">
-              No prescriptions found for this patient.
-            </div>
-          )}
+      ) : (
+        <div className="text-center text-gray-600 py-8">
+          No clinical notes found for this patient and hospital.
         </div>
-      ),
-      "lab-tests": (
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-6">
-            <TestTube size={24} className="text-orange-600" />
-            <h4 className="h4-heading">Test Results History</h4>
+      )}
+
+      {/* Discharge Summary (only for IPD) */}
+      {selectedRecord?.type === "IPD" && (
+        <div className="mt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <FileCheck size={24} className="text-green-600" />
+            <h3 className="h3-heading">Discharge Summary</h3>
           </div>
-          {loading ? (
-            <div className="text-center py-8">Loading lab tests...</div>
-          ) : error ? (
-            <div className="text-center text-gray-600 py-8">{error}</div>
-          ) : labTestsData.length > 0 ? (
-            <DynamicTable
-              columns={[
+          <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-100">
+            <div className="font-bold text-sm text-gray-600 mb-2">Summary</div>
+            <div className="text-gray-800 text-sm break-words">
+              {clinicalNotes?.dischargeSummary || "N/A"}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  ),
+
+  "prescriptions": (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <Pill size={20} className="text-purple-600" />
+        <h4 className="h4-heading">Prescribed Medications</h4>
+      </div>
+      {loading ? (
+        <div className="text-center py-8">Loading prescriptions...</div>
+      ) : prescriptionData.length > 0 ? (
+        <div className="overflow-x-auto">
+          <DynamicTable
+            columns={[
+              { header: "Date", accessor: "date" },
+              { header: "Doctor Name", accessor: "doctorName" },
+              { header: "Medicines", accessor: "medicines" },
+              { header: "Instructions", accessor: "instructions" },
+            ]}
+            data={prescriptionData}
+          />
+        </div>
+      ) : (
+        <div className="text-center text-gray-600 py-8">
+          No prescriptions found for this patient.
+        </div>
+      )}
+    </div>
+  ),
+
+  "lab-tests": (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <TestTube size={24} className="text-orange-600" />
+        <h4 className="h4-heading">Test Results History</h4>
+      </div>
+      {loading ? (
+        <div className="text-center py-8">Loading lab tests...</div>
+      ) : error ? (
+        <div className="text-center text-gray-600 py-8">{error}</div>
+      ) : labTestsData.length > 0 ? (
+        <div className="overflow-x-auto">
+          <DynamicTable
+            columns={[
+              { header: "Date", accessor: "date" },
+              { header: "Test Name", accessor: "testName" },
+              { header: "Result", accessor: "result" },
+              { header: "Normal Range", accessor: "normalRange" },
+              {
+                header: "Status",
+                accessor: "status",
+                cell: (row) => (
+                  <span
+                    className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                      row.status === "Normal"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {row.status === "Normal" ? (
+                      <CheckCircle size={12} className="inline mr-1" />
+                    ) : (
+                      <AlertTriangle size={12} className="inline mr-1" />
+                    )}
+                    {row.status}
+                  </span>
+                ),
+              },
+              {
+                header: "Print",
+                accessor: "print",
+                cell: (row) => (
+                  <button
+                    className="edit-btn flex items-center gap-1"
+                    onClick={() => printLabTest(row)}
+                  >
+                    <Printer size={14} /> Print
+                  </button>
+                ),
+              },
+            ]}
+            data={labTestsData}
+          />
+        </div>
+      ) : (
+        <div className="text-center text-gray-600 py-8">No lab tests found.</div>
+      )}
+    </div>
+  ),
+
+  "billing": (
+    <div className="space-y-6">
+      <div className="overflow-x-auto">
+        <DynamicTable
+          columns={(() => {
+            const columnMaps = {
+              pharmacy: [
+                { header: "Medicine Name", accessor: "medicineName" },
+                { header: "Quantity", accessor: "quantity" },
+                { header: "Unit Price (₹)", accessor: "unitPrice" },
+                { header: "Total Price (₹)", accessor: "totalPrice" },
                 { header: "Date", accessor: "date" },
+              ],
+              labs: [
                 { header: "Test Name", accessor: "testName" },
-                { header: "Result", accessor: "result" },
-                { header: "Normal Range", accessor: "normalRange" },
+                { header: "Cost (₹)", accessor: "cost" },
+                { header: "Date", accessor: "date" },
+                {
+                  header: "Payment Status",
+                  accessor: "paymentStatus",
+                  cell: (row) => (
+                    <span
+                      className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                        row.paymentStatus === "Paid"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {row.paymentStatus}
+                    </span>
+                  ),
+                },
+              ],
+              hospital: [
+                { header: "Bill Type", accessor: "billType" },
+                { header: "Amount (₹)", accessor: "amount" },
+                { header: "Payment Mode", accessor: "paymentMode" },
                 {
                   header: "Status",
                   accessor: "status",
                   cell: (row) => (
-                    <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                      row.status === "Normal" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                    }`}>
-                      {row.status === "Normal" ? <CheckCircle size={12} className="inline mr-1" /> : <AlertTriangle size={12} className="inline mr-1" />}
+                    <span
+                      className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                        row.status === "Paid"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
                       {row.status}
                     </span>
                   ),
                 },
-                {
-                  header: "Print",
-                  accessor: "print",
-                  cell: (row) => (
-                    <button className="edit-btn flex items-center gap-1" onClick={() => printLabTest(row)}>
-                      <Printer size={14} /> Print
-                    </button>
-                  ),
-                },
-              ]}
-              data={labTestsData}
-            />
-          ) : (
-            <div className="text-center text-gray-600 py-8">No lab tests found.</div>
-          )}
-        </div>
-      ),
-      "billing": (
-        <div className="space-y-6">
+                { header: "Bill Date", accessor: "billDate" },
+              ],
+            };
+            return columnMaps[state.billingActiveTab];
+          })()}
+          data={mockData.billingData[state.billingActiveTab]}
+          tabs={[
+            { value: "pharmacy", label: "Pharmacy" },
+            { value: "labs", label: "Labs" },
+            { value: "hospital", label: "Hospital Bills" },
+          ]}
+          activeTab={state.billingActiveTab}
+          onTabChange={(tab) => updateState({ billingActiveTab: tab })}
+          filters={[
+            {
+              key: "paymentStatus",
+              label: "Payment Status",
+              options: [
+                { value: "Paid", label: "Paid" },
+                { value: "Unpaid", label: "Unpaid" },
+              ],
+            },
+          ]}
+        />
+      </div>
+    </div>
+  ),
+
+  "video": (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <Video size={24} className="text-indigo-600" />
+        <h4 className="h4-heading">Video Consultation History</h4>
+      </div>
+      {videoRecordings.length > 0 ? (
+        <div className="overflow-x-auto">
           <DynamicTable
-            columns={(() => {
-              const columnMaps = {
-                pharmacy: [
-                  { header: "Medicine Name", accessor: "medicineName" },
-                  { header: "Quantity", accessor: "quantity" },
-                  { header: "Unit Price (₹)", accessor: "unitPrice" },
-                  { header: "Total Price (₹)", accessor: "totalPrice" },
-                  { header: "Date", accessor: "date" },
-                ],
-                labs: [
-                  { header: "Test Name", accessor: "testName" },
-                  { header: "Cost (₹)", accessor: "cost" },
-                  { header: "Date", accessor: "date" },
-                  {
-                    header: "Payment Status",
-                    accessor: "paymentStatus",
-                    cell: (row) => (
-                      <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                        row.paymentStatus === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                      }`}>
-                        {row.paymentStatus}
-                      </span>
-                    ),
-                  },
-                ],
-                hospital: [
-                  { header: "Bill Type", accessor: "billType" },
-                  { header: "Amount (₹)", accessor: "amount" },
-                  { header: "Payment Mode", accessor: "paymentMode" },
-                  {
-                    header: "Status",
-                    accessor: "status",
-                    cell: (row) => (
-                      <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                        row.status === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                      }`}>
-                        {row.status}
-                      </span>
-                    ),
-                  },
-                  { header: "Bill Date", accessor: "billDate" },
-                ],
-              };
-              return columnMaps[state.billingActiveTab];
-            })()}
-            data={mockData.billingData[state.billingActiveTab]}
-            tabs={[
-              { value: "pharmacy", label: "Pharmacy" },
-              { value: "labs", label: "Labs" },
-              { value: "hospital", label: "Hospital Bills" },
-            ]}
-            activeTab={state.billingActiveTab}
-            onTabChange={(tab) => updateState({ billingActiveTab: tab })}
-            filters={[
+            columns={[
+              { header: "ID", accessor: "id" },
+              { header: "Date", accessor: "date" },
+              { header: "Type", accessor: "type" },
+              { header: "Doctor Name", accessor: "doctorName" },
               {
-                key: "paymentStatus",
-                label: "Payment Status",
-                options: [
-                  { value: "Paid", label: "Paid" },
-                  { value: "Unpaid", label: "Unpaid" },
-                ],
+                header: "Actions",
+                accessor: "actions",
+                cell: (row) => (
+                  <button
+                    className="edit-btn flex items-center gap-1"
+                    onClick={() => {
+                      if (row.videoBlob) {
+                        setSelectedVideoBlob(row.videoBlob);
+                        setSelectedVideoMetadata(row.metadata);
+                        setShowVideoModal(true);
+                      } else {
+                        alert("Video recording is not available.");
+                      }
+                    }}
+                  >
+                    <Video size={14} /> View Recording
+                  </button>
+                ),
               },
             ]}
+            data={videoRecordings}
           />
         </div>
-      ),
-      "video": (
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-6">
-            <Video size={24} className="text-indigo-600" />
-            <h4 className="h4-heading">Video Consultation History</h4>
-          </div>
-          {videoRecordings.length > 0 ? (
-            <DynamicTable
-              columns={[
-                { header: "ID", accessor: "id" },
-                { header: "Date", accessor: "date" },
-                { header: "Type", accessor: "type" },
-                { header: "Doctor Name", accessor: "doctorName" },
-                {
-                  header: "Actions",
-                  accessor: "actions",
-                  cell: (row) => (
-                    <button
-                      className="edit-btn flex items-center gap-1"
-                      onClick={() => {
-                        if (row.videoBlob) {
-                          setSelectedVideoBlob(row.videoBlob);
-                          setSelectedVideoMetadata(row.metadata);
-                          setShowVideoModal(true);
-                        } else {
-                          alert("Video recording is not available.");
-                        }
-                      }}
-                    >
-                      <Video size={14} /> View Recording
-                    </button>
-                  ),
-                },
-              ]}
-              data={videoRecordings}
-            />
-          ) : (
-            <div className="text-center text-gray-600 py-8">
-              No video recordings found.
-            </div>
-          )}
+      ) : (
+        <div className="text-center text-gray-600 py-8">
+          No video recordings found.
         </div>
-      ),
-    };
+      )}
+    </div>
+  ),
+};
+
     return tabContentMap[state.detailsActiveTab] || null;
   };
 
@@ -926,14 +968,19 @@ const MedicalRecordDetails = () => {
     );
   }
 
-  const detailsTabs = [
-    { id: "medical-records", label: "Medical Records", icon: FileText },
-    { id: "prescriptions", label: "Prescriptions", icon: Pill },
-    { id: "lab-tests", label: "Lab/Scan", icon: TestTube },
-    { id: "billing", label: "Billing", icon: CreditCard },
-    { id: "video", label: "Video", icon: Video },
-  ];
+const detailsTabs = [
+  { id: "medical-records", label: "Medical Records", icon: FileText },
+  { id: "prescriptions", label: "Prescriptions", icon: Pill },
+  { id: "lab-tests", label: "Lab/Scan", icon: TestTube },
+  { id: "billing", label: "Billing", icon: CreditCard },
+  { id: "video", label: "Video", icon: Video },
+];
 
+// create a new array including the refer tab
+const allTabs = [
+  ...detailsTabs,
+  { id: "refer", label: "Refer to Doctor", icon: Stethoscope },
+];
   return (
     <ErrorBoundary>
       <div className="p-6 space-y-6">
@@ -955,91 +1002,162 @@ const MedicalRecordDetails = () => {
             </p>
           </div>
         )}
-        <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-6 mb-6 text-white">
-          <div className="flex flex-col md:flex-row md:items-start gap-6">
-            <div className="relative h-20 w-20 shrink-0">
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-white text-2xl font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2 text-[#01B07A]">
-                {getInitials(displayPatientName)}
-              </div>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-2xl font-bold mb-4">
-                <p>{displayPatientName}</p>
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6 text-sm">
-                <div className="space-y-1">
-                  <div>Age: {calculatedAge}</div>
-                  <div>Gender: {displayGender}</div>
-                </div>
-                <div className="space-y-1">
-                  <div>Hospital: {hospitalName}</div>
-                  <div>Visit Date: {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}</div>
-                </div>
-                <div className="space-y-1">
-                  <div>Diagnosis: {displayDiagnosis}</div>
-                  <div>K/C/O: {selectedRecord["K/C/O"] ?? "--"}</div>
-                </div>
-              </div>
-            </div>
-          </div>
+        
+ <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-4 sm:p-6 mb-6 text-white">
+  {/* Mobile View (iPhone & small phones) - Hidden on tablet and desktop */}
+  <div className="flex flex-col items-center mb-2 md:hidden">
+    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-sm font-bold uppercase shadow-inner ring-2 ring-white">
+      {getInitials(displayPatientName)}
+    </div>
+    <h3 className="text-sm font-bold mt-1 truncate">{displayPatientName}</h3>
+  </div>
+
+  {/* Details Grid (Left-Aligned) - Mobile View */}
+  <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 w-full ps-1 text-[10px] md:hidden">
+    <p className="text-left">
+      <span className="font-semibold">Age:</span> {calculatedAge}
+    </p>
+    <p className="text-left">
+      <span className="font-semibold">Gender:</span> {displayGender}
+    </p>
+    <p className="text-left">
+      <span className="font-semibold">Hospital:</span> {hospitalName}
+    </p>
+    <p className="text-left">
+      <span className="font-semibold">Visit Date:</span>
+      {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}
+    </p>
+    <p className="col-span-2 text-left break-words">
+      <span className="font-semibold">Diagnosis:</span> {displayDiagnosis}
+    </p>
+    <p className="col-span-2 text-left truncate">
+      <span className="font-semibold">K/C/O:</span> {selectedRecord["K/C/O"] ?? "--"}
+    </p>
+  </div>
+
+  {/* Tablet View (iPad) - Hidden on mobile and desktop */}
+  <div className="hidden md:grid lg:hidden grid-cols-1 gap-2">
+    <div className="flex items-center gap-3">
+      <div className="h-8 w-9 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-sm font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2">
+        {getInitials(displayPatientName)}
+      </div>
+      <h3 className="text-lg font-bold truncate">{displayPatientName}</h3>
+    </div>
+    <div className="grid grid-cols-2 gap-x-6 gap-y-2 ml-12 text-sm">
+      <p><span className="font-semibold">Age:</span> {calculatedAge}</p>
+      <p><span className="font-semibold">Gender:</span> {displayGender}</p>
+      <p><span className="font-semibold">Hospital:</span> {hospitalName}</p>
+      <p><span className="font-semibold">Visit Date:</span>
+        {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}
+      </p>
+      <p><span className="font-semibold">Diagnosis:</span> {displayDiagnosis}</p>
+      <p><span className="font-semibold">K/C/O:</span> {selectedRecord["K/C/O"] ?? "--"}</p>
+    </div>
+  </div>
+
+  {/* Desktop View - Hidden on mobile and tablet */}
+  <div className="hidden lg:flex flex-row sm:items-start gap-6">
+    <div className="flex-shrink-0 flex justify-start">
+      <div className="h-20 w-20 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-2xl font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2">
+        {getInitials(displayPatientName)}
+      </div>
+    </div>
+    <div className="flex-1">
+      <h3 className="text-2xl font-bold mb-3 truncate">{displayPatientName}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6 text-base">
+        <div>
+          <p><span className="font-semibold">Age:</span> {calculatedAge}</p>
+          <p><span className="font-semibold">Gender:</span> {displayGender}</p>
         </div>
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Activity size={20} className="text-green-600" />
-              <h3 className="h4-heading">Vitals Summary</h3>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-            {[
-              { key: "bloodPressure", icon: Heart, color: "red", label: "Blood Pressure", value: vitalsData.bloodPressure },
-              { key: "heartRate", icon: Activity, color: "blue", label: "Heart Rate", value: vitalsData.heartRate },
-              { key: "temperature", icon: Thermometer, color: "orange", label: "Temperature", value: vitalsData.temperature },
-              { key: "spO2", icon: null, color: "emerald", label: "SpO2", value: vitalsData.spO2 },
-              { key: "respiratoryRate", icon: null, color: "violet", label: "Respiratory Rate", value: vitalsData.respiratoryRate },
-              { key: "height", icon: null, color: "cyan", label: "Height", value: vitalsData.height },
-              { key: "weight", icon: null, color: "amber", label: "Weight", value: vitalsData.weight },
-            ].map(({ key, icon: Icon, color, label, value }) => (
-              <div key={key} className={`bg-${color}-50 border-l-4 border-${color}-500 p-3 rounded-lg shadow-md`}>
-                <div className="flex items-center gap-1 mb-1">
-                  {Icon && <Icon size={16} className={`text-${color}-500`} />}
-                  <span className={`text-xs font-medium text-${color}-700`}>{label}</span>
-                </div>
-                <div className={`text-base font-semibold text-${color}-800`}>
-                  {value || "--"}
-                </div>
-              </div>
-            ))}
-          </div>
+        <div>
+          <p><span className="font-semibold">Hospital:</span> {hospitalName}</p>
+          <p><span className="font-semibold">Visit Date:</span>
+            {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}
+          </p>
         </div>
-        <div className="flex border-gray-200 mb-6">
-          {detailsTabs.map((tab) => {
-            const IconComponent = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => updateState({ detailsActiveTab: tab.id })}
-                className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors duration-300 ${
-                  state.detailsActiveTab === tab.id
-                    ? "border-b-2 text-[var(--primary-color)] border-[var(--primary-color)]"
-                    : "text-gray-500 hover:text-[var(--accent-color)]"
-                }`}
-              >
-                <IconComponent size={18} />
-                {tab.label}
-              </button>
-            );
-          })}
-          <div className="flex-1 flex justify-end">
-            <button
-              onClick={handleSecondOpinion}
-              className="btn btn-primary text-white px-4 py-3 text-xs flex items-center gap-2 hover:opacity-90 transition-opacity"
-            >
-              <Stethoscope size={18} />
-              Refer to Doctor
-            </button>
-          </div>
+        <div>
+          <p><span className="font-semibold">Diagnosis:</span> {displayDiagnosis}</p>
+          <p><span className="font-semibold">K/C/O:</span> {selectedRecord["K/C/O"] ?? "--"}</p>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+       <div className="space-y-6">
+  <div className="flex justify-between items-center">
+    <div className="flex items-center gap-2">
+      <Activity size={20} className="text-green-600" />
+      <h3 className="h4-heading">Vitals Summary</h3>
+    </div>
+  </div>
+
+  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+    {[
+      { key: "bloodPressure", icon: Heart, label: "Blood Pressure", value: vitalsData.bloodPressure, classes: "bg-red-50 border-red-500 text-red-700" },
+      { key: "heartRate", icon: Activity, label: "Heart Rate", value: vitalsData.heartRate, classes: "bg-blue-50 border-blue-500 text-blue-700" },
+      { key: "temperature", icon: Thermometer, label: "Temperature", value: vitalsData.temperature, classes: "bg-orange-50 border-orange-500 text-orange-700" },
+      { key: "spO2", icon: null, label: "SpO₂", value: vitalsData.spo2, classes: "bg-emerald-50 border-emerald-500 text-emerald-700" },
+      { key: "respiratoryRate", icon: null, label: "Respiratory Rate", value: vitalsData.respiratoryRate, classes: "bg-violet-50 border-violet-500 text-violet-700" },
+      { key: "height", icon: null, label: "Height", value: vitalsData.height, classes: "bg-cyan-50 border-cyan-500 text-cyan-700" },
+      { key: "weight", icon: null, label: "Weight", value: vitalsData.weight, classes: "bg-amber-50 border-amber-500 text-amber-700" },
+    ].map(({ key, icon: Icon, label, value, classes }) => (
+      <div
+        key={key}
+        className={`p-3 rounded-lg shadow-md border-l-4 ${classes}`}
+      >
+        <div className="flex items-center gap-1 mb-1">
+          {Icon && <Icon size={16} className={classes.split(" ")[2]} />}
+          <span className="text-xs font-medium">{label}</span>
+        </div>
+        <div className="text-base font-semibold">
+          {value || "--"}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<div className="flex mb-3 sm:mb-4 overflow-x-auto custom-scrollbar ">
+  {/* Tabs */}
+  {detailsTabs.map((tab) => {
+    const IconComponent = tab.icon;
+    return (
+      <button
+        key={tab.id}
+        onClick={() => updateState({ detailsActiveTab: tab.id })}
+        className={`flex-shrink-0 flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 font-medium transition-colors duration-300 whitespace-nowrap ${
+          state.detailsActiveTab === tab.id
+            ? "border-b-2 text-[var(--primary-color)] border-[var(--primary-color)]"
+            : "text-gray-500 hover:text-[var(--accent-color)]"
+        }`}
+      >
+        <IconComponent size={14} />
+        <span className="text-xs sm:text-sm">{tab.label}</span>
+      </button>
+    );
+  })}
+  {/* Refer button (MOBILE + DESKTOP) */}
+  {selectedRecord?.type && !selectedRecord?.isNewlyAdded && (
+    <div className="flex-shrink-0 flex justify-end ml-2">
+      <button
+        onClick={handleSecondOpinion}
+        className="btn btn-primary text-white px-2 sm:px-4 py-1 sm:py-2 text-xs flex items-center gap-1 hover:opacity-90 transition-opacity"
+      >
+        <Stethoscope size={14} />
+        <span className="text-xs sm:text-sm">Refer to Doctor</span>
+      </button>
+    </div>
+  )}
+</div>
+
+
+
+
+
         <div className="animate-slide-fade-in">{renderTabContent()}</div>
         {showCamera && (
           <CameraCapture

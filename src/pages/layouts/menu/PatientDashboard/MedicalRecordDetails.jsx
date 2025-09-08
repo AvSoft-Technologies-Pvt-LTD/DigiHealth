@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -24,7 +25,6 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 
-// Error Boundary Component
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -44,7 +44,7 @@ class ErrorBoundary extends React.Component {
           <p>{this.state.error?.message}</p>
           <button
             onClick={() => this.setState({ hasError: false })}
-            className="mt-2 px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200"
+            className="mt-2 px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-xs md:text-sm"
           >
             Try again
           </button>
@@ -55,7 +55,6 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Helper: Load blob, context, and metadata from localStorage
 const loadRecordingFromLocalStorage = (key) => {
   const dataUrl = localStorage.getItem(key);
   const metadataStr = localStorage.getItem(`${key}_metadata`);
@@ -88,29 +87,29 @@ const loadRecordingFromLocalStorage = (key) => {
 const VideoPlaybackModal = ({ show, onClose, videoBlob, metadata }) =>
   show
     ? createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="relative bg-white p-6 rounded-xl w-[90%] max-w-4xl max-h-[90vh] overflow-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">Consultation Recording</h3>
-              <p className="text-sm text-gray-600">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 md:p-4">
+          <div className="relative bg-white p-3 md:p-6 rounded-xl w-full max-w-md md:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <div className="flex justify-between items-center mb-2 md:mb-4">
+              <h3 className="text-lg md:text-xl font-semibold">Consultation Recording</h3>
+              <p className="text-xs md:text-sm text-gray-600">
                 Recorded on: {metadata?.timestamp ? new Date(metadata.timestamp).toLocaleString() : "N/A"}
               </p>
               <button
                 onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-500 hover:text-gray-700 text-xl md:text-2xl"
               >
                 ×
               </button>
             </div>
-            <div className="bg-black rounded-lg overflow-hidden mb-4">
+            <div className="bg-black rounded-lg overflow-hidden mb-2 md:mb-4">
               {!videoBlob ? (
-                <div className="w-full h-96 flex items-center justify-center text-white">
+                <div className="w-full h-48 md:h-64 lg:h-96 flex items-center justify-center text-white text-sm md:text-base">
                   <p>No video recording available.</p>
                 </div>
               ) : (
                 <video
                   controls
-                  className="w-full h-96 object-contain"
+                  className="w-full h-48 md:h-64 lg:h-96 object-contain"
                   src={URL.createObjectURL(videoBlob)}
                   onError={(e) => {
                     console.error("Video playback error:", e);
@@ -118,14 +117,14 @@ const VideoPlaybackModal = ({ show, onClose, videoBlob, metadata }) =>
                     e.target.src = "";
                   }}
                 >
-                  <p className="text-center text-white p-8">Unable to load video recording.</p>
+                  <p className="text-center text-white p-4">Unable to load video recording.</p>
                 </video>
               )}
             </div>
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                className="px-3 py-1.5 md:px-4 md:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs md:text-sm"
               >
                 Close
               </button>
@@ -243,6 +242,16 @@ const PatientMedicalRecordDetails = () => {
       age--;
     }
     return `${age} years`;
+  };
+
+  const handleSecondOpinion = () => {
+    const recordToPass = {
+      ...selectedRecord,
+      medicalDetails: mockData.medicalDetails,
+      prescriptionsData: mockData.prescriptionsData,
+      labTestsData: mockData.labTestsData,
+    };
+    navigate("/patientdashboard/second-opinion", { state: { selectedRecord: recordToPass } });
   };
 
   const calculatedAge = displayAge || calculateAge(displayDob, selectedRecord?.dateOfVisit || selectedRecord?.dateOfAdmission || selectedRecord?.dateOfConsultation);
@@ -395,7 +404,7 @@ const PatientMedicalRecordDetails = () => {
         id: index + 1,
         date: new Date(video.metadata.timestamp).toLocaleString(),
         type: video.metadata.type || "N/A",
-        doctorName: video.metadata.doctorName || "dr Kavya Patil",
+        doctorName: video.metadata.doctorName || "Dr. Kavya Patil",
         videoBlob: video.blob,
         metadata: video.metadata,
       }))
@@ -414,7 +423,7 @@ const PatientMedicalRecordDetails = () => {
   }, [displayEmail]);
 
   const handleBack = () => {
-    navigate("/patientdashboard/medical-record", {
+    navigate("/patientdashboard/medical-records", {
       state: {
         selectedRecord: selectedRecord,
         patientName: displayPatientName,
@@ -455,45 +464,57 @@ const PatientMedicalRecordDetails = () => {
   const renderTabContent = () => {
     const tabContentMap = {
       "medical-records": (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <FileText size={24} className="text-[var(--primary-color)]" />
-              <h3 className="h4-heading">Medical Information</h3>
-            </div>
-          </div>
+        <div className="space-y-4 md:space-y-6">
+         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-3">
+  {/* Left Section */}
+  <div className="flex items-center gap-2 md:gap-3">
+    <FileText
+      size={18}
+      className="md:size-[24px] text-[var(--primary-color)]"
+    />
+    <h3 className="text-base sm:text-lg md:text-xl font-semibold">
+      Medical Information
+    </h3>
+  </div>
+
+  {/* Button Section */}
+  <button className="px-3 py-1 bg-[var(--primary-color)] text-white rounded-lg hover:opacity-90 transition-opacity text-sm self-start md:self-auto">
+    View Original
+  </button>
+</div>
+
           {loading ? (
-            <div className="text-center py-8">Loading clinical notes...</div>
+            <div className="text-center py-6 md:py-8 text-sm md:text-base">Loading clinical notes...</div>
           ) : error ? (
-            <div className="text-center text-gray-600 py-8">{error}</div>
+            <div className="text-center text-gray-600 py-6 md:py-8 text-sm md:text-base">{error}</div>
           ) : clinicalNotes ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {[
                 { label: "Chief Complaint", value: clinicalNotes.chiefComplaint || clinicalNotes.chiefcomplaint || "N/A" },
                 { label: "Past History", value: clinicalNotes.pastHistory || clinicalNotes.History || "N/A" },
                 { label: "Advice", value: clinicalNotes.treatmentAdvice || clinicalNotes.Advice || "N/A" },
                 { label: "Plan", value: clinicalNotes.Plan || "N/A" },
               ].map((item, index) => (
-                <div key={index} className="bg-white p-6 rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
-                  <div className="font-bold text-sm text-gray-600 mb-2">{item.label}</div>
-                  <div className="text-gray-800 text-sm">{item.value}</div>
+                <div key={index} className="bg-white p-4 md:p-6 rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="font-bold text-xs md:text-sm text-gray-600 mb-1.5 md:mb-2">{item.label}</div>
+                  <div className="text-gray-800 text-xs md:text-sm">{item.value}</div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center text-gray-600 py-8">
+            <div className="text-center text-gray-600 py-6 md:py-8 text-sm md:text-base">
               No clinical notes found for this patient and hospital.
             </div>
           )}
           {selectedRecord?.type === "IPD" && (
-            <div className="mt-6">
-              <div className="flex items-center gap-3 mb-6">
-                <FileText size={24} className="text-green-600" />
-                <h3 className="h3-heading">Discharge Summary</h3>
+            <div className="mt-4 md:mt-6">
+              <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                <FileText size={18} className="md:size-[24px] text-green-600" />
+                <h3 className="text-lg md:text-xl font-semibold">Discharge Summary</h3>
               </div>
-              <div className="bg-white p-6 rounded-xl border border-gray-100">
-                <div className="font-bold text-sm text-gray-600 mb-2">Summary</div>
-                <div className="text-gray-800 text-sm">
+              <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-100">
+                <div className="font-bold text-xs md:text-sm text-gray-600 mb-1.5 md:mb-2">Summary</div>
+                <div className="text-gray-800 text-xs md:text-sm">
                   {clinicalNotes?.dischargeSummary || "N/A"}
                 </div>
               </div>
@@ -502,185 +523,191 @@ const PatientMedicalRecordDetails = () => {
         </div>
       ),
       "prescriptions": (
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-6">
-            <Pill size={20} className="text-purple-600" />
-            <h4 className="h4-heading">Prescribed Medications</h4>
+        <div className="space-y-4 md:space-y-6">
+          <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+            <Pill size={16} className="md:size-[20px] text-purple-600" />
+            <h4 className="text-lg md:text-xl font-semibold">Prescribed Medications</h4>
           </div>
           {loading ? (
-            <div className="text-center py-8">Loading prescriptions...</div>
+            <div className="text-center py-6 md:py-8 text-sm md:text-base">Loading prescriptions...</div>
           ) : prescriptionData.length > 0 ? (
-            <DynamicTable
-              columns={[
-                { header: "Date", accessor: "date" },
-                { header: "Doctor Name", accessor: "doctorName" },
-                { header: "Medicines", accessor: "medicines" },
-                { header: "Instructions", accessor: "instructions" },
-              ]}
-              data={prescriptionData}
-            />
+            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <DynamicTable
+                columns={[
+                  { header: "Date", accessor: "date" },
+                  { header: "Doctor Name", accessor: "doctorName" },
+                  { header: "Medicines", accessor: "medicines" },
+                  { header: "Instructions", accessor: "instructions" },
+                ]}
+                data={prescriptionData}
+              />
+            </div>
           ) : (
-            <div className="text-center text-gray-600 py-8">
+            <div className="text-center text-gray-600 py-6 md:py-8 text-sm md:text-base">
               No prescriptions found for this patient.
             </div>
           )}
         </div>
       ),
       "lab-tests": (
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-6">
-            <TestTube size={24} className="text-orange-600" />
-            <h4 className="h4-heading">Test Results History</h4>
+        <div className="space-y-4 md:space-y-6">
+          <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+            <TestTube size={18} className="md:size-[24px] text-orange-600" />
+            <h4 className="text-lg md:text-xl font-semibold">Test Results History</h4>
           </div>
           {loading ? (
-            <div className="text-center py-8">Loading lab tests...</div>
+            <div className="text-center py-6 md:py-8 text-sm md:text-base">Loading lab tests...</div>
           ) : error ? (
-            <div className="text-center text-gray-600 py-8">{error}</div>
+            <div className="text-center text-gray-600 py-6 md:py-8 text-sm md:text-base">{error}</div>
           ) : labTestsData.length > 0 ? (
-            <DynamicTable
-              columns={[
-                { header: "Date", accessor: "date" },
-                { header: "Test Name", accessor: "testName" },
-                { header: "Result", accessor: "result" },
-                { header: "Normal Range", accessor: "normalRange" },
-                {
-                  header: "Status",
-                  accessor: "status",
-                  cell: (row) => (
-                    <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                      row.status === "Normal" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                    }`}>
-                      {row.status === "Normal" ? <CheckCircle size={12} className="inline mr-1" /> : <AlertTriangle size={12} className="inline mr-1" />}
-                      {row.status}
-                    </span>
-                  ),
-                },
-                {
-                  header: "Print",
-                  accessor: "print",
-                  cell: (row) => (
-                    <button className="edit-btn flex items-center gap-1" onClick={() => printLabTest(row)}>
-                      <Printer size={14} /> Print
-                    </button>
-                  ),
-                },
-              ]}
-              data={labTestsData}
-            />
-          ) : (
-            <div className="text-center text-gray-600 py-8">No lab tests found.</div>
-          )}
-        </div>
-      ),
-      "billing": (
-        <div className="space-y-6">
-          <DynamicTable
-            columns={(() => {
-              const columnMaps = {
-                pharmacy: [
-                  { header: "Medicine Name", accessor: "medicineName" },
-                  { header: "Quantity", accessor: "quantity" },
-                  { header: "Unit Price (₹)", accessor: "unitPrice" },
-                  { header: "Total Price (₹)", accessor: "totalPrice" },
+            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <DynamicTable
+                columns={[
                   { header: "Date", accessor: "date" },
-                ],
-                labs: [
                   { header: "Test Name", accessor: "testName" },
-                  { header: "Cost (₹)", accessor: "cost" },
-                  { header: "Date", accessor: "date" },
-                  {
-                    header: "Payment Status",
-                    accessor: "paymentStatus",
-                    cell: (row) => (
-                      <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                        row.paymentStatus === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                      }`}>
-                        {row.paymentStatus}
-                      </span>
-                    ),
-                  },
-                ],
-                hospital: [
-                  { header: "Bill Type", accessor: "billType" },
-                  { header: "Amount (₹)", accessor: "amount" },
-                  { header: "Payment Mode", accessor: "paymentMode" },
+                  { header: "Result", accessor: "result" },
+                  { header: "Normal Range", accessor: "normalRange" },
                   {
                     header: "Status",
                     accessor: "status",
                     cell: (row) => (
-                      <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                        row.status === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                      <span className={`text-xs md:text-sm font-semibold px-2 py-1 rounded-full ${
+                        row.status === "Normal" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                       }`}>
+                        {row.status === "Normal" ? <CheckCircle size={12} className="inline mr-1" /> : <AlertTriangle size={12} className="inline mr-1" />}
                         {row.status}
                       </span>
                     ),
                   },
-                  { header: "Bill Date", accessor: "billDate" },
-                ],
-              };
-              return columnMaps[state.billingActiveTab];
-            })()}
-            data={mockData.billingData[state.billingActiveTab]}
-            tabs={[
-              { value: "pharmacy", label: "Pharmacy" },
-              { value: "labs", label: "Labs" },
-              { value: "hospital", label: "Hospital Bills" },
-            ]}
-            activeTab={state.billingActiveTab}
-            onTabChange={(tab) => setState((prev) => ({ ...prev, billingActiveTab: tab }))}
-            filters={[
-              {
-                key: "paymentStatus",
-                label: "Payment Status",
-                options: [
-                  { value: "Paid", label: "Paid" },
-                  { value: "Unpaid", label: "Unpaid" },
-                ],
-              },
-            ]}
-          />
+                  {
+                    header: "Print",
+                    accessor: "print",
+                    cell: (row) => (
+                      <button className="px-2 py-1 bg-[var(--primary-color)] text-white rounded-lg hover:opacity-90 transition-opacity text-xs flex items-center gap-1" onClick={() => printLabTest(row)}>
+                        <Printer size={12} /> Print
+                      </button>
+                    ),
+                  },
+                ]}
+                data={labTestsData}
+              />
+            </div>
+          ) : (
+            <div className="text-center text-gray-600 py-6 md:py-8 text-sm md:text-base">No lab tests found.</div>
+          )}
+        </div>
+      ),
+      "billing": (
+        <div className="space-y-4 md:space-y-6">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <DynamicTable
+              columns={(() => {
+                const columnMaps = {
+                  pharmacy: [
+                    { header: "Medicine Name", accessor: "medicineName" },
+                    { header: "Quantity", accessor: "quantity" },
+                    { header: "Unit Price (₹)", accessor: "unitPrice" },
+                    { header: "Total Price (₹)", accessor: "totalPrice" },
+                    { header: "Date", accessor: "date" },
+                  ],
+                  labs: [
+                    { header: "Test Name", accessor: "testName" },
+                    { header: "Cost (₹)", accessor: "cost" },
+                    { header: "Date", accessor: "date" },
+                    {
+                      header: "Payment Status",
+                      accessor: "paymentStatus",
+                      cell: (row) => (
+                        <span className={`text-xs md:text-sm font-semibold px-2 py-1 rounded-full ${
+                          row.paymentStatus === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                        }`}>
+                          {row.paymentStatus}
+                        </span>
+                      ),
+                    },
+                  ],
+                  hospital: [
+                    { header: "Bill Type", accessor: "billType" },
+                    { header: "Amount (₹)", accessor: "amount" },
+                    { header: "Payment Mode", accessor: "paymentMode" },
+                    {
+                      header: "Status",
+                      accessor: "status",
+                      cell: (row) => (
+                        <span className={`text-xs md:text-sm font-semibold px-2 py-1 rounded-full ${
+                          row.status === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                        }`}>
+                          {row.status}
+                        </span>
+                      ),
+                    },
+                    { header: "Bill Date", accessor: "billDate" },
+                  ],
+                };
+                return columnMaps[state.billingActiveTab];
+              })()}
+              data={mockData.billingData[state.billingActiveTab]}
+              tabs={[
+                { value: "pharmacy", label: "Pharmacy" },
+                { value: "labs", label: "Labs" },
+                { value: "hospital", label: "Hospital Bills" },
+              ]}
+              activeTab={state.billingActiveTab}
+              onTabChange={(tab) => setState((prev) => ({ ...prev, billingActiveTab: tab }))}
+              filters={[
+                {
+                  key: "paymentStatus",
+                  label: "Payment Status",
+                  options: [
+                    { value: "Paid", label: "Paid" },
+                    { value: "Unpaid", label: "Unpaid" },
+                  ],
+                },
+              ]}
+            />
+          </div>
         </div>
       ),
       "video": (
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-6">
-            <Video size={24} className="text-indigo-600" />
-            <h4 className="h4-heading">Video Consultation History</h4>
+        <div className="space-y-4 md:space-y-6">
+          <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+            <Video size={18} className="md:size-[24px] text-indigo-600" />
+            <h4 className="text-lg md:text-xl font-semibold">Video Consultation History</h4>
           </div>
           {videoRecordings.length > 0 ? (
-            <DynamicTable
-              columns={[
-                { header: "ID", accessor: "id" },
-                { header: "Date", accessor: "date" },
-                { header: "Type", accessor: "type" },
-                { header: "Doctor Name", accessor: "doctorName" },
-                {
-                  header: "Actions",
-                  accessor: "actions",
-                  cell: (row) => (
-                    <button
-                      className="edit-btn flex items-center gap-1"
-                      onClick={() => {
-                        if (row.videoBlob) {
-                          setSelectedVideoBlob(row.videoBlob);
-                          setSelectedVideoMetadata(row.metadata);
-                          setShowVideoModal(true);
-                        } else {
-                          alert("Video recording is not available.");
-                        }
-                      }}
-                    >
-                      <Video size={14} /> View Recording
-                    </button>
-                  ),
-                },
-              ]}
-              data={videoRecordings}
-            />
-          ) : (
-            <div className="text-center text-gray-600 py-8">
-              No video recordings found.
+            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <DynamicTable
+                columns={[
+                  { header: "ID", accessor: "id" },
+                  { header: "Date", accessor: "date" },
+                  { header: "Type", accessor: "type" },
+                  { header: "Doctor Name", accessor: "doctorName" },
+                  {
+                    header: "Actions",
+                    accessor: "actions",
+                    cell: (row) => (
+                      <button
+                        className="px-2 py-1 bg-[var(--primary-color)] text-white rounded-lg hover:opacity-90 transition-opacity text-xs flex items-center gap-1"
+                        onClick={() => {
+                          if (row.videoBlob) {
+                            setSelectedVideoBlob(row.videoBlob);
+                            setSelectedVideoMetadata(row.metadata);
+                            setShowVideoModal(true);
+                          } else {
+                            alert("Video recording is not available.");
+                          }
+                        }}
+                      >
+                        <Video size={12} /> View Recording
+                      </button>
+                    ),
+                  },
+                ]}
+                data={videoRecordings}
+              />
             </div>
+          ) : (
+            <div className="text-center text-gray-600 py-6 md:py-8 text-sm md:text-base">No video recordings found.</div>
           )}
         </div>
       ),
@@ -690,8 +717,8 @@ const PatientMedicalRecordDetails = () => {
 
   if (!selectedRecord) {
     return (
-      <div className="p-6">
-        <div className="text-center text-gray-500">
+      <div className="p-4 md:p-6">
+        <div className="text-center text-gray-500 text-sm md:text-base">
           No record selected. Please go back and select a record.
         </div>
       </div>
@@ -706,59 +733,121 @@ const PatientMedicalRecordDetails = () => {
     { id: "video", label: "Video", icon: Video },
   ];
 
+  const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
+
   return (
     <ErrorBoundary>
-      <div className="p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-4 md:space-y-6">
         <button
           onClick={handleBack}
-          className="flex items-center gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600"
+          className="flex items-center gap-1.5 md:gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600 text-xs md:text-sm"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={16} className="md:size-[20px]" />
           <span className="font-medium">Back to Medical Records</span>
         </button>
 
-        <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-3 sm:p-4 lg:p-6 mb-3 sm:mb-4 text-white">
-          <div className="flex flex-col md:flex-row md:items-start gap-3 sm:gap-4">
-            <div className="relative h-12 w-12 sm:h-16 sm:w-16 shrink-0">
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-white text-base sm:text-2xl font-bold uppercase shadow-inner ring-2 ring-white ring-offset-2 text-[#01B07A]">
-                {getInitials(`${user?.firstName || ""} ${user?.lastName || ""}`.trim())}
-              </div>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2">
-                {user.firstName} {user.lastName}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-1 gap-x-3 sm:gap-x-4 text-xs sm:text-sm">
-                <div className="space-y-1">
-                  <div>Age: {selectedRecord.age}</div>
-                  <div>Gender: {user.gender}</div>
-                </div>
-                <div className="space-y-1">
-                  <div>Hospital: {selectedRecord.hospitalName}</div>
-                  <div>
-                    Visit Date:{" "}
-                    {selectedRecord.dateOfVisit ||
-                      selectedRecord.dateOfAdmission ||
-                      selectedRecord.dateOfConsultation}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div>Diagnosis: {selectedRecord.diagnosis}</div>
-                  <div>K/C/O: {selectedRecord["K/C/O"] ?? "--"}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Patient Header: Responsive for all devices */}
+       <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-4 sm:p-6 mb-6 text-white">
+  {/* Mobile View (iPhone & small phones) */}
+  <div className="flex flex-col gap-3 md:hidden">
+    {/* Avatar + Name Inline */}
+    <div className="flex flex-col items-center mb-2 md:hidden">
+    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-sm font-bold uppercase shadow-inner ring-2 ring-white">
+      {getInitials(displayPatientName)}
+    </div>
+    <h3 className="text-sm font-bold mt-1 truncate">{displayPatientName}</h3>
+  </div>
+    {/* Details below name with left margin aligned under name */}
+    <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 w-full ps-1 text-[10px] md:hidden">
+    <p className="text-left">
+      <span className="font-semibold">Age:</span> {calculatedAge}
+    </p>
+    <p className="text-left">
+      <span className="font-semibold">Gender:</span> {displayGender}
+    </p>
+    <p className="text-left">
+      <span className="font-semibold">Hospital:</span> {hospitalName}
+    </p>
+    <p className="text-left">
+      <span className="font-semibold">Visit Date:</span>
+      {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}
+    </p>
+    <p className="col-span-2 text-left break-words">
+      <span className="font-semibold">Diagnosis:</span> {displayDiagnosis}
+    </p>
+    <p className="col-span-2 text-left truncate">
+      <span className="font-semibold">K/C/O:</span> {selectedRecord["K/C/O"] ?? "--"}
+    </p>
+  </div>
 
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Activity size={20} className="text-green-600" />
-              <h3 className="h4-heading">Vitals Summary</h3>
+  </div>
+
+  {/* Tablet View (iPad) */}
+  <div className="hidden md:grid lg:hidden grid-cols-1 gap-2">
+    {/* Avatar + Name */}
+    <div className="flex items-center gap-3">
+      <div className="h-8 w-9 flex items-center justify-center rounded-full bg-white
+        text-[#01B07A] text-sm font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2">
+        {getInitials(displayPatientName)}
+      </div>
+      <h3 className="text-lg font-bold truncate">{displayPatientName}</h3>
+    </div>
+    {/* Details in grid */}
+    <div className="grid grid-cols-2 gap-x-6 gap-y-2 ml-12 text-sm">
+      <p><span className="font-semibold">Age:</span> {calculatedAge}</p>
+      <p><span className="font-semibold">Gender:</span> {displayGender}</p>
+      <p><span className="font-semibold">Hospital:</span> {hospitalName}</p>
+      <p>
+        <span className="font-semibold">Visit Date:</span>
+        {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}
+      </p>
+      <p><span className="font-semibold">Diagnosis:</span> {displayDiagnosis}</p>
+      <p><span className="font-semibold">K/C/O:</span> {selectedRecord["K/C/O"] ?? "--"}</p>
+    </div>
+  </div>
+
+  {/* Desktop View */}
+  <div className="hidden lg:flex flex-row sm:items-start gap-6">
+    {/* Avatar */}
+    <div className="flex-shrink-0 flex justify-start">
+      <div className="h-20 w-20 flex items-center justify-center rounded-full bg-white
+        text-[#01B07A] text-2xl font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2">
+        {getInitials(displayPatientName)}
+      </div>
+    </div>
+    {/* Name + Details */}
+    <div className="flex-1">
+      <h3 className="text-2xl font-bold mb-3 truncate">{displayPatientName}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6 text-base">
+        <div>
+          <p><span className="font-semibold">Age:</span> {calculatedAge}</p>
+          <p><span className="font-semibold">Gender:</span> {displayGender}</p>
+        </div>
+        <div>
+          <p><span className="font-semibold">Hospital:</span> {hospitalName}</p>
+          <p>
+            <span className="font-semibold">Visit Date:</span>
+            {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}
+          </p>
+        </div>
+        <div>
+          <p><span className="font-semibold">Diagnosis:</span> {displayDiagnosis}</p>
+          <p><span className="font-semibold">K/C/O:</span> {selectedRecord["K/C/O"] ?? "--"}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+        {/* Vitals Summary: Responsive Grid */}
+        <div className="space-y-4 md:space-y-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <Activity size={16} className="md:size-[20px] text-green-600" />
+              <h3 className="text-lg md:text-xl font-semibold">Vitals Summary</h3>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3">
             {[
               { key: "bloodPressure", icon: Heart, color: "red", label: "Blood Pressure", value: vitalsData?.bloodPressure || "--" },
               { key: "heartRate", icon: Activity, color: "blue", label: "Heart Rate", value: vitalsData?.heartRate || "--" },
@@ -768,12 +857,12 @@ const PatientMedicalRecordDetails = () => {
               { key: "height", icon: null, color: "cyan", label: "Height", value: vitalsData?.height || "--" },
               { key: "weight", icon: null, color: "amber", label: "Weight", value: vitalsData?.weight || "--" },
             ].map(({ key, icon: Icon, color, label, value }) => (
-              <div key={key} className={`bg-${color}-50 border-l-4 border-${color}-500 p-3 rounded-lg shadow-md`}>
+              <div key={key} className={`bg-${color}-50 border-l-4 border-${color}-500 p-2 md:p-3 rounded-lg shadow-md`}>
                 <div className="flex items-center gap-1 mb-1">
-                  {Icon && <Icon size={16} className={`text-${color}-500`} />}
+                  {Icon && <Icon size={14} className={`md:size-[16px] text-${color}-500`} />}
                   <span className={`text-xs font-medium text-${color}-700`}>{label}</span>
                 </div>
-                <div className={`text-base font-semibold text-${color}-800`}>
+                <div className={`text-sm md:text-base font-semibold text-${color}-800`}>
                   {value}
                 </div>
               </div>
@@ -781,28 +870,48 @@ const PatientMedicalRecordDetails = () => {
           </div>
         </div>
 
-        <div className="flex border-gray-200 mb-6">
+        {/* Tabs: Responsive */}
+        <div className="flex flex-wrap  mb-3 sm:mb-4">
           {detailsTabs.map((tab) => {
             const IconComponent = tab.icon;
             return (
               <button
                 key={tab.id}
-                onClick={() => setState((prev) => ({ ...prev, detailsActiveTab: tab.id }))}
-                className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors duration-300 ${
+                onClick={() => updateState({ detailsActiveTab: tab.id })}
+                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 font-medium transition-colors duration-300 whitespace-nowrap ${
                   state.detailsActiveTab === tab.id
                     ? "border-b-2 text-[var(--primary-color)] border-[var(--primary-color)]"
                     : "text-gray-500 hover:text-[var(--accent-color)]"
                 }`}
               >
-                <IconComponent size={18} />
-                {tab.label}
+                <IconComponent size={14} />
+                <span className="text-xs sm:text-sm">{tab.label}</span>
               </button>
             );
           })}
+          {selectedRecord?.type && !selectedRecord?.isNewlyAdded && (
+            <div className="flex-1 flex justify-end">
+              <button
+                onClick={handleSecondOpinion}
+                className="btn btn-primary text-white px-2 sm:px-4 py-1 sm:py-2 text-xs flex items-center gap-1 hover:opacity-90 transition-opacity"
+              >
+                <Stethoscope size={14} />
+                <span className="text-xs sm:text-sm">Second Opinion</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="animate-slide-fade-in">{renderTabContent()}</div>
+        {/* Tab Content */}
+        <div className="animate-slide-fade-in overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          {selectedRecord.createdBy === "patient" ? (
+            <DocsReader />
+          ) : (
+            renderTabContent()
+          )}
+        </div>
 
+        {/* Video Modal */}
         <VideoPlaybackModal
           show={showVideoModal}
           onClose={() => setShowVideoModal(false)}

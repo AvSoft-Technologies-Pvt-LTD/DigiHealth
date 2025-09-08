@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -20,7 +19,6 @@ const MedicalRecords = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
 
-  // State management
   const [state, setState] = useState({
     activeTab: "OPD",
     showAddModal: false,
@@ -30,7 +28,6 @@ const MedicalRecords = () => {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
 
-  // API data states
   const [hospitalOptions, setHospitalOptions] = useState([]);
   const [medicalConditions, setMedicalConditions] = useState([]);
   const [statusTypes, setStatusTypes] = useState([]);
@@ -40,73 +37,80 @@ const MedicalRecords = () => {
     status: false
   });
 
-  // Fetch master data from APIs
   useEffect(() => {
+    const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: false });
+    const byLabelAsc = (a, b) => collator.compare(String(a.label || ""), String(b.label || ""));
+
     const fetchMasterData = async () => {
       try {
-        // Fetch hospitals dropdown
         setApiDataLoading((prev) => ({ ...prev, hospitals: true }));
         const hospitalsResponse = await getHospitalDropdown();
-        const hospitalsList =
-          hospitalsResponse.data?.map((hospital) => ({
-            label: hospital.name || hospital.hospitalName || hospital.label,
-            value: hospital.name || hospital.hospitalName || hospital.value || hospital.id
-          })) || [];
+        const hospitalsList = (hospitalsResponse?.data ?? [])
+          .map((hospital) => {
+            const label = hospital?.name || hospital?.hospitalName || hospital?.label || "";
+            const value = hospital?.id ?? label;
+            return { label, value };
+          })
+          .filter((opt) => opt.label)
+          .sort(byLabelAsc);
         setHospitalOptions(hospitalsList);
         setApiDataLoading((prev) => ({ ...prev, hospitals: false }));
 
-        // Fetch medical conditions
         setApiDataLoading((prev) => ({ ...prev, conditions: true }));
         const conditionsResponse = await getAllMedicalConditions();
-        const conditionsList =
-          conditionsResponse.data?.map((condition) => ({
-            label: condition.name || condition.conditionName || condition.label,
-            value: condition.name || condition.conditionName || condition.value || condition.id
-          })) || [];
+        const conditionsList = (conditionsResponse?.data ?? [])
+          .map((condition) => ({
+            label: condition?.name || condition?.conditionName || condition?.label || "",
+            value: condition?.name || condition?.conditionName || condition?.value || condition?.id || "",
+          }))
+          .filter((opt) => opt.label)
+          .sort(byLabelAsc);
         setMedicalConditions(conditionsList);
         setApiDataLoading((prev) => ({ ...prev, conditions: false }));
 
-        // Fetch medical status
         setApiDataLoading((prev) => ({ ...prev, status: true }));
         const statusResponse = await getAllMedicalStatus();
-        const statusList =
-          statusResponse.data?.map((status) => ({
-            label: status.name || status.statusName || status.label,
-            value: status.name || status.statusName || status.value || status.id
-          })) || [];
+        const statusList = (statusResponse?.data ?? [])
+          .map((status) => ({
+            label: status?.name || status?.statusName || status?.label || "",
+            value: status?.name || status?.statusName || status?.value || status?.id || "",
+          }))
+          .filter((opt) => opt.label)
+          .sort(byLabelAsc);
         setStatusTypes(statusList);
         setApiDataLoading((prev) => ({ ...prev, status: false }));
       } catch (error) {
         console.error("Error fetching master data:", error);
-        // Fallback to default data if API fails
-        setHospitalOptions([
+        const fallbackHospitals = [
           { label: "AIIMS Delhi", value: "AIIMS Delhi" },
-          { label: "Fortis Hospital, Gurgaon", value: "Fortis Hospital, Gurgaon" },
           { label: "Apollo Hospital, Chennai", value: "Apollo Hospital, Chennai" },
+          { label: "Fortis Hospital, Gurgaon", value: "Fortis Hospital, Gurgaon" },
+          { label: "Max Super Speciality Hospital, Delhi", value: "Max Super Speciality Hospital, Delhi" },
           { label: "Medanta – The Medicity, Gurgaon", value: "Medanta – The Medicity, Gurgaon" },
-          { label: "Max Super Speciality Hospital, Delhi", value: "Max Super Speciality Hospital, Delhi" }
-        ]);
-        setMedicalConditions([
-          { label: "Diabetic Disease", value: "Diabetic" },
+        ].sort(byLabelAsc);
+        setHospitalOptions(fallbackHospitals);
+        const fallbackConditions = [
+          { label: "Asthma Disease", value: "Asthma" },
           { label: "BP (Blood Pressure)", value: "BP" },
+          { label: "Diabetic Disease", value: "Diabetic" },
           { label: "Heart Disease", value: "Heart" },
-          { label: "Asthma Disease", value: "Asthma" }
-        ]);
-        setStatusTypes([
+        ].sort(byLabelAsc);
+        setMedicalConditions(fallbackConditions);
+        const fallbackStatus = [
           { label: "Active", value: "Active" },
-          { label: "Treated", value: "Treated" },
-          { label: "Recovered", value: "Recovered" },
+          { label: "Consulted", value: "Consulted" },
           { label: "Discharged", value: "Discharged" },
-          { label: "Consulted", value: "Consulted" }
-        ]);
+          { label: "Recovered", value: "Recovered" },
+          { label: "Treated", value: "Treated" },
+        ].sort(byLabelAsc);
+        setStatusTypes(fallbackStatus);
       } finally {
-        setApiDataLoading((prev) => ({ hospitals: false, conditions: false, status: false }));
+        setApiDataLoading((prev) => ({ ...prev, hospitals: false, conditions: false, status: false }));
       }
     };
     fetchMasterData();
   }, []);
 
-  // Fetch medical records data
   useEffect(() => {
     const fetchAllRecords = async () => {
       setLoading(true);
@@ -116,8 +120,6 @@ const MedicalRecords = () => {
         const opd = [];
         const ipd = [];
         const virtual = [];
-
-        // Filter records by patient email (from Redux)
         const patientEmail = user?.email;
         response.data.forEach((rec) => {
           if (rec.ptemail === patientEmail) {
@@ -126,7 +128,6 @@ const MedicalRecords = () => {
             else if (rec.type === "Virtual") virtual.push(rec);
           }
         });
-
         setMedicalData({ OPD: opd, IPD: ipd, Virtual: virtual });
         const hiddenRecords = response.data
           .filter((record) => record.hiddenByPatient)
@@ -195,7 +196,6 @@ const MedicalRecords = () => {
       }
     } catch (error) {
       console.error("Error updating hide status:", error);
-      // Fallback update for UI consistency
       if (isHidden) {
         updateState({ hiddenIds: [...state.hiddenIds, recordId] });
       } else {
@@ -216,7 +216,7 @@ const MedicalRecords = () => {
       phone: user?.phone || "Not provided",
       ptemail: user?.email,
       address: user?.address || "Not provided",
-      isVerified: formData.uploadedBy === "Doctor",
+      isVerified: false,
       hasDischargeSummary: recordType === "IPD",
       isNewlyAdded: true,
       createdBy: "patient",
@@ -246,7 +246,6 @@ const MedicalRecords = () => {
       updateState({ showAddModal: false });
     } catch (error) {
       console.error("Error adding record:", error);
-      // Fallback - add locally if API fails
       setMedicalData((prev) => {
         const updated = {
           ...prev,
@@ -284,7 +283,7 @@ const MedicalRecords = () => {
           if (key === "hospitalName") {
             return (
               <div className={`flex items-center gap-1 sm:gap-2 ${hiddenClass}`}>
-                {(row.isVerified || row.hasDischargeSummary) && (
+                {(row.isVerified || row.hasDischargeSummary || row.createdBy === "doctor" || row.uploadedBy === "Doctor") && (
                   <CheckCircle size={14} className="text-green-600" />
                 )}
                 <button
@@ -320,38 +319,52 @@ const MedicalRecords = () => {
           return <span className={hiddenClass}>{row[key]}</span>;
         }
       })),
-      {
-        header: "Actions",
-        accessor: "actions",
-        cell: (row) => (
-          <div className="flex gap-1 sm:gap-2">
-            <button
-              onClick={() =>
-                row.isHidden ? handleUnhideRecord(row.id) : handleHideRecord(row.id)
-              }
-              className={`transition-colors ${
-                row.isHidden ? "text-green-500 hover:text-green-700" : "text-gray-500 hover:text-red-500"
-              }`}
-              title={row.isHidden ? "Unhide Record" : "Hide Record"}
-              type="button"
-            >
-              <EyeOff size={14} />
-            </button>
-          </div>
-        )
-      }
+{
+  header: "Actions",
+  accessor: "actions",
+  cell: (row) => (
+    <div className="flex items-center gap-1">
+      <label className="relative inline-flex items-center cursor-pointer">
+        {/* <input
+          type="checkbox"
+          checked={!row.isHidden}
+          onChange={() =>
+            row.isHidden ? handleUnhideRecord(row.id) : handleHideRecord(row.id)
+          }
+          className="sr-only peer"
+        /> */}
+
+
+         <input
+          type="checkbox"
+          checked={!row.isHidden}
+          onChange={() =>
+            row.isHidden ? handleUnhideRecord(row.id) : handleHideRecord(row.id)
+          }
+          className="sr-only peer"
+        />
+        <div
+          className={`w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer-checked:bg-gradient-to-r peer-checked:from-emerald-500 peer-checked:to-teal-500 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5`}
+        ></div>
+        <span className="ml-1 text-xs font-medium text-gray-900">
+          {/* {row.isHidden ? "Hidden" : "Visible"} */}
+        </span>
+      </label>
+    </div>
+  ),
+}
+
+
+
     ];
   };
 
-  // Updated: Deduplicate records before displaying
   const getCurrentTabData = () => {
     const records = medicalData[state.activeTab] || [];
     const seen = new Set();
     const uniqueRecords = [];
-
     records.forEach((record) => {
       const recordKey = `${record.hospitalName}-${record.dateOfVisit}-${record.chiefComplaint}`;
-
       if (!seen.has(recordKey)) {
         seen.add(recordKey);
         uniqueRecords.push({
@@ -361,7 +374,6 @@ const MedicalRecords = () => {
         });
       }
     });
-
     return uniqueRecords;
   };
 
@@ -404,7 +416,6 @@ const MedicalRecords = () => {
 
   const tabs = Object.keys(medicalData).map((key) => ({ label: key, value: key }));
 
-  // Deduplicate hospital names for filters
   const filters = [
     {
       key: "hospitalName",
@@ -457,20 +468,6 @@ const MedicalRecords = () => {
           </div>
         </div>
       )}
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Search size={18} className="text-[var(--primary-color)]" />
-          <h2 className="text-lg sm:text-xl font-bold">Medical Records History</h2>
-        </div>
-        <button
-          onClick={() => updateState({ showAddModal: true })}
-          className="btn btn-primary flex items-center gap-1 px-2 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm mt-2 sm:mt-0"
-          disabled={isDataLoading}
-        >
-          <Plus size={14} />
-          Add Record
-        </button>
-      </div>
       {loading ? (
         <div className="text-center py-4 sm:py-8">
           <div className="flex items-center justify-center gap-2">
@@ -490,14 +487,21 @@ const MedicalRecords = () => {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <DynamicTable
-            columns={createColumns(state.activeTab)}
-            data={getCurrentTabData()}
-            filters={filters}
-            tabs={tabs}
-            activeTab={state.activeTab}
-            onTabChange={(tab) => updateState({ activeTab: tab })}
-          />
+                    <DynamicTable
+  columns={createColumns(state.activeTab)}
+  data={getCurrentTabData()}
+  filters={filters}
+  tabs={tabs}
+  activeTab={state.activeTab}
+  onTabChange={(tab) => updateState({ activeTab: tab })}
+  tabActions={[
+    {
+      label: "Add Record",
+      onClick: () => updateState({ showAddModal: true }),
+      className: "edit-btn",
+    },
+  ]}
+/>
         </div>
       )}
       <ReusableModal

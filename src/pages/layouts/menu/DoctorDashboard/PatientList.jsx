@@ -1,17 +1,8 @@
-//patientList(API)
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import {
-  Bed,
-  Users,
-  Heart,
-  AlertTriangle,
-  Baby,
-  Shield,
-  Stethoscope,
-  ChevronLeft,
+import {Bed,Users,Heart,AlertTriangle,Baby,Shield,Stethoscope,ChevronLeft,
   ChevronRight,
   Snowflake,
   Monitor,
@@ -21,43 +12,56 @@ import {
   CheckCircle,
   Wrench,
 } from "lucide-react";
-import OPDTab from "./OPDTab";
-import IPDTab from "./IPDTab";
-import VirtualTab from "./VirtualTab";
+import DynamicTable from "../../../../components/microcomponents/DynamicTable";
+import Pagination from "../../../../components/Pagination";
+import TeleConsultFlow from "../../../../components/microcomponents/Call";
 import ReusableModal from "../../../../components/microcomponents/Modal";
-import axios from "axios";
 import { useSelector } from "react-redux";
-// Import the API functions
-import {
-  getPersonalHealthByPatientId,
-  getFamilyMembersByPatient,
-} from "../../../../utils/CrudService";
+import { FaNotesMedical, FaVideo } from "react-icons/fa";
+import { FiExternalLink } from "react-icons/fi";
 
+// Import API functions
+import {
+  getGenders,
+  getBloodGroups,
+  getSpecializationsByPracticeType,
+  getAllHospitals,
+} from "../../../../utils/masterService";
+import { getFamilyMembersByPatient,
+  getPersonalHealthByPatientId } from "../../../../utils/CrudService";
+// Mock API endpoints (to be replaced with real patient APIs)
 const API = {
   FORM: "https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient",
   USERS: "https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users",
-  PERSONAL_HEALTH:
-    "https://680cc0c2ea307e081d4edda.mockapi.io/personalHealthDetails",
-  FAMILY_DATA: "https://6808fb0f942707d722e09f1d.mockapi.io/FamilyData",
   VITAL_SIGNS: "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary",
 };
 
-const OPT = {
-  GENDER: ["Female", "Male", "Other"],
-  BLOOD: ["A+", "B+", "O+", "AB+"],
-  OCC: ["Doctor", "Engineer", "Teacher", "Student", "Retired"],
-  DEPT: [
-    "General Medicine",
-    "Surgery",
-    "Cardiology",
-    "Orthopedics",
-    "Pediatrics",
-    "Gynecology",
-  ],
-  INS: ["None", "CGHS", "ESIC", "Private Insurance", "Other"],
-  STATUS: ["Admitted", "Discharged"],
-  SURGERY: ["No", "Yes"],
-};
+// Static data that might need to be converted to APIs later
+const OCCUPATIONS = [
+  { value: "Doctor", label: "Doctor" },
+  { value: "Engineer", label: "Engineer" },
+  { value: "Teacher", label: "Teacher" },
+  { value: "Student", label: "Student" },
+  { value: "Retired", label: "Retired" },
+];
+
+const INSURANCE_TYPES = [
+  { value: "None", label: "None" },
+  { value: "CGHS", label: "CGHS" },
+  { value: "ESIC", label: "ESIC" },
+  { value: "Private Insurance", label: "Private Insurance" },
+  { value: "Other", label: "Other" },
+];
+
+const PATIENT_STATUS = [
+  { value: "Admitted", label: "Admitted" },
+  { value: "Discharged", label: "Discharged" },
+];
+
+const SURGERY_OPTIONS = [
+  { value: "No", label: "No" },
+  { value: "Yes", label: "Yes" },
+];
 
 const WARD_DATA = [
   {
@@ -119,12 +123,14 @@ const BED_FACILITIES = Object.fromEntries(
     ),
   ])
 );
+
 const FACILITY_ICONS = {
   AC: Snowflake,
   TV: Monitor,
   Bathroom: ShowerHead,
   Oxygen: Wind,
 };
+
 const WARD_ICONS = {
   General: Users,
   "ICU Ward": Heart,
@@ -141,8 +147,10 @@ const IPD_WIZARD_STEPS = [
   { id: 4, title: "IPD Admission Details", description: "Finalize Admission" },
 ];
 
+// Helper functions
 const getCurrentDate = () => new Date().toISOString().slice(0, 10);
 const getCurrentTime = () => new Date().toTimeString().slice(0, 5);
+
 const to24Hour = (t) =>
   t.includes("AM") || t.includes("PM")
     ? t.replace(
@@ -158,6 +166,7 @@ const to24Hour = (t) =>
             .padStart(2, "0")}:${m}`
       )
     : t;
+
 const incrementTime = (time) => {
   const [h, m] = time.split(":").map(Number);
   return `${((h + Math.floor((m + 30) / 60)) % 24)
@@ -165,173 +174,7 @@ const incrementTime = (time) => {
     .padStart(2, "0")}:${((m + 30) % 60).toString().padStart(2, "0")}`;
 };
 
-const PATIENT_BASIC_FIELDS = [
-  { name: "firstName", label: "First Name", type: "text", required: true },
-  { name: "middleName", label: "Middle Name", type: "text" },
-  { name: "lastName", label: "Last Name", type: "text", required: true },
-  { name: "phone", label: "Phone Number", type: "text", required: true },
-  { name: "email", label: "Email Address", type: "email", required: true },
-  {
-    name: "gender",
-    label: "Gender",
-    type: "select",
-    required: true,
-    options: OPT.GENDER.map((g) => ({ value: g, label: g })),
-  },
-  { name: "dob", label: "Date of Birth", type: "date", required: true },
-  {
-    name: "bloodGroup",
-    label: "Blood Group",
-    type: "select",
-    options: OPT.BLOOD.map((b) => ({ value: b, label: b })),
-  },
-  {
-    name: "occupation",
-    label: "Occupation",
-    type: "select",
-    required: true,
-    options: OPT.OCC.map((o) => ({ value: o, label: o })),
-  },
-  {
-    name: "addressPerm",
-    label: "Permanent Address",
-    type: "textarea",
-    required: true,
-    colSpan: 1.5,
-  },
-  {
-    name: "addressTemp",
-    label: "Temporary Address",
-    type: "textarea",
-    required: true,
-    colSpan: 1.5,
-  },
-  {
-    name: "sameAsPermAddress",
-    label: "Same as Permanent Address",
-    type: "checkbox",
-    colSpan: 3,
-  },
-  {
-    name: "password",
-    label: "Create Password",
-    type: "password",
-    required: true,
-  },
-  {
-    name: "confirmPassword",
-    label: "Confirm Password",
-    type: "password",
-    required: true,
-  },
-];
-
-const APPOINTMENT_FIELDS = [
-  { name: "date", label: "Appointment Date", type: "date", required: true },
-  { name: "time", label: "Appointment Time", type: "time", required: true },
-  { name: "diagnosis", label: "Diagnosis", type: "text", required: true },
-  {
-    name: "reason",
-    label: "Reason for Visit",
-    type: "select",
-    required: true,
-    options: ["Consultation", "Follow-up", "Test", "Other"].map((r) => ({
-      value: r,
-      label: r,
-    })),
-  },
-];
-
-const CONSULTATION_FIELDS = [
-  { name: "firstName", label: "First Name", type: "text", required: true },
-  { name: "lastName", label: "Last Name", type: "text", required: true },
-  { name: "email", label: "Email Address", type: "email", required: true },
-  { name: "phone", label: "Phone Number", type: "text", required: true },
-  {
-    name: "consultationType",
-    label: "Consultation Type",
-    type: "select",
-    required: true,
-    options: ["Video Call", "Voice Call", "Chat"].map((t) => ({
-      value: t,
-      label: t,
-    })),
-  },
-  {
-    name: "scheduledDate",
-    label: "Scheduled Date",
-    type: "date",
-    required: true,
-  },
-  {
-    name: "scheduledTime",
-    label: "Scheduled Time",
-    type: "time",
-    required: true,
-  },
-  {
-    name: "duration",
-    label: "Duration (minutes)",
-    type: "number",
-    required: true,
-  },
-  { name: "notes", label: "Consultation Notes", type: "textarea", colSpan: 2 },
-];
-
-const IPD_FINAL_FIELDS = [
-  {
-    name: "admissionDate",
-    label: "Admission Date",
-    type: "date",
-    required: true,
-  },
-  {
-    name: "admissionTime",
-    label: "Admission Time",
-    type: "time",
-    required: true,
-  },
-  {
-    name: "status",
-    label: "Status",
-    type: "select",
-    required: true,
-    options: OPT.STATUS.map((s) => ({ value: s, label: s })),
-  },
-  { name: "wardType", label: "Ward Type", type: "text", readonly: true },
-  { name: "wardNumber", label: "Ward Number", type: "text", readonly: true },
-  { name: "bedNumber", label: "Bed Number", type: "text", readonly: true },
-  {
-    name: "department",
-    label: "Department",
-    type: "select",
-    required: true,
-    options: OPT.DEPT.map((d) => ({ value: d, label: d })),
-  },
-  {
-    name: "insuranceType",
-    label: "Insurance Type",
-    type: "select",
-    required: true,
-    options: OPT.INS.map((i) => ({ value: i, label: i })),
-  },
-  {
-    name: "surgeryRequired",
-    label: "Surgery Required",
-    type: "select",
-    options: OPT.SURGERY.map((s) => ({ value: s, label: s })),
-  },
-  { name: "dischargeDate", label: "Discharge Date", type: "date" },
-  { name: "diagnosis", label: "Diagnosis", type: "text" },
-  {
-    name: "reasonForAdmission",
-    label: "Reason For Admission",
-    type: "textarea",
-    colSpan: 2,
-  },
-];
-
-// Updated PatientViewSections component to handle the new API structure
+// PatientViewSections component
 const PatientViewSections = ({
   data,
   personalHealthDetails,
@@ -358,17 +201,17 @@ const PatientViewSections = ({
           ? {
               Height: `${personalHealthDetails.height || "N/A"} cm`,
               Weight: `${personalHealthDetails.weight || "N/A"} kg`,
-              "Blood Group": personalHealthDetails.bloodGroupName || "N/A",
+              "Blood Group": personalHealthDetails.bloodGroupName || personalHealthDetails.bloodGroup || "N/A",
               Allergies: personalHealthDetails.allergies || "None",
               Surgeries: personalHealthDetails.surgeries || "None",
               Smoking: personalHealthDetails.isSmoker ? "Yes" : "No",
-              "Years Smoking": personalHealthDetails.isSmoker ? 
+              "Years Smoking": personalHealthDetails.isSmoker ?
                 (personalHealthDetails.yearsSmoking || "Not specified") : "N/A",
               Alcohol: personalHealthDetails.isAlcoholic ? "Yes" : "No",
-              "Years Alcohol": personalHealthDetails.isAlcoholic ? 
+              "Years Alcohol": personalHealthDetails.isAlcoholic ?
                 (personalHealthDetails.yearsAlcoholic || "Not specified") : "N/A",
               Tobacco: personalHealthDetails.isTobacco ? "Yes" : "No",
-              "Years Tobacco": personalHealthDetails.isTobacco ? 
+              "Years Tobacco": personalHealthDetails.isTobacco ?
                 (personalHealthDetails.yearsTobacco || "Not specified") : "N/A",
             }
           : null,
@@ -400,16 +243,16 @@ const PatientViewSections = ({
             section.data.map((member, i) => (
               <div key={i} className="p-2 bg-gray-50 rounded text-sm mb-2">
                 <p>
-                  <strong>{member.memberName}</strong> ({member.relationName})
+                  <strong>{member.memberName || member.name}</strong> ({member.relationName || member.relation})
                 </p>
                 <p>
-                  <strong>Phone:</strong> {member.phoneNumber || "Not provided"}
+                  <strong>Phone:</strong> {member.phoneNumber || member.phone || "Not provided"}
                 </p>
                 <p>
                   <strong>Health Conditions:</strong>{" "}
                   {member.healthConditions?.length > 0
                     ? member.healthConditions
-                        .map((condition) => condition.healthConditionName)
+                        .map((condition) => condition.healthConditionName || condition.name)
                         .join(", ")
                     : "None reported"}
                 </p>
@@ -434,6 +277,7 @@ const PatientViewSections = ({
   </div>
 );
 
+// PatientViewModal component
 const PatientViewModal = ({
   isOpen,
   onClose,
@@ -515,10 +359,13 @@ const PatientViewModal = ({
   );
 };
 
+// Main PatientList component
 export default function PatientList() {
   const location = useLocation();
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
+
+  // State variables
   const [doctorName, setDoctorName] = useState("");
   const [activeTab, setActiveTab] = useState("OPD");
   const [patients, setPatients] = useState([]);
@@ -556,40 +403,394 @@ export default function PatientList() {
   const [vitalSigns, setVitalSigns] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
 
+  // Master data state
+  const [masterData, setMasterData] = useState({
+    genders: [],
+    bloodGroups: [],
+    departments: [],
+    hospitals: [],
+    loading: true,
+  });
+
+  // Load master data
+  useEffect(() => {
+    const loadMasterData = async () => {
+      try {
+        setMasterData(prev => ({ ...prev, loading: true }));
+        
+        const [gendersRes, bloodGroupsRes, hospitalsRes] = await Promise.allSettled([
+          getGenders(),
+          getBloodGroups(),
+          getAllHospitals(),
+        ]);
+
+        // Process results
+        const genders = gendersRes.status === 'fulfilled' 
+          ? gendersRes.value.data.map(g => ({ value: g.genderName || g.name, label: g.genderName || g.name }))
+          : OCCUPATIONS; // Fallback
+
+        const bloodGroups = bloodGroupsRes.status === 'fulfilled'
+          ? bloodGroupsRes.value.data.map(bg => ({ value: bg.bloodGroupName || bg.name, label: bg.bloodGroupName || bg.name }))
+          : [{ value: "A+", label: "A+" }, { value: "B+", label: "B+" }, { value: "O+", label: "O+" }, { value: "AB+", label: "AB+" }];
+
+        const hospitals = hospitalsRes.status === 'fulfilled'
+          ? hospitalsRes.value.data
+          : [];
+
+        // Try to get departments from practice types/specializations
+        let departments = [];
+        try {
+          // This might need to be adjusted based on your practice type structure
+          const specializationsRes = await getSpecializationsByPracticeType(1); // Assuming 1 is medical practice type
+          departments = specializationsRes.data.map(spec => ({ 
+            value: spec.specializationName || spec.name, 
+            label: spec.specializationName || spec.name 
+          }));
+        } catch (error) {
+          console.warn("Failed to load specializations, using fallback departments");
+          departments = [
+            { value: "General Medicine", label: "General Medicine" },
+            { value: "Surgery", label: "Surgery" },
+            { value: "Cardiology", label: "Cardiology" },
+            { value: "Orthopedics", label: "Orthopedics" },
+            { value: "Pediatrics", label: "Pediatrics" },
+            { value: "Gynecology", label: "Gynecology" },
+          ];
+        }
+
+        setMasterData({
+          genders,
+          bloodGroups,
+          departments,
+          hospitals,
+          loading: false,
+        });
+
+        // Log any failed requests
+        if (gendersRes.status === 'rejected') {
+          console.warn("Failed to load genders:", gendersRes.reason);
+        }
+        if (bloodGroupsRes.status === 'rejected') {
+          console.warn("Failed to load blood groups:", bloodGroupsRes.reason);
+        }
+        if (hospitalsRes.status === 'rejected') {
+          console.warn("Failed to load hospitals:", hospitalsRes.reason);
+        }
+
+      } catch (error) {
+        console.error("Error loading master data:", error);
+        // Set fallback data
+        setMasterData({
+          genders: [
+            { value: "Female", label: "Female" },
+            { value: "Male", label: "Male" },
+            { value: "Other", label: "Other" },
+          ],
+          bloodGroups: [
+            { value: "A+", label: "A+" },
+            { value: "B+", label: "B+" },
+            { value: "O+", label: "O+" },
+            { value: "AB+", label: "AB+" },
+          ],
+          departments: [
+            { value: "General Medicine", label: "General Medicine" },
+            { value: "Surgery", label: "Surgery" },
+            { value: "Cardiology", label: "Cardiology" },
+            { value: "Orthopedics", label: "Orthopedics" },
+            { value: "Pediatrics", label: "Pediatrics" },
+            { value: "Gynecology", label: "Gynecology" },
+          ],
+          hospitals: [],
+          loading: false,
+        });
+        toast.error("Some master data failed to load, using defaults");
+      }
+    };
+
+    loadMasterData();
+  }, []);
+
+  // Tabs configuration for DynamicTable
   const tabs = [
     { label: "OPD", value: "OPD" },
     { label: "IPD", value: "IPD" },
     { label: "Virtual", value: "Virtual" },
   ];
 
+  // Tab actions configuration for DynamicTable
+  const tabActions = [
+    {
+      label: activeTab === "Virtual" ? "Schedule Consultation" : "Add Patient",
+      onClick: () => {
+        if (activeTab === "Virtual") {
+          setModals(prev => ({ ...prev, scheduleConsultation: true }));
+        } else if (activeTab === "IPD") {
+          setModals(prev => ({ ...prev, ipdWizard: true }));
+        } else {
+          setModals(prev => ({ ...prev, addPatient: true }));
+        }
+      },
+      className: "btn btn-primary whitespace-nowrap px-4 py-2 text-xs flex items-center gap-2"
+    }
+  ];
+ const handleAddRecord = (patient) => {
+    navigate("/doctordashboard/form", { state: { patient } });
+  };
+  // Generate field configurations using master data
+  const generatePatientBasicFields = () => [
+    { name: "firstName", label: "First Name", type: "text", required: true },
+    { name: "middleName", label: "Middle Name", type: "text" },
+    { name: "lastName", label: "Last Name", type: "text", required: true },
+    { name: "phone", label: "Phone Number", type: "text", required: true },
+    { name: "email", label: "Email Address", type: "email", required: true },
+    {
+      name: "gender",
+      label: "Gender",
+      type: "select",
+      required: true,
+      options: masterData.genders,
+    },
+    { name: "dob", label: "Date of Birth", type: "date", required: true },
+    {
+      name: "bloodGroup",
+      label: "Blood Group",
+      type: "select",
+      options: masterData.bloodGroups,
+    },
+    {
+      name: "occupation",
+      label: "Occupation",
+      type: "select",
+      required: true,
+      options: OCCUPATIONS,
+    },
+    {
+      name: "addressPerm",
+      label: "Permanent Address",
+      type: "textarea",
+      required: true,
+      colSpan: 1.5,
+    },
+    {
+      name: "addressTemp",
+      label: "Temporary Address",
+      type: "textarea",
+      required: true,
+      colSpan: 1.5,
+    },
+    {
+      name: "sameAsPermAddress",
+      label: "Same as Permanent Address",
+      type: "checkbox",
+      colSpan: 3,
+    },
+    {
+      name: "password",
+      label: "Create Password",
+      type: "password",
+      required: true,
+    },
+    {
+      name: "confirmPassword",
+      label: "Confirm Password",
+      type: "password",
+      required: true,
+    },
+  ];
+
+  const APPOINTMENT_FIELDS = [
+    { name: "date", label: "Appointment Date", type: "date", required: true },
+    { name: "time", label: "Appointment Time", type: "time", required: true },
+    { name: "diagnosis", label: "Diagnosis", type: "text", required: true },
+    {
+      name: "reason",
+      label: "Reason for Visit",
+      type: "select",
+      required: true,
+      options: ["Consultation", "Follow-up", "Test", "Other"].map((r) => ({
+        value: r,
+        label: r,
+      })),
+    },
+  ];
+
+  const CONSULTATION_FIELDS = [
+    { name: "firstName", label: "First Name", type: "text", required: true },
+    { name: "lastName", label: "Last Name", type: "text", required: true },
+    { name: "email", label: "Email Address", type: "email", required: true },
+    { name: "phone", label: "Phone Number", type: "text", required: true },
+    {
+      name: "consultationType",
+      label: "Consultation Type",
+      type: "select",
+      required: true,
+      options: ["Video Call", "Voice Call", "Chat"].map((t) => ({
+        value: t,
+        label: t,
+      })),
+    },
+    {
+      name: "scheduledDate",
+      label: "Scheduled Date",
+      type: "date",
+      required: true,
+    },
+    {
+      name: "scheduledTime",
+      label: "Scheduled Time",
+      type: "time",
+      required: true,
+    },
+    {
+      name: "duration",
+      label: "Duration (minutes)",
+      type: "number",
+      required: true,
+    },
+    { name: "notes", label: "Consultation Notes", type: "textarea", colSpan: 2 },
+  ];
+
+  const generateIpdFinalFields = () => [
+    {
+      name: "admissionDate",
+      label: "Admission Date",
+      type: "date",
+      required: true,
+    },
+    {
+      name: "admissionTime",
+      label: "Admission Time",
+      type: "time",
+      required: true,
+    },
+    {
+      name: "status",
+      label: "Status",
+      type: "select",
+      required: true,
+      options: PATIENT_STATUS,
+    },
+    { name: "wardType", label: "Ward Type", type: "text", readonly: true },
+    { name: "wardNumber", label: "Ward Number", type: "text", readonly: true },
+    { name: "bedNumber", label: "Bed Number", type: "text", readonly: true },
+    {
+      name: "department",
+      label: "Department",
+      type: "select",
+      required: true,
+      options: masterData.departments,
+    },
+    {
+      name: "insuranceType",
+      label: "Insurance Type",
+      type: "select",
+      required: true,
+      options: INSURANCE_TYPES,
+    },
+    {
+      name: "surgeryRequired",
+      label: "Surgery Required",
+      type: "select",
+      options: SURGERY_OPTIONS,
+    },
+    { name: "dischargeDate", label: "Discharge Date", type: "date" },
+    { name: "diagnosis", label: "Diagnosis", type: "text" },
+    {
+      name: "reasonForAdmission",
+      label: "Reason For Admission",
+      type: "textarea",
+      colSpan: 2,
+    },
+  ];
+
+  // Helper function to load recording from localStorage
+  const loadRecordingFromLocalStorage = (key) => {
+    const dataUrl = localStorage.getItem(key);
+    const metadataStr = localStorage.getItem(`${key}_metadata`);
+    if (!dataUrl) return null;
+    try {
+      const byteString = atob(dataUrl.split(",")[1]);
+      const mimeString = dataUrl.split(",")[0].split(":")[1].split(";")[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      return {
+        blob: new Blob([ab], { type: mimeString }),
+        metadata: metadataStr ? JSON.parse(metadataStr) : null,
+      };
+    } catch (error) {
+      console.error("Failed to decode data URL from localStorage:", error);
+      return null;
+    }
+  };
+
+  // Helper function to check if a patient has a recording
+  const hasRecording = useCallback((patientEmail, hospitalName) => {
+    const videoKeys = Object.keys(localStorage).filter((key) =>
+      key.startsWith("consultationVideo_")
+    );
+    for (const key of videoKeys) {
+      const metadataStr = localStorage.getItem(`${key}_metadata`);
+      if (metadataStr) {
+        try {
+          const metadata = JSON.parse(metadataStr);
+          if (
+            metadata.patientEmail === patientEmail &&
+            metadata.hospitalName === hospitalName
+          ) {
+            return true;
+          }
+        } catch (error) {
+          console.error("Failed to parse metadata:", error);
+        }
+      }
+    }
+    return false;
+  }, []);
+
+  // Fetch doctor name (keeping original implementation for now)
   useEffect(() => {
     const fetchDoctorName = async () => {
-      if (!user?.email) return;
+      if (!user?.email) {
+        console.error("No user email found in Redux");
+        return;
+      }
       try {
-        const res = await axios.get(
+        console.log("Fetching doctor name for email:", user.email);
+        const res = await fetch(
           `${API.USERS}?email=${encodeURIComponent(user.email)}`
         );
-        if (res.data.length > 0) {
-          const doctor = res.data[0];
-          setDoctorName(`Dr. ${doctor.firstName} ${doctor.lastName}`.trim());
+        const users = await res.json();
+        if (users.length === 0) {
+          throw new Error('No user found with the provided email');
         }
+        const doctor = users[0];
+        const fullName = `${doctor.firstName} ${doctor.lastName}`.trim();
+        const formattedDoctorName = `Dr. ${fullName}`;
+        console.log("Fetched Doctor Name:", formattedDoctorName);
+        setDoctorName(formattedDoctorName);
       } catch (error) {
-        console.error("Error fetching doctor name:", error);
-        toast.error("Failed to fetch doctor name");
+        console.error('Error fetching doctor name:', error);
+        toast.error('Failed to fetch doctor name, using default.');
       }
     };
     fetchDoctorName();
   }, [user]);
 
+  // Fetch all patients
   useEffect(() => {
-    if (doctorName) fetchAllPatients();
-  }, [doctorName]);
+    if (doctorName && !masterData.loading) fetchAllPatients();
+  }, [doctorName, masterData.loading]);
 
+  // Handle tab change from URL
   useEffect(() => {
     const tabFromUrl = new URLSearchParams(location.search).get("tab");
     const tabFromState = location.state?.tab;
     const highlightIdFromState = location.state?.highlightId;
     const autoNavigated = location.state?.autoNavigated;
+
     if (autoNavigated && tabFromState) {
       setActiveTab(tabFromState);
       if (highlightIdFromState) setNewPatientId(highlightIdFromState);
@@ -598,11 +799,13 @@ export default function PatientList() {
     }
   }, [location.search, location.state]);
 
+  // Fetch all patients from API (keeping original implementation for now)
   const fetchAllPatients = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(API.FORM);
-      const allPatients = res.data
+      const res = await fetch(API.FORM);
+      const allPatients = await res.json();
+      const processedPatients = allPatients
         .map((p) => ({
           ...p,
           name:
@@ -615,7 +818,7 @@ export default function PatientList() {
         .reverse();
 
       setPatients(
-        allPatients
+        processedPatients
           .filter(
             (p) =>
               (!p.type || p.type.toLowerCase() === "opd") &&
@@ -638,7 +841,7 @@ export default function PatientList() {
       );
 
       setIpdPatients(
-        allPatients
+        processedPatients
           .filter(
             (p) =>
               p.type?.toLowerCase() === "ipd" && p.doctorName === doctorName
@@ -663,7 +866,7 @@ export default function PatientList() {
       );
 
       setVirtualPatients(
-        allPatients
+        processedPatients
           .filter(
             (p) =>
               (p.type?.toLowerCase() === "virtual" || p.consultationType) &&
@@ -694,18 +897,18 @@ export default function PatientList() {
     }
   };
 
-  // Updated fetchPatientDetails function with improved error handling and data structure
+  // Fetch patient details using real APIs
   const fetchPatientDetails = async (patientId) => {
     if (!patientId) {
       console.warn("No patientId provided to fetchPatientDetails");
       return;
     }
-    
+
     setDetailsLoading(true);
     try {
       console.log("Fetching patient details for ID:", patientId);
-      
-      // Fetch personal health details
+
+      // Fetch personal health details using real API
       const personalHealthPromise = getPersonalHealthByPatientId(patientId)
         .then(response => {
           console.log("Personal health response:", response);
@@ -716,7 +919,7 @@ export default function PatientList() {
           return { data: null };
         });
 
-      // Fetch family members
+      // Fetch family members using real API
       const familyMembersPromise = getFamilyMembersByPatient(patientId)
         .then(response => {
           console.log("Family members response:", response);
@@ -727,9 +930,10 @@ export default function PatientList() {
           return { data: [] };
         });
 
-      // Fetch vital signs (keeping existing mock implementation)
-      const vitalSignsPromise = axios.get(API.VITAL_SIGNS)
-        .then(response => response)
+      // Fetch vital signs (keeping mock for now)
+      const vitalSignsPromise = fetch(API.VITAL_SIGNS)
+        .then(response => response.json())
+        .then(data => ({ data }))
         .catch(error => {
           console.warn("Vital signs fetch failed:", error);
           return { data: [] };
@@ -758,7 +962,7 @@ export default function PatientList() {
         setFamilyHistory([]);
       }
 
-      // Set vital signs (keep existing logic for email matching)
+      // Set vital signs
       const patientEmail = selectedPatient?.email?.toLowerCase().trim();
       if (patientEmail && Array.isArray(vitalRes.data)) {
         const matchingVitalSigns = vitalRes.data.find(
@@ -770,11 +974,10 @@ export default function PatientList() {
       }
 
       toast.success("Patient details loaded successfully!");
-
     } catch (error) {
       console.error("Error fetching patient details:", error);
       toast.error("Failed to fetch some patient details");
-      
+
       // Reset to default values
       setPersonalHealthDetails(null);
       setFamilyHistory([]);
@@ -784,12 +987,14 @@ export default function PatientList() {
     }
   };
 
+  // Tab change handler
   const handleTabChange = (tabValue) => {
     setActiveTab(tabValue);
     setNewPatientId(null);
     navigate(`/doctordashboard/patients?tab=${tabValue}`);
   };
 
+  // Modal handlers
   const openModal = (modalName) => {
     setModals((prev) => ({ ...prev, [modalName]: true }));
     if (modalName === "ipdWizard") {
@@ -839,10 +1044,12 @@ export default function PatientList() {
     }
   };
 
+  // Fetch OPD patient details for IPD transfer
   const handleFetchPatientDetails = async () => {
     if (!patientIdInput.trim()) return toast.error("Please enter a Patient ID");
     try {
-      const data = await (await fetch(API.FORM)).json();
+      const response = await fetch(API.FORM);
+      const data = await response.json();
       const found = data
         .filter((p) => !p.type || p.type.toLowerCase() === "opd")
         .find((p) => (p.id || "").toString() === patientIdInput.trim());
@@ -876,18 +1083,19 @@ export default function PatientList() {
     }
   };
 
+  // Form change handler
   const handleFormChange = (data) => {
     if (data.sameAsPermAddress && data.addressPerm)
       data.addressTemp = data.addressPerm;
     setFormData(data);
   };
 
-  // Updated handleViewPatient to pass patientId and handle the flow better
+  // View patient handler
   const handleViewPatient = (patient) => {
     console.log("Viewing patient:", patient);
     setSelectedPatient(patient);
     openModal("viewPatient");
-    
+
     // Use the patient ID to fetch details
     const patientId = patient.id || patient.patientId;
     if (patientId) {
@@ -898,6 +1106,7 @@ export default function PatientList() {
     }
   };
 
+  // Edit patient handler
   const handleEditPatient = (patient) => {
     setSelectedPatient(patient);
     setFormData({
@@ -909,6 +1118,7 @@ export default function PatientList() {
     openModal("editPatient");
   };
 
+  // Update patient handler
   const handleUpdatePatient = async (formData) => {
     try {
       const payload = {
@@ -920,7 +1130,14 @@ export default function PatientList() {
         temporaryAddress: formData.addressTemp,
         updatedAt: new Date().toISOString(),
       };
-      await axios.put(`${API.FORM}/${selectedPatient.id}`, payload);
+      const response = await fetch(`${API.FORM}/${selectedPatient.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to update patient');
       toast.success("Patient updated successfully!");
       closeModal("editPatient");
       fetchAllPatients();
@@ -930,6 +1147,7 @@ export default function PatientList() {
     }
   };
 
+  // Save patient handler
   const handleSavePatient = async (formData) => {
     try {
       const payload = {
@@ -944,8 +1162,16 @@ export default function PatientList() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      const response = await axios.post(API.FORM, payload);
-      setNewPatientId(response.data.id);
+      const response = await fetch(API.FORM, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to save patient');
+      const responseData = await response.json();
+      setNewPatientId(responseData.id);
       toast.success("Patient details saved!");
       closeModal("addPatient");
       if (activeTab === "OPD") {
@@ -959,6 +1185,7 @@ export default function PatientList() {
     }
   };
 
+  // Schedule appointment handler
   const handleScheduleAppointment = async (formData) => {
     try {
       const payload = {
@@ -971,7 +1198,14 @@ export default function PatientList() {
         type: "OPD",
         updatedAt: new Date().toISOString(),
       };
-      await axios.put(`${API.FORM}/${newPatientId}`, payload);
+      const response = await fetch(`${API.FORM}/${newPatientId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to schedule appointment');
       toast.success("Appointment scheduled successfully!");
       closeModal("appointment");
       fetchAllPatients();
@@ -981,6 +1215,7 @@ export default function PatientList() {
     }
   };
 
+  // Schedule consultation handler
   const handleScheduleConsultation = async (formData) => {
     try {
       const payload = {
@@ -993,10 +1228,18 @@ export default function PatientList() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      const response = await axios.post(API.FORM, payload);
+      const response = await fetch(API.FORM, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to schedule consultation');
+      const responseData = await response.json();
       toast.success("Virtual consultation scheduled successfully!");
       closeModal("scheduleConsultation");
-      setNewPatientId(response.data.id);
+      setNewPatientId(responseData.id);
       fetchAllPatients();
     } catch (error) {
       console.error("Error scheduling consultation:", error);
@@ -1004,6 +1247,7 @@ export default function PatientList() {
     }
   };
 
+  // IPD Wizard handlers
   const handleIpdWizardChange = (field, value) => {
     setIpdWizardData((prev) => {
       const updated = { ...prev, [field]: value };
@@ -1089,16 +1333,28 @@ export default function PatientList() {
         };
         let response;
         if (isExistingPatient) {
-          response = await axios.put(
-            `${API.FORM}/${ipdWizardData.id}`,
-            payload
-          );
+          response = await fetch(`${API.FORM}/${ipdWizardData.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+          if (!response.ok) throw new Error('Failed to update patient');
           setNewPatientId(ipdWizardData.id);
           toast.success("Existing OPD patient converted to IPD!");
         } else {
           payload.createdAt = new Date().toISOString();
-          response = await axios.post(API.FORM, payload);
-          setNewPatientId(response.data.id);
+          response = await fetch(API.FORM, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+          if (!response.ok) throw new Error('Failed to create patient');
+          const responseData = await response.json();
+          setNewPatientId(responseData.id);
           toast.success("New IPD patient created!");
         }
         setIpdWizardStep(2);
@@ -1141,7 +1397,14 @@ export default function PatientList() {
         doctorName,
         updatedAt: new Date().toISOString(),
       };
-      await axios.put(`${API.FORM}/${newPatientId}`, payload);
+      const response = await fetch(`${API.FORM}/${newPatientId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to finalize IPD admission');
       toast.success("IPD admission completed successfully!");
       closeModal("ipdWizard");
       fetchAllPatients();
@@ -1183,40 +1446,13 @@ export default function PatientList() {
     setBedScrollIndex(newIndex);
   };
 
-  const renderActiveTab = () => {
-    const commonProps = {
-      loading,
-      newPatientId,
-      onViewPatient: handleViewPatient,
-      highlightedPatientId: location.state?.highlightId || newPatientId,
-    };
-    switch (activeTab) {
-      case "OPD":
-        return <OPDTab patients={patients} {...commonProps} />;
-      case "IPD":
-        return <IPDTab patients={ipdPatients} {...commonProps} />;
-      case "Virtual":
-        return <VirtualTab patients={virtualPatients} {...commonProps} />;
-      default:
-        return <OPDTab patients={patients} {...commonProps} />;
-    }
-  };
-
-  const getAddButtonLabel = () =>
-    ({ IPD: "Add Patient", Virtual: "Schedule Consultation" }[activeTab] ||
-    "Add Patient");
-
-  const handleAddButtonClick = () => {
-    if (activeTab === "Virtual") openModal("scheduleConsultation");
-    else if (activeTab === "IPD") openModal("ipdWizard");
-    else openModal("addPatient");
-  };
-
+  // Get ward icon
   const getWardIcon = (wardType) => {
     const IconComponent = WARD_ICONS[wardType] || Bed;
     return <IconComponent className="w-5 h-5" />;
   };
 
+  // Render bed selection
   const renderBedSelection = () => {
     if (!selectedWard) return null;
     const visibleBeds = Array.from(
@@ -1324,14 +1560,12 @@ export default function PatientList() {
                       {facilities.map((facility) => {
                         const IconComponent = FACILITY_ICONS[facility];
                         return (
-                          IconComponent && (
-                            <div key={facility} className="relative group">
-                              <IconComponent className="w-3 h-3 opacity-70" />
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                {facility}
-                              </div>
+                          <div key={facility} className="relative group">
+                            <IconComponent className="w-3 h-3 opacity-70" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                              {facility}
                             </div>
-                          )
+                          </div>
                         );
                       })}
                     </div>
@@ -1405,6 +1639,7 @@ export default function PatientList() {
     );
   };
 
+  // Render IPD wizard content
   const renderIpdWizardContent = () => (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4"
@@ -1567,7 +1802,7 @@ export default function PatientList() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {PATIENT_BASIC_FIELDS.map((field) => (
+                  {generatePatientBasicFields().map((field) => (
                     <div
                       key={field.name}
                       className={`col-span-1 ${
@@ -1755,7 +1990,7 @@ export default function PatientList() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {IPD_FINAL_FIELDS.map((field) => (
+                  {generateIpdFinalFields().map((field) => (
                     <div
                       key={field.name}
                       className={`col-span-1 ${
@@ -1847,38 +2082,495 @@ export default function PatientList() {
     </motion.div>
   );
 
+  // Render active tab content
+  const renderActiveTab = () => {
+    const commonProps = {
+      loading,
+      newPatientId,
+      onViewPatient: handleViewPatient,
+      highlightedPatientId: location.state?.highlightId || newPatientId,
+    };
+
+    const getColumnsForTab = () => {
+      switch (activeTab) {
+        case "OPD":
+          return [
+            {
+              header: "ID",
+              accessor: "sequentialId",
+            },
+            {
+              header: "Name",
+              accessor: "name",
+              clickable: true,
+              cell: (row) => (
+                <button
+                  className="cursor-pointer text-[var(--primary-color)] hover:text-[var(--accent-color)]"
+                  onClick={() => handleViewPatient(row)}
+                >
+                  {row.name ||
+                    `${row.firstName || ""} ${row.middleName || ""} ${
+                      row.lastName || ""
+                    }`
+                      .replace(/\s+/g, " ")
+                      .trim()}
+                </button>
+              ),
+            },
+            { header: "Date", accessor: "appointmentDate" },
+            { header: "Time", accessor: "appointmentTime" },
+            { header: "Diagnosis", accessor: "diagnosis" },
+            {
+              header: "Actions",
+              cell: (row) => (
+                <div className="flex items-center gap-2">
+                 <button onClick={() => handleAddRecord(row)} className="text-base p-1">
+            <FaNotesMedical />
+          </button>
+                  <div className="text-sm">
+                    <TeleConsultFlow
+                      phone={row.phone}
+                      patientName={
+                        row.name ||
+                        `${row.firstName || ""} ${row.middleName || ""} ${
+                          row.lastName || ""
+                        }`
+                          .replace(/\s+/g, " ")
+                          .trim()
+                      }
+                      context="OPD"
+                      patientEmail={row.email}
+                      hospitalName={row.hospitalName || "AV Hospital"}
+                    />
+                  </div>
+                  <button
+                    title="View Medical Record"
+                    onClick={() => {
+                      let age = "";
+                      if (row.dob) {
+                        const dobDate = new Date(row.dob);
+                        const today = new Date();
+                        age = today.getFullYear() - dobDate.getFullYear();
+                        const m = today.getMonth() - dobDate.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+                          age--;
+                        }
+                      }
+                      navigate("/doctordashboard/medical-record", {
+                        state: {
+                          patientName: row.name,
+                          email: row.email || "",
+                          phone: row.phone || "",
+                          gender: row.gender || row.sex || "",
+                          temporaryAddress:
+                            row.temporaryAddress ||
+                            row.addressTemp ||
+                            row.address ||
+                            "",
+                          address:
+                            row.address ||
+                            row.temporaryAddress ||
+                            row.addressTemp ||
+                            "",
+                          addressTemp:
+                            row.addressTemp ||
+                            row.temporaryAddress ||
+                            row.address ||
+                            "",
+                          dob: row.dob || "",
+                          age: age,
+                          bloodType: row.bloodGroup || row.bloodType || "",
+                          regNo: row.regNo || "2025/072/0032722",
+                          mobileNo: row.mobileNo || row.phone || "",
+                          department: row.department || "Ophthalmology",
+                        },
+                      });
+                    }}
+                    className="p-1 text-base text-[var(--primary-color)]"
+                    style={{ display: "flex", alignItems: "center" }}
+                  >
+                    <FiExternalLink />
+                  </button>
+                </div>
+              ),
+            },
+          ];
+        case "IPD":
+          return [
+            {
+              header: "ID",
+              accessor: "sequentialId",
+            },
+            {
+              header: "Name",
+              accessor: "name",
+              clickable: true,
+              cell: (row) => (
+                <button
+                  className="cursor-pointer text-[var(--primary-color)] hover:text-[var(--accent-color)]"
+                  onClick={() => handleViewPatient(row)}
+                >
+                  {row.name ||
+                    `${row.firstName || ""} ${row.middleName || ""} ${
+                      row.lastName || ""
+                    }`
+                      .replace(/\s+/g, " ")
+                      .trim()}
+                </button>
+              ),
+            },
+            { header: "Admission", accessor: "admissionDate" },
+            {
+              header: "Status",
+              cell: (row) => (
+                <span
+                  className={`status-badge ${
+                    row.status === "Admitted"
+                      ? "status-admitted"
+                      : row.status === "Under Treatment"
+                      ? "status-pending"
+                      : "status-discharged"
+                  }`}
+                >
+                  {row.status}
+                </span>
+              ),
+            },
+            { header: "Diagnosis", accessor: "diagnosis" },
+            {
+              header: "Ward",
+              accessor: "ward",
+              cell: (row) => row.ward || "N/A",
+            },
+            {
+              header: "Discharge",
+              accessor: "dischargeDate",
+              cell: (row) => {
+                if (!row.dischargeDate || typeof row.dischargeDate === "number") {
+                  return "-";
+                }
+                return row.dischargeDate;
+              },
+            },
+            {
+              header: "Actions",
+              cell: (row) => (
+                <div className="flex items-center gap-2">
+                 <button onClick={() => handleAddRecord(row)} className="text-base p-1">
+            <FaNotesMedical />
+          </button>
+                  <div className="text-sm">
+                    <TeleConsultFlow
+                      phone={row.phone}
+                      patientName={
+                        row.name ||
+                        `${row.firstName || ""} ${row.middleName || ""} ${
+                          row.lastName || ""
+                        }`
+                          .replace(/\s+/g, " ")
+                          .trim()
+                      }
+                      context="IPD"
+                      patientEmail={row.email}
+                      hospitalName={row.hospitalName || "AV Hospital"}
+                    />
+                  </div>
+                  {hasRecording(row.email, row.hospitalName || "AV Hospital") && (
+                    <button
+                      onClick={() => {
+                        const key = Object.keys(localStorage).find((k) =>
+                          k.startsWith("consultationVideo_") &&
+                          localStorage.getItem(`${k}_metadata`) &&
+                          JSON.parse(localStorage.getItem(`${k}_metadata`)).patientEmail === row.email
+                        );
+                        if (key) {
+                          const { blob, metadata } = loadRecordingFromLocalStorage(key);
+                          setSelectedVideoBlob(blob);
+                          setSelectedVideoMetadata(metadata);
+                          setShowVideoModal(true);
+                        }
+                      }}
+                      className="text-base p-1 text-green-600"
+                      title="View Recording"
+                    >
+                      <FaVideo />
+                    </button>
+                  )}
+                  <button
+                    title="View Medical Record"
+                    onClick={() => {
+                      let age = "";
+                      if (row.dob) {
+                        const dobDate = new Date(row.dob);
+                        const today = new Date();
+                        age = today.getFullYear() - dobDate.getFullYear();
+                        const m = today.getMonth() - dobDate.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+                          age--;
+                        }
+                      }
+                      navigate("/doctordashboard/medical-record", {
+                        state: {
+                          patientName: row.name,
+                          email: row.email || "",
+                          phone: row.phone || "",
+                          gender: row.gender || row.sex || "",
+                          temporaryAddress:
+                            row.temporaryAddress ||
+                            row.addressTemp ||
+                            row.address ||
+                            "",
+                          address:
+                            row.address ||
+                            row.temporaryAddress ||
+                            row.addressTemp ||
+                            "",
+                          addressTemp:
+                            row.addressTemp ||
+                            row.temporaryAddress ||
+                            row.address ||
+                            "",
+                          dob: row.dob || "",
+                          age: age,
+                          bloodType: row.bloodGroup || row.bloodType || "",
+                          regNo: row.regNo || "2025/072/0032722",
+                          mobileNo: row.mobileNo || row.phone || "",
+                          department: row.department || "Ophthalmology",
+                          wardType: row.wardType,
+                          wardNo: row.wardNo,
+                          bedNo: row.bedNo,
+                        },
+                      });
+                    }}
+                    className="p-1 text-base text-[var(--primary-color)]"
+                    style={{ display: "flex", alignItems: "center" }}
+                  >
+                    <FiExternalLink />
+                  </button>
+                </div>
+              ),
+            },
+          ];
+        case "Virtual":
+          return [
+            {
+              header: "ID",
+              accessor: "sequentialId",
+            },
+            {
+              header: "Name",
+              accessor: "name",
+              clickable: true,
+              cell: (row) => (
+                <button
+                  className="cursor-pointer text-[var(--primary-color)] hover:text-[var(--accent-color)]"
+                  onClick={() => handleViewPatient(row)}
+                >
+                  {row.name ||
+                    `${row.firstName || ""} ${row.middleName || ""} ${
+                      row.lastName || ""
+                    }`
+                      .replace(/\s+/g, " ")
+                      .trim()}
+                </button>
+              ),
+            },
+            { header: "Date", accessor: "scheduledDate" },
+            { header: "Time", accessor: "scheduledTime" },
+            { header: "Type", accessor: "consultationType" },
+            { header: "Duration", accessor: "duration" },
+            {
+              header: "Actions",
+              cell: (row) => (
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleAddRecord(row)} className="text-base p-1">
+            <FaNotesMedical />
+          </button>
+                  <div className="text-sm">
+                    <TeleConsultFlow
+                      phone={row.phone}
+                      patientName={
+                        row.name ||
+                        `${row.firstName || ""} ${row.middleName || ""} ${
+                          row.lastName || ""
+                        }`
+                          .replace(/\s+/g, " ")
+                          .trim()
+                      }
+                      context="Virtual"
+                      patientEmail={row.email}
+                      hospitalName={row.hospitalName || "AV Hospital"}
+                    />
+                  </div>
+                  <button
+                    title="View Medical Record"
+                    onClick={() => {
+                      let age = "";
+                      if (row.dob) {
+                        const dobDate = new Date(row.dob);
+                        const today = new Date();
+                        age = today.getFullYear() - dobDate.getFullYear();
+                        const m = today.getMonth() - dobDate.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+                          age--;
+                        }
+                      }
+                      navigate("/doctordashboard/medical-record", {
+                        state: {
+                          patientName: row.name,
+                          email: row.email || "",
+                          phone: row.phone || "",
+                          gender: row.gender || row.sex || "",
+                          temporaryAddress:
+                            row.temporaryAddress ||
+                            row.addressTemp ||
+                            row.address ||
+                            "",
+                          address:
+                            row.address ||
+                            row.temporaryAddress ||
+                            row.addressTemp ||
+                            "",
+                          addressTemp:
+                            row.addressTemp ||
+                            row.temporaryAddress ||
+                            row.address ||
+                            "",
+                          dob: row.dob || "",
+                          age: age,
+                          bloodType: row.bloodGroup || row.bloodType || "",
+                          regNo: row.regNo || "2025/072/0032722",
+                          mobileNo: row.mobileNo || row.phone || "",
+                          department: row.department || "Ophthalmology",
+                        },
+                      });
+                    }}
+                    className="p-1 text-base text-[var(--primary-color)]"
+                    style={{ display: "flex", alignItems: "center" }}
+                  >
+                    <FiExternalLink />
+                  </button>
+                </div>
+              ),
+            },
+          ];
+        default:
+          return [];
+      }
+    };
+
+    const getDataForTab = () => {
+      switch (activeTab) {
+        case "OPD":
+          return patients;
+        case "IPD":
+          return ipdPatients;
+        case "Virtual":
+          return virtualPatients;
+        default:
+          return [];
+      }
+    };
+
+    const getFiltersForTab = () => {
+      switch (activeTab) {
+        case "OPD":
+          return [
+            {
+              key: "status",
+              label: "Status",
+              options: ["Scheduled", "Completed", "Cancelled"].map((status) => ({
+                value: status,
+                label: status,
+              })),
+            },
+            {
+              key: "department",
+              label: "Department",
+              options: masterData.departments,
+            },
+          ];
+        case "IPD":
+          return [
+            {
+              key: "status",
+              label: "Status",
+              options: PATIENT_STATUS,
+            },
+            {
+              key: "department",
+              label: "Department",
+              options: masterData.departments,
+            },
+          ];
+        case "Virtual":
+          return [
+            {
+              key: "consultationStatus",
+              label: "Status",
+              options: ["Scheduled", "Completed", "Cancelled"].map((status) => ({
+                value: status,
+                label: status,
+              })),
+            },
+            {
+              key: "consultationType",
+              label: "Type",
+              options: ["Video Call", "Voice Call", "Chat"].map((type) => ({
+                value: type,
+                label: type,
+              })),
+            },
+          ];
+        default:
+          return [];
+      }
+    };
+
+    const columns = getColumnsForTab();
+    const data = getDataForTab();
+    const filters = getFiltersForTab();
+
+    return (
+      <DynamicTable
+        columns={columns}
+        data={data}
+        filters={filters}
+        tabs={tabs}
+        tabActions={tabActions}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        newRowIds={[newPatientId].filter(Boolean)}
+        rowClassName={(row) =>
+          row.sequentialId === newPatientId ||
+          row.sequentialId === location.state?.highlightId
+            ? "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150"
+            : ""
+        }
+      />
+    );
+  };
+
+  // Show loading state while master data is loading
+  if (masterData.loading) {
+    return (
+      <div className="p-4 flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          <span className="text-gray-600">Loading master data...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-2 sm:p-4 md:p-2">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex gap-4">
-          {tabs.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => handleTabChange(tab.value)}
-              className={`relative cursor-pointer flex items-center gap-1 px-4 py-2 font-medium transition-colors duration-300 ${
-                activeTab === tab.value
-                  ? "text-[var(--primary-color)] after:content-[''] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-[var(--primary-color)]"
-                  : "text-gray-500 hover:text-[var(--accent-color)]"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={handleAddButtonClick}
-          className="btn btn-primary whitespace-nowrap px-4 py-2 text-xs flex items-center gap-2"
-        >
-          {getAddButtonLabel()}
-        </button>
-      </div>
-
       {renderActiveTab()}
 
       <PatientViewModal
         isOpen={modals.viewPatient}
         onClose={() => closeModal("viewPatient")}
-        patient={selectedPatient}
+        // patient={selectedPatient}
         personalHealthDetails={personalHealthDetails}
         familyHistory={familyHistory}
         vitalSigns={vitalSigns}
@@ -1893,7 +2585,7 @@ export default function PatientList() {
         onClose={() => closeModal("addPatient")}
         mode="add"
         title={`Add ${activeTab} Patient`}
-        fields={PATIENT_BASIC_FIELDS}
+        fields={generatePatientBasicFields()}
         data={formData}
         onSave={handleSavePatient}
         onChange={handleFormChange}
@@ -1957,7 +2649,7 @@ export default function PatientList() {
         onClose={() => closeModal("editPatient")}
         mode="edit"
         title={`Edit ${activeTab} Patient`}
-        fields={PATIENT_BASIC_FIELDS}
+        fields={generatePatientBasicFields()}
         data={formData}
         onSave={handleUpdatePatient}
         onChange={handleFormChange}

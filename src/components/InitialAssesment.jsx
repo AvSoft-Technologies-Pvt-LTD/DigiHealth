@@ -30,6 +30,8 @@ import {
   Image as ImageIcon,
   AlertCircle,
   Loader2,
+  X,
+  Plus,
 } from "lucide-react";
 import {
   TemplateModal,
@@ -55,6 +57,14 @@ const iconMapping = {
   default: FileText,
 };
 
+const templateTypes = [
+  { id: "past-history", name: "Past History", color: "#3B82F6" },
+  { id: "discharge-summary", name: "Discharge Summary", color: "#10B981" },
+  { id: "registration-form", name: "Registration Form", color: "#F59E0B" },
+  { id: "prescription", name: "Prescription", color: "#8B5CF6" },
+  { id: "lab-report", name: "Lab Report", color: "#EF4444" },
+];
+
 const InitialAssessment = () => {
   const [practiceTypes, setPracticeTypes] = useState([]);
   const [specializations, setSpecializations] = useState([]);
@@ -71,7 +81,12 @@ const InitialAssessment = () => {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("classic");
   const [selectedColor, setSelectedColor] = useState("#2563eb");
+  const [selectedTemplateType, setSelectedTemplateType] = useState("past-history");
+  const [uploadedTemplates, setUploadedTemplates] = useState([]);
+  const [showTemplateUpload, setShowTemplateUpload] = useState(false);
+  const [templateUploadLoading, setTemplateUploadLoading] = useState(false);
   const fileInputRef = useRef(null);
+  const templateFileInputRef = useRef(null);
   const navigate = useNavigate();
 
   const [patientInfo, setPatientInfo] = useState({
@@ -101,6 +116,7 @@ const InitialAssessment = () => {
   useEffect(() => {
     (async () => {
       await loadPracticeTypes();
+      await loadUploadedTemplates();
       setInitialLoading(false);
     })();
   }, []);
@@ -121,6 +137,10 @@ const InitialAssessment = () => {
       setTemplateFields([]);
     }
   }, [selectedSpecialty]);
+
+  useEffect(() => {
+    loadUploadedTemplates();
+  }, [selectedTemplateType]);
 
   const loadPracticeTypes = async () => {
     try {
@@ -166,14 +186,81 @@ const InitialAssessment = () => {
   const loadTemplateFields = async (specializationId) => {
     try {
       setError(null);
-      const response = await getTemplateFields(specializationId);
-      setTemplateFields(response.data || []);
+      const mockFields = [
+        { id: "chief-complaint", label: "Chief Complaint", type: "textarea", required: true },
+        { id: "history", label: "History of Present Illness", type: "textarea" },
+        { id: "examination", label: "Physical Examination", type: "textarea" },
+        { id: "diagnosis", label: "Provisional Diagnosis", type: "text" },
+        { id: "treatment", label: "Treatment Plan", type: "textarea" },
+      ];
+      setTemplateFields(mockFields);
       setFormData({});
     } catch (err) {
       setError("Failed to load template fields. Using default template.");
-      const response = await getTemplateFields(specializationId);
-      setTemplateFields(response.data || []);
+      setTemplateFields([]);
       setFormData({});
+    }
+  };
+
+  const loadUploadedTemplates = async () => {
+    try {
+      const storedTemplates = JSON.parse(localStorage.getItem("uploadedTemplates") || "[]");
+      const filteredTemplates = storedTemplates.filter(
+        template => template.templateType === selectedTemplateType
+      );
+      setUploadedTemplates(filteredTemplates);
+    } catch (err) {
+      console.log("Failed to load templates from localStorage");
+      setUploadedTemplates([]);
+    }
+  };
+
+  const handleTemplateUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setTemplateUploadLoading(true);
+    const reader = new FileReader();
+
+    reader.onloadend = async () => {
+      const base64String = reader.result.split(",")[1];
+      const templateData = {
+        id: Date.now().toString(),
+        templateType: selectedTemplateType,
+        image: base64String,
+        originalFile: reader.result,
+        fileName: file.name,
+        uploadedAt: new Date().toISOString(),
+        doctorName: patientInfo.consultingDoctor,
+        specialty: selectedSpecialty,
+        practiceType: selectedPracticeType,
+      };
+      try {
+        const storedTemplates = JSON.parse(localStorage.getItem("uploadedTemplates") || "[]");
+        storedTemplates.push(templateData);
+        localStorage.setItem("uploadedTemplates", JSON.stringify(storedTemplates));
+
+        toast.success(`${templateTypes.find(t => t.id === selectedTemplateType)?.name} template uploaded successfully!`);
+        await loadUploadedTemplates();
+      } catch (err) {
+        toast.error("Failed to upload template. Please try again.");
+      } finally {
+        setTemplateUploadLoading(false);
+      }
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const deleteTemplate = async (templateId) => {
+    try {
+      const storedTemplates = JSON.parse(localStorage.getItem("uploadedTemplates") || "[]");
+      const updatedTemplates = storedTemplates.filter(template => template.id !== templateId);
+      localStorage.setItem("uploadedTemplates", JSON.stringify(updatedTemplates));
+
+      toast.success("Template deleted successfully!");
+      await loadUploadedTemplates();
+    } catch (err) {
+      toast.error("Failed to delete template. Please try again.");
     }
   };
 
@@ -237,7 +324,6 @@ const InitialAssessment = () => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64String = reader.result.split(",")[1];
@@ -247,34 +333,17 @@ const InitialAssessment = () => {
         base64: base64String,
         timestamp: new Date().toISOString(),
         specialty: selectedSpecialty,
+        templateType: selectedTemplateType,
         fileName: file.name,
         size: file.size,
         apiLink: "",
       };
 
-      try {
-        const response = await fetch("https://6899921cfed141b96b9fea9a.mockapi.io/template", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64String }),
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          newImage.apiLink = result.image || result.link || "";
-          toast.success("Image uploaded successfully to server!");
-        } else {
-          toast.error("Failed to upload image to server.");
-        }
-      } catch (err) {
-        console.log("API upload failed, storing locally");
-        toast.success("Image uploaded locally!");
-      }
-
       setAnnotatedImages((prev) => [...prev, newImage]);
       const storedImages = JSON.parse(localStorage.getItem("medicalImages") || "[]");
       storedImages.push(newImage);
       localStorage.setItem("medicalImages", JSON.stringify(storedImages));
+      toast.success("Image uploaded successfully!");
     };
     reader.readAsDataURL(file);
   };
@@ -282,9 +351,11 @@ const InitialAssessment = () => {
   const navigateToAnnotation = (image) => {
     navigate("/image-annotation", {
       state: {
-        initialImage: image.originalFile,
+        initialImage: image.originalFile || `data:image/jpeg;base64,${image.image}`,
         patient: patientInfo,
         annotatedImages: annotatedImages,
+        templateType: selectedTemplateType,
+        uploadedTemplates: uploadedTemplates,
         from: "form",
       },
     });
@@ -530,12 +601,13 @@ const InitialAssessment = () => {
             </div>
           </div>
         )}
+        {/* Header Section */}
         <div
           className="bg-white rounded-xl shadow-lg p-6 mb-8"
           style={{
             backgroundColor: "#01D48C",
             color: "white",
-            textAlign: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.textAlign || "center",
+            textAlign: "left",
             borderRadius: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.borderRadius || "12px",
             borderLeft: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.borderLeft || "none",
             border: layoutStyles[prescriptionTemplates[selectedTemplate].layout]?.header.border || "none",
@@ -559,24 +631,25 @@ const InitialAssessment = () => {
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => setShowTemplateModal(true)}
-                className="btn btn-primary"
+                className="btn btn-primary flex items-center gap-2 px-3 py-2"
                 type="button"
               >
                 <Settings className="w-4 h-4" />
-                Templates
+                <span className="hidden md:inline">Templates</span>
               </button>
               <button
-                onClick={() => setShowImageUpload(!showImageUpload)}
-                className="btn btn-primary"
+                onClick={() => setShowTemplateUpload(!showTemplateUpload)}
+                className="btn btn-primary flex items-center gap-2 px-3 py-2"
                 type="button"
               >
-                <Upload className="w-4 h-4" />
-                Upload Template
+                <Plus className="w-4 h-4" />
+                <span className="hidden md:inline">Upload Template</span>
               </button>
             </div>
           </div>
         </div>
         <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Medical System & Specialty Selection */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
             <h4 className="h3-heading mb-4 flex items-center">
               <Settings className="w-5 h-5 mr-2" style={{ color: selectedColor }} />
@@ -634,63 +707,129 @@ const InitialAssessment = () => {
               </div>
             )}
           </div>
-          {showImageUpload && (
+          {/* Template Upload Section */}
+          {showTemplateUpload && (
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="flex items-center mb-4">
-                <ImageIcon className="w-6 h-6 text-green-500 mr-3" />
-                <h4 className="text-lg font-semibold text-gray-900">Medical Images</h4>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <FileText className="w-6 h-6 text-blue-500 mr-3" />
+                  <h4 className="text-lg font-semibold text-gray-900">Upload Medical Templates</h4>
+                </div>
+                <button
+                  onClick={() => setShowTemplateUpload(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              {/* Template Type Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Template Type
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {templateTypes.map((type) => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() => setSelectedTemplateType(type.id)}
+                      className={`p-3 rounded-lg border-2 transition-all text-sm font-medium ${
+                        selectedTemplateType === type.id
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full mx-auto mb-2"
+                        style={{ backgroundColor: type.color }}
+                      ></div>
+                      {type.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Upload Area */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-6">
                 <input
-                  ref={fileInputRef}
+                  ref={templateFileInputRef}
                   type="file"
                   accept="image/*"
-                  onChange={handleImageUpload}
+                  onChange={handleTemplateUpload}
                   className="hidden"
                 />
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  onClick={() => templateFileInputRef.current?.click()}
+                  disabled={templateUploadLoading}
+                  className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center mx-auto"
                 >
-                  Upload Medical Image
+                  {templateUploadLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload {templateTypes.find(t => t.id === selectedTemplateType)?.name} Template
+                    </>
+                  )}
                 </button>
-                <p className="text-sm text-gray-500 mt-2">
-                  Upload X-rays, scans, or other medical images
+                <p className="text-sm text-gray-500 mt-3">
+                  Upload {templateTypes.find(t => t.id === selectedTemplateType)?.name.toLowerCase()} templates for future use
                 </p>
               </div>
-              {annotatedImages.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                    Uploaded Images ({annotatedImages.length})
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {annotatedImages.map((image) => (
-                      <div key={image.id} className="border rounded-lg p-3 bg-gray-50">
-                        <div className="w-full h-32 bg-gray-200 rounded-lg mb-2 overflow-hidden">
+              {/* Uploaded Templates Display */}
+              {uploadedTemplates.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h5 className="text-lg font-semibold text-gray-900">
+                      {templateTypes.find(t => t.id === selectedTemplateType)?.name} Templates ({uploadedTemplates.length})
+                    </h5>
+                    <div
+                      className="px-3 py-1 rounded-full text-xs font-medium text-white"
+                      style={{ backgroundColor: templateTypes.find(t => t.id === selectedTemplateType)?.color }}
+                    >
+                      {selectedTemplateType}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {uploadedTemplates.map((template) => (
+                      <div key={template.id} className="border rounded-lg p-3 bg-gray-50 hover:shadow-md transition-shadow">
+                        <div className="w-full h-32 bg-gray-200 rounded-lg mb-3 overflow-hidden">
                           <img
-                            src={image.originalFile}
-                            alt="Medical"
-                            className="w-full h-full object-cover"
+                            src={template.originalFile || `data:image/jpeg;base64,${template.image}`}
+                            alt="Template"
+                            className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                            onClick={() => navigateToAnnotation(template)}
                           />
                         </div>
-                        <div className="text-sm text-gray-600">
-                          <p className="font-medium truncate">{image.fileName}</p>
-                          <p>
-                            Uploaded: {new Date(image.timestamp).toLocaleDateString()}
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p className="font-medium truncate">{template.fileName}</p>
+                          <p className="text-xs">
+                            Uploaded: {new Date(template.uploadedAt).toLocaleDateString()}
                           </p>
-                          <p>
-                            Specialty: {specialtyTemplates[image.specialty]?.title || image.specialty}
+                          <p className="text-xs">
+                            Doctor: {template.doctorName}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => navigateToAnnotation(image)}
-                          className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                        >
-                          Annotate
-                        </button>
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            type="button"
+                            onClick={() => navigateToAnnotation(template)}
+                            className="flex-1 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs font-medium"
+                          >
+                            View/Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteTemplate(template.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-xs"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -698,6 +837,7 @@ const InitialAssessment = () => {
               )}
             </div>
           )}
+          {/* Patient Information Section */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center mb-6">
               <User className="w-6 h-6 mr-3" style={{ color: selectedColor }} />
@@ -806,6 +946,7 @@ const InitialAssessment = () => {
               </div>
             </div>
           </div>
+          {/* Template Fields Section */}
           {templateFields.length > 0 ? (
             templateFields.map((field, index) => (
               <div key={field.id} className="bg-white rounded-xl shadow-lg p-6">
@@ -820,7 +961,44 @@ const InitialAssessment = () => {
                     <span className="ml-2 text-red-500 text-sm">*Required</span>
                   )}
                 </div>
-                {renderFormSection(field)}
+                {(() => {
+                  switch (field.type) {
+                    case "textarea":
+                      return (
+                        <textarea
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent min-h-32 resize-vertical"
+                          value={formData[field.id] || ""}
+                          onChange={(e) => handleInputChange(field.id, e.target.value)}
+                          placeholder={field.placeholder || field.label}
+                        />
+                      );
+                    case "select":
+                      return (
+                        <select
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
+                          value={formData[field.id] || ""}
+                          onChange={(e) => handleInputChange(field.id, e.target.value)}
+                        >
+                          <option value="">Select {field.label}</option>
+                          {field.options?.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      );
+                    default:
+                      return (
+                        <input
+                          type={field.type || "text"}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
+                          value={formData[field.id] || ""}
+                          onChange={(e) => handleInputChange(field.id, e.target.value)}
+                          placeholder={field.placeholder || field.label}
+                        />
+                      );
+                  }
+                })()}
               </div>
             ))
           ) : selectedSpecialty ? (
@@ -831,6 +1009,7 @@ const InitialAssessment = () => {
               </p>
             </div>
           ) : null}
+          {/* Additional Notes Section */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center mb-4">
               <PenTool className="w-6 h-6 text-purple-500 mr-3" />
@@ -845,6 +1024,7 @@ const InitialAssessment = () => {
               onChange={(e) => setHandwrittenNotes(e.target.value)}
             />
           </div>
+          {/* Action Buttons */}
           <div className="flex flex-wrap gap-4 justify-center">
             <button
               type="submit"

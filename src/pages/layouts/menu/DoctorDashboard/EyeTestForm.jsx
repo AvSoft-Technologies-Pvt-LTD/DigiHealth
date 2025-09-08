@@ -1,9 +1,14 @@
-//EyeTestForm.jsx
+
+
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { Eye, Save, Printer, Plus, Trash2, Edit, Check, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 
- const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
+const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
   const [rows, setRows] = useState(data?.rows || []);
   const [editingRow, setEditingRow] = useState(null);
   const [currentRow, setCurrentRow] = useState({
@@ -65,9 +70,7 @@ import { toast } from 'react-toastify';
   };
 
   const handleSaveEdit = () => {
-    setRows((prev) =>
-      prev.map((row, idx) => (idx === editingRow ? currentRow : row))
-    );
+    setRows((prev) => prev.map((row, idx) => (idx === editingRow ? currentRow : row)));
     setEditingRow(null);
     setCurrentRow({
       testDate: new Date().toISOString().split('T')[0],
@@ -109,7 +112,8 @@ import { toast } from 'react-toastify';
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-slideIn">
+    <div className="w-full mx-auto bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-slideIn">
+      {/* Header */}
       <div className="sub-heading px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Eye className="text-xl text-white" />
@@ -117,12 +121,11 @@ import { toast } from 'react-toastify';
         </div>
         <div className="flex items-center gap-3 text-white">
           <button
-  onClick={handleSave}
-  className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"
->
-  <Save className="w-5 h-5" />
-</button>
-
+            onClick={handleSave}
+            className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"
+          >
+            <Save className="w-5 h-5" />
+          </button>
           <button
             onClick={() => onPrint('eye')}
             className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"
@@ -132,15 +135,13 @@ import { toast } from 'react-toastify';
         </div>
       </div>
 
-      <div className="p-6 bg-gray-50">
+      {/* Form Content */}
+      <div className="p-3 bg-gray-50">
         {/* Form Input Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
           <h4 className="h4-heading mb-4">
-            {editingRow !== null
-              ? 'Edit Eye Test Record'
-              : 'Add New Eye Test Record'}
+            {editingRow !== null ? 'Edit Eye Test Record' : 'Add New Eye Test Record'}
           </h4>
-
           {/* Basic Info Row */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div>
@@ -215,7 +216,15 @@ import { toast } from 'react-toastify';
                       value={currentRow[field] || ''}
                       onChange={(e) => handleChange(field, e.target.value)}
                       className="input-field text-sm"
-                      placeholder={field === 'od_sph' ? 'e.g. -2.50' : field === 'od_cyl' ? 'e.g. -1.25' : field === 'od_va' ? 'e.g. 20/20' : 'e.g. 90°'}
+                      placeholder={
+                        field === 'od_sph'
+                          ? 'e.g. -2.50'
+                          : field === 'od_cyl'
+                          ? 'e.g. -1.25'
+                          : field === 'od_va'
+                          ? 'e.g. 20/20'
+                          : 'e.g. 90°'
+                      }
                     />
                   </div>
                 ))}
@@ -251,7 +260,15 @@ import { toast } from 'react-toastify';
                       value={currentRow[field] || ''}
                       onChange={(e) => handleChange(field, e.target.value)}
                       className="input-field text-sm"
-                      placeholder={field === 'os_sph' ? 'e.g. -2.00' : field === 'os_cyl' ? 'e.g. -1.00' : field === 'os_va' ? 'e.g. 20/25' : 'e.g. 180°'}
+                      placeholder={
+                        field === 'os_sph'
+                          ? 'e.g. -2.00'
+                          : field === 'os_cyl'
+                          ? 'e.g. -1.00'
+                          : field === 'os_va'
+                          ? 'e.g. 20/25'
+                          : 'e.g. 180°'
+                      }
                     />
                   </div>
                 ))}
@@ -270,102 +287,107 @@ import { toast } from 'react-toastify';
               </div>
             </div>
           </div>
+<div className="mt-6 flex justify-end gap-3">
+  {editingRow === null ? (
+    <button
+      onClick={handleAddRow}
+      className="btn btn-primary get-details-animate text-xs px-3 py-2 sm:px-4 sm:py-2"
+    >
+      <Plus className="w-4 h-4" />
+      Add Record
+    </button>
+  ) : (
+    <>
+      <button
+        onClick={handleSaveEdit}
+        className="btn btn-primary text-xs px-3 py-2 sm:px-4 sm:py-2"
+      >
+        <Check className="w-4 h-4" />
+        Save Changes
+      </button>
+      <button
+        onClick={() => {
+          setEditingRow(null);
+          setCurrentRow({
+            testDate: new Date().toISOString().split('T')[0],
+            visionType: '',
+            od_sph: '',
+            od_cyl: '',
+            od_va: '',
+            od_axis: '',
+            od_prev_va: '',
+            os_sph: '',
+            os_cyl: '',
+            os_va: '',
+            os_axis: '',
+            os_prev_va: '',
+            remarks: '',
+            product: '',
+          });
+        }}
+        className="btn-secondary text-xs px-3 py-2 sm:px-4 sm:py-2"
+      >
+        <X className="w-4 h-4" />
+        Cancel
+      </button>
+    </>
+  )}
+</div>
 
-          {/* Action Buttons */}
-          <div className="mt-6 flex justify-end gap-3">
-            {editingRow === null ? (
-              <button
-                onClick={handleAddRow}
-                className="btn btn-primary get-details-animate"
-              >
-                <Plus className="w-4 h-4" />
-                Add Record
-              </button>
-            ) : (
-              <>
-                <button onClick={handleSaveEdit} className="btn btn-primary">
-                  <Check className="w-4 h-4" />
-                  Save Changes
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingRow(null);
-                    setCurrentRow({
-                      testDate: new Date().toISOString().split('T')[0],
-                      visionType: '',
-                      od_sph: '',
-                      od_cyl: '',
-                      od_va: '',
-                      od_axis: '',
-                      od_prev_va: '',
-                      os_sph: '',
-                      os_cyl: '',
-                      os_va: '',
-                      os_axis: '',
-                      os_prev_va: '',
-                      remarks: '',
-                      product: '',
-                    });
-                  }}
-                  className="btn-secondary animated-cancel-btn"
-                >
-                  <X className="w-4 h-4" />
-                  Cancel
-                </button>
-              </>
-            )}
-          </div>
+          
         </div>
 
-        {/* Records Table */}
+        {/* Records Table (Responsive) */}
         {rows.length > 0 && (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="table-head text-center py-3">
               <h4>Eye Test Records</h4>
             </div>
-            <div className="overflow-x-auto">
-              <table className="table-container">
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="table-container w-full">
                 <thead className="table-head">
                   <tr>
-                    <th className="text-xs">Date</th>
-                    <th className="text-xs">Type</th>
-                    <th className="text-xs">OD SPH</th>
-                    <th className="text-xs">OD CYL</th>
-                    <th className="text-xs">OD V/A</th>
-                    <th className="text-xs">OD AXIS</th>
-                    <th className="text-xs">OS SPH</th>
-                    <th className="text-xs">OS CYL</th>
-                    <th className="text-xs">OS V/A</th>
-                    <th className="text-xs">OS AXIS</th>
-                    <th className="text-xs">Remarks</th>
-                    <th className="text-xs">Actions</th>
+                    <th className="text-xs p-2">Date</th>
+                    <th className="text-xs p-2">Type</th>
+                    <th className="text-xs p-2">OD SPH</th>
+                    <th className="text-xs p-2">OD CYL</th>
+                    <th className="text-xs p-2">OD V/A</th>
+                    <th className="text-xs p-2">OD AXIS</th>
+                    <th className="text-xs p-2">OS SPH</th>
+                    <th className="text-xs p-2">OS CYL</th>
+                    <th className="text-xs p-2">OS V/A</th>
+                    <th className="text-xs p-2">OS AXIS</th>
+                    <th className="text-xs p-2">Remarks</th>
+                    <th className="text-xs p-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="table-body">
                   {rows.map((row, idx) => (
-                    <tr key={idx} className="tr-style hover:bg-gray-50">
-                      <td className="text-xs">{row.testDate || '-'}</td>
-                      <td className="text-xs">{row.visionType || '-'}</td>
-                      <td className="text-xs">{row.od_sph || '-'}</td>
-                      <td className="text-xs">{row.od_cyl || '-'}</td>
-                      <td className="text-xs">{row.od_va || '-'}</td>
-                      <td className="text-xs">{row.od_axis || '-'}</td>
-                      <td className="text-xs">{row.os_sph || '-'}</td>
-                      <td className="text-xs">{row.os_cyl || '-'}</td>
-                      <td className="text-xs">{row.os_va || '-'}</td>
-                      <td className="text-xs">{row.os_axis || '-'}</td>
-                      <td className="text-xs">{row.remarks || '-'}</td>
-                      <td className="text-xs">
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="text-xs p-2">{row.testDate || '-'}</td>
+                      <td className="text-xs p-2">{row.visionType || '-'}</td>
+                      <td className="text-xs p-2">{row.od_sph || '-'}</td>
+                      <td className="text-xs p-2">{row.od_cyl || '-'}</td>
+                      <td className="text-xs p-2">{row.od_va || '-'}</td>
+                      <td className="text-xs p-2">{row.od_axis || '-'}</td>
+                      <td className="text-xs p-2">{row.os_sph || '-'}</td>
+                      <td className="text-xs p-2">{row.os_cyl || '-'}</td>
+                      <td className="text-xs p-2">{row.os_va || '-'}</td>
+                      <td className="text-xs p-2">{row.os_axis || '-'}</td>
+                      <td className="text-xs p-2">{row.remarks || '-'}</td>
+                      <td className="text-xs p-2">
                         <div className="flex gap-1">
                           <button
                             onClick={() => handleEditRow(idx)}
-                            className="edit-btn text-xs"
+                            className="edit-btn text-xs p-1"
                           >
                             <Edit className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => handleRemoveRow(idx)}
-                            className="delete-btn text-xs"
+                            className="delete-btn text-xs p-1"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -376,10 +398,49 @@ import { toast } from 'react-toastify';
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden p-2">
+              {rows.map((row, idx) => (
+                <div
+                  key={idx}
+                  className="border border-gray-200 rounded-lg p-2 mb-2 bg-gray-50"
+                >
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
+                    <div><strong>Date:</strong> {row.testDate || '-'}</div>
+                    <div><strong>Type:</strong> {row.visionType || '-'}</div>
+                    <div><strong>OD SPH:</strong> {row.od_sph || '-'}</div>
+                    <div><strong>OD CYL:</strong> {row.od_cyl || '-'}</div>
+                    <div><strong>OD V/A:</strong> {row.od_va || '-'}</div>
+                    <div><strong>OD AXIS:</strong> {row.od_axis || '-'}</div>
+                    <div><strong>OS SPH:</strong> {row.os_sph || '-'}</div>
+                    <div><strong>OS CYL:</strong> {row.os_cyl || '-'}</div>
+                    <div><strong>OS V/A:</strong> {row.os_va || '-'}</div>
+                    <div><strong>OS AXIS:</strong> {row.os_axis || '-'}</div>
+                    <div className="col-span-2"><strong>Remarks:</strong> {row.remarks || '-'}</div>
+                    <div className="flex gap-1 justify-end col-span-2">
+                      <button
+                        onClick={() => handleEditRow(idx)}
+                        className="edit-btn text-xs p-1"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleRemoveRow(idx)}
+                        className="delete-btn text-xs p-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 };
+
 export default EyeTestForm;

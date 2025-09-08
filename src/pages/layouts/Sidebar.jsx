@@ -1,34 +1,36 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
-  RiUserSettingsLine,
-  RiBarChart2Line,
-  RiDashboardFill,
-  RiCalendarCheckFill,
-  RiShoppingBagFill,
-  RiShoppingCartFill,
-  RiShieldUserFill,
-  RiShieldCheckFill,
-  RiAlarmWarningFill,
-  RiSettings3Fill,
-  RiLogoutBoxRFill,
-  RiArrowLeftSLine,
-  RiArrowRightSLine,
-  RiMoneyDollarCircleFill,
-  RiTestTubeFill,
-  RiMicroscopeFill,
-  RiCapsuleFill,
-  RiFileList3Fill,
-  RiHospitalFill,
-  RiUserSettingsFill,
-  RiStethoscopeFill,
-  RiUser3Fill,
-  RiArrowDownSLine,
-  RiArrowUpSLine,
-} from "react-icons/ri";
-import logo from "../../assets/logo.png"
+  User,
+  BarChart3,
+  LayoutDashboard,
+  CalendarCheck,
+  ShoppingBag,
+  ShoppingCart,
+  Shield,
+  ShieldCheck,
+  AlertTriangle,
+  Settings,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  DollarSign,
+  TestTube,
+  Microscope,
+  Pill,
+  FileText,
+  Hospital,
+  UserCog,
+  Stethoscope,
+  Users,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Power
+} from "lucide-react";
+import logo from '../../assets/logo.png'; // Adjust the path as necessary
 
-const Sidebar = () => {
+const Sidebar = ({ isMobileDrawerOpen, closeMobileDrawer }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [user, setUser] = useState(null);
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState(null);
@@ -37,15 +39,14 @@ const Sidebar = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
+      if (window.innerWidth < 1024) {
         setIsCollapsed(true);
       } else {
         setIsCollapsed(false);
       }
     };
-
     window.addEventListener("resize", handleResize);
-    handleResize(); // Call once to set initial state
+    handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -65,14 +66,17 @@ const Sidebar = () => {
   }, [location.pathname, user]);
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
-
   const handleLogout = () => {
     localStorage.removeItem("user");
+    closeMobileDrawer();
     navigate("/login");
   };
-
   const handleSubmenuToggle = (index) => {
     setOpenSubmenuIndex(openSubmenuIndex === index ? null : index);
+  };
+  const handleNavigation = (path) => {
+    navigate(path);
+    closeMobileDrawer();
   };
 
   const roleDisplayNames = {
@@ -86,41 +90,33 @@ const Sidebar = () => {
 
   const menuItemsMap = {
     doctor: [
-      { icon: RiDashboardFill, label: "Dashboard", path: "/doctordashboard" },
-      { icon: RiCalendarCheckFill, label: "Appointments", path: "/doctordashboard/appointments" },
-      { icon: RiShoppingBagFill, label: "Patients", path: "/doctordashboard/patients" },
-      { icon: RiShieldCheckFill, label: "Payments", path: "/doctordashboard/billing" },
-      // { icon: RiAlarmWarningFill, label: "Messages", path: "/doctordashboard/messages" },
-      { icon: RiSettings3Fill, label: "Settings", path: "/doctordashboard/settings" },
-    ],
-    freelancer: [
-      { icon: RiDashboardFill, label: "Dashboard", path: "/freelancerdashboard" },
-      { icon: RiCalendarCheckFill, label: "Appointments", path: "/freelancerdashboard/appointments" },
-      { icon: RiShoppingBagFill, label: "Patients", path: "/freelancerdashboard/patients" },
-      { icon: RiShieldCheckFill, label: "Payments", path: "/freelancerdashboard/billing" },
-      { icon: RiSettings3Fill, label: "Settings", path: "/freelancerdashboard/settings" },
+      { icon: LayoutDashboard, label: "Dashboard", path: "/doctordashboard" },
+      { icon: CalendarCheck, label: "Appointments", path: "/doctordashboard/appointments" },
+      { icon: ShoppingBag, label: "Patients", path: "/doctordashboard/patients" },
+      { icon: ShieldCheck, label: "Payments", path: "/doctordashboard/billing" },
+      { icon: Settings, label: "Settings", path: "/doctordashboard/settings" },
     ],
     lab: [
-      { icon: RiDashboardFill, label: "Dashboard", path: "/labdashboard" },
-      { icon: RiFileList3Fill, label: "Test Requests", path: "/labdashboard/requests" },
-      { icon: RiFileList3Fill, label: "Patients List", path: "/labdashboard/patientlist" },
-      { icon: RiFileList3Fill, label: "Test Catalogs", path: "/labdashboard/testcatalogs" },
-      { icon: RiTestTubeFill, label: "Billing", path: "/labdashboard/billing" },
-      { icon: RiUserSettingsFill, label: "Settings", path: "/labdashboard/settings" },
+      { icon: LayoutDashboard, label: "Dashboard", path: "/labdashboard" },
+      { icon: FileText, label: "Test Requests", path: "/labdashboard/requests" },
+      { icon: FileText, label: "Patients List", path: "/labdashboard/patientlist" },
+      { icon: FileText, label: "Test Catalogs", path: "/labdashboard/testcatalogs" },
+      { icon: TestTube, label: "Billing", path: "/labdashboard/billing" },
+      { icon: UserCog, label: "Settings", path: "/labdashboard/settings" },
     ],
     hospital: [
-      { icon: RiDashboardFill, label: "Dashboard", path: "/hospitaldashboard" },
-      { icon: RiStethoscopeFill, label: "OPD", path: "/hospitaldashboard/opd-list" },
-      { icon: RiHospitalFill, label: "IPD", path: "/hospitaldashboard/Ipd" },
-      { icon: RiShieldCheckFill, label: "Billing & Payments", path: "/hospitaldashboard/billing-payments" },
-      { icon: RiAlarmWarningFill, label: "Emergency", path: "/hospitaldashboard/emergency" },
-      { icon: RiUserSettingsFill, label: "Settings", path: "/hospitaldashboard/settings" },
+      { icon: LayoutDashboard, label: "Dashboard", path: "/hospitaldashboard" },
+      { icon: Stethoscope, label: "OPD", path: "/hospitaldashboard/opd-list" },
+      { icon: Hospital, label: "IPD", path: "/hospitaldashboard/Ipd" },
+      { icon: ShieldCheck, label: "Billing & Payments", path: "/hospitaldashboard/billing-payments" },
+      { icon: AlertTriangle, label: "Emergency", path: "/hospitaldashboard/emergency" },
+      { icon: UserCog, label: "Settings", path: "/hospitaldashboard/settings" },
     ],
     superadmin: [
-      { icon: RiDashboardFill, label: "Dashboard", path: "/superadmindashboard" },
-      { icon: RiUser3Fill, label: "Manage Patients", path: "/superadmindashboard/managepatients" },
+      { icon: LayoutDashboard, label: "Dashboard", path: "/superadmindashboard" },
+      { icon: Users, label: "Manage Patients", path: "/superadmindashboard/managepatients" },
       {
-        icon: RiStethoscopeFill,
+        icon: Stethoscope,
         label: "Manage Doctors",
         isSubmenu: true,
         submenu: [
@@ -128,23 +124,23 @@ const Sidebar = () => {
           { label: "DigiHealth Doctors", path: "/superadmindashboard/manage-doctors/avswasthya" },
         ],
       },
-      { icon: RiHospitalFill, label: "Manage Hospitals", path: "/superadmindashboard/manage-hospitals" },
-      { icon: RiMicroscopeFill, label: "Manage Labs", path: "/superadmindashboard/manage-labs" },
-      { icon: RiCapsuleFill, label: "Manage Pharmacies", path: "/superadmindashboard/manage-pharmacies" },
-      { icon: RiUserSettingsLine, label: "Roles", path: "/superadmindashboard/manage-roles" },
-      { icon: RiBarChart2Line, label: "Reports", path: "/superadmindashboard/manage-reports" },
-      { icon: RiShieldCheckFill, label: "Payments", path: "/superadmindashboard/payments" },
-      { icon: RiSettings3Fill, label: "Settings", path: "/superadmindashboard/settings" },
+      { icon: Hospital, label: "Manage Hospitals", path: "/superadmindashboard/manage-hospitals" },
+      { icon: Microscope, label: "Manage Labs", path: "/superadmindashboard/manage-labs" },
+      { icon: Pill, label: "Manage Pharmacies", path: "/superadmindashboard/manage-pharmacies" },
+      { icon: User, label: "Roles", path: "/superadmindashboard/manage-roles" },
+      { icon: BarChart3, label: "Reports", path: "/superadmindashboard/manage-reports" },
+      { icon: ShieldCheck, label: "Payments", path: "/superadmindashboard/payments" },
+      { icon: Settings, label: "Settings", path: "/superadmindashboard/settings" },
     ],
-   patient: [
-  { icon: RiDashboardFill, label: "Dashboard", path: "/patientdashboard" },
-  { icon: RiCalendarCheckFill, label: "My Appointments", path: "/patientdashboard/app" },
-  { icon: RiFileList3Fill, label: "Medical Records", path: "/patientdashboard/medical-records" },
-  { icon: RiShoppingCartFill, label: "Online Shopping", path: "/patientdashboard/shopping" },
-  { icon: RiShieldUserFill, label: "Insurance", path: "/patientdashboard/insurance" },
-  { icon: RiMoneyDollarCircleFill, label: "Billing", path: "/patientdashboard/billing" },
-  { icon: RiSettings3Fill, label: "Settings", path: "/patientdashboard/settings" },
-],
+    patient: [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/patientdashboard" },
+      { icon: CalendarCheck, label: "My Appointments", path: "/patientdashboard/app" },
+      { icon: FileText, label: "Medical Records", path: "/patientdashboard/medical-records" },
+      { icon: ShoppingCart, label: "Online Shopping", path: "/patientdashboard/shopping" },
+      { icon: Shield, label: "Insurance", path: "/patientdashboard/insurance" },
+      { icon: DollarSign, label: "Billing", path: "/patientdashboard/billing" },
+      { icon: Settings, label: "Settings", path: "/patientdashboard/settings" },
+    ],
   };
 
   const getDisplayName = () => {
@@ -158,52 +154,84 @@ const Sidebar = () => {
 
   const menuItems = menuItemsMap[user?.userType] || [];
 
-  return (
-    <div className={`h-screen bg-[var(--primary-color)] text-white p-2 sm:p-4 flex flex-col rounded-xl shadow-xl transition-all duration-300 ${isCollapsed ? "w-16 sm:w-20" : "w-60"}`}>
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <div className={`flex items-center ${isCollapsed ? "justify-center w-full" : ""}`}>
-          {!isCollapsed && (<div> <img src={logo} alt="AV Logo" className="h-10 w-10 object-contain" /> </div>)}
-          {!isCollapsed && <h3 className="ml-2 sm:ml-3 font-bold text-sm sm:text-base">DigiHealth</h3>}
+  const SidebarContent = () => (
+    <>
+      {/* Logo and Toggle Button */}
+      <div className="flex items-center justify-between mb-6">
+        <div className={`flex items-center ${isCollapsed && window.innerWidth >= 768 ? "justify-center w-full" : ""}`}>
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-md overflow-hidden">
+  <img
+    src={logo} // replace with your image path or URL
+    alt="Profile"
+    className="w-full h-full object-cover rounded-lg"
+  />
+</div>
+          {(!isCollapsed || window.innerWidth < 1024) && (
+            <h3 className="ml-3 font-bold text-lg text-white">DigiHealth</h3>
+          )}
         </div>
-        <button onClick={toggleSidebar} className="text-white hover:bg-slate-500 p-1 rounded-full">
-          {isCollapsed ? <RiArrowRightSLine size={20} /> : <RiArrowLeftSLine size={20} />}
-        </button>
+        {window.innerWidth >= 1024 && (
+          <button
+            onClick={toggleSidebar}
+            className="text-white hover:bg-white/20 p-2 rounded-full transition-colors duration-200"
+          >
+            {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          </button>
+        )}
+        {window.innerWidth < 1024 && (
+          <button
+            onClick={closeMobileDrawer}
+            className="text-white hover:bg-white/20 p-2 rounded-full transition-colors duration-200"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
-      <div className="flex items-center mb-4 sm:mb-6">
-        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[var(--accent-color)] text-[var(--primary-color)] flex items-center justify-center rounded-full  sm:text-xl">
-          <RiUser3Fill />
+
+      {/* User Profile Section */}
+      <div className="flex items-center p-1 mb-4 rounded-lg">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[var(--accent-color)] text-[var(--primary-color)] flex items-center justify-center rounded-full text-lg font-bold shadow-md">
+          <Users className="h-5 w-5 sm:h-6 sm:w-6" />
         </div>
-        {!isCollapsed && (
-          <div className="ml-2 sm:ml-3">
-            <p className="text-xs sm:text-sm font-semibold">{getDisplayName()}</p>
+        {(!isCollapsed || window.innerWidth < 1024) && (
+          <div className="ml-3">
+            <p className="text-sm font-semibold text-white">{getDisplayName()}</p>
             <span className="text-xs text-gray-300">{roleDisplayNames[user?.userType] || "User"}</span>
           </div>
         )}
       </div>
-      <hr className="border-gray-700 mb-2 sm:mb-4" />
-      <ul className="flex-1 text-xs sm:text-sm overflow-y-auto space-y-1">
+
+      {/* Menu Items */}
+      <ul className="flex-1 space-y-1 overflow-y-auto">
         {menuItems.map((item, idx) =>
           item.isSubmenu ? (
-            <li key={idx}>
+            <li key={idx} className="mb-1">
               <button
                 onClick={() => handleSubmenuToggle(idx)}
-                className="flex items-center justify-between w-full py-1 sm:py-2 px-2 sm:px-3 rounded-lg hover:bg-[var(--accent-color)] hover:text-[var(--primary-color)] transition"
+                className={`flex items-center justify-between w-full py-2.5 px-3 rounded-lg transition-all duration-200 ${
+                  openSubmenuIndex === idx ? "bg-white/20 text-white" : "hover:bg-white/10 text-gray-300 hover:text-white"
+                }`}
               >
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <item.icon size={16} />
-                  {!isCollapsed && <span>{item.label}</span>}
+                <div className="flex items-center gap-3">
+                  <item.icon className="h-5 w-5" />
+                  {(!isCollapsed || window.innerWidth < 1024) && <span className="text-sm font-medium">{item.label}</span>}
                 </div>
-                {!isCollapsed && (openSubmenuIndex === idx ? <RiArrowUpSLine size={16} /> : <RiArrowDownSLine size={16} />)}
+                {(!isCollapsed || window.innerWidth < 1024) && (
+                  openSubmenuIndex === idx ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                )}
               </button>
-              {openSubmenuIndex === idx && !isCollapsed && (
-                <ul className="ml-4 sm:ml-6 mt-1 space-y-1 text-xs sm:text-sm">
+              {openSubmenuIndex === idx && (!isCollapsed || window.innerWidth < 1024) && (
+                <ul className="ml-6 mt-1 space-y-1">
                   {item.submenu.map((sub, subIdx) => (
                     <li key={subIdx}>
                       <NavLink
                         to={sub.path}
+                        onClick={() => window.innerWidth < 1024 && closeMobileDrawer()}
                         className={({ isActive }) =>
-                          `block px-2 sm:px-3 py-1 rounded-md ${
-                            isActive ? "bg-[var(--accent-color)] text-[var(--primary-color)]" : "hover:bg-gray-700"
+                          `block py-2 px-3 rounded-lg transition-all duration-200 text-sm ${
+                            isActive
+                              ? "bg-[var(--accent-color)] text-[var(--primary-color)] font-medium"
+                              : "text-gray-300 hover:bg-white/10 hover:text-white"
                           }`
                         }
                       >
@@ -215,29 +243,62 @@ const Sidebar = () => {
               )}
             </li>
           ) : (
-            <li key={idx}>
+            <li key={idx} className="mb-1">
               <NavLink
                 to={item.path}
                 end={item.path === "/" || item.label === "Dashboard"}
+                onClick={() => window.innerWidth < 1024 && closeMobileDrawer()}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 sm:gap-4 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition ${
-                    isActive ? "bg-[var(--accent-color)] text-[var(--primary-color)]" : "hover:bg-gray-700"
+                  `flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all duration-200 ${
+                    isActive
+                      ? "bg-[var(--accent-color)] text-[var(--primary-color)] font-medium"
+                      : "text-gray-300 hover:bg-white/10 hover:text-white"
                   }`
                 }
               >
-                <item.icon size={16} /> {!isCollapsed && <span>{item.label}</span>}
+                <item.icon className="h-5 w-5" />
+                {(!isCollapsed || window.innerWidth < 1024) && <span className="text-sm">{item.label}</span>}
               </NavLink>
             </li>
           )
         )}
       </ul>
+
+      {/* Logout Button */}
       <button
         onClick={handleLogout}
-        className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm hover:bg-red-500 bg-red-400 rounded-md mt-2 sm:mt-4"
+        className="flex items-center gap-3 w-full py-2.5 px-3 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all duration-200 mt-4"
       >
-        <RiLogoutBoxRFill size={16} /> {!isCollapsed && <span>Logout</span>}
+        <Power className="h-5 w-5" />
+        {(!isCollapsed || window.innerWidth < 1024) && <span>Logout</span>}
       </button>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <div className={`hidden lg:flex h-screen bg-[var(--primary-color)] text-white p-4 flex-col rounded-xl shadow-xl transition-all duration-300 ${isCollapsed ? "w-20" : "w-64"}`}>
+        <SidebarContent />
+      </div>
+
+      {/* Mobile/Tablet Drawer Backdrop */}
+      {isMobileDrawerOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          onClick={closeMobileDrawer}
+        />
+      )}
+
+      {/* Mobile/Tablet Drawer */}
+      <div
+        className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-[var(--primary-color)] text-white p-4 flex flex-col rounded-r-xl shadow-2xl transform transition-transform duration-300 ease-in-out z-50 lg:hidden ${
+          isMobileDrawerOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <SidebarContent />
+      </div>
+    </>
   );
 };
 

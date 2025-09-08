@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Heart,
@@ -20,6 +22,7 @@ import VitalsChart from "./VitalsChart";
 
 const API_URL = "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary";
 const VITALS_POST_API = "https://689887d3ddf05523e55f1e6c.mockapi.io/vitals";
+const PATIENT_MR_API = "https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec";
 
 const vitalRanges = {
   heartRate: { min: 60, max: 100, label: "bpm", placeholder: "e.g. 72" },
@@ -33,9 +36,22 @@ const vitalRanges = {
   },
   height: { min: 100, max: 220, label: "cm", placeholder: "e.g. 170" },
   weight: { min: 30, max: 200, label: "kg", placeholder: "e.g. 65" },
+  spo2: { min: 90, max: 100, label: "%", placeholder: "e.g. 98" },
+  respiratoryRate: { min: 12, max: 20, label: "bpm", placeholder: "e.g. 16" },
 };
 
-const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hospitalName, ptemail }) => {
+const VitalsForm = ({
+  data,
+  onSave,
+  onPrint,
+  setIsChartOpen,
+  setChartVital,
+  hospitalName,
+  ptemail,
+  drEmail,
+  diagnosis,
+  type,
+}) => {
   const emptyVitals = {
     heartRate: "",
     temperature: "",
@@ -43,6 +59,8 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hosp
     bloodPressure: "",
     height: "",
     weight: "",
+    spo2: "",
+    respiratoryRate: "",
     timeOfDay: "morning",
   };
   const [formData, setFormData] = useState({ ...emptyVitals, ...data });
@@ -51,7 +69,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hosp
   const [loading, setLoading] = useState(false);
   const [vitalsRecords, setVitalsRecords] = useState([]);
 
-  // Fetch vitals from server on mount
   const fetchVitals = async () => {
     if (!ptemail || !hospitalName) return;
     try {
@@ -64,16 +81,16 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hosp
       const serverRecords = response.data || [];
       const stored = localStorage.getItem("vitalsRecords");
       const localRecords = stored ? JSON.parse(stored) : [];
-      // Merge and deduplicate by timestamp
       const allRecords = [...serverRecords, ...localRecords];
       const uniqueRecords = allRecords.reduce((acc, rec) => {
-        if (!acc.some(r => r.timestamp === rec.timestamp)) {
+        if (!acc.some((r) => r.timestamp === rec.timestamp)) {
           acc.push(rec);
         }
         return acc;
       }, []);
-      // Sort by timestamp (newest first)
-      const sortedRecords = uniqueRecords.sort((a, b) => b.timestamp - a.timestamp);
+      const sortedRecords = uniqueRecords.sort(
+        (a, b) => b.timestamp - a.timestamp
+      );
       setVitalsRecords(sortedRecords);
       localStorage.setItem("vitalsRecords", JSON.stringify(sortedRecords));
       onSave("vitals", { ...formData, vitalsRecords: sortedRecords });
@@ -99,6 +116,8 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hosp
         bloodPressure: rec.bloodPressure || "",
         height: rec.height || "",
         weight: rec.weight || "",
+        spo2: rec.spo2 || "",
+        respiratoryRate: rec.respiratoryRate || "",
         timeOfDay: rec.timeOfDay || "morning",
       });
     }
@@ -110,7 +129,12 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hosp
     if (field === "bloodPressure") {
       const [systolic, diastolic] = value.split("/").map(Number);
       if (!systolic || !diastolic) return "Enter as systolic/diastolic";
-      if (systolic < 90 || systolic > 180 || diastolic < 60 || diastolic > 120)
+      if (
+        systolic < 90 ||
+        systolic > 180 ||
+        diastolic < 60 ||
+        diastolic > 120
+      )
         return "Out of normal range";
       return "";
     }
@@ -124,35 +148,96 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hosp
 
   const postVitals = async (vitalsData) => {
     try {
-      const response = await axios.post(VITALS_POST_API, {
+      const payload = {
         ...vitalsData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
         hospitalName: hospitalName || "Unknown Hospital",
         ptemail: ptemail || "unknown@example.com",
-      });
+        heart_rate: vitalsData.heartRate,
+        temperature: vitalsData.temperature,
+        blood_sugar: vitalsData.bloodSugar,
+        blood_pressure: vitalsData.bloodPressure,
+        height: vitalsData.height,
+        weight: vitalsData.weight,
+        spo2: vitalsData.spo2,
+        respiratory_rate: vitalsData.respiratoryRate,
+      };
+      const response = await axios.post(VITALS_POST_API, payload);
       toast.success("🔧 Vitals saved to server!");
       return response.data;
     } catch (error) {
-      toast.error("❌ Failed to save vitals");
-      console.error("Error saving vitals:", error);
+      console.error("Error saving vitals:", error.response?.data || error.message);
+      toast.error(`❌ Failed to save vitals: ${error.response?.data?.message || error.message}`);
+      throw error;
+    }
+  };
+
+  const postPatientMR = async (vitalsData) => {
+    const now = new Date();
+    const currentTimestamp = now.toISOString();
+    const dateFields = {
+      date: now.toISOString().split("T")[0],
+      time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+    const payload = {
+      id: Date.now().toString(),
+      createdAt: currentTimestamp,
+      hospitalName: hospitalName || "Unknown Hospital",
+      ptemail: ptemail || "unknown@example.com",
+      dremail: drEmail || "unknown@example.com",
+      diagnosis: diagnosis || "N/A",
+      type: type ? type.toUpperCase() : "OPD",
+      ...dateFields,
+      status: "Active",
+      patientEmail: ptemail || "unknown@example.com",
+      patientPhoneNumber: "Not provided",
+      createdBy: "doctor",
+    };
+    try {
+      const response = await axios.post(PATIENT_MR_API, payload);
+      toast.success("📝 Patient MR saved successfully!");
+      return response.data;
+    } catch (error) {
+      console.error("Error saving Patient MR:", error.response?.data || error.message);
+      toast.error(`❌ Failed to save Patient MR: ${error.response?.data?.message || error.message}`);
+      throw error;
     }
   };
 
   const save = async () => {
     setLoading(true);
     try {
-      await axios.post(API_URL, { ...formData, email: "demo@demo.com" });
       const now = new Date();
+      const payload = {
+        ...formData,
+        id: Date.now().toString(),
+        createdAt: now.toISOString(),
+        email: "demo@demo.com",
+        heart_rate: formData.heartRate,
+        temperature: formData.temperature,
+        blood_sugar: formData.bloodSugar,
+        blood_pressure: formData.bloodPressure,
+        height: formData.height,
+        weight: formData.weight,
+        spo2: formData.spo2,
+        respiratory_rate: formData.respiratoryRate,
+      };
+      console.log("Saving payload to API_URL:", payload);
+      const response = await axios.post(API_URL, payload);
+      console.log("API response:", response.data);
       const date = now.toISOString().split("T")[0];
-      const time = now.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       const newRecord = {
         ...formData,
         timestamp: now.getTime(),
         date,
         time,
       };
+      console.log("Saving to VITALS_POST_API:", newRecord);
+      await postVitals(newRecord);
+      console.log("Saving to PATIENT_MR_API:", newRecord);
+      await postPatientMR(newRecord);
       setVitalsRecords((prev) => {
         let updated = [...prev, newRecord];
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -160,7 +245,6 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hosp
         localStorage.setItem("vitalsRecords", JSON.stringify(updated));
         return updated;
       });
-      await postVitals(newRecord);
       onSave("vitals", {
         ...formData,
         vitalsRecords: [...vitalsRecords, newRecord],
@@ -170,24 +254,24 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hosp
       toast.success("✅ Vitals saved successfully!", {
         position: "top-right",
         autoClose: 2000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
       });
-      // Refetch to ensure UI is up-to-date
       await fetchVitals();
     } catch (error) {
-      toast.error("❌ Failed to save vitals!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      if (error.response?.data === "Max number of elements reached for this resource!") {
+        toast.error("❌ Max entries reached! Please delete old entries or upgrade your MockAPI plan.", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+      } else {
+        console.error("Full error response:", error.response?.data || error.message);
+        toast.error(`❌ Failed to save vitals: ${error.response?.data?.message || error.message}`, {
+          position: "top-right",
+          autoClose: 5000,
+        });
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleChange = (e) => {
@@ -291,6 +375,32 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hosp
         }));
       }
     }
+    const spo2Match = lowerText.match(
+      /(?:spo2|oxygen|saturation)(?:\s+is|\s+of|\s+at)?\s+(\d+)/
+    );
+    if (spo2Match) {
+      const spo2 = spo2Match[1];
+      if (spo2 >= 70 && spo2 <= 100) {
+        setFormData((prev) => ({ ...prev, spo2 }));
+        setWarnings((prev) => ({
+          ...prev,
+          spo2: validate("spo2", spo2),
+        }));
+      }
+    }
+    const rrMatch = lowerText.match(
+      /(?:respiratory rate|rr|breathing)(?:\s+is|\s+of|\s+at)?\s+(\d+)/
+    );
+    if (rrMatch) {
+      const respiratoryRate = rrMatch[1];
+      if (respiratoryRate >= 8 && respiratoryRate <= 30) {
+        setFormData((prev) => ({ ...prev, respiratoryRate }));
+        setWarnings((prev) => ({
+          ...prev,
+          respiratoryRate: validate("respiratoryRate", respiratoryRate),
+        }));
+      }
+    }
   }, []);
 
   const { isListening, transcript, isSupported, confidence, toggleListening } =
@@ -307,149 +417,225 @@ const VitalsForm = ({ data, onSave, onPrint, setIsChartOpen, setChartVital, hosp
   const getVitalIcon = (vital) => {
     switch (vital) {
       case "heartRate":
-        return <Heart className="w-4 h-4" />;
+        return <Heart className="w-3 sm:w-4 h-3 sm:h-4" />;
       case "temperature":
-        return <Activity className="w-4 h-4" />;
+        return <Activity className="w-3 sm:w-4 h-3 sm:h-4" />;
       case "bloodSugar":
-        return <TrendingUp className="w-4 h-4" />;
+        return <TrendingUp className="w-3 sm:w-4 h-3 sm:h-4" />;
       case "bloodPressure":
-        return <BarChart3 className="w-4 h-4" />;
+        return <BarChart3 className="w-3 sm:w-4 h-3 sm:h-4" />;
       case "height":
-        return <Activity className="w-4 h-4" />;
+        return <Activity className="w-3 sm:w-4 h-3 sm:h-4" />;
       case "weight":
-        return <PieChart className="w-4 h-4" />;
+        return <PieChart className="w-3 sm:w-4 h-3 sm:h-4" />;
+      case "spo2":
+        return <Radar className="w-3 sm:w-4 h-3 sm:h-4" />;
+      case "respiratoryRate":
+        return <PieChart className="w-3 sm:w-4 h-3 sm:h-4" />;
       default:
-        return <BarChart3 className="w-4 h-4" />;
+        return <BarChart3 className="w-3 sm:w-4 h-3 sm:h-4" />;
     }
   };
 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-slideIn">
-      <div className="sub-heading px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-        <div className="flex items-center gap-3 flex-wrap">
-          <Heart className="text-xl text-white" />
-          <h3 className="text-white font-semibold">Vital Signs</h3>
-          <div className="flex items-center gap-2 bg-white/10 px-2 py-1 rounded-lg">
-            <span className="text-xs text-white">Record:</span>
-            <select
-              className="rounded px-1 py-0.5 text-xs bg-white text-[var(--primary-color)] border border-gray-200"
-              value={headerRecordIdx === null ? "" : headerRecordIdx}
-              onChange={(e) =>
-                setHeaderRecordIdx(e.target.value === "" ? null : Number(e.target.value))
-              }
-            >
-              <option value="">Current</option>
-              {vitalsRecords.map((rec, idx) => (
-                <option key={rec.timestamp} value={idx}>
-                  {rec.date} {rec.time} ({rec.timeOfDay === "morning" ? "Morning" : "Evening"})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2 bg-white/10 px-2 py-1 rounded-lg">
-            <label className="flex items-center gap-1 text-xs text-white">
-              <input
-                type="radio"
-                name="timeOfDay"
-                value="morning"
-                checked={formData.timeOfDay === "morning"}
-                onChange={handleChange}
-                className="accent-[var(--accent-color)]"
-              />
-              Morning
-            </label>
-            <label className="flex items-center gap-1 text-xs text-white">
-              <input
-                type="radio"
-                name="timeOfDay"
-                value="evening"
-                checked={formData.timeOfDay === "evening"}
-                onChange={handleChange}
-                className="accent-[var(--accent-color)]"
-              />
-              Evening
-            </label>
-          </div>
-          <VoiceButton
-            isListening={isListening}
-            onToggle={toggleListening}
-            isSupported={isSupported}
-            size="md"
-            confidence={confidence}
-          />
-          {isListening && (
-            <div className="flex items-center gap-2 text-white text-sm">
-              <span className="animate-pulse">🎤 Listening...</span>
-              {confidence > 0 && (
-                <span className="text-xs opacity-75">({Math.round(confidence * 100)}%)</span>
-              )}
-            </div>
+      {/* Header */}
+<div className="sub-heading px-3 sm:px-4 md:px-6 py-3 flex flex-col gap-2 sm:gap-4">
+  {/* FIRST ROW: Heading + Voice Button (Mobile) / Heading + Icons (Desktop) */}
+  <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+    {/* Heading + Voice Button (Mobile) / Heading Only (Desktop) */}
+    <div className="flex items-center gap-2 sm:gap-3">
+      <Heart className="text-lg sm:text-xl text-white" />
+      <h3 className="text-white font-medium text-sm sm:text-base md:text-lg">
+        Vital Signs
+      </h3>
+    </div>
+    {/* Voice Button (Mobile) / Icons (Desktop) */}
+    <div className="flex items-center gap-2 sm:gap-3">
+      {/* Desktop: Save/Print/Chart Buttons */}
+      <div className="hidden sm:flex items-center gap-2 sm:gap-3">
+        <button
+          onClick={save}
+          disabled={loading}
+          className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1.5 sm:p-2 rounded-lg transition-colors"
+        >
+          <Save className="w-4 sm:w-5 h-4 sm:h-5" />
+        </button>
+        <button
+          onClick={() => onPrint("vitals")}
+          className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1.5 sm:p-2 rounded-lg transition-colors"
+        >
+          <Printer className="w-4 sm:w-5 h-4 sm:h-5" />
+        </button>
+        <button
+          onClick={() => {
+            setChartVital("heartRate");
+            setIsChartOpen(true);
+          }}
+          className="flex items-center gap-1 bg-white/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium hover:bg-[var(--primary-color)] hover:bg-opacity-20"
+        >
+          <BarChart3 className="w-3 sm:w-4 h-3 sm:h-4" />
+          <span>Charts</span>
+        </button>
+      </div>
+      {/* Voice Button (Mobile + Desktop) */}
+      <VoiceButton
+        isListening={isListening}
+        onToggle={toggleListening}
+        isSupported={isSupported}
+        size="sm"
+        confidence={confidence}
+      />
+      {isListening && (
+        <div className="flex items-center gap-1 text-white text-[10px] sm:text-xs">
+          <span className="animate-pulse">🎤 Listening...</span>
+          {confidence > 0 && (
+            <span className="opacity-75">
+              ({Math.round(confidence * 100)}%)
+            </span>
           )}
         </div>
-        <div className="flex items-center gap-3 text-white mt-2 md:mt-0">
-          <button
-            onClick={save}
-            disabled={loading}
-            className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"
-          >
-            <Save className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => onPrint("vitals")}
-            className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"
-          >
-            <Printer className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => {
-              setChartVital("heartRate");
-              setIsChartOpen(true);
-            }}
-            className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors flex items-center gap-1 bg-white/10 px-3 py-2 rounded-lg"
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span className="text-xs font-medium">Charts & Analytics</span>
-          </button>
-        </div>
+      )}
+    </div>
+  </div>
+
+  {/* SECOND ROW: Record Selector + Time of Day (Mobile) / Record Selector + Time of Day + Action Buttons (Desktop) */}
+  <div className="flex flex-wrap items-center justify-start gap-2 sm:gap-4">
+    {/* Record Selector */}
+    <div className="flex items-center gap-1 sm:gap-2 bg-white/10 px-2 py-1 rounded-lg w-fit">
+      <span className="text-[10px] sm:text-xs md:text-sm text-white">
+        Record:
+      </span>
+      <div className="relative w-full max-w-[180px]">
+        <select
+          className="rounded px-1 py-0.5 text-[10px] sm:text-xs md:text-sm bg-white text-[var(--primary-color)]
+                     border border-gray-200 w-full max-w-[100px] truncate appearance-none
+                     pr-6 bg-right bg-no-repeat"
+          style={{
+            backgroundImage: "url('data:image/svg+xml;utf8,<svg fill=\"black\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>)",
+            backgroundPosition: "right 0.5rem center",
+            backgroundSize: "1em",
+          }}
+          value={headerRecordIdx === null ? "" : headerRecordIdx}
+          onChange={(e) =>
+            setHeaderRecordIdx(
+              e.target.value === "" ? null : Number(e.target.value)
+            )
+          }
+        >
+          <option value="" className="max-w-[80px] text-[8px] sm:text-[10px] md:text-[10px]">Current</option>
+          {vitalsRecords.map((rec, idx) => (
+            <option
+              key={rec.timestamp}
+              value={idx}
+              className="truncate max-w-[80px] text-[8px] sm:text-[10px] md:text-[10px]"
+            >
+              {rec.date} {rec.time} {rec.timeOfDay === "morning" ? "(Morning)" : "(Evening)"}
+            </option>
+          ))}
+        </select>
       </div>
-      <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {Object.keys(vitalRanges).map((field) => (
-          <div key={field} className="space-y-2">
-            <label className="block text-sm font-medium text-[var(--primary-color)]">
-              {field.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
-            </label>
-            <div className="relative">
-              <input
-                name={field}
-                value={formData[field]}
-                onChange={handleChange}
-                placeholder={vitalRanges[field].placeholder}
-                className={`input-field ${
-                  formData[field] ? "bg-green-50 border-green-300 ring-2 ring-green-200" : ""
-                }`}
-              />
-              {formData[field] && (
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm pointer-events-none">
-                  {vitalRanges[field].label}
-                </span>
-              )}
-            </div>
-            {warnings[field] && (
-              <span className="flex items-center text-xs text-yellow-700 bg-yellow-100 rounded-lg px-3 py-2 gap-2">
-                <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                {warnings[field]}
-              </span>
-            )}
-          </div>
-        ))}
+    </div>
+
+    {/* Time of Day Radio */}
+    <div className="flex items-center gap-x-2 bg-white/10 px-2 py-1 rounded-lg">
+      {["morning", "evening"].map((t) => (
+        <label
+          key={t}
+          className="flex items-center gap-1 text-[10px] sm:text-xs text-white"
+        >
+          <input
+            type="radio"
+            name="timeOfDay"
+            value={t}
+            checked={formData.timeOfDay === t}
+            onChange={handleChange}
+            className="accent-[var(--accent-color)]"
+          />
+          <span className="hidden sm:inline">
+            {t[0].toUpperCase() + t.slice(1)}
+          </span>
+          <span className="sm:hidden">{t[0].toUpperCase()}</span>
+        </label>
+      ))}
+    </div>
+
+    {/* Mobile: Action Buttons (Save/Print/Chart) */}
+    <div className="flex sm:hidden items-center gap-2 text-white">
+      <button
+        onClick={save}
+        disabled={loading}
+        className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1.5 rounded-lg transition-colors"
+      >
+        <Save className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => onPrint("vitals")}
+        className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1.5 rounded-lg transition-colors"
+      >
+        <Printer className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => {
+          setChartVital("heartRate");
+          setIsChartOpen(true);
+        }}
+        className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg text-[10px] font-medium hover:bg-[var(--primary-color)] hover:bg-opacity-20"
+      >
+        <BarChart3 className="w-3 h-3" />
+        <span>Charts</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+      {/* Vitals Input Grid */}
+     <div className="p-3 sm:p-4 md:p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+  {Object.keys(vitalRanges).map((field) => (
+    <div key={field} className="space-y-1 sm:space-y-2">
+      <label className="block text-[12px] sm:text-sm md:text-text-base font-medium text-[var(--primary-color)]">
+        {field.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
+      </label>
+      <div className="relative">
+        <input
+          name={field}
+          value={formData[field]}
+          onChange={handleChange}
+          placeholder={vitalRanges[field].placeholder}
+          className={`w-full rounded-lg border px-2 sm:px-3 py-1 sm:py-1.5 md:py-2 text-[10px] sm:text-xs md:text-sm ${
+            formData[field]
+              ? "bg-green-50 border-green-300 ring-2 ring-green-200"
+              : ""
+          }`}
+        />
+        {formData[field] && (
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] sm:text-xs md:text-sm">
+            {vitalRanges[field].label}
+          </span>
+        )}
       </div>
+      {warnings[field] && (
+        <span className="flex items-center text-[10px] sm:text-xs md:text-sm text-yellow-700 bg-yellow-100 rounded-lg px-2 sm:px-3 py-1 gap-1 sm:gap-2">
+          <AlertTriangle className="w-3 sm:w-4 h-3 sm:h-4 text-yellow-500" />
+          {warnings[field]}
+        </span>
+      )}
+    </div>
+  ))}
+</div>
+
+      {/* Voice Transcript */}
       {transcript && (
-        <div className="px-6 pb-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <strong className="text-blue-800 text-sm">Voice Input:</strong>
-            <span className="text-blue-700 ml-2 text-sm">{transcript}</span>
+        <div className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3 md:p-4 max-h-24 overflow-y-auto">
+            <strong className="text-blue-800 text-[10px] sm:text-xs md:text-sm">Voice Input:</strong>
+            <span className="text-blue-700 ml-1 text-[10px] sm:text-xs md:text-sm">{transcript}</span>
             {isListening && (
-              <div className="text-sm text-blue-600 mt-1">
+              <div className="text-[10px] sm:text-xs md:text-sm text-blue-600 mt-1">
                 <em>Speaking... Fields will update automatically</em>
               </div>
             )}

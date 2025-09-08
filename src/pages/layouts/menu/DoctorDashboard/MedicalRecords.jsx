@@ -1,6 +1,7 @@
 
 
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
@@ -16,11 +17,18 @@ import {
   Activity,
   Thermometer,
 } from "lucide-react";
+import {
+  getHospitalDropdown,
+  getAllMedicalConditions,
+  getAllMedicalStatus,
+} from "../../../../utils/masterService";
 
 const DrMedicalRecords = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state) => state.auth.user);
+
+  // Extract patient data from location.state
   const patientDataFromOPD = location.state?.patientData || location.state || {};
   const patientNameFromOPD = location.state?.patientName || patientDataFromOPD?.name || "";
   const patientEmailFromOPD = location.state?.email || patientDataFromOPD?.email || "";
@@ -29,9 +37,11 @@ const DrMedicalRecords = () => {
   const patientDobFromOPD = location.state?.dob || patientDataFromOPD?.dob || "";
   const patientAgeFromOPD = location.state?.age || patientDataFromOPD?.age || "";
   const patientDiagnosisFromOPD = location.state?.diagnosis || patientDataFromOPD?.diagnosis || "";
+  const patientVisitDateFromOPD = location.state?.dateOfVisit || location.state?.appointmentDate || patientDataFromOPD?.dateOfVisit || patientDataFromOPD?.appointmentDate || "";
+  const patientTypeFromOPD = location.state?.type || patientDataFromOPD?.type || "OPD";
 
   const [state, setState] = useState({
-    activeTab: "OPD",
+    activeTab: patientTypeFromOPD || "OPD",
     showAddModal: false,
     hiddenIds: [],
   });
@@ -44,6 +54,27 @@ const DrMedicalRecords = () => {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [patientDetailsMap, setPatientDetailsMap] = useState({});
+  const [hospitalOptions, setHospitalOptions] = useState([]);
+  const [medicalConditions, setMedicalConditions] = useState([]);
+  const [statusTypes, setStatusTypes] = useState([]);
+  const [apiDataLoading, setApiDataLoading] = useState({
+    hospitals: false,
+    conditions: false,
+    status: false,
+  });
+
+  const hospitalMap = useMemo(() => {
+    const m = {};
+    for (const opt of hospitalOptions) {
+      m[String(opt.value)] = opt.label;
+    }
+    return m;
+  }, [hospitalOptions]);
+
+  const resolveHospitalLabel = (val) => {
+    if (val == null) return "";
+    return hospitalMap[String(val)] || String(val);
+  };
 
   const getInitials = (name) => {
     if (!name) return "";
@@ -54,7 +85,6 @@ const DrMedicalRecords = () => {
       .toUpperCase();
   };
 
-  // Helper function to check if a record belongs to the selected patient
   const isRecordForSelectedPatient = (record) => {
     const patientEmail = patientEmailFromOPD;
     const patientPhone = patientPhoneFromOPD;
@@ -155,24 +185,87 @@ const DrMedicalRecords = () => {
     setPatientDetailsMap(patientMap);
   };
 
-  const statusTypes = ["Active", "Treated", "Recovered", "Discharged", "Consulted"];
-  const medicalConditions = [
-    { label: "Diabetic Disease", value: "Diabetic" },
-    { label: "BP (Blood Pressure)", value: "BP" },
-    { label: "Heart Disease", value: "Heart" },
-    { label: "Asthma Disease", value: "Asthma" },
-  ];
+  useEffect(() => {
+    const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: false });
+    const byLabelAsc = (a, b) => collator.compare(String(a.label || ""), String(b.label || ""));
+    const fetchMasterData = async () => {
+      try {
+        setApiDataLoading((prev) => ({ ...prev, hospitals: true }));
+        const hospitalsResponse = await getHospitalDropdown();
+        const hospitalsList = (hospitalsResponse?.data ?? [])
+          .map((hospital) => {
+            const label = hospital?.name || hospital?.hospitalName || hospital?.label || "";
+            const value = hospital?.id ?? label;
+            return { label, value };
+          })
+          .filter((opt) => opt.label)
+          .sort(byLabelAsc);
+        setHospitalOptions(hospitalsList);
+        setApiDataLoading((prev) => ({ ...prev, hospitals: false }));
+        setApiDataLoading((prev) => ({ ...prev, conditions: true }));
+        const conditionsResponse = await getAllMedicalConditions();
+        const conditionsList = (conditionsResponse?.data ?? [])
+          .map((condition) => ({
+            label: condition?.name || condition?.conditionName || condition?.label || "",
+            value: condition?.name || condition?.conditionName || condition?.value || condition?.id || "",
+          }))
+          .filter((opt) => opt.label)
+          .sort(byLabelAsc);
+        setMedicalConditions(conditionsList);
+        setApiDataLoading((prev) => ({ ...prev, conditions: false }));
+        setApiDataLoading((prev) => ({ ...prev, status: true }));
+        const statusResponse = await getAllMedicalStatus();
+        const statusList = (statusResponse?.data ?? [])
+          .map((status) => ({
+            label: status?.name || status?.statusName || status?.label || "",
+            value: status?.name || status?.statusName || status?.value || status?.id || "",
+          }))
+          .filter((opt) => opt.label)
+          .sort(byLabelAsc);
+        setStatusTypes(statusList);
+        setApiDataLoading((prev) => ({ ...prev, status: false }));
+      } catch (error) {
+        console.error("Error fetching master data:", error);
+        const fallbackHospitals = [
+          { label: "AIIMS Delhi", value: "AIIMS Delhi" },
+          { label: "Apollo Hospital, Chennai", value: "Apollo Hospital, Chennai" },
+          { label: "Fortis Hospital, Gurgaon", value: "Fortis Hospital, Gurgaon" },
+          { label: "Max Super Speciality Hospital, Delhi", value: "Max Super Speciality Hospital, Delhi" },
+          { label: "Medanta – The Medicity, Gurgaon", value: "Medanta – The Medicity, Gurgaon" },
+        ].sort(byLabelAsc);
+        setHospitalOptions(fallbackHospitals);
+        const fallbackConditions = [
+          { label: "Asthma Disease", value: "Asthma" },
+          { label: "BP (Blood Pressure)", value: "BP" },
+          { label: "Diabetic Disease", value: "Diabetic" },
+          { label: "Heart Disease", value: "Heart" },
+        ].sort(byLabelAsc);
+        setMedicalConditions(fallbackConditions);
+        const fallbackStatus = [
+          { label: "Active", value: "Active" },
+          { label: "Consulted", value: "Consulted" },
+          { label: "Discharged", value: "Discharged" },
+          { label: "Recovered", value: "Recovered" },
+          { label: "Treated", value: "Treated" },
+        ].sort(byLabelAsc);
+        setStatusTypes(fallbackStatus);
+      } finally {
+        setApiDataLoading((prev) => ({ ...prev, hospitals: false, conditions: false, status: false }));
+      }
+    };
+    fetchMasterData();
+  }, []);
 
   const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
 
   const handleViewDetails = (record) => {
     const patientDetails = patientDetailsMap[record.id];
-    const patientName = patientNameFromOPD || (patientDetails ? `${patientDetails.firstName || ''} ${patientDetails.lastName || ''}`.trim() : record.patientName || record.name || '');
-    const email = patientEmailFromOPD || patientDetails?.email || record.email || record.patientEmail || record.Email || '';
-    const phone = patientPhoneFromOPD || patientDetails?.phone || record.phone || record.phoneNumber || record.Phone || '';
-    const gender = patientGenderFromOPD || patientDetails?.gender || record.gender || record.sex || '';
-    const dob = patientDobFromOPD || patientDetails?.dob || record.dob || '';
-    const diagnosis = patientDiagnosisFromOPD || patientDetails?.diagnosis || record.diagnosis || record.chiefComplaint || '';
+    const patientName = patientNameFromOPD || (patientDetails ? `${patientDetails.firstName || ""} ${patientDetails.lastName || ""}`.trim() : record.patientName || record.name || "");
+    const email = patientEmailFromOPD || patientDetails?.email || record.email || record.patientEmail || record.Email || "";
+    const phone = patientPhoneFromOPD || patientDetails?.phone || record.phone || record.phoneNumber || record.Phone || "";
+    const gender = patientGenderFromOPD || patientDetails?.gender || record.gender || record.sex || "";
+    const dob = patientDobFromOPD || patientDetails?.dob || record.dob || "";
+    const diagnosis = patientDiagnosisFromOPD || patientDetails?.diagnosis || record.diagnosis || record.chiefComplaint || "";
     let firstName, lastName;
     if (patientNameFromOPD) {
       const nameParts = patientNameFromOPD.split(" ");
@@ -198,16 +291,16 @@ const DrMedicalRecords = () => {
       email,
       phone,
       gender,
-      id: record.id || record.patientId || '',
-      currentDate: new Date().toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
+      id: record.id || record.patientId || "",
+      currentDate: new Date().toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
       }),
-      currentTime: new Date().toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+      currentTime: new Date().toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       }),
       firstName,
       lastName,
@@ -224,7 +317,7 @@ const DrMedicalRecords = () => {
           isVerified: record.isVerified || false,
           hasDischargeSummary: record.hasDischargeSummary || false,
           phoneConsent: record.phoneConsent || false,
-          createdBy: record.createdBy || "patient"
+          createdBy: record.createdBy || "patient",
         },
         firstName,
         lastName,
@@ -237,7 +330,7 @@ const DrMedicalRecords = () => {
         patientDetails,
         patientPhone: phone,
         patientEmail: email,
-        patientId: record.id || record.patientId || '',
+        patientId: record.id || record.patientId || "",
         recordType: record.type || state.activeTab,
         opdPatientData: patientDataFromOPD,
         hospitalName: patientDetails?.hospitalName || record.hospitalName || "AV Hospital",
@@ -257,12 +350,17 @@ const DrMedicalRecords = () => {
 
   const handleAddRecord = async (formData) => {
     const recordType = formData.type || state.activeTab;
+    const selectedHospital = hospitalOptions.find(
+      (o) => String(o.value) === String(formData.hospitalId)
+    );
     const userFirstName = user?.firstName || "Guest";
     const userLastName = user?.lastName || "";
     const fullPatientName = `${userFirstName} ${userLastName}`.trim();
     const newRecord = {
       id: Date.now(),
       ...formData,
+      hospitalId: selectedHospital?.value ?? formData.hospitalId ?? formData.hospitalName,
+      hospitalName: selectedHospital?.label ?? resolveHospitalLabel(formData.hospitalId ?? formData.hospitalName),
       type: recordType,
       patientName: fullPatientName,
       firstName: userFirstName,
@@ -278,7 +376,6 @@ const DrMedicalRecords = () => {
       isNewlyAdded: true,
       createdBy: "doctor",
       hiddenByPatient: false,
-      hospitalName: formData.hospitalName || "AV Hospital",
       vitals: {
         bloodPressure: "N/A",
         heartRate: "N/A",
@@ -294,21 +391,10 @@ const DrMedicalRecords = () => {
         "https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec",
         newRecord
       );
-      setMedicalData(prev => {
-        const updated = {
-          ...prev,
-          [recordType]: [
-            ...(Array.isArray(prev[recordType]) ? prev[recordType] : []),
-            response.data
-          ]
-        };
-        try {
-          localStorage.setItem("medicalData", JSON.stringify(updated));
-        } catch (e) {
-          console.error("Error saving to localStorage:", e);
-        }
-        return updated;
-      });
+      setMedicalData((prev) => ({
+        ...prev,
+        [recordType]: [...(prev[recordType] || []), response.data],
+      }));
       try {
         const phone = newRecord.phone || newRecord.phoneNumber;
         const email = newRecord.email;
@@ -338,84 +424,27 @@ const DrMedicalRecords = () => {
           }
         }
         if (patientDetails) {
-          setPatientDetailsMap(prev => ({
+          setPatientDetailsMap((prev) => ({
             ...prev,
             [response.data.id]: {
               ...patientDetails,
               hospitalName: newRecord.hospitalName,
-            }
+            },
           }));
         }
       } catch (error) {
         console.error("Error fetching patient details for new record:", error);
       }
       updateState({ showAddModal: false });
-      const phone = newRecord.phone || newRecord.phoneNumber;
-      const email = newRecord.email;
-      navigate("/doctordashboard/medical-record-details", {
-        state: {
-          selectedRecord: {
-            ...response.data,
-            isVerified: true,
-            hasDischargeSummary: recordType === "IPD",
-            phoneConsent: formData.phoneConsent || false,
-            createdBy: "doctor"
-          },
-          firstName: userFirstName,
-          lastName: userLastName,
-          email: email,
-          phone: phone,
-          patientDetails: null,
-          patientPhone: phone,
-          patientEmail: email,
-          patientId: response.data.id,
-          recordType: recordType,
-          isNewlyCreated: true,
-          hospitalName: newRecord.hospitalName,
-        },
-      });
+      alert("Record added successfully!");
     } catch (error) {
       console.error("Error adding record:", error);
-      setMedicalData(prev => {
-        const updated = {
-          ...prev,
-          [recordType]: [
-            ...(Array.isArray(prev[recordType]) ? prev[recordType] : []),
-            newRecord
-          ]
-        };
-        try {
-          localStorage.setItem("medicalData", JSON.stringify(updated));
-        } catch (e) {
-          console.error("Error saving to localStorage:", e);
-        }
-        return updated;
-      });
+      setMedicalData((prev) => ({
+        ...prev,
+        [recordType]: [...(prev[recordType] || []), newRecord],
+      }));
       updateState({ showAddModal: false });
-      const phone = newRecord.phone || newRecord.phoneNumber;
-      const email = newRecord.email;
-      navigate("/doctordashboard/medical-record-details", {
-        state: {
-          selectedRecord: {
-            ...newRecord,
-            isVerified: true,
-            hasDischargeSummary: recordType === "IPD",
-            phoneConsent: formData.phoneConsent || false,
-            createdBy: "doctor"
-          },
-          firstName: userFirstName,
-          lastName: userLastName,
-          email: email,
-          phone: phone,
-          patientDetails: null,
-          patientPhone: phone,
-          patientEmail: email,
-          patientId: newRecord.id,
-          recordType: recordType,
-          isNewlyCreated: true,
-          hospitalName: newRecord.hospitalName,
-        },
-      });
+      alert("Failed to add record. The record has been saved locally.");
     }
   };
 
@@ -444,10 +473,7 @@ const DrMedicalRecords = () => {
           if (key === "hospitalName") {
             return (
               <div className="flex items-center gap-2">
-                {(row.isVerified === true ||
-                  row.hasDischargeSummary === true ||
-                  row.phoneConsent === true ||
-                  row.createdBy === "doctor") && (
+                {(row.isVerified === true || row.hasDischargeSummary === true || row.phoneConsent === true || row.createdBy === "doctor") && (
                   <CheckCircle
                     size={16}
                     className="text-green-600"
@@ -471,11 +497,7 @@ const DrMedicalRecords = () => {
           }
           if (key === "type") {
             return (
-              <span
-                className={`text-sm font-semibold px-2 py-1 rounded-full bg-${
-                  typeColors[row.type]
-                }-100 text-${typeColors[row.type]}-800`}
-              >
+              <span className={`text-sm font-semibold px-2 py-1 rounded-full bg-${typeColors[row.type]}-100 text-${typeColors[row.type]}-800`}>
                 {row.type}
               </span>
             );
@@ -487,84 +509,55 @@ const DrMedicalRecords = () => {
               </span>
             );
           }
-          return (
-            <span>
-              {row[key]}
-            </span>
-          );
+          return <span>{row[key]}</span>;
         },
       })),
+      {
+        header: "Actions",
+        accessor: "actions",
+        cell: (row) => (
+          <div className="flex gap-2">
+            <button
+              onClick={() => row.hiddenByPatient ? handleUnhideRecord(row.id) : handleHideRecord(row.id)}
+              className={`transition-colors ${row.hiddenByPatient ? "text-green-500 hover:text-green-700" : "text-gray-500 hover:text-red-500"}`}
+              title={row.hiddenByPatient ? "Unhide Record" : "Hide Record"}
+              type="button"
+            >
+              <EyeOff size={16} />
+            </button>
+          </div>
+        ),
+      },
     ];
   };
 
-  const getCurrentTabData = () => {
-    const allRecords = (medicalData[state.activeTab] || [])
+  const getCurrentTabData = () =>
+    (medicalData[state.activeTab] || [])
       .filter((record) => !record.hiddenByPatient)
       .map((record) => {
         const chiefComplaint = record.chiefComplaint || record.diagnosis || "";
+        const displayHospital = resolveHospitalLabel(record.hospitalId ?? record.hospitalName);
         const patientDetails = patientDetailsMap[record.id];
         return {
           ...record,
+          hospitalName: displayHospital,
           chiefComplaint,
-          displayPatientName: patientDetails
-            ? `${patientDetails.firstName || ''} ${patientDetails.lastName || ''}`.trim()
-            : record.patientName || record.name || 'Unknown Patient',
-          hospitalName: patientDetails?.hospitalName || record.hospitalName || "AV Hospital",
+          displayPatientName: patientDetails ? `${patientDetails.firstName || ""} ${patientDetails.lastName || ""}`.trim() : record.patientName || record.name || "Unknown Patient",
         };
+      })
+      .sort((a, b) => {
+        const dateA = a.dateOfVisit || a.dateOfAdmission || a.dateOfConsultation || "1970-01-01";
+        const dateB = b.dateOfVisit || b.dateOfAdmission || b.dateOfConsultation || "1970-01-01";
+        return new Date(dateB) - new Date(dateA);
       });
-    const sortedRecords = allRecords.sort((a, b) => {
-      const dateA = a.dateOfVisit || a.dateOfAdmission || a.dateOfConsultation || "1970-01-01";
-      const dateB = b.dateOfVisit || b.dateOfAdmission || b.dateOfConsultation || "1970-01-01";
-      return new Date(dateB) - new Date(dateA);
-    });
-    const latestRecordsMap = {};
-    sortedRecords.forEach((record) => {
-      const hospitalName = record.hospitalName;
-      if (!latestRecordsMap[hospitalName]) {
-        latestRecordsMap[hospitalName] = record;
-      }
-    });
-    return Object.values(latestRecordsMap);
-  };
 
   const getFormFields = (recordType) => [
     {
-      name: "hospitalName",
+      name: "hospitalId",
       label: "Hospital Name",
       type: "select",
-      options: [
-        { label: "AV Hospital", value: "AV Hospital" },
-        { label: "AIIMS Delhi", value: "AIIMS Delhi" },
-        { label: "Fortis Hospital, Gurgaon", value: "Fortis Hospital, Gurgaon" },
-        { label: "Apollo Hospital, Chennai", value: "Apollo Hospital, Chennai" },
-        { label: "Medanta – The Medicity, Gurgaon", value: "Medanta – The Medicity, Gurgaon" },
-        { label: "Max Super Speciality Hospital, Delhi", value: "Max Super Speciality Hospital, Delhi" },
-        { label: "Narayana Health, Bangalore", value: "Narayana Health, Bangalore" },
-        { label: "Kokilaben Dhirubhai Ambani Hospital, Mumbai", value: "Kokilaben Dhirubhai Ambani Hospital, Mumbai" },
-        { label: "Lilavati Hospital, Mumbai", value: "Lilavati Hospital, Mumbai" },
-        { label: "Sir Ganga Ram Hospital, Delhi", value: "Sir Ganga Ram Hospital, Delhi" },
-        { label: "Christian Medical College, Vellore", value: "Christian Medical College, Vellore" },
-        { label: "Manipal Hospital, Bangalore", value: "Manipal Hospital, Bangalore" },
-        { label: "Jaslok Hospital, Mumbai", value: "Jaslok Hospital, Mumbai" },
-        { label: "BLK Super Speciality Hospital, Delhi", value: "BLK Super Speciality Hospital, Delhi" },
-        { label: "Care Hospitals, Hyderabad", value: "Care Hospitals, Hyderabad" },
-        { label: "Amrita Hospital, Kochi", value: "Amrita Hospital, Kochi" },
-        { label: "Ruby Hall Clinic, Pune", value: "Ruby Hall Clinic, Pune" },
-        { label: "Columbia Asia Hospital, Bangalore", value: "Columbia Asia Hospital, Bangalore" },
-        { label: "Hinduja Hospital, Mumbai", value: "Hinduja Hospital, Mumbai" },
-        { label: "D.Y. Patil Hospital, Navi Mumbai", value: "D.Y. Patil Hospital, Navi Mumbai" },
-        { label: "Tata Memorial Hospital, Mumbai", value: "Tata Memorial Hospital, Mumbai" },
-        { label: "Apollo Gleneagles Hospital, Kolkata", value: "Apollo Gleneagles Hospital, Kolkata" },
-        { label: "Wockhardt Hospitals, Mumbai", value: "Wockhardt Hospitals, Mumbai" },
-        { label: "SevenHills Hospital, Mumbai", value: "SevenHills Hospital, Mumbai" },
-        { label: "KIMS Hospital, Hyderabad", value: "KIMS Hospital, Hyderabad" },
-        { label: "Global Hospitals, Chennai", value: "Global Hospitals, Chennai" },
-        { label: "Yashoda Hospitals, Hyderabad", value: "Yashoda Hospitals, Hyderabad" },
-        { label: "Sunshine Hospital, Hyderabad", value: "Sunshine Hospital, Hyderabad" },
-        { label: "BM Birla Heart Research Centre, Kolkata", value: "BM Birla Heart Research Centre, Kolkata" },
-        { label: "Religare SRL Diagnostics, Mumbai", value: "Religare SRL Diagnostics, Mumbai" },
-        { label: "Sankara Nethralaya, Chennai", value: "Sankara Nethralaya, Chennai" },
-      ],
+      options: hospitalOptions,
+      loading: apiDataLoading.hospitals,
     },
     { name: "chiefComplaint", label: "Chief Complaint", type: "text" },
     {
@@ -572,27 +565,19 @@ const DrMedicalRecords = () => {
       label: "Medical Conditions",
       type: "multiselect",
       options: medicalConditions,
+      loading: apiDataLoading.conditions,
     },
     {
       name: "status",
       label: "Status",
       type: "select",
-      options: statusTypes.map((s) => ({ label: s, value: s })),
+      options: statusTypes,
+      loading: apiDataLoading.status,
     },
-    ...({
-      OPD: [{ name: "dateOfVisit", label: "Date of Visit", type: "date" }],
-      IPD: [
-        { name: "dateOfAdmission", label: "Date of Admission", type: "date" },
-        { name: "dateOfDischarge", label: "Date of Discharge", type: "date" },
-      ],
-      Virtual: [
-        {
-          name: "dateOfConsultation",
-          label: "Date of Consultation",
-          type: "date",
-        },
-      ],
-    }[recordType] || []),
+    ...(recordType === "OPD" ? [{ name: "dateOfVisit", label: "Date of Visit", type: "date" }] : recordType === "IPD" ? [
+      { name: "dateOfAdmission", label: "Date of Admission", type: "date" },
+      { name: "dateOfDischarge", label: "Date of Discharge", type: "date" },
+    ] : [{ name: "dateOfConsultation", label: "Date of Consultation", type: "date" }]),
     {
       name: "phoneNumber",
       label: "Register Phone Number",
@@ -600,8 +585,8 @@ const DrMedicalRecords = () => {
       hasInlineCheckbox: true,
       inlineCheckbox: {
         name: "phoneConsent",
-        label: "Sync with patient number"
-      }
+        label: "Sync with patient number",
+      },
     },
   ];
 
@@ -618,212 +603,301 @@ const DrMedicalRecords = () => {
         ...new Set(
           Object.values(medicalData)
             .flatMap((records) =>
-              records
-                .filter((record) => !record.hiddenByPatient)
-                .map((record) => record.hospitalName || "Unknown Hospital")
+              records.map((r) =>
+                resolveHospitalLabel(r.hospitalId ?? r.hospitalName)
+              )
             )
             .filter(Boolean)
-        )
-      ].map((hospital) => ({
-        value: hospital,
-        label: hospital,
-      })),
+        ),
+      ].map((label) => ({ value: label, label })),
     },
     {
       key: "status",
       label: "Status",
-      options: statusTypes.map((status) => ({ value: status, label: status })),
-    }
+      options: statusTypes,
+    },
   ];
 
-  let selectedRecord;
-  if (location.state) {
-    if (location.state.selectedRecord) {
-      selectedRecord = location.state.selectedRecord;
-    } else {
-      selectedRecord = location.state;
-    }
-  } else {
-    const currentData = getCurrentTabData();
-    if (currentData.length > 0) {
-      selectedRecord = currentData[0];
-    } else {
-      selectedRecord = null;
-    }
-  }
-
-  if (!selectedRecord && patientNameFromOPD) {
-    selectedRecord = {
-      patientName: patientNameFromOPD,
-      name: patientNameFromOPD,
-      email: patientEmailFromOPD,
-      phone: patientPhoneFromOPD,
-      gender: patientGenderFromOPD,
-      sex: patientGenderFromOPD,
-      dob: patientDobFromOPD,
-      age: patientAgeFromOPD,
-      diagnosis: patientDiagnosisFromOPD,
-      hospitalName: "AV Hospital",
-      type: "OPD"
-    };
-  }
-
-  const selectedPatientDetails = selectedRecord ? patientDetailsMap[selectedRecord.id] : null;
-  let calculatedAge = null;
-  let dob = patientDobFromOPD || selectedPatientDetails?.dob || selectedRecord?.dob;
-  if (dob) {
-    const dobDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - dobDate.getFullYear();
-    const m = today.getMonth() - dobDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
-      age--;
-    }
-    calculatedAge = age + ' years';
-  }
+  const selectedRecord = location.state?.selectedRecord || location.state || null;
 
   const tabActions = [
     {
       label: (
-        <div className="flex items-center gap-2">
-          <Plus size={18} />
-          Add Record
+        <div className="flex items-center gap-1">
+          <Plus size={16} className="sm:h-4 sm:w-4" />
+          <span className="text-xs sm:text-xs">Add Record</span>
         </div>
       ),
       onClick: () => updateState({ showAddModal: true }),
-      className: "btn btn-primary"
-    }
+      className: "btn btn-primary w-full sm:w-auto py-1 px-2 sm:py-2 sm:px-9 text-xs sm:text-sm",
+    },
   ];
-
-  const fetchPatientRecords = async () => {
-    try {
-      const response = await axios.get(
-        "https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec"
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching patient records:", error);
-      return [];
-    }
-  };
 
   const getConsentStats = () => {
     const allRecords = Object.values(medicalData).flat();
-    const visibleToDoctor = allRecords.filter(record => !record.hiddenByPatient);
-    const verifiedRecords = visibleToDoctor.filter(record =>
-      record.isVerified === true ||
-      record.hasDischargeSummary === true ||
-      record.phoneConsent === true ||
-      record.createdBy === "doctor"
+    const visibleToDoctor = allRecords.filter((record) => !record.hiddenByPatient);
+    const verifiedRecords = visibleToDoctor.filter(
+      (record) => record.isVerified === true || record.hasDischargeSummary === true || record.phoneConsent === true || record.createdBy === "doctor"
     );
-    const visibleRecords = visibleToDoctor;
     const totalRecords = visibleToDoctor.length;
     return {
       withConsent: verifiedRecords.length,
-      visible: visibleRecords.length,
+      visible: visibleToDoctor.length,
       total: totalRecords,
-      percentage: totalRecords > 0 ? Math.round((visibleRecords.length / totalRecords) * 100) : 0
+      percentage: totalRecords > 0 ? Math.round((visibleToDoctor.length / totalRecords) * 100) : 0,
     };
   };
 
   const consentStats = getConsentStats();
 
+  // Helper function to format visit date based on record type
+  const getVisitDate = (record) => {
+    const type = record?.type || patientTypeFromOPD;
+    if (type === "OPD") {
+      return record?.dateOfVisit || patientVisitDateFromOPD || "--";
+    } else if (type === "IPD") {
+      return record?.dateOfAdmission || patientDataFromOPD?.admissionDate || "--";
+    } else {
+      return record?.dateOfConsultation || patientDataFromOPD?.dateOfConsultation || "--";
+    }
+  };
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      {/* Back Button */}
       <button
-        className="mb-4 inline-flex items-center"
+        className="mb-4 inline-flex items-center text-sm sm:text-base"
         onClick={() => navigate("/doctordashboard/patients")}
       >
-        <ArrowLeft size={20} /> <span className="ms-2 font-medium">Back to Patient List</span>
+        <ArrowLeft size={18} className="sm:h-5 sm:w-5" />
+        <span className="ms-2 font-medium">Back to Patient List</span>
       </button>
-      {selectedRecord && (
-        <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-6 mb-6 text-white">
-          <div className="flex flex-col md:flex-row md:items-start gap-6">
-            <div className="relative h-20 w-20 shrink-0">
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-white text-2xl font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2 text-[#01B07A]">
-                {getInitials(
-                  patientNameFromOPD || (selectedPatientDetails
-                    ? `${selectedPatientDetails.firstName || ''} ${selectedPatientDetails.lastName || ''}`.trim()
-                    : selectedRecord.patientName || selectedRecord.name || "")
-                )}
+
+      {/* Patient Header */}
+      {(selectedRecord || patientDataFromOPD) && (
+        <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-3 sm:p-6 mb-6 text-white">
+     
+     <div className="flex flex-col items-center gap-2 md:hidden w-full">
+
+  <div className="h-10 w-10 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-xs font-bold uppercase shadow-inner ring-2 ring-white ring-offset-1">
+    {getInitials(patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "")}
+  </div>
+
+
+  <h3 className="text-sm font-bold truncate text-center w-full ">
+    {patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "--"}
+  </h3>
+{/* <div className="w-full flex justify-center">
+  <div className="grid grid-cols-[120px_1fr] gap-y-2 gap-x-1 text-xs max-w-lg w-full py-2 rounded-lg shadow-sm">
+    
+    <p className="font-semibold text-left ml-10">Age:</p>
+    <p>{patientAgeFromOPD || selectedRecord?.age || "35 year"}</p>
+
+    <p className="font-semibold text-left  ml-10">Gender:</p>
+    <p className="break-words">{patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--"}</p>
+
+    <p className="font-semibold text-left  ml-10">Hospital:</p>
+    <p className="break-words  mr-4">{selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital"}</p>
+
+    <p className="font-semibold text-left  ml-10">Visit Date:</p>
+    <p>{getVisitDate(selectedRecord || patientDataFromOPD || "23/10/2025")}</p>
+
+    <p className="font-semibold text-left  ml-10">Diagnosis:</p>
+    <p className="break-words">{patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "Fever"}</p>
+
+    <p className="font-semibold text-left  ml-10">K/C/O:</p>
+    <p className="break-words me-4">{selectedRecord?.["K/C/O"] || "--"}</p>
+
+    {(selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") && (
+      <>
+        <p className="font-semibold text-left">Ward Type:</p>
+        <p>{selectedRecord?.wardType || patientDataFromOPD?.wardType || "--"}</p>
+      </>
+    )}
+  </div>
+</div> */}
+
+
+<div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs w-full ps-2">
+  <div className="col-span-2 grid grid-cols-2">
+    <p className="">
+      <span className="font-semibold">Age:</span> {patientAgeFromOPD || selectedRecord?.age || "35 year"}
+    </p>
+    <p className="break-words">
+      <span className="font-semibold">Gender:</span> {patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--"}
+    </p>
+  </div>
+  <div className="col-span-2 grid grid-cols-2">
+    <p className="break-words">
+      <span className="font-semibold">Hospital:</span> {selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital"}
+    </p>
+    <p className="break-words">
+      <span className="font-semibold">Visit Date:</span> {getVisitDate(selectedRecord || patientDataFromOPD || "23/10/2025")}
+    </p>
+  </div>
+  <div className="col-span-2 grid grid-cols-2">
+    <p className="break-words">
+      <span className="font-semibold">Diagnosis:</span> {patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "Fever"}
+    </p>
+    <p className="break-words">
+      <span className="font-semibold">K/C/O:</span> {selectedRecord?.["K/C/O"] || "--"}
+    </p>
+  </div>
+  {(selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") && (
+    <p className="col-span-2 truncate">
+      <span className="font-semibold">Ward Type:</span> {selectedRecord?.wardType || patientDataFromOPD?.wardType || "--"}
+    </p>
+  )}
+</div>
+
+  
+  {/* <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs w-full ps-2 ">
+    <div className="col-span-2 grid grid-cols-2 ">
+      <p className="">
+        <span className="font-semibold">Age:</span> {patientAgeFromOPD || selectedRecord?.age || "35 year"}
+      </p>
+      <p className="break-words">
+        <span className="font-semibold">Gender:</span> {patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--"}
+      </p>
+    </div>
+
+ <div className="col-span-2 grid grid-cols-2 ">
+  <p className="break-words">
+    <span className="font-semibold">Hospital:</span> {selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital"}
+  </p>
+  <p className="break-words">
+    <span className="font-semibold">Visit Date:</span> {getVisitDate(selectedRecord || patientDataFromOPD || "23/10/2025")}
+  </p>
+</div>
+
+
+    <div className="col-span-2 grid grid-cols-2">
+      <p className="break-words">
+        <span className="font-semibold">Diagnosis:</span> {patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "Fever"}
+      </p>
+      <p className="break-words">
+        <span className="font-semibold">K/C/O:</span> {selectedRecord?.["K/C/O"] || "--"}
+      </p>
+    </div>
+
+    {(selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") && (
+      <p className="col-span-2 truncate">
+        <span className="font-semibold">Ward Type:</span> {selectedRecord?.wardType || patientDataFromOPD?.wardType || "--"}
+      </p>
+    )}
+  </div> */}
+  
+</div>
+
+
+
+          {/* Tablet View (iPad) */}
+          <div className="hidden md:grid lg:hidden grid-cols-1 gap-2">
+            {/* Avatar + Name */}
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-lg font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2">
+                {getInitials(patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "")}
+              </div>
+              <h3 className="text-lg font-bold truncate">
+                {patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "--"}
+              </h3>
+            </div>
+            {/* Details grid */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2 ml-14 text-sm">
+              <p><span className="font-semibold">Age:</span> {patientAgeFromOPD || selectedRecord?.age || "36 year old"}</p>
+              <p><span className="font-semibold">Gender:</span> {patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--"}</p>
+              <p><span className="font-semibold">Hospital:</span> {selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital"}</p>
+              <p><span className="font-semibold">Visit Date:</span> {getVisitDate(selectedRecord || patientDataFromOPD)}</p>
+              {(selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") && (
+                <p><span className="font-semibold">Ward Type:</span> {selectedRecord?.wardType || patientDataFromOPD?.wardType || "--"}</p>
+              )}
+              <p><span className="font-semibold">Diagnosis:</span> {patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "--"}</p>
+              <p><span className="font-semibold">K/C/O:</span> {selectedRecord?.["K/C/O"] || "--"}</p>
+            </div>
+          </div>
+
+          {/* Desktop View */}
+          <div className="hidden lg:flex flex-row sm:items-start gap-6">
+            {/* Avatar */}
+            <div className="flex-shrink-0 flex justify-start">
+              <div className="h-20 w-20 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-2xl font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2">
+                {getInitials(patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "")}
               </div>
             </div>
+            {/* Name + Details */}
             <div className="flex-1">
-              <h3 className="text-2xl font-bold mb-4">
-                {patientNameFromOPD || (selectedPatientDetails
-                  ? `${selectedPatientDetails.firstName || ''} ${selectedPatientDetails.lastName || ''}`.trim()
-                  : selectedRecord.patientName || selectedRecord.name || "--")}
+              <h3 className="text-2xl font-bold mb-3 truncate">
+                {patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "--"}
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6 text-sm">
-                <div className="space-y-1">
-                  <div>Age: {patientAgeFromOPD || selectedRecord.age || calculatedAge || selectedPatientDetails?.age || "--"}</div>
-                  <div>Gender: {patientGenderFromOPD || selectedRecord.gender || selectedRecord.sex || selectedPatientDetails?.gender || selectedPatientDetails?.sex || "--"}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6 text-base">
+                <div>
+                  <p><span className="font-semibold">Age:</span> {patientAgeFromOPD || selectedRecord?.age || "--"}</p>
+                  <p><span className="font-semibold">Gender:</span> {patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--"}</p>
                 </div>
-                <div className="space-y-1">
-                  <div>Hospital: {selectedPatientDetails?.hospitalName || selectedRecord.hospitalName || "AV Hospital"}</div>
-                  <div>
-                    Visit Date: {
-                      (() => {
-                        const type = selectedPatientDetails?.type || selectedRecord.type;
-                        if (type === "OPD") {
-                          return selectedPatientDetails?.appointmentDate || selectedRecord.appointmentDate || selectedRecord.dateOfVisit || "--";
-                        } else if (type === "IPD") {
-                          return selectedPatientDetails?.admissionDate || selectedRecord.admissionDate || selectedRecord.dateOfAdmission || "--";
-                        } else {
-                          return selectedPatientDetails?.dateOfConsultation || selectedRecord.dateOfConsultation || selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || "--";
-                        }
-                      })()
-                    }
-                  </div>
-                  {(selectedPatientDetails?.type === "IPD" || selectedRecord.type === "IPD") && (
-                    <div>Ward Type: {selectedRecord.wardType || "--"}</div>
+                <div>
+                  <p><span className="font-semibold">Hospital:</span> {selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital"}</p>
+                  <p><span className="font-semibold">Visit Date:</span> {getVisitDate(selectedRecord || patientDataFromOPD)}</p>
+                  {(selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") && (
+                    <p><span className="font-semibold">Ward Type:</span> {selectedRecord?.wardType || patientDataFromOPD?.wardType || "--"}</p>
                   )}
                 </div>
-                <div className="space-y-1">
-                  <div>Diagnosis: {patientDiagnosisFromOPD || selectedRecord.diagnosis || selectedRecord.chiefComplaint || "--"}</div>
-                  <div>K/C/O: {selectedRecord["K/C/O"] ?? "--"}</div>
+                <div>
+                  <p><span className="font-semibold">Diagnosis:</span> {patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "--"}</p>
+                  <p><span className="font-semibold">K/C/O:</span> {selectedRecord?.["K/C/O"] || "--"}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       )}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Search size={24} className="text-[var(--primary-color)]" />
+
+      {/* Medical Records Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Search size={20} className="text-[var(--primary-color)] sm:h-6 sm:w-6" />
           <div>
-            <h2 className="h4-heading">Medical Records History</h2>
+            <h2 className="text-lg sm:text-xl font-semibold">Medical Records History</h2>
           </div>
         </div>
       </div>
-      <DynamicTable
-        columns={createColumns(state.activeTab)}
-        data={getCurrentTabData()}
-        filters={filters}
-        tabs={tabs}
-        tabActions={tabActions}
-        activeTab={state.activeTab}
-        onTabChange={(tab) => updateState({ activeTab: tab })}
-      />
+
+      {/* Dynamic Table */}
+      <div className="overflow-x-auto">
+        <DynamicTable
+          columns={createColumns(state.activeTab)}
+          data={getCurrentTabData()}
+          filters={filters}
+          tabs={tabs}
+          tabActions={tabActions}
+          activeTab={state.activeTab}
+          onTabChange={(tab) => updateState({ activeTab: tab })}
+        />
+      </div>
+
+      {/* Loading/Error/Empty States */}
       {loading && (
-        <div className="text-center py-8">Loading medical records...</div>
+        <div className="text-center py-6 sm:py-8">
+          <p className="text-sm sm:text-base">Loading medical records...</p>
+        </div>
       )}
       {fetchError && (
-        <div className="text-center text-red-600 py-8">{fetchError}</div>
+        <div className="text-center text-red-600 py-6 sm:py-8">
+          <p className="text-sm sm:text-base">{fetchError}</p>
+        </div>
       )}
       {getCurrentTabData().length === 0 && !loading && !fetchError && (
-        <div className="text-center py-8 text-gray-600">
-          <div className="flex flex-col items-center gap-4">
-            <CheckCircle size={48} className="text-gray-400" />
+        <div className="text-center py-6 sm:py-8 text-gray-600">
+          <div className="flex flex-col items-center gap-3 sm:gap-4">
+            <CheckCircle size={36} className="text-gray-400 sm:h-10 sm:w-10" />
             <div>
-              <h3 className="text-lg font-semibold mb-2">No Accessible Medical Records</h3>
-              <p className="text-sm">
-                No medical records found for this patient in the selected category.
-              </p>
+              <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2">No Accessible Medical Records</h3>
+              <p className="text-xs sm:text-sm">No medical records found for this patient in the selected category.</p>
             </div>
           </div>
         </div>
       )}
+
+      {/* Add Record Modal */}
       <ReusableModal
         isOpen={state.showAddModal}
         onClose={() => updateState({ showAddModal: false })}

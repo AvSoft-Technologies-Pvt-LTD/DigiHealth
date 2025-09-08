@@ -1,220 +1,359 @@
+//payment Gateway
 import React, { useState, useEffect } from "react";
 import * as Lucide from "lucide-react";
-import { toast } from "react-toastify";
+import logo from "../../assets/logo.png";
 
-const PaymentGatewayPage = ({ amount, bookingId, currency = "₹", onPaymentSuccess, onPaymentFailure, customerDetails = {}, description = "Ambulance Booking Payment", allowedMethods = ["card", "upi", "wallet", "netbanking"], theme = { primaryColor: "#0E1630", accentColor: "#01D48C", surfaceColor: "#FFFFFF" } }) => {
-  const [currentStep, setCurrentStep] = useState("method-selection");
-  const [selectedMethod, setSelectedMethod] = useState("card");
+const PaymentGateway = ({
+  isOpen,
+  onClose,
+  amount,
+  bookingId,
+  merchantName = "DigiHealth",
+  methods = ["upi", "card", "netbanking", "wallet"],
+  onPay,
+  currency = "₹",
+  logo: propLogo,
+}) => {
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [upiId, setUpiId] = useState("");
+  const [cardData, setCardData] = useState({ number: "", name: "", expiry: "", cvv: "" });
+  const [selectedBank, setSelectedBank] = useState("");
+  const [selectedWallet, setSelectedWallet] = useState("");
   const [timeLeft, setTimeLeft] = useState(600);
-  const [loading, setLoading] = useState(false);
-  const [cardForm, setCardForm] = useState({ cardNumber: "", nameOnCard: "", expiryMonth: "", expiryYear: "", cvv: "" });
-  const [upiForm, setUpiForm] = useState({ upiId: "", method: "qr" });
-  const [walletForm, setWalletForm] = useState({ provider: "paytm", mobile: "" });
-  const [netbankingForm, setNetbankingForm] = useState({ bank: "" });
-  const [otpStep, setOtpStep] = useState(false);
+  const [currentStep, setCurrentStep] = useState("method-selection");
   const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => { const timer = setInterval(() => { setTimeLeft(prev => prev <= 1 ? (toast.error("Payment session expired"), 0) : prev - 1); }, 1000); return () => clearInterval(timer); }, []);
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setInterval(() => setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0)), 1000);
+    return () => clearInterval(timer);
+  }, [isOpen]);
 
-  const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
-  const paymentMethods = [{ id: "card", name: "Credit/Debit Card", icon: Lucide.CreditCard, description: "Visa, Mastercard, RuPay", color: "text-[var(--primary-color)]" },
-                          { id: "upi", name: "UPI Payment", icon: Lucide.Smartphone, description: "Google Pay, PhonePe, Paytm", color: "text-green-600" },
-                          { id: "wallet", name: "Digital Wallet", icon: Lucide.Wallet, description: "Paytm, Amazon Pay, Mobikwik", color: "text-purple-600" },
-                          { id: "netbanking", name: "Net Banking", icon: Lucide.Building, description: "All major banks", color: "text-orange-600" }].filter(method => allowedMethods.includes(method.id));
+  const paymentMethods = [
+    { id: "upi", name: "UPI", icon: Lucide.Smartphone, providers: ["GPay", "PhonePe", "Paytm", "BHIM"], color: "text-green-600" },
+    { id: "card", name: "Cards", icon: Lucide.CreditCard, providers: ["Visa", "Mastercard", "RuPay"], color: "text-[color:var(--primary-color)]" },
+    { id: "netbanking", name: "Netbanking", icon: Lucide.Building2, providers: ["SBI", "HDFC", "ICICI", "Axis"], color: "text-orange-600" },
+    { id: "wallet", name: "Wallet", icon: Lucide.Wallet, providers: ["Paytm", "Amazon Pay", "MobiKwik"], color: "text-purple-600" },
+  ].filter((method) => methods.includes(method.id));
 
-  const banks = [{ id: "sbi", name: "State Bank of India" }, { id: "hdfc", name: "HDFC Bank" }, { id: "icici", name: "ICICI Bank" }, { id: "axis", name: "Axis Bank" }, { id: "kotak", name: "Kotak Mahindra Bank" }, { id: "pnb", name: "Punjab National Bank" }];
-  const walletProviders = [{ id: "paytm", name: "Paytm" }, { id: "amazonpay", name: "Amazon Pay" }, { id: "mobikwik", name: "Mobikwik" }];
+  const banks = ["State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank", "Punjab National Bank"];
+  const wallets = ["Paytm", "Amazon Pay", "MobiKwik", "Freecharge", "JioMoney"];
 
-  const handleMethodSelect = (methodId) => setSelectedMethod(methodId);
-  const proceedToPayment = () => setCurrentStep("payment-form");
-  const goBack = () => { setCurrentStep("method-selection"); setOtpStep(false); };
+  const handleProceed = () => setCurrentStep("payment-form");
+  const handleBack = () => { setCurrentStep("method-selection"); setOtp(""); };
+  const handleOtpVerify = () => {
+    if (otp === "1234") {
+      setLoading(true);
+      setTimeout(() => {
+        const data = selectedMethod === "upi" ? { upiId } :
+                     selectedMethod === "card" ? cardData :
+                     selectedMethod === "netbanking" ? { bank: selectedBank } : { wallet: selectedWallet };
+        onPay(selectedMethod, data);
+        setCurrentStep("success");
+        setLoading(false);
+      }, 2000);
+    } else alert("Invalid OTP. Please try again.");
+  };
+  const handleSubmit = (e) => { e.preventDefault(); setCurrentStep("otp-step"); };
 
-  const handleCardSubmit = async (e) => { e.preventDefault(); if (!Object.values(cardForm).every(field => field)) { toast.error("Please fill all card details"); return; } setLoading(true); setCurrentStep("processing"); setTimeout(() => { setOtpStep(true); setLoading(false); toast.info("OTP sent to your registered mobile number"); }, 2000); };
-  const handleUpiSubmit = async (e) => { e.preventDefault(); setCurrentStep("confirm-payment"); };
-  const handleWalletSubmit = async (e) => { e.preventDefault(); setLoading(true); setCurrentStep("processing"); setTimeout(() => { setOtpStep(true); setLoading(false); toast.info("OTP sent to your mobile number"); }, 2000); };
-  const handleNetbankingSubmit = (e) => { e.preventDefault(); if (!netbankingForm.bank) { toast.error("Please select a bank"); return; } setLoading(true); setCurrentStep("processing"); setTimeout(() => { if (Math.random() > 0.2) { setCurrentStep("success"); onPaymentSuccess({ paymentId: `NB_${Date.now()}`, method: "Net Banking", amount, bookingId }); } else { setCurrentStep("failure"); onPaymentFailure({ reason: "Net banking authentication failed" }); } setLoading(false); }, 4000); };
-  const handleOtpVerify = () => { if (!otp || otp.length !== 4) { toast.error("Please enter valid 4-digit OTP"); return; } setLoading(true); setTimeout(() => { if (otp === "1234") { setCurrentStep("success"); onPaymentSuccess({ paymentId: `${selectedMethod.toUpperCase()}_${Date.now()}`, method: selectedMethod === "card" ? "Credit/Debit Card" : "Digital Wallet", amount, bookingId }); } else { toast.error("Invalid OTP. Please try again."); } setLoading(false); }, 2000); };
-  const resetPayment = () => { setCurrentStep("method-selection"); setSelectedMethod("card"); setOtpStep(false); setOtp(""); setCardForm({ cardNumber: "", nameOnCard: "", expiryMonth: "", expiryYear: "", cvv: "" }); setUpiForm({ upiId: "", method: "qr" }); setWalletForm({ provider: "paytm", mobile: "" }); setNetbankingForm({ bank: "" }); };
+  if (!isOpen) return null;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-grow flex items-center justify-center p-2 sm:p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-full overflow-y-auto" style={{ "--primary-color": theme.primaryColor, "--accent-color": theme.accentColor }}>
-          <div className="p-3 sm:p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div><div className="text-gray-800 text-xs sm:text-sm">Amount to Pay</div><div className="text-gray-800 text-xl sm:text-2xl font-bold">{currency}{amount}</div></div>
-              <div className="text-gray-800 text-xs sm:text-sm">⏳ {formatTime(timeLeft)}</div>
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+          {/* Left Sidebar */}
+          <div className="w-full lg:w-2/5 bg-[color:var(--primary-color)] text-white p-4 sm:p-6 lg:p-8 relative overflow-hidden flex-shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-[color:var(--primary-color)] to-[color:var(--primary-color)]/80"></div>
+            <div className="relative z-10 h-full flex flex-col">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <img src={propLogo || logo} alt={merchantName} className="h-12 w-12 object-contain" />
+                <span className="font-semibold text-lg sm:text-xl">{merchantName}</span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+                <div className="text-white/80 text-xs sm:text-sm mb-1">Amount to Pay</div>
+                <div className="text-2xl sm:text-3xl font-bold">{currency}{amount}</div>
+                {bookingId && <div className="text-white/60 text-xs mt-2">Booking ID: #{bookingId}</div>}
+              </div>
+              <div className="text-right text-white/80 text-sm mb-4 sm:mb-8">⏱ {formatTime(timeLeft)}</div>
+              <div className="mt-auto">
+                <div className="flex items-center gap-2 text-white/60 text-xs">
+                  <Lucide.Shield size={16} /><span>Secured by SSL Encryption</span>
+                </div>
+              </div>
             </div>
-            {bookingId && <div className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-500">Booking ID: #{bookingId}</div>}
+            <div className="absolute bottom-0 right-0 opacity-10"><Lucide.CreditCard size={80} className="sm:w-[120px] sm:h-[120px]" /></div>
+            <div className="absolute top-1/2 -right-8 opacity-5"><Lucide.Smartphone size={60} className="sm:w-[100px] sm:h-[100px]" /></div>
           </div>
-          <div className="p-3 sm:p-4">
-            {currentStep === "method-selection" && (
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="text-sm sm:text-base font-semibold" style={{ color: theme.primaryColor }}>Select Payment Method</h3>
-                <div className="space-y-2 sm:space-y-3">
-                  {paymentMethods.map(method => {
-                    const IconComponent = method.icon;
-                    return (
-                      <div key={method.id} onClick={() => handleMethodSelect(method.id)} className={`p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-all ${selectedMethod === method.id ? "border-[var(--primary-color)] bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center ${method.color} bg-opacity-10`}><IconComponent className={method.color} size={18} /></div>
-                          <div className="flex-1"><div className="font-semibold text-xs sm:text-sm" style={{ color: theme.primaryColor }}>{method.name}</div><div className="text-xs text-gray-500">{method.description}</div></div>
-                          <div className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 ${selectedMethod === method.id ? "border-[var(--primary-color)] bg-[var(--primary-color)]" : "border-gray-300"}`}>{selectedMethod === method.id && <Lucide.Check className="text-white w-2 h-2 sm:w-3 sm:h-3 m-0.5" />}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <button onClick={proceedToPayment} className="w-full py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors" style={{ backgroundColor: theme.accentColor, color: theme.surfaceColor }}>Proceed to Payment</button>
-              </div>
-            )}
-            {currentStep === "payment-form" && !otpStep && (
-              <div className="space-y-3 sm:space-y-4">
-                {selectedMethod === "card" && (
-                  <form onSubmit={handleCardSubmit} className="space-y-3 sm:space-y-4">
-                    <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1 sm:gap-2" style={{ color: theme.primaryColor }}><Lucide.CreditCard className="text-[var(--primary-color)]" size={16} /> Card Details</h3>
-                    {["Card Number", "Name on Card"].map((label, index) => (
-                      <div key={index}>
-                        <label className="block text-xs font-medium text-gray-700 mb-1 sm:mb-2">{label}</label>
-                        <input type={label === "Card Number" ? "text" : "text"} placeholder={label === "Card Number" ? "1234 5678 9012 3456" : "John Doe"} value={label === "Card Number" ? cardForm.cardNumber : cardForm.nameOnCard} onChange={e => setCardForm({ ...cardForm, [label === "Card Number" ? "cardNumber" : "nameOnCard"]: e.target.value })} className="w-full px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)]" maxLength={label === "Card Number" ? 19 : undefined} />
-                      </div>
-                    ))}
-                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                      {["Month", "Year", "CVV"].map((label, index) => (
-                        <div key={index}>
-                          <label className="block text-xs font-medium text-gray-700 mb-1 sm:mb-2">{label}</label>
-                          <input type={label === "CVV" ? "password" : "text"} placeholder={label === "Month" ? "MM" : label === "Year" ? "YY" : "123"} value={label === "Month" ? cardForm.expiryMonth : label === "Year" ? cardForm.expiryYear : cardForm.cvv} onChange={e => setCardForm({ ...cardForm, [label === "Month" ? "expiryMonth" : label === "Year" ? "expiryYear" : "cvv"]: e.target.value })} className="w-full px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)]" maxLength={label === "CVV" ? 4 : undefined} />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1 sm:gap-2 text-xs text-gray-600"><Lucide.Shield className="text-green-600" size={14} /> 256-bit SSL Encrypted</div>
-                    <div className="flex gap-2 sm:gap-3">
-                      <button type="button" onClick={goBack} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors border border-gray-300 text-gray-700">Back</button>
-                      <button type="submit" disabled={loading} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors" style={{ backgroundColor: theme.accentColor, color: theme.surfaceColor }}>{loading ? <div className="flex items-center justify-center gap-1 sm:gap-2"><Lucide.Loader2 className="animate-spin" size={14} /> Processing...</div> : `Pay ${currency}${amount}`}</button>
-                    </div>
-                  </form>
+
+          {/* Right Payment Section */}
+          <div className="w-full lg:w-3/5 flex flex-col min-h-0 relative">
+            {/* Updated Top Bar */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 flex-shrink-0">
+              <div>
+                {currentStep !== "method-selection" && (
+                  <button
+                    onClick={handleBack}
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-[color:var(--primary-color)] transition-colors"
+                  >
+                    <Lucide.ArrowLeft size={16} />
+                    <span className="hidden sm:inline">Back</span>
+                  </button>
                 )}
-                {selectedMethod === "upi" && (
-                  <div className="space-y-3 sm:space-y-4">
-                    <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1 sm:gap-2" style={{ color: theme.primaryColor }}><Lucide.Smartphone className="text-green-600" size={16} /> UPI Payment</h3>
-                    <div className="space-y-2 sm:space-y-3">
-                      {["Scan QR Code", "Enter UPI ID"].map((method, index) => (
-                        <label key={index} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border rounded-lg cursor-pointer">
-                          <input type="radio" name="upiMethod" value={method === "Scan QR Code" ? "qr" : "id"} checked={upiForm.method === (method === "Scan QR Code" ? "qr" : "id")} onChange={e => setUpiForm({ ...upiForm, method: e.target.value })} className="w-4 h-4 sm:w-5 sm:h-5" />
-                          <div><div className="text-xs sm:text-sm font-medium">{method}</div><div className="text-xs text-gray-500">Use any UPI app</div></div>
-                        </label>
-                      ))}
-                    </div>
-                    {upiForm.method === "qr" && <div className="text-center py-2"><div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-3 sm:mb-4"><Lucide.QrCode size={60} className="text-gray-400" /></div><p className="text-xs sm:text-sm text-gray-600">Scan with any UPI app to pay {currency}{amount}</p></div>}
-                    {upiForm.method === "id" && <div><label className="block text-xs font-medium text-gray-700 mb-1 sm:mb-2">Enter UPI ID</label><input type="text" placeholder="user@paytm" value={upiForm.upiId} onChange={e => setUpiForm({ ...upiForm, upiId: e.target.value })} className="w-full px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)]" /></div>}
-                    <div className="flex gap-2 sm:gap-3">
-                      <button type="button" onClick={goBack} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors border border-gray-300 text-gray-700">Back</button>
-                      <button onClick={handleUpiSubmit} disabled={loading} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors" style={{ backgroundColor: theme.accentColor, color: theme.surfaceColor }}>{loading ? <div className="flex items-center justify-center gap-1 sm:gap-2"><Lucide.Loader2 className="animate-spin" size={14} /> Waiting...</div> : `Pay ${currency}${amount} via UPI`}</button>
-                    </div>
+              </div>
+              <div>
+                <button
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-[color:var(--primary-color)] transition-colors p-1"
+                >
+                  <Lucide.X size={24} />
+                </button>
+              </div>
+            </div>
+
+            {/* Rest of the Payment Section */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              {currentStep === "method-selection" && (
+                <div className="space-y-4 sm:space-y-6">
+                  <h2 className="text-xl sm:text-2xl font-semibold text-[color:var(--primary-color)]">Payment Options</h2>
+                  <div className="space-y-3 max-h-[50vh] sm:max-h-none overflow-y-auto">
+                    {paymentMethods.map((method) => {
+                      const IconComponent = method.icon;
+                      return (
+                        <div
+                          key={method.id}
+                          onClick={() => { setSelectedMethod(method.id); handleProceed(); }}
+                          className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg cursor-pointer transition-all shadow hover:shadow-lg border border-gray-100 hover:border-[color:var(--primary-color)]/20 bg-white"
+                        >
+                          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-50 flex items-center justify-center ${method.color}`}>
+                            <IconComponent size={20} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-[color:var(--primary-color)] text-sm sm:text-base">{method.name}</div>
+                            <div className="text-gray-500 text-xs sm:text-sm truncate">{method.providers.join(", ")}</div>
+                          </div>
+                          <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-                {selectedMethod === "wallet" && (
-                  <form onSubmit={handleWalletSubmit} className="space-y-3 sm:space-y-4">
-                    <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1 sm:gap-2" style={{ color: theme.primaryColor }}><Lucide.Wallet className="text-purple-600" size={16} /> Digital Wallet</h3>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1 sm:mb-2">Select Wallet</label>
-                      <select value={walletForm.provider} onChange={e => setWalletForm({ ...walletForm, provider: e.target.value })} className="w-full px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)]">
-                        {walletProviders.map(provider => <option key={provider.id} value={provider.id}>{provider.name}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1 sm:mb-2">Mobile Number</label>
-                      <input type="tel" placeholder="9876543210" value={walletForm.mobile} onChange={e => setWalletForm({ ...walletForm, mobile: e.target.value })} className="w-full px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)]" maxLength={10} />
-                    </div>
-                    <div className="flex gap-2 sm:gap-3">
-                      <button type="button" onClick={goBack} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors border border-gray-300 text-gray-700">Back</button>
-                      <button type="submit" disabled={loading} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors" style={{ backgroundColor: theme.accentColor, color: theme.surfaceColor }}>{loading ? <div className="flex items-center justify-center gap-1 sm:gap-2"><Lucide.Loader2 className="animate-spin" size={14} /> Processing...</div> : `Pay ${currency}${amount}`}</button>
-                    </div>
-                  </form>
-                )}
-                {selectedMethod === "netbanking" && (
-                  <form onSubmit={handleNetbankingSubmit} className="space-y-3 sm:space-y-4">
-                    <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1 sm:gap-2" style={{ color: theme.primaryColor }}><Lucide.Building className="text-orange-600" size={16} /> Net Banking</h3>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1 sm:mb-2">Select Your Bank</label>
-                      <select value={netbankingForm.bank} onChange={e => setNetbankingForm({ ...netbankingForm, bank: e.target.value })} className="w-full px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)]">
-                        <option value="">Choose your bank</option>
-                        {banks.map(bank => <option key={bank.id} value={bank.id}>{bank.name}</option>)}
-                      </select>
-                    </div>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 sm:p-3">
-                      <div className="flex items-start gap-1 sm:gap-2">
-                        <Lucide.AlertTriangle className="text-yellow-600 mt-0.5" size={14} />
-                        <div className="text-xs text-yellow-800">You will be redirected to your bank's secure login page</div>
+                </div>
+              )}
+              {currentStep === "payment-form" && (
+                <div className="space-y-4 sm:space-y-6">
+                  {selectedMethod === "upi" && (
+                    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                      <h3 className="font-semibold flex items-center gap-2 text-[color:var(--primary-color)] text-lg sm:text-xl">
+                        <Lucide.QrCode size={20} /> UPI Payment
+                      </h3>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="text-center">
+                          <div className="w-32 h-32 sm:w-48 sm:h-48 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+                            <Lucide.QrCode size={80} className="sm:w-[120px] sm:h-[120px] text-gray-400" />
+                          </div>
+                          <p className="text-xs sm:text-sm text-gray-600">Scan with any UPI app</p>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">UPI ID / Number</label>
+                            <input
+                              type="text"
+                              placeholder="example@okhdfc"
+                              value={upiId}
+                              onChange={(e) => setUpiId(e.target.value)}
+                              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            className="w-full py-3 bg-[color:var(--primary-color)] text-white rounded-lg hover:bg-[color:var(--primary-color)]/90 transition-colors font-medium text-sm sm:text-base"
+                          >
+                            Verify and Pay
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2 sm:gap-3">
-                      <button type="button" onClick={goBack} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors border border-gray-300 text-gray-700">Back</button>
-                      <button type="submit" disabled={loading} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors" style={{ backgroundColor: theme.accentColor, color: theme.surfaceColor }}>{loading ? <div className="flex items-center justify-center gap-1 sm:gap-2"><Lucide.Loader2 className="animate-spin" size={14} /> Redirecting...</div> : "Proceed to Bank"}</button>
-                    </div>
-                  </form>
-                )}
-              </div>
-            )}
-            {otpStep && (
-              <div className="text-center space-y-3 sm:space-y-4">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto"><Lucide.Shield className="text-[var(--primary-color)]" size={24} /></div>
-                <h3 className="text-xs sm:text-sm font-semibold" style={{ color: theme.primaryColor }}>Enter OTP</h3>
-                <p className="text-xs sm:text-sm text-gray-600">We've sent a 4-digit code to your registered mobile number</p>
-                <div className="flex gap-1 sm:gap-2 justify-center">
-                  {[0, 1, 2, 3].map(index => (
-                    <input key={index} type="text" maxLength={1} value={otp[index] || ""} onChange={e => { const newOtp = otp.split(""); newOtp[index] = e.target.value; setOtp(newOtp.join("")); if (e.target.value && index < 3) { const nextInput = e.target.parentElement.children[index + 1]; if (nextInput) nextInput.focus(); } }} className="w-8 h-8 sm:w-10 sm:h-10 text-center font-bold border-2 rounded-lg focus:border-[var(--primary-color)] outline-none text-xs sm:text-sm" />
-                  ))}
+                    </form>
+                  )}
+                  {selectedMethod === "card" && (
+                    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                      <h3 className="font-semibold flex items-center gap-2 text-[color:var(--primary-color)] text-lg sm:text-xl">
+                        <Lucide.CreditCard size={20} /> Card Details
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Card Number</label>
+                          <input
+                            type="text"
+                            placeholder="1234 5678 9012 3456"
+                            value={cardData.number}
+                            onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] text-sm sm:text-base"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Cardholder Name</label>
+                          <input
+                            type="text"
+                            placeholder="John Doe"
+                            value={cardData.name}
+                            onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] text-sm sm:text-base"
+                            required
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+                            <input
+                              type="text"
+                              placeholder="MM/YY"
+                              value={cardData.expiry}
+                              onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
+                              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">CVV</label>
+                            <input
+                              type="password"
+                              placeholder="123"
+                              value={cardData.cvv}
+                              onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
+                              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full py-3 bg-[color:var(--primary-color)] text-white rounded-lg hover:bg-[color:var(--primary-color)]/90 transition-colors font-medium text-sm sm:text-base"
+                      >
+                        Pay {currency}{amount}
+                      </button>
+                    </form>
+                  )}
+                  {selectedMethod === "netbanking" && (
+                    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                      <h3 className="font-semibold flex items-center gap-2 text-[color:var(--primary-color)] text-lg sm:text-xl">
+                        <Lucide.Building2 size={20} /> Net Banking
+                      </h3>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Select Bank</label>
+                        <select
+                          value={selectedBank}
+                          onChange={(e) => setSelectedBank(e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] text-sm sm:text-base bg-white"
+                          required
+                        >
+                          <option value="">Select Bank</option>
+                          {banks.map((bank) => <option key={bank} value={bank}>{bank}</option>)}
+                        </select>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!selectedBank}
+                        className={`w-full py-3 rounded-lg font-medium text-sm sm:text-base transition-colors ${selectedBank ? "bg-[color:var(--primary-color)] text-white hover:bg-[color:var(--primary-color)]/90" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
+                      >
+                        Pay {currency}{amount}
+                      </button>
+                    </form>
+                  )}
+                  {selectedMethod === "wallet" && (
+                    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                      <h3 className="font-semibold flex items-center gap-2 text-[color:var(--primary-color)] text-lg sm:text-xl">
+                        <Lucide.Wallet size={20} /> Digital Wallet
+                      </h3>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Select Wallet</label>
+                        <select
+                          value={selectedWallet}
+                          onChange={(e) => setSelectedWallet(e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] text-sm sm:text-base bg-white"
+                          required
+                        >
+                          <option value="">Select Wallet</option>
+                          {wallets.map((wallet) => <option key={wallet} value={wallet}>{wallet}</option>)}
+                        </select>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!selectedWallet}
+                        className={`w-full py-3 rounded-lg font-medium text-sm sm:text-base transition-colors ${selectedWallet ? "bg-[color:var(--primary-color)] text-white hover:bg-[color:var(--primary-color)]/90" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
+                      >
+                        Pay {currency}{amount}
+                      </button>
+                    </form>
+                  )}
                 </div>
-                <div className="flex gap-2 sm:gap-3">
-                  <button type="button" onClick={goBack} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors border border-gray-300 text-gray-700">Back</button>
-                  <button onClick={handleOtpVerify} disabled={loading || otp.length !== 4} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors" style={{ backgroundColor: theme.accentColor, color: theme.surfaceColor }}>{loading ? <div className="flex items-center justify-center gap-1 sm:gap-2"><Lucide.Loader2 className="animate-spin" size={14} /> Verifying...</div> : "Verify & Pay"}</button>
+              )}
+              {currentStep === "otp-step" && (
+                <div className="text-center space-y-4 sm:space-y-6 max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-[color:var(--primary-color)]/10 rounded-full flex items-center justify-center mx-auto">
+                    <Lucide.Shield size={24} className="text-[color:var(--primary-color)]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[color:var(--primary-color)] text-lg sm:text-xl mb-2">Enter OTP</h3>
+                    <p className="text-sm text-gray-600">We've sent a 4-digit code to your registered mobile number</p>
+                  </div>
+                  <div className="flex gap-2 justify-center">
+                    {[0, 1, 2, 3].map((index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        maxLength={1}
+                        value={otp[index] || ""}
+                        onChange={(e) => {
+                          const newOtp = otp.split("");
+                          newOtp[index] = e.target.value;
+                          setOtp(newOtp.join(""));
+                          if (e.target.value && index < 3) {
+                            const nextInput = e.target.nextSibling;
+                            if (nextInput) nextInput.focus();
+                          }
+                        }}
+                        className="w-10 h-10 sm:w-12 sm:h-12 text-center font-bold border-2 border-[color:var(--primary-color)]/30 rounded-lg outline-none focus:border-[color:var(--primary-color)] text-sm sm:text-base"
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">Hint: Use OTP "1234" for demo</p>
+                  <button
+                    onClick={handleOtpVerify}
+                    disabled={otp.length !== 4}
+                    className={`w-full py-3 rounded-lg font-medium text-sm sm:text-base transition-colors ${otp.length === 4 ? "bg-[color:var(--primary-color)] text-white hover:bg-[color:var(--primary-color)]/90" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
+                  >
+                    {loading ? "Verifying..." : "Verify & Pay"}
+                  </button>
                 </div>
-                <p className="text-xs text-gray-500">Hint: Use OTP "1234" for demo</p>
-              </div>
-            )}
-            {currentStep === "processing" && (
-              <div className="text-center py-6 sm:py-8">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"><Lucide.Loader2 className="text-[var(--primary-color)] animate-spin" size={24} /></div>
-                <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2" style={{ color: theme.primaryColor }}>Processing Payment</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Please wait while we process your payment...</p>
-              </div>
-            )}
-            {currentStep === "success" && (
-              <div className="text-center py-6 sm:py-8">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"><Lucide.CheckCircle className="text-green-600" size={24} /></div>
-                <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-green-600">Payment Successful!</h3>
-                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Your payment of {currency}{amount} has been processed successfully</p>
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-1 sm:space-y-2 text-xs sm:text-sm">
-                  <div className="flex justify-between"><span>Amount Paid:</span><span className="font-semibold">{currency}{amount}</span></div>
-                  <div className="flex justify-between"><span>Payment Method:</span><span className="font-semibold">{paymentMethods.find(m => m.id === selectedMethod)?.name}</span></div>
-                  <div className="flex justify-between"><span>Transaction ID:</span><span className="font-semibold">TXN{Date.now()}</span></div>
+              )}
+              {currentStep === "success" && (
+                <div className="text-center space-y-4 sm:space-y-6 max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                    <Lucide.CheckCircle className="text-green-600" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-green-600 text-lg sm:text-xl mb-2">Payment Successful!</h3>
+                    <p className="text-sm text-gray-600">Your payment of {currency}{amount} has been processed successfully.</p>
+                  </div>
+                  <button
+                    onClick={onClose}
+                    className="w-full py-3 bg-[color:var(--primary-color)] text-white rounded-lg hover:bg-[color:var(--primary-color)]/90 transition-colors font-medium text-sm sm:text-base"
+                  >
+                    Close
+                  </button>
                 </div>
-                <button onClick={() => window.location.reload()} className="w-full mt-3 sm:mt-4 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors" style={{ backgroundColor: theme.accentColor, color: theme.surfaceColor }}>Continue</button>
-              </div>
-            )}
-            {currentStep === "failure" && (
-              <div className="text-center py-6 sm:py-8">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"><Lucide.XCircle className="text-red-600" size={24} /></div>
-                <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-red-600">Payment Failed</h3>
-                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Your payment could not be processed. Please try again.</p>
-                <div className="flex gap-2 sm:gap-3">
-                  <button onClick={resetPayment} className="flex-1 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors border border-[var(--accent-color)] text-[var(--accent-color)]">Try Again</button>
-                  <button onClick={() => window.location.reload()} className="flex-1 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors" style={{ backgroundColor: theme.primaryColor, color: theme.surfaceColor }}>Cancel</button>
-                </div>
-              </div>
-            )}
-            {currentStep === "confirm-payment" && selectedMethod === "upi" && (
-              <div className="text-center space-y-3 sm:space-y-4">
-                <h3 className="text-xs sm:text-sm font-semibold" style={{ color: theme.primaryColor }}>Confirm UPI Payment</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Please confirm your payment of {currency}{amount} using UPI.</p>
-                <div className="flex gap-2 sm:gap-3">
-                  <button type="button" onClick={goBack} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors border border-gray-300 text-gray-700">Back</button>
-                  <button onClick={() => { setCurrentStep("processing"); setLoading(true); setTimeout(() => { if (Math.random() > 0.3) { setCurrentStep("success"); onPaymentSuccess({ paymentId: `UPI_${Date.now()}`, method: "UPI", amount, bookingId }); } else { setCurrentStep("failure"); onPaymentFailure({ reason: "UPI payment declined" }); } setLoading(false); }, 3000); }} className="w-1/2 py-2 sm:py-3 text-xs sm:text-sm rounded-lg font-semibold hover:opacity-90 transition-colors" style={{ backgroundColor: theme.accentColor, color: theme.surfaceColor }}>Confirm Payment</button>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -222,4 +361,4 @@ const PaymentGatewayPage = ({ amount, bookingId, currency = "₹", onPaymentSucc
   );
 };
 
-export default PaymentGatewayPage;
+export default PaymentGateway;

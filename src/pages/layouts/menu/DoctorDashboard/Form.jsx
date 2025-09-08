@@ -655,162 +655,341 @@ const Form = () => {
     );
   };
 
-  return (
+ 
+return (
     <div className="min-h-screen">
       <div className="sticky top-0 z-10 bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3">
           <button
             onClick={handleBackToPatients}
-            className="flex items-center gap-2 px-4 text-[var(--primary-color)] rounded-lg transition-colors"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 text-[10px] sm:text-sm text-[var(--primary-color)] rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 sm:w-5 h-4 sm:h-5" />
             Back to Patient List
           </button>
         </div>
       </div>
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-[#01B07A] to-[#1A223F] max-w-[120rem] mx-auto mt-1 text-white rounded-b-xl shadow-md">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          {showPatientDetails && (
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 flex items-center justify-center rounded-full bg-white text-lg font-bold text-[#01B07A] shadow-md uppercase">
-                  {getPatientName()
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("") || "N/A"}
+      
+      {/* mobile */}
+      <div className="md:hidden flex flex-col items-center bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-b-xl shadow-md gap-1 p-4 w-full">
+  {/* Patient Avatar and Name */}
+  <div className="flex flex-col sm:flex-row sm:items-start w-full gap-2">
+    {/* Avatar */}
+    <div className="w-12 h-12 flex items-center justify-center  rounded-full bg-white text-xs font-bold text-[#01B07A] shadow-md uppercase mx-auto">
+      {getPatientName().split(" ").map((n) => n[0]).join("") || "N/A"}
+    </div>
+    {/* Name and Details */}
+    <div className="flex flex-col  w-full items-center sm:items-start">
+      <h2 className="text-sm sm:text-[16px] font-medium truncate max-w-[200px] text-center sm:text-left text-white">
+        <b>{getPatientName() || "Unknown Patient"}</b>
+      </h2>
+      {/* Patient Details (Tablet) */}
+      <div className="hidden sm:flex flex-wrap justify-between text-[8px] sm:text-[12px] text-white w-full gap-x-2">
+        <span><b>Contact:</b> {patient?.phone || patient?.contact || "N/A"}</span>
+        <span><b>Age:</b> {getPatientAge() || "N/A"}</span>
+        <span><b>Gender:</b> {patient?.gender || "N/A"}</span>
+        <span><b>Diagnosis:</b> {patient?.diagnosis || "N/A"}</span>
+      </div>
+      {/* Patient Details (Mobile) */}
+  <div className="w-full flex justify-center sm:hidden mx-4">
+  <div className="grid grid-cols-2 gap-x-4 text-[10px] sm:text-[12px] text-white max-w-fit">
+    <span className="text-right"><b>Contact:</b> {patient?.phone || patient?.contact || "N/A"}</span>
+    <span className="text-left"><b>Diagnosis:</b> {patient?.diagnosis || "N/A"}</span>
+    <span className="text-right"><b>Gender:</b> {patient?.gender || "N/A"}</span>
+    <span className="text-left"><b>Age:</b> {getPatientAge() || "N/A"}</span>
+  </div>
+</div>
+
+
+    </div>
+  </div>
+  {/* IPD Patient Details (if applicable) */}
+  {isIPDPatient && (
+    <div className="grid grid-cols-2 sm:grid-cols-2 gap-x-2 gap-y-1 text-[10px] sm:text-[14px] text-white w-full mt-1">
+      <div className="truncate">
+        <span><b>Room No:</b> {patient?.roomNo || "N/A"}</span>
+      </div>
+      <div className="truncate">
+        <span><b>IPD No:</b> {patient?.ipdNo || "N/A"}</span>
+      </div>
+    </div>
+  )}
+  {/* Buttons Grid (Mobile & Tablet) */}
+  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-0.5 mt-2 w-full">
+    {Object.values(formTypes).map((formType) => {
+      const Icon = formType.icon;
+      const isActive = activeForm === formType.id;
+      return (
+        <button
+          key={formType.id}
+          onClick={() => handleFormTypeClick(formType.id)}
+          className={`flex items-center justify-center gap-0.5 px-1.5 py-2 rounded text-[9px] sm:text-[12px] font-medium transition-all ${
+            isActive ? "bg-white text-[#01B07A] shadow-sm" : "bg-white/10 hover:bg-white/20 text-white"
+          }`}
+        >
+          {Icon && <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+          {formType.name}
+        </button>
+      );
+    })}
+    <button
+      onClick={printAllForms}
+      className="flex items-center justify-center gap-0.5 px-1.5 py-2 rounded text-[9px] sm:text-[12px] font-medium bg-white text-[#01B07A] hover:shadow-sm"
+    >
+      <Printer className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+      Print All
+    </button>
+  </div>
+</div>
+
+{/* tabs */}
+<div className="hidden md:block lg:hidden sticky top-0 z-50 bg-gradient-to-r from-[#01B07A] to-[#1A223F] w-full mx-auto mt-1 text-white rounded-b-xl shadow-md">
+  <div className="w-full px-3 py-2 sm:px-4 md:px-6 sm:py-3">
+    {showPatientDetails && (
+      <div className="flex flex-col gap-2 md:gap-3">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4">
+          <div className="flex flex-row items-center md:items-start gap-2 md:gap-4 w-full">
+            <div className="w-16 h-16 sm:w-16 sm:h-16 flex items-center justify-center rounded-full bg-white text-xs sm:text-sm font-bold text-[#01B07A] shadow-md uppercase mb-4 sm:mb-0">
+              {getPatientName().split(" ").map((n) => n[0]).join("") || "N/A"}
+            </div>
+            <div className="flex flex-col text-left w-full md:w-auto ">
+              <h2 className="text-xl sm:text-xl font-bold truncate max-w-[200px] sm:max-w-[300px] text-white">
+                {getPatientName() || "Unknown Patient"}
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-x-2 sm:gap-x-1 gap-y-1 text-[10px] sm:text-sm">
+                <div className="flex items-center gap-1 truncate">
+                  <span className="font-medium">Contact:</span>
+                  <span className="break-all truncate max-w-[120px]">{patient?.phone || patient?.contact || "N/A"}</span>
                 </div>
-                <div>
-                  <h2 className="text-xl font-semibold mb-1">
-                    {getPatientName() || "Unknown Patient"}
-                  </h2>
-                  <div className="grid grid-cols-4 gap-x-6 gap-y-1 text-sm">
-                    <div>
-                      <span className="font-medium">Contact:</span>{" "}
-                      {patient?.phone || patient?.contact || "N/A"}
-                    </div>
-                    <div>
-                      <span className="font-medium">Age:</span>{" "}
-                      {getPatientAge() || "N/A"}
-                    </div>
-                    <div>
-                      <span className="font-medium">Gender:</span>{" "}
-                      {patient?.gender || "N/A"}
-                    </div>
-                    <div>
-                      <span className="font-medium">Diagnosis:</span>{" "}
-                      {patient?.diagnosis || "N/A"}
-                    </div>
-                    {isIPDPatient && (
-                      <>
-                        <div>
-                          <span className="font-medium">Ward:</span>{" "}
-                          {getCombinedWardInfo()}
-                        </div>
-                        <div>
-                          <span className="font-medium">Status:</span>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ml-1 ${
-                              patient?.status?.toLowerCase() === "admitted"
-                                ? "bg-green-200 text-green-900"
-                                : patient?.status?.toLowerCase() ===
-                                  "under treatment"
-                                ? "bg-yellow-200 text-yellow-900"
-                                : patient?.status?.toLowerCase() ===
-                                  "discharged"
-                                ? "bg-gray-200 text-gray-900"
-                                : "bg-blue-200 text-blue-900"
-                            }`}
-                          >
-                            {patient?.status || "N/A"}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                <div className="truncate">
+                  <span className="font-medium">Age:</span>
+                  <span> {getPatientAge() || "N/A"}</span>
                 </div>
+                <div className="truncate">
+                  <span className="font-medium">Gender:</span>
+                  <span> {patient?.gender || "N/A"}</span>
+                </div>
+                <div className="col-span-2 sm:col-span-1 truncate">
+                  <span className="font-medium">Diagnosis:</span>
+                  <span> {patient?.diagnosis || "N/A"}</span>
+                </div>
+                {isIPDPatient && (
+                  <>
+                    <div className="col-span-2 sm:col-span-1 truncate">
+                      <span className="font-medium">Ward:</span>
+                      <span> {getCombinedWardInfo()}</span>
+                    </div>
+                    <div className="col-span-2 sm:col-span-2 flex">
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">Status:</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
+                            patient?.status?.toLowerCase() === "admitted"
+                              ? "bg-green-200 text-green-900"
+                              : patient?.status?.toLowerCase() === "under treatment"
+                              ? "bg-yellow-200 text-yellow-900"
+                              : patient?.status?.toLowerCase() === "discharged"
+                              ? "bg-gray-200 text-gray-900"
+                              : "bg-blue-200 text-blue-900"
+                          }`}
+                        >
+                          {patient?.status || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
-              {isIPDPatient && (
-                <div className="flex-shrink-0 mt-4 md:mt-0">
-                  <QuickLinksPanel
-                    isOpen={isMobileMenuOpen}
-                    setActiveForm={setActiveForm}
-                    patient={patient}
-                    onToggle={setIsMobileMenuOpen}
-                  />
-                </div>
-              )}
             </div>
-          )}
-          <div className="flex items-center justify-between gap-4 mt-6">
-            <div className="flex flex-wrap gap-2">
-              {Object.values(formTypes).map((formType) => {
-                const Icon = formType.icon;
-                const isActive = activeForm === formType.id;
-                return (
-                  <button
-                    key={formType.id}
-                    onClick={() => handleFormTypeClick(formType.id)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                      isActive
-                        ? "bg-white text-[#01B07A] shadow-md"
-                        : "bg-white/10 hover:bg-white/20 text-white"
-                    }`}
-                  >
-                    {Icon && <Icon className="w-3.5 h-3.5" />}
-                    {formType.name}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              onClick={printAllForms}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-[#01B07A] text-xs font-medium hover:shadow-lg transition-all"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              Print All
-            </button>
+            {isIPDPatient && (
+              <div className="w-full md:w-auto md:ml-auto mt-2 md:mt-0">
+                <QuickLinksPanel
+                  isOpen={isMobileMenuOpen}
+                  setActiveForm={setActiveForm}
+                  patient={patient}
+                  onToggle={setIsMobileMenuOpen}
+                />
+              </div>
+            )}
           </div>
         </div>
-      </header>
+        {/* Buttons Grid (Tablet) - 4 Columns with All Buttons */}
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2 mt-3">
+          {Object.values(formTypes).map((formType) => {
+            const Icon = formType.icon;
+            const isActive = activeForm === formType.id;
+            return (
+              <button
+                key={formType.id}
+                onClick={() => handleFormTypeClick(formType.id)}
+                className={`flex items-center justify-center gap-1 px-2 py-2.5 sm:px-1 rounded-md text-xs sm:text-sm font-medium transition-all ${
+                  isActive ? "bg-white text-[#01B07A] shadow-md" : "bg-white/10 hover:bg-white/20 text-white"
+                }`}
+              >
+                {Icon && <Icon className="w-3 h-3 sm:w-3.5 sm:h-4" />}
+                {formType.name}
+              </button>
+            );
+          })}
+          {/* Print All Button - Same size and style as other buttons */}
+          <button
+            onClick={printAllForms}
+            className="flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium bg-white text-[#01B07A] hover:shadow-lg transition-all"
+          >
+            <Printer className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            Print All
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+
+
+
+
+      {/* desk */}
+<header className="hidden lg:block sticky top-0 z-50 bg-gradient-to-r from-[#01B07A] to-[#1A223F] w-full mx-auto mt-1 text-white rounded-b-xl shadow-md">
+  <div className="w-full px-3 py-2 sm:px-4 md:px-6 sm:py-3">
+    {showPatientDetails && (
+      <div className="flex flex-col gap-2 md:gap-3">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4">
+          <div className="flex flex-row items-center md:items-start gap-2 md:gap-4 w-full">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full bg-white text-xs sm:text-sm md:text-lg font-bold text-[#01B07A] shadow-md uppercase mb-10 sm:mb-0">
+              {getPatientName().split(" ").map((n) => n[0]).join("") || "N/A"}
+            </div>
+            <div className="flex flex-col text-left w-full md:w-auto">
+              <h2 className="text-sm sm:text-base md:text-xl font-medium md:font-semibold mb-0.5 truncate max-w-[200px] sm:max-w-[300px] md:max-w-none">
+                {getPatientName() || "Unknown Patient"}
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-2 sm:gap-x-3 md:gap-x-4 gap-y-1 text-[10px] sm:text-xs md:text-sm">
+                <div className="flex items-center gap-1 truncate">
+                  <span className="font-medium">Contact:</span>
+                  <span className="break-all truncate max-w-[120px]">{patient?.phone || patient?.contact || "N/A"}</span>
+                </div>
+                <div className="truncate">
+                  <span className="font-medium">Age:</span>
+                  <span> {getPatientAge() || "N/A"}</span>
+                </div>
+                <div className="truncate">
+                  <span className="font-medium">Gender:</span>
+                  <span> {patient?.gender || "N/A"}</span>
+                </div>
+                <div className="col-span-2 sm:col-span-1 md:col-span-1 truncate">
+                  <span className="font-medium">Diagnosis:</span>
+                  <span> {patient?.diagnosis || "N/A"}</span>
+                </div>
+                {isIPDPatient && (
+                  <>
+                    <div className="col-span-2 sm:col-span-1 truncate">
+                      <span className="font-medium">Ward:</span>
+                      <span> {getCombinedWardInfo()}</span>
+                    </div>
+                    <div className="col-span-2 sm:col-span-1 md:col-span-2 flex">
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">Status:</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
+                            patient?.status?.toLowerCase() === "admitted"
+                              ? "bg-green-200 text-green-900"
+                              : patient?.status?.toLowerCase() === "under treatment"
+                              ? "bg-yellow-200 text-yellow-900"
+                              : patient?.status?.toLowerCase() === "discharged"
+                              ? "bg-gray-200 text-gray-900"
+                              : "bg-blue-200 text-blue-900"
+                          }`}
+                        >
+                          {patient?.status || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            {isIPDPatient && (
+              <div className="w-full md:w-auto md:ml-auto mt-2 md:mt-0">
+                <QuickLinksPanel
+                  isOpen={isMobileMenuOpen}
+                  setActiveForm={setActiveForm}
+                  patient={patient}
+                  onToggle={setIsMobileMenuOpen}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1.5 md:gap-2 justify-start mt-3 md:mt-4">
+          {Object.values(formTypes).map((formType) => {
+            const Icon = formType.icon;
+            const isActive = activeForm === formType.id;
+            return (
+              <button
+                key={formType.id}
+                onClick={() => handleFormTypeClick(formType.id)}
+                className={`flex items-center gap-1 px-3 py-2 rounded-md text-xs md:text-sm font-medium transition-all ${
+                  isActive ? "bg-white text-[#01B07A] shadow-md" : "bg-white/10 hover:bg-white/20 text-white"
+                }`}
+              >
+                {Icon && <Icon className="w-3.5 h-3.5" />}
+                {formType.name}
+              </button>
+            );
+          })}
+          <button
+            onClick={printAllForms}
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md bg-white text-[#01B07A] text-xs md:text-sm font-medium hover:shadow-lg transition-all"
+          >
+            <Printer className="w-4 h-4" />
+            Print All
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+</header>
+
       <div
-        className={`max-w-7xl mx-auto px-6 py-8 ${
-          isMobileMenuOpen ? "mr-72" : ""
+        className={`max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 ${
+          isMobileMenuOpen ? "mr-0 sm:mr-72" : ""
         } relative z-0`}
       >
-        <div className="mb-8">{renderActiveForm()}</div>
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 animate-fadeIn">
-          <h3 className="h3-heading mb-6">Digital Signature</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-4">
+        <div className="mb-6 sm:mb-8">{renderActiveForm()}</div>
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-8 animate-fadeIn">
+          <h3 className="text-base sm:text-lg font-medium sm:font-semibold mb-4 sm:mb-6">
+            Digital Signature
+          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[var(--primary-color)] mb-2">
+                <label className="block text-[10px] sm:text-sm font-medium text-[var(--primary-color)] mb-1.5 sm:mb-2">
                   Upload Signature:
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleSignatureUpload}
-                  className="input-field"
+                  className="input-field text-[10px] sm:text-sm"
                 />
               </div>
               {doctorSignature && (
-                <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <span className="text-sm font-medium text-blue-800">
+                <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <span className="text-[10px] sm:text-sm font-medium text-blue-800">
                     Preview:
                   </span>
                   <img
                     src={doctorSignature}
                     alt="Doctor's Signature"
-                    className="h-12 border border-blue-300 rounded shadow-sm"
+                    className="h-8 sm:h-12 border border-blue-300 rounded shadow-sm"
                   />
                 </div>
               )}
             </div>
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-[var(--primary-color)]">
+            <div className="space-y-3 sm:space-y-4">
+              <label className="block text-[10px] sm:text-sm font-medium text-[var(--primary-color)]">
                 Or Draw Signature:
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 sm:p-4">
                 <SignatureCanvas
                   ref={signaturePadRef}
                   canvasProps={{
@@ -821,19 +1000,19 @@ const Form = () => {
                   }}
                 />
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <button
                   onClick={handleSaveSignature}
-                  className="flex items-center gap-2 px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--accent-color)] transition-colors font-medium"
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--accent-color)] transition-colors text-[10px] sm:text-sm"
                 >
-                  <Save className="w-4 h-4" />
+                  <Save className="w-3 h-3 sm:w-4 sm:h-4" />
                   Save
                 </button>
                 <button
                   onClick={handleClearSignature}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-[10px] sm:text-sm"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3 sm:w-4 sm:h-4" />
                   Clear
                 </button>
               </div>
