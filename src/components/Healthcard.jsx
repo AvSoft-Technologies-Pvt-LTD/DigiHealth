@@ -36,8 +36,8 @@ const subscriptionPlans = [
     period: "/month",
     icon: Star,
     color: "gray",
-    gradient: "from-gray-600 to-gray-800", // Darker gradient for Silver
-    cardGradient: "from-[#374151] to-[#1F2937]", // Darker gradient for Silver card
+    gradient: "from-gray-600 to-gray-800",
+    cardGradient: "from-[#374151] to-[#1F2937]",
     qrColor: "#6B7280",
     benefits: [
       "Enhanced health card design",
@@ -215,22 +215,22 @@ function Healthcard({ hideLogin }) {
   if (!subscription || showSubscriptionModal) {
     return (
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-md flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-8 w-full max-w-4xl mx-auto max-h-[90vh] overflow-y-auto shadow-xl relative">
+        <div className="bg-white rounded-2xl p-6 w-full max-w-4xl mx-auto max-h-[90vh] overflow-y-auto shadow-xl relative">
           <button
             onClick={() => setShowSubscriptionModal(false)}
             className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 transition"
           >
             <X className="w-5 h-5 text-gray-600" />
           </button>
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
               Choose Your Health Plan
             </h2>
-            <p className="text-gray-600 max-w-xl mx-auto">
+            <p className="text-gray-600 max-w-xl mx-auto text-sm sm:text-base">
               Select the perfect plan for your healthcare needs and unlock premium features
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {subscriptionPlans.map((plan) => {
               const IconComponent = plan.icon;
               const isSelected = selectedPlan?.id === plan.id;
@@ -238,32 +238,32 @@ function Healthcard({ hideLogin }) {
                 <div
                   key={plan.id}
                   onClick={() => setSelectedPlan(plan)}
-                  className={`relative cursor-pointer rounded-xl p-6 border-2 transition-all duration-300 hover:scale-102 hover:shadow-lg ${
+                  className={`relative cursor-pointer rounded-xl p-4 sm:p-6 border-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
                     isSelected
-                      ? `border-${plan.color}-500 bg-${plan.color}-50 shadow-2xl ring-4 ring-${plan.color}-200`
+                      ? `border-${plan.color}-500 bg-${plan.color}-50 shadow-2xl ring-2 ring-${plan.color}-200`
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                   }`}
                 >
                   {plan.id === 'gold' && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-gradient-to-r from-yellow-500 to-yellow-700 text-white text-xs px-3 py-1 rounded-full font-semibold shadow-md whitespace-nowrap">
+                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-gradient-to-r from-yellow-500 to-yellow-700 text-white text-xs px-2 py-0.5 rounded-full font-semibold shadow-md whitespace-nowrap">
                         Most Popular
                       </span>
                     </div>
                   )}
-                  <div className="text-center mb-4">
-                    <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r ${plan.gradient} text-white mb-3 shadow-md`}>
-                      <IconComponent className="w-6 h-6" />
+                  <div className="text-center mb-3">
+                    <div className={`inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r ${plan.gradient} text-white mb-2 shadow-md`}>
+                      <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800 mb-1">{plan.name}</h3>
-                    <div className="mb-3">
-                      <span className="text-2xl font-bold text-gray-900">{plan.price}</span>
-                      <span className="text-gray-500 text-sm">{plan.period}</span>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-1">{plan.name}</h3>
+                    <div className="mb-2">
+                      <span className="text-xl sm:text-2xl font-bold text-gray-900">{plan.price}</span>
+                      <span className="text-gray-500 text-xs sm:text-sm">{plan.period}</span>
                     </div>
                   </div>
-                  <ul className="space-y-2 mb-6 min-h-[120px]">
+                  <ul className="space-y-1.5 mb-4 min-h-[100px]">
                     {plan.benefits.map((benefit, index) => (
-                      <li key={index} className="flex items-start gap-2 text-xs text-gray-600">
+                      <li key={index} className="flex items-start gap-1.5 text-xs sm:text-sm text-gray-600">
                         <Check className={`w-3 h-3 mt-0.5 text-${plan.color}-500 flex-shrink-0`} />
                         <span className="leading-snug">{benefit}</span>
                       </li>
@@ -271,8 +271,8 @@ function Healthcard({ hideLogin }) {
                   </ul>
                   {isSelected && (
                     <div className={`absolute inset-0 rounded-xl border-2 border-${plan.color}-500 bg-${plan.color}-50/20 flex items-center justify-center`}>
-                      <div className={`bg-${plan.color}-500 text-white rounded-full p-2 shadow-md`}>
-                        <Check className="w-5 h-5" />
+                      <div className={`bg-${plan.color}-500 text-white rounded-full p-1.5 sm:p-2 shadow-md`}>
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                     </div>
                   )}
@@ -280,21 +280,21 @@ function Healthcard({ hideLogin }) {
               );
             })}
           </div>
-          <div className="flex justify-center gap-4 mt-8">
+          <div className="flex justify-center gap-3 mt-6">
             <button
               onClick={() => selectedPlan && handleSubscriptionChoice(selectedPlan.id)}
               disabled={!selectedPlan}
-              className={`px-8 py-3 rounded-lg font-semibold transition-all duration-300 shadow-md ${
+              className={`px-6 py-2 sm:px-8 sm:py-3 rounded-lg font-semibold transition-all duration-300 shadow-md text-sm sm:text-base ${
                 selectedPlan
-                  ? `bg-gradient-to-r ${selectedPlan.gradient} text-white hover:shadow-lg transform hover:scale-102`
+                  ? `bg-gradient-to-r ${selectedPlan.gradient} text-white hover:shadow-lg transform hover:scale-[1.02]`
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
               }`}
             >
               {selectedPlan ? `Activate ${selectedPlan.name} Plan` : 'Select a Plan First'}
             </button>
           </div>
-          <div className="text-center mt-6 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
+          <div className="text-center mt-4 pt-3 border-t border-gray-200">
+            <p className="text-xs sm:text-sm text-gray-500">
               🔒 Secure payment • 30-day money back guarantee • Cancel anytime
             </p>
           </div>
@@ -309,17 +309,17 @@ function Healthcard({ hideLogin }) {
                      currentPlan?.id === "silver" ? "text-gray-200" : "text-blue-200";
 
   return (
-    <div className="flex flex-col items-center justify-center min-w-full p-4">
+    <div className="flex flex-col items-center justify-center min-w-full p-2 sm:p-4">
       <ToastContainer position="top-right" />
       {currentPlan && (
-        <div className="mb-6 flex items-center justify-center gap-3">
-          <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r ${currentPlan.gradient} text-white font-bold shadow-xl`}>
-            <currentPlan.icon className="w-5 h-5" />
-            <span className="text-lg">{currentPlan.name} Member</span>
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+          <div className={`inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-gradient-to-r ${currentPlan.gradient} text-white font-bold shadow-xl text-sm sm:text-lg`}>
+            <currentPlan.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>{currentPlan.name} Member</span>
           </div>
           <button
             onClick={handleChangePlan}
-            className="text-sm text-gray-300 hover:underline font-medium"
+            className="text-xs sm:text-sm text-gray-300 hover:underline font-medium"
           >
             Change Plan
           </button>
@@ -327,7 +327,7 @@ function Healthcard({ hideLogin }) {
       )}
       <div
         ref={cardRef}
-        className="relative w-full max-w-[400px] h-[250px] rounded-xl overflow-hidden shadow-xl mx-auto"
+        className="relative w-full max-w-[350px] sm:max-w-[400px] h-[220px] sm:h-[250px] rounded-xl overflow-hidden shadow-xl mx-auto"
         style={{
           background: currentPlan?.cardGradient ?
             `linear-gradient(135deg, ${currentPlan.cardGradient.replace('from-[', '').replace('] to-[', ', ').replace(']', '')})` :
@@ -335,62 +335,62 @@ function Healthcard({ hideLogin }) {
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-        <div className="relative h-full p-2 px-4 flex flex-col">
+        <div className="relative h-full p-1.5 sm:p-2 px-3 sm:px-4 flex flex-col">
           <div className="flex justify-between items-start">
             <div className="flex items-center"></div>
             <div className="text-right">
-              <div className="flex items-center">
+              <div className="flex items-center justify-end gap-1 sm:gap-2">
                 <img
                   src={logo}
                   alt="DigiHealth Logo"
-                  className="w-16 h-16 object-contain"
+                  className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
                 />
-                <h1 className={`text-xl font-bold ${accentColor}`}>DigiHealth</h1>
+                <h1 className={`text-lg sm:text-xl font-bold ${accentColor}`}>DigiHealth</h1>
               </div>
             </div>
           </div>
-          <div className="flex justify-between items-center -mt-3">
-            <div className="flex items-center gap-4">
+          <div className="flex justify-between items-center -mt-2 sm:-mt-3">
+            <div className="flex items-center gap-2 sm:gap-4">
               <img
                 src={userData.photo || "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150"}
                 alt="User"
-                className="w-20 h-20 object-cover rounded-full border-2 border-white shadow-[0_10PX_15px_rgba(0,0,0,0.3)]"
+                className="w-14 h-14 sm:w-20 sm:h-20 object-cover rounded-full border-2 border-white shadow-[0_6px_10px_rgba(0,0,0,0.3)]"
               />
               <div className="space-y-0.5">
-                <p className={`font-bold text-lg tracking-wider uppercase ${textColor}`}>
+                <p className={`font-bold text-base sm:text-lg tracking-wider uppercase ${textColor}`}>
                   {userData.firstName} {userData.lastName}
                 </p>
-                <div className="flex items-center gap-2">
-                  <div className={`flex items-center gap-2 text-sm ${textColor}`}>
-                    <span className={"font-semibold text-sm"}>DOB:</span>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <div className={`flex items-center gap-1 sm:gap-2 text-xs sm:text-sm ${textColor}`}>
+                    <span className="font-semibold text-xs sm:text-sm">DOB:</span>
                     <span>{formatDate(userData.dob)}</span>
-                    <span>|</span>
+                    <span className="hidden sm:inline">|</span>
                   </div>
-                  <div className={`flex items-center gap-2 text-sm ${textColor}`}>
-                    <span className={"font-semibold text-sm"}>Gender:</span>
+                  <div className={`flex items-center gap-1 sm:gap-2 text-xs sm:text-sm ${textColor}`}>
+                    <span className="font-semibold text-xs sm:text-sm">Gender:</span>
                     <span>{userData.gender}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div className="mt-4 flex justify-between items-center px-3">
+          <div className="mt-3 sm:mt-4 flex justify-between items-center px-2 sm:px-3">
             <div className="flex flex-col">
               <span className={`text-xs font-semibold ${textColor}`}>Health ID</span>
-              <div className={`font-mono text-2xl tracking-wider font-bold ${textColor} inline-block`}>
+              <div className={`font-mono text-lg sm:text-2xl tracking-wider font-bold ${textColor} inline-block`}>
                 {healthId}
               </div>
-              <div className={`flex items-center gap-2 text-xs mt-1 ${textColor}`}>
-                <span className={"text-xs font-bold"}>Valid Upto:</span>
+              <div className={`flex items-center gap-1 sm:gap-2 text-xs mt-1 ${textColor}`}>
+                <span className="text-xs font-bold">Valid Upto:</span>
                 <span>12/28</span>
               </div>
             </div>
-            <div className="w-16 h-16 bg-white p-1.5 rounded-lg flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white p-1 sm:p-1.5 rounded-lg flex items-center justify-center shadow-lg">
               {qrImage && (
                 <img
                   src={qrImage}
                   alt="QR Code"
-                  className="w-full h-full cursor-pointer border-2 border-white shadow-[0_10PX_15px_rgba(0,0,0,0.3)]"
+                  className="w-full h-full cursor-pointer border-2 border-white shadow-[0_6px_10px_rgba(0,0,0,0.3)]"
                   onClick={handleScan}
                 />
               )}
@@ -398,7 +398,7 @@ function Healthcard({ hideLogin }) {
           </div>
         </div>
       </div>
-      <div className="flex gap-4 mt-6 justify-center w-full">
+      <div className="flex gap-3 mt-4 sm:mt-6 justify-center w-full">
         <button
           onClick={() => {
             const title = document.title;
@@ -406,35 +406,35 @@ function Healthcard({ hideLogin }) {
             window.print();
             document.title = title;
           }}
-          className={`flex items-center gap-2 font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg ${
+          className={`flex items-center gap-1.5 sm:gap-2 font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.03] shadow-lg text-xs sm:text-sm ${
             currentPlan ? `bg-gradient-to-r ${currentPlan.gradient} text-white hover:shadow-xl` : 'bg-gray-600 text-white hover:bg-gray-700'
           }`}
         >
-          <Download className="w-4 h-4" />
+          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           Download Card
         </button>
         {!hideLogin && (
           <button
             onClick={() => navigate("/login")}
-            className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold"
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold text-xs sm:text-sm"
           >
             Login
           </button>
         )}
       </div>
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-sm mx-auto shadow-2xl border border-blue-100">
-            <div className="flex flex-col items-center mb-6">
-              <div className="bg-blue-100 rounded-full p-3 mb-3">
-                <KeyRound className="w-8 h-8 text-blue-600" />
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-xs sm:max-w-sm mx-auto shadow-2xl border border-blue-100">
+            <div className="flex flex-col items-center mb-4 sm:mb-6">
+              <div className="bg-blue-100 rounded-full p-2 sm:p-3 mb-2 sm:mb-3">
+                <KeyRound className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-1">OTP Verification</h2>
-              <p className="text-gray-500 text-sm text-center">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">OTP Verification</h2>
+              <p className="text-gray-500 text-xs sm:text-sm text-center">
                 Enter the 6-digit code sent to <span className="font-semibold">{userData.phone}</span>
               </p>
             </div>
-            <div className="flex justify-center gap-2 mb-6">
+            <div className="flex justify-center gap-1.5 sm:gap-2 mb-4 sm:mb-6">
               {otpDigits.map((digit, idx) => (
                 <input
                   key={idx}
@@ -444,21 +444,21 @@ function Healthcard({ hideLogin }) {
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleOtpChange(e, idx)}
-                  className="w-10 h-12 text-center text-xl border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  className="w-8 h-10 sm:w-10 sm:h-12 text-center text-lg sm:text-xl border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   autoFocus={idx === 0}
                 />
               ))}
             </div>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-3 sm:mb-4">
               <button
                 onClick={closeModal}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-xs sm:text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleVerifyOTP}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow"
+                className="px-4 sm:px-6 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow text-xs sm:text-sm"
               >
                 Verify
               </button>

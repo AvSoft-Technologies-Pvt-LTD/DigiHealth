@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from "react";
 import { Bell, MessageCircle, ArrowLeft, Search, Filter, CheckCircle, Circle, X, Clock, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -263,15 +265,15 @@ const PatientNotificationsPage = () => {
                           </>
                         )}
                         {notification.showPayButton && (
-                         <button
-  onClick={(e) => {
-    e.stopPropagation();
-    console.log("Pay now clicked for", notification.id);
-  }}
-  className="ml-auto bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-xs font-semibold px-3 py-1 rounded-full transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
->
-  Pay Now
-</button>
+        <button
+    onClick={(e) => {
+      e.stopPropagation();
+      navigate("/patientdashboard/payment");
+    }}
+    className="ml-auto bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-xs font-semibold px-3 py-1 rounded-full transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
+  >
+    Pay Now
+  </button>
 
                         )}
                       </div>
@@ -353,14 +355,14 @@ const PatientNotificationsPage = () => {
           <div className="mt-4">
           <div className="flex w-full">
                  <button
-  onClick={(e) => {
-    e.stopPropagation();
-    console.log("Pay now clicked for", notification.id);
-  }}
-  className="ml-auto bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-xs font-semibold px-3 py-1 rounded-full transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
->
-  Pay Now
-</button>
+    onClick={(e) => {
+      e.stopPropagation();
+      navigate("/patientdashboard/payment");
+    }}
+    className="ml-auto bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-xs font-semibold px-3 py-1 rounded-full transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
+  >
+    Pay Now
+  </button>
 </div>
 
           </div>
