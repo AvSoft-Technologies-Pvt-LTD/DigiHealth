@@ -34,6 +34,7 @@ import CartProduct from "./CartProduct";
 import DocsReader from "../../../../components/DocsReader";
 import SecondOpinion from "./SecondOpinion";
 import MedicalRecordDetails from "./MedicalRecordDetails";
+import Help from "./Help";
 const PdashboardRoutes = () => {
   return (
     <Routes>
@@ -59,7 +60,7 @@ const PdashboardRoutes = () => {
       <Route path="payment1" element={<PaymentLab />} />
       <Route path="track-appointment/:bookingId" element={<TrackAppointment />} />
       <Route path="/alldoctors" element={<DoctorList />} />
-
+   <Route path="help" element={<Help />} />
 
 <Route path="/shopping" element={<ProductCard />} />
       <Route path="/cartproduct" element={<CartProduct />} />

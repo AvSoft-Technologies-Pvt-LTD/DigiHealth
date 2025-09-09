@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Bell, MessageCircle, ArrowLeft, Search, Filter, CheckCircle, Circle } from "lucide-react";
+import { Bell, MessageCircle, ArrowLeft, Search, Filter, CheckCircle, Circle, X, Clock, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -9,12 +9,14 @@ const PatientNotificationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("https://67e631656530dbd3110f0322.mockapi.io/drnotifiy");
+      const res = await axios.get("https://67e631656530dbd3110f0322.mockapi.io/notify");
       const sorted = res.data
         .map((n) => ({
           ...n,
@@ -40,19 +42,16 @@ const PatientNotificationsPage = () => {
 
   useEffect(() => {
     let filtered = notifications;
-
     if (searchTerm) {
       filtered = filtered.filter((n) =>
         n.message.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
     if (filterType !== "all") {
       filtered = filtered.filter((n) =>
         filterType === "unread" ? n.unread : !n.unread
       );
     }
-
     setFilteredNotifications(filtered);
   }, [notifications, searchTerm, filterType]);
 
@@ -96,6 +95,17 @@ const PatientNotificationsPage = () => {
       default:
         return <Bell className="h-4 w-4" />;
     }
+  };
+
+  const openNotificationModal = (notification) => {
+    setSelectedNotification(notification);
+    setIsModalOpen(true);
+    markAsRead(notification.id);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedNotification(null);
   };
 
   const unreadCount = notifications.filter((n) => n.unread).length;
@@ -224,7 +234,7 @@ const PatientNotificationsPage = () => {
             filteredNotifications.map((notification) => (
               <div
                 key={notification.id}
-                onClick={() => markAsRead(notification.id)}
+                onClick={() => openNotificationModal(notification)}
                 className={`bg-white rounded-xl border cursor-pointer transition-all duration-200 hover:shadow-md ${
                   notification.unread
                     ? "border-l-4 border-l-[var(--primary-color)] border-gray-200 shadow-sm"
@@ -252,6 +262,18 @@ const PatientNotificationsPage = () => {
                             <span className="text-xs font-medium text-red-600">High Priority</span>
                           </>
                         )}
+                        {notification.showPayButton && (
+                         <button
+  onClick={(e) => {
+    e.stopPropagation();
+    console.log("Pay now clicked for", notification.id);
+  }}
+  className="ml-auto bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-xs font-semibold px-3 py-1 rounded-full transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
+>
+  Pay Now
+</button>
+
+                        )}
                       </div>
                       <p className="text-gray-900 font-medium leading-relaxed mb-2">
                         {notification.message}
@@ -260,17 +282,6 @@ const PatientNotificationsPage = () => {
                         <p className="text-sm text-gray-600 leading-relaxed">
                           {notification.description}
                         </p>
-                      )}
-                      {notification.showPayButton && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log("Pay now clicked for", notification.id);
-                          }}
-                          className="mt-4 bg-gradient-to-r from-[var(--accent-color)] to-yellow-400 hover:from-yellow-400 hover:to-[var(--accent-color)] text-[var(--primary-color)] text-sm font-semibold px-6 py-2 rounded-full transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
-                        >
-                          Pay Now
-                        </button>
                       )}
                     </div>
                   </div>
@@ -283,6 +294,82 @@ const PatientNotificationsPage = () => {
         {/* Bottom Spacing for Mobile */}
         <div className="h-20"></div>
       </div>
+
+      {/* Notification Detail Modal */}
+     {isModalOpen && selectedNotification && (
+  <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-end sm:items-center justify-center p-2 sm:p-4 z-50">
+    {/* Modal Container */}
+    <div className="bg-white rounded-xl sm:rounded-2xl w-full sm:w-[90%] sm:max-w-md max-h-[95vh] sm:max-h-[90vh] overflow-y-auto
+      sm:relative sm:my-auto sm:mx-auto fixed bottom-0 left-0 right-0 sm:static">
+      {/* Modal Header (Sticky) */}
+      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4 rounded-t-xl sm:rounded-t-2xl flex items-center justify-between">
+        <h2 className="text-sm sm:text-base font-bold text-gray-900">
+          Notification Details
+        </h2>
+        <button
+          onClick={closeModal}
+          className="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+        >
+          <X className="h-4 w-4 sm:h-5 sm:w-5" />
+        </button>
+      </div>
+      {/* Modal Content (Same as List Card) */}
+      <div className="p-4 sm:p-6">
+        <div className="flex items-start gap-3 sm:gap-4">
+          <div className={`p-2 sm:p-3 rounded-full ${getPriorityColor(selectedNotification.priority)} flex-shrink-0`}>
+            {getTypeIcon(selectedNotification.type)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
+              {selectedNotification.unread && (
+                <div className="w-2 h-2 bg-[var(--primary-color)] rounded-full flex-shrink-0" />
+              )}
+              <span className="text-xs text-gray-500 uppercase tracking-wide font-medium truncate">
+                {selectedNotification.type || "General"}
+              </span>
+              <span className="text-xs text-gray-400">•</span>
+              <span className="text-xs text-gray-500 whitespace-nowrap">
+                {getTimeAgo(selectedNotification.createdAt)}
+              </span>
+              {selectedNotification.priority === "high" && (
+                <>
+                  <span className="text-xs text-gray-400 hidden sm:inline">•</span>
+                  <span className="text-xs font-medium text-red-600 hidden sm:inline">High Priority</span>
+                </>
+              )}
+            </div>
+            <p className="text-sm sm:text-base text-gray-900 font-medium leading-relaxed mb-2">
+              {selectedNotification.message}
+            </p>
+            {selectedNotification.description && (
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                {selectedNotification.description}
+              </p>
+            )}
+          </div>
+        </div>
+        {/* Pay Now Button (if applicable) */}
+        {selectedNotification.showPayButton && (
+          <div className="mt-4">
+          <div className="flex w-full">
+                 <button
+  onClick={(e) => {
+    e.stopPropagation();
+    console.log("Pay now clicked for", notification.id);
+  }}
+  className="ml-auto bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-xs font-semibold px-3 py-1 rounded-full transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
+>
+  Pay Now
+</button>
+</div>
+
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

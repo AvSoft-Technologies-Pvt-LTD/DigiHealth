@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Bell, Pill, Menu, X, FileText, Ambulance, MessageCircle } from "lucide-react";
+import { Bell, Pill, Menu, X, FileText, Ambulance, MoreHorizontal } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import ModulesMenu from "../../components/microcomponents/ModulesMenu";
@@ -91,6 +91,11 @@ const HeaderWithNotifications = ({ toggleSidebar }) => {
     }
   };
 
+  // Handle module selection and close mobile header
+  const handleModuleSelect = () => {
+    closeMobileHeader();
+  };
+
   return (
     <>
       {/* Main Header */}
@@ -169,9 +174,8 @@ const HeaderWithNotifications = ({ toggleSidebar }) => {
                                     prev.map((notif) => (notif.id === n.id ? { ...notif, unread: false } : notif))
                                   )
                                 }
-                                className={`group px-6 py-4 border-b cursor-pointer transition-all duration-200 ${
-                                  n.unread ? "bg-[var(--accent-color)]/10" : "bg-white"
-                                } hover:bg-[var(--accent-color)]/20`}
+                                className={`group px-6 py-4 border-b cursor-pointer transition-all duration-200 ${n.unread ? "bg-[var(--accent-color)]/10" : "bg-white"
+                                  } hover:bg-[var(--accent-color)]/20`}
                               >
                                 <div className="flex justify-between gap-3">
                                   <div className="flex-1">
@@ -219,7 +223,7 @@ const HeaderWithNotifications = ({ toggleSidebar }) => {
                       >
                         <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white transition-all duration-300 group-hover:text-white" />
                       </button>
-                      <ModulesMenu user={user} />
+                      <ModulesMenu user={user} onModuleSelect={handleModuleSelect} />
                       <div className="relative">
                         <button
                           onClick={() => setShowNotifications(!showNotifications)}
@@ -257,9 +261,8 @@ const HeaderWithNotifications = ({ toggleSidebar }) => {
                                       prev.map((notif) => (notif.id === n.id ? { ...notif, unread: false } : notif))
                                     )
                                   }
-                                  className={`group px-6 py-4 border-b cursor-pointer transition-all duration-200 ${
-                                    n.unread ? "bg-[var(--accent-color)]/10" : "bg-white"
-                                  } hover:bg-[var(--accent-color)]/20`}
+                                  className={`group px-6 py-4 border-b cursor-pointer transition-all duration-200 ${n.unread ? "bg-[var(--accent-color)]/10" : "bg-white"
+                                    } hover:bg-[var(--accent-color)]/20`}
                                 >
                                   <div className="flex justify-between gap-3">
                                     <div className="flex-1">
@@ -297,7 +300,7 @@ const HeaderWithNotifications = ({ toggleSidebar }) => {
                   onClick={toggleMobileHeader}
                   className="relative flex items-center justify-center w-10 h-10 rounded-full bg-[var(--primary-color)] hover:bg-[var(--accent-color)] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
-                  <Menu className="h-5 w-5 text-white" />
+                  <MoreHorizontal className="h-5 w-5 text-white" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white w-5 h-5 text-xs rounded-full flex items-center justify-center animate-pulse font-semibold">
                       {unreadCount}
@@ -310,126 +313,125 @@ const HeaderWithNotifications = ({ toggleSidebar }) => {
         </div>
       </nav>
 
-      {/* Mobile & Tablet Header Drawer - Right Side */}
       {isMobileHeaderOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm xl:hidden"
-            onClick={closeMobileHeader}
-          />
-          {/* Right Drawer */}
-          <div className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 xl:hidden">
-            {/* Drawer Header */}
-            <div className="bg-[var(--primary-color)] px-6 py-4 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[var(--accent-color)] text-[var(--primary-color)] flex items-center justify-center rounded-full text-lg font-bold">
-                  {user?.firstName?.charAt(0) || "U"}
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold text-base">{getUserName()}</h3>
-                  <p className="text-gray-200 text-sm capitalize">{user?.userType || "User"}</p>
-                </div>
-              </div>
-              <button
-                onClick={closeMobileHeader}
-                className="text-white hover:bg-white/20 p-2 rounded-full transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
+        <div
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm xl:hidden"
+          onClick={closeMobileHeader}
+        />
+      )}
+
+      {/* Mobile & Tablet Header Drawer - Right Side */}
+      <div
+        className={`fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl z-50 xl:hidden transform transition-transform duration-300 ease-in-out ${isMobileHeaderOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+      >
+        {/* Drawer Header */}
+        <div className="bg-[var(--primary-color)] px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[var(--accent-color)] text-[var(--primary-color)] flex items-center justify-center rounded-full text-lg font-bold">
+              {user?.firstName?.charAt(0) || "U"}
             </div>
-            {/* Quick Actions Section */}
-            <div className="p-6 border-b border-gray-100">
-              <h4 className="text-gray-900 font-semibold text-sm uppercase tracking-wide mb-4">Quick Actions</h4>
-              <div className="grid grid-cols-1 gap-3">
-                {user?.userType?.toLowerCase() === "patient" ? (
-                  <>
-                    <button
-                      onClick={() => {
-                        navigate("/patientdashboard/pharmacy");
-                        closeMobileHeader();
-                      }}
-                      className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-xl border border-blue-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
-                    >
-                      <div className="w-12 h-12 bg-[var(--primary-color)] rounded-full flex items-center justify-center">
-                        <Pill className="h-6 w-6 text-white" />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">Pharmacy</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigate("/patientdashboard/ambulance");
-                        closeMobileHeader();
-                      }}
-                      className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 rounded-xl border border-red-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
-                    >
-                      <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
-                        <Ambulance className="h-6 w-6 text-white" />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">Ambulance</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleNotificationClick();
-                        closeMobileHeader();
-                      }}
-                      className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl border border-purple-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
-                    >
-                      <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                        <Bell className="h-6 w-6 text-white" />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">Notifications</span>
-                    </button>
-                  </>
-                ) : (
-                  ["doctor", "hospital"].includes(user?.userType?.toLowerCase()) && (
-                    <>
-                      <button
-                        onClick={() => {
-                          const specialization = localStorage.getItem("selectedSpecialization") || "General Physician";
-                          const dashboardPrefix = {
-                            doctor: "doctordashboard",
-                            hospital: "hospitaldashboard",
-                            freelancer: "freelancerdashboard",
-                          }[user?.userType?.toLowerCase()] || "";
-                          navigate(`/${dashboardPrefix}/specialization`, {
-                            state: { specialization, uploadedFiles: [] },
-                          });
-                          closeMobileHeader();
-                        }}
-                        className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-xl border border-green-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
-                      >
-                        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                          <FileText className="h-6 w-6 text-white" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Reports</span>
-                      </button>
-                      <div className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md">
-                        <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                          <ModulesMenu user={user} />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Modules</span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          handleNotificationClick();
-                          closeMobileHeader();
-                        }}
-                        className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl border border-purple-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
-                      >
-                        <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                          <Bell className="h-6 w-6 text-white" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Notifications</span>
-                      </button>
-                    </>
-                  )
-                )}
-              </div>
+            <div>
+              <h3 className="text-white font-semibold text-base">{getUserName()}</h3>
+              <p className="text-gray-200 text-sm capitalize">{user?.userType || "User"}</p>
             </div>
           </div>
-        </>
-      )}
+          <button
+            onClick={closeMobileHeader}
+            className="text-white hover:bg-white/20 p-2 rounded-full transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {/* Quick Actions Section */}
+        <div className="p-6 border-b border-gray-100">
+          <h4 className="text-gray-900 font-semibold text-sm uppercase tracking-wide mb-4">Quick Actions</h4>
+          <div className="grid grid-cols-1 gap-3">
+            {user?.userType?.toLowerCase() === "patient" ? (
+              <>
+                <button
+                  onClick={() => {
+                    navigate("/patientdashboard/pharmacy");
+                    closeMobileHeader();
+                  }}
+                  className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-xl border border-blue-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
+                >
+                  <div className="w-12 h-12 bg-[var(--primary-color)] rounded-full flex items-center justify-center">
+                    <Pill className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">Pharmacy</span>
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/patientdashboard/ambulance");
+                    closeMobileHeader();
+                  }}
+                  className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 rounded-xl border border-red-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
+                >
+                  <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+                    <Ambulance className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">Ambulance</span>
+                </button>
+                <button
+                  onClick={() => {
+                    handleNotificationClick();
+                    closeMobileHeader();
+                  }}
+                  className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl border border-purple-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
+                >
+                  <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                    <Bell className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">Notifications</span>
+                </button>
+              </>
+            ) : (
+              ["doctor", "hospital"].includes(user?.userType?.toLowerCase()) && (
+                <>
+                  <button
+                    onClick={() => {
+                      const specialization = localStorage.getItem("selectedSpecialization") || "General Physician";
+                      const dashboardPrefix = {
+                        doctor: "doctordashboard",
+                        hospital: "hospitaldashboard",
+                        freelancer: "freelancerdashboard",
+                      }[user?.userType?.toLowerCase()] || "";
+                      navigate(`/${dashboardPrefix}/specialization`, {
+                        state: { specialization, uploadedFiles: [] },
+                      });
+                      closeMobileHeader();
+                    }}
+                    className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-xl border border-green-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
+                  >
+                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                      <FileText className="h-6 w-6 text-white" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">Reports</span>
+                  </button>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-purple-200 p-4">
+                    <ModulesMenu user={user} onModuleSelect={closeMobileHeader} />
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleNotificationClick();
+                      closeMobileHeader();
+                    }}
+                    className="flex flex-row items-center gap-3 p-4 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl border border-purple-200 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
+                  >
+                    <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                      <Bell className="h-6 w-6 text-white" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">Notifications</span>
+                  </button>
+                </>
+              )
+            )}
+          </div>
+        </div>
+      </div>
+
+
     </>
   );
 };

@@ -6,21 +6,22 @@ import QRCode from "qrcode";
 import { Download, X, Check, Crown, Star, Shield, Zap, KeyRound } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import logo from '../assets/logo.png';
 
 const API_BASE_URL = "https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1";
 const CARD_API_URL = "https://681075c727f2fdac24116e70.mockapi.io/user/healthcard";
 
 const subscriptionPlans = [
   {
-    id: "standard",
-    name: "Standard",
+    id: "basic",
+    name: "Basic",
     price: "₹299",
     period: "/month",
     icon: Shield,
     color: "blue",
-    gradient: "from-blue-600 to-blue-800",
-    cardGradient: "from-[#1a3a5c] to-[#0e2a47]",
-    qrColor: "#01D48C",
+    gradient: "from-blue-700 to-blue-900",
+    cardGradient: "from-[#1E40AF] to-[#1E3A8A]",
+    qrColor: "#1E40AF",
     benefits: [
       "Basic health card",
       "QR code access",
@@ -29,21 +30,20 @@ const subscriptionPlans = [
     ]
   },
   {
-    id: "premium",
-    name: "Premium",
+    id: "silver",
+    name: "Silver",
     price: "₹599",
     period: "/month",
     icon: Star,
-    color: "purple",
-    gradient: "from-purple-600 to-purple-800",
-    cardGradient: "from-[#8B4513] to-[#A0522D]",
-    qrColor: "#8B4513",
+    color: "gray",
+    gradient: "from-gray-600 to-gray-800", // Darker gradient for Silver
+    cardGradient: "from-[#374151] to-[#1F2937]", // Darker gradient for Silver card
+    qrColor: "#6B7280",
     benefits: [
       "Enhanced health card design",
       "Priority medical support",
       "Detailed health analytics",
-      "Family member cards",
-      "Telemedicine access"
+      "Family member cards"
     ]
   },
   {
@@ -60,9 +60,7 @@ const subscriptionPlans = [
       "Premium gold card design",
       "24/7 health concierge",
       "Advanced health monitoring",
-      "Specialist consultations",
-      "Health insurance integration",
-      "Annual health checkups"
+      "Specialist consultations"
     ]
   },
   {
@@ -71,18 +69,15 @@ const subscriptionPlans = [
     price: "₹1,499",
     period: "/month",
     icon: Zap,
-    color: "gray",
-    gradient: "from-gray-700 to-gray-900",
-    cardGradient: "from-[#2C3E50] to-[#34495E]",
-    qrColor: "#95A5A6",
+    color: "purple",
+    gradient: "from-purple-800 to-purple-950",
+    cardGradient: "from-[#4C1D95] to-[#5B21B6]",
+    qrColor: "#7C3AED",
     benefits: [
       "Exclusive platinum card",
       "Personal health manager",
       "AI-powered health insights",
-      "Global medical coverage",
-      "VIP hospital access",
-      "Genetic health screening",
-      "Wellness coaching"
+      "Global medical coverage"
     ]
   }
 ];
@@ -95,9 +90,9 @@ function Healthcard({ hideLogin }) {
   const [qrImage, setQrImage] = useState("");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [showModal, setShowModal] = useState(false);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(true);
   const [subscription, setSubscription] = useState(localStorage.getItem("subscription") || null);
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState(subscriptionPlans.find(p => p.id === "gold"));
   const navigate = useNavigate();
   const userEmail = useSelector((state) => state.auth.user?.email);
   const cardRef = useRef(null);
@@ -210,7 +205,6 @@ function Healthcard({ hideLogin }) {
   };
 
   const handleChangePlan = () => {
-    setSelectedPlan(null);
     setShowSubscriptionModal(true);
   };
 
@@ -221,7 +215,13 @@ function Healthcard({ hideLogin }) {
   if (!subscription || showSubscriptionModal) {
     return (
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-md flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-8 w-full max-w-4xl mx-auto max-h-[90vh] overflow-y-auto shadow-xl">
+        <div className="bg-white rounded-2xl p-8 w-full max-w-4xl mx-auto max-h-[90vh] overflow-y-auto shadow-xl relative">
+          <button
+            onClick={() => setShowSubscriptionModal(false)}
+            className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 transition"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
               Choose Your Health Plan
@@ -230,12 +230,10 @@ function Healthcard({ hideLogin }) {
               Select the perfect plan for your healthcare needs and unlock premium features
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {subscriptionPlans.map((plan) => {
               const IconComponent = plan.icon;
               const isSelected = selectedPlan?.id === plan.id;
-
               return (
                 <div
                   key={plan.id}
@@ -246,14 +244,13 @@ function Healthcard({ hideLogin }) {
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                   }`}
                 >
-                  {plan.id === 'premium' && (
+                  {plan.id === 'gold' && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-3 py-1 rounded-full font-semibold shadow-md whitespace-nowrap">
+                      <span className="bg-gradient-to-r from-yellow-500 to-yellow-700 text-white text-xs px-3 py-1 rounded-full font-semibold shadow-md whitespace-nowrap">
                         Most Popular
                       </span>
                     </div>
                   )}
-
                   <div className="text-center mb-4">
                     <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r ${plan.gradient} text-white mb-3 shadow-md`}>
                       <IconComponent className="w-6 h-6" />
@@ -264,7 +261,6 @@ function Healthcard({ hideLogin }) {
                       <span className="text-gray-500 text-sm">{plan.period}</span>
                     </div>
                   </div>
-
                   <ul className="space-y-2 mb-6 min-h-[120px]">
                     {plan.benefits.map((benefit, index) => (
                       <li key={index} className="flex items-start gap-2 text-xs text-gray-600">
@@ -273,7 +269,6 @@ function Healthcard({ hideLogin }) {
                       </li>
                     ))}
                   </ul>
-
                   {isSelected && (
                     <div className={`absolute inset-0 rounded-xl border-2 border-${plan.color}-500 bg-${plan.color}-50/20 flex items-center justify-center`}>
                       <div className={`bg-${plan.color}-500 text-white rounded-full p-2 shadow-md`}>
@@ -285,14 +280,7 @@ function Healthcard({ hideLogin }) {
               );
             })}
           </div>
-
           <div className="flex justify-center gap-4 mt-8">
-            <button
-              onClick={() => setShowSubscriptionModal(false)}
-              className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-all duration-300 font-semibold"
-            >
-              Cancel
-            </button>
             <button
               onClick={() => selectedPlan && handleSubscriptionChoice(selectedPlan.id)}
               disabled={!selectedPlan}
@@ -305,7 +293,6 @@ function Healthcard({ hideLogin }) {
               {selectedPlan ? `Activate ${selectedPlan.name} Plan` : 'Select a Plan First'}
             </button>
           </div>
-
           <div className="text-center mt-6 pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-500">
               🔒 Secure payment • 30-day money back guarantee • Cancel anytime
@@ -318,14 +305,12 @@ function Healthcard({ hideLogin }) {
 
   const textColor = currentPlan?.id === "gold" ? "text-gray-800" : "text-white";
   const accentColor = currentPlan?.id === "gold" ? "text-gray-700" :
-                     currentPlan?.id === "platinum" ? "text-gray-300" :
-                     currentPlan?.id === "premium" ? "text-yellow-200" : "text-blue-200";
-  const borderColor = `border-${currentPlan?.color}-300/20`;
+                     currentPlan?.id === "platinum" ? "text-purple-300" :
+                     currentPlan?.id === "silver" ? "text-gray-200" : "text-blue-200";
 
   return (
     <div className="flex flex-col items-center justify-center min-w-full p-4">
       <ToastContainer position="top-right" />
-
       {currentPlan && (
         <div className="mb-6 flex items-center justify-center gap-3">
           <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r ${currentPlan.gradient} text-white font-bold shadow-xl`}>
@@ -334,89 +319,85 @@ function Healthcard({ hideLogin }) {
           </div>
           <button
             onClick={handleChangePlan}
-            className="text-sm text-gray-600 hover:text-gray-800 underline font-medium"
+            className="text-sm text-gray-300 hover:underline font-medium"
           >
             Change Plan
           </button>
         </div>
       )}
-
       <div
         ref={cardRef}
-        className={`relative w-full max-w-[400px] h-[250px] rounded-xl overflow-hidden shadow-xl border ${borderColor} mx-auto`}
+        className="relative w-full max-w-[400px] h-[250px] rounded-xl overflow-hidden shadow-xl mx-auto"
         style={{
           background: currentPlan?.cardGradient ?
             `linear-gradient(135deg, ${currentPlan.cardGradient.replace('from-[', '').replace('] to-[', ', ').replace(']', '')})` :
-            'linear-gradient(135deg, #1a3a5c, #0e2a47)'
+            'linear-gradient(135deg, #6B7280, #374151)'
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-        <div className="relative h-full p-6 flex flex-col justify-between">
+        <div className="relative h-full p-2 px-4 flex flex-col">
           <div className="flex justify-between items-start">
-            <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${currentPlan?.gradient || 'from-blue-600 to-blue-800'} flex items-center justify-center`}>
-                {currentPlan && <currentPlan.icon className="w-6 h-6 text-white" />}
-              </div>
-              <div>
+            <div className="flex items-center"></div>
+            <div className="text-right">
+              <div className="flex items-center">
+                <img
+                  src={logo}
+                  alt="DigiHealth Logo"
+                  className="w-16 h-16 object-contain"
+                />
                 <h1 className={`text-xl font-bold ${accentColor}`}>DigiHealth</h1>
-                <p className={`text-xs font-medium ${textColor} capitalize`}>
-                  {currentPlan?.name || 'Standard'} Healthcare ID
-                </p>
               </div>
-            </div>
-            <div className={`text-xs ${textColor} text-right`}>
-              <span className="block">Valid</span>
-              <span className="block font-mono">12/28</span>
             </div>
           </div>
-
-          <div className="flex justify-between items-center mt-2">
+          <div className="flex justify-between items-center -mt-3">
             <div className="flex items-center gap-4">
               <img
                 src={userData.photo || "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150"}
                 alt="User"
-                className="w-16 h-16 object-cover rounded-full border-3 border-white shadow-md"
+                className="w-20 h-20 object-cover rounded-full border-2 border-white shadow-[0_10PX_15px_rgba(0,0,0,0.3)]"
               />
-              <div className="space-y-1">
-                <p className={`font-bold text-lg tracking-wider ${textColor}`}>
+              <div className="space-y-0.5">
+                <p className={`font-bold text-lg tracking-wider uppercase ${textColor}`}>
                   {userData.firstName} {userData.lastName}
                 </p>
-                <div className={`flex items-center gap-2 text-xs ${textColor}`}>
-                  <span className={accentColor}>DOB:</span>
-                  <span>{formatDate(userData.dob)}</span>
+                <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-2 text-sm ${textColor}`}>
+                    <span className={"font-semibold text-sm"}>DOB:</span>
+                    <span>{formatDate(userData.dob)}</span>
+                    <span>|</span>
+                  </div>
+                  <div className={`flex items-center gap-2 text-sm ${textColor}`}>
+                    <span className={"font-semibold text-sm"}>Gender:</span>
+                    <span>{userData.gender}</span>
+                  </div>
                 </div>
-                <div className={`flex items-center gap-2 text-xs ${textColor}`}>
-                  <span className={accentColor}>Gender:</span>
-                  <span>{userData.gender}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute right-6 top-1/2 transform -translate-y-1/2">
-              <div className="w-16 h-16 bg-white p-1.5 rounded-lg flex items-center justify-center shadow-lg">
-                {qrImage && (
-                  <img
-                    src={qrImage}
-                    alt="QR Code"
-                    className="w-full h-full cursor-pointer"
-                    onClick={handleScan}
-                  />
-                )}
               </div>
             </div>
           </div>
-
-          <div className={`mt-6 pt-4 border-t ${currentPlan?.id === 'gold' ? 'border-gray-600/40' : 'border-white/20'}`}>
-            <div className="flex justify-between items-center">
-              <div>
-                <div className={`text-sm font-semibold ${accentColor}`}>Health ID</div>
-                <div className={`font-mono text-lg tracking-widest ${textColor}`}>{healthId}</div>
+          <div className="mt-4 flex justify-between items-center px-3">
+            <div className="flex flex-col">
+              <span className={`text-xs font-semibold ${textColor}`}>Health ID</span>
+              <div className={`font-mono text-2xl tracking-wider font-bold ${textColor} inline-block`}>
+                {healthId}
               </div>
+              <div className={`flex items-center gap-2 text-xs mt-1 ${textColor}`}>
+                <span className={"text-xs font-bold"}>Valid Upto:</span>
+                <span>12/28</span>
+              </div>
+            </div>
+            <div className="w-16 h-16 bg-white p-1.5 rounded-lg flex items-center justify-center shadow-lg">
+              {qrImage && (
+                <img
+                  src={qrImage}
+                  alt="QR Code"
+                  className="w-full h-full cursor-pointer border-2 border-white shadow-[0_10PX_15px_rgba(0,0,0,0.3)]"
+                  onClick={handleScan}
+                />
+              )}
             </div>
           </div>
         </div>
       </div>
-
       <div className="flex gap-4 mt-6 justify-center w-full">
         <button
           onClick={() => {
@@ -426,7 +407,7 @@ function Healthcard({ hideLogin }) {
             document.title = title;
           }}
           className={`flex items-center gap-2 font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg ${
-            currentPlan ? `bg-gradient-to-r ${currentPlan.gradient} text-white hover:shadow-xl` : 'bg-blue-600 text-white hover:bg-blue-700'
+            currentPlan ? `bg-gradient-to-r ${currentPlan.gradient} text-white hover:shadow-xl` : 'bg-gray-600 text-white hover:bg-gray-700'
           }`}
         >
           <Download className="w-4 h-4" />
@@ -441,7 +422,6 @@ function Healthcard({ hideLogin }) {
           </button>
         )}
       </div>
-
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-8 w-full max-w-sm mx-auto shadow-2xl border border-blue-100">

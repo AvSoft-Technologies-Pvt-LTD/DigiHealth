@@ -16,7 +16,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useNavigate } from "react-router-dom";
-import PaymentGatewayPage from "../../../../components/microcomponents/PaymentGatway";
+import PaymentGateway from "../../../../components/microcomponents/PaymentGatway";
 import { getHospitalDropdown } from "../../../../utils/masterService";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -63,27 +63,6 @@ const Emergency = () => {
   const debouncedHospitalSearch = useDebounce(hospitalSearch, 300);
   const [showHospitalDropdown, setShowHospitalDropdown] = useState(false);
   const hospitalRef = useRef(null);
-
-const filteredHospitals = useMemo(() => {
-  if (!debouncedHospitalSearch.trim()) return hospitals;
-  return hospitals.filter((hospital) =>
-    hospital.hospitalName?.toLowerCase().includes(debouncedHospitalSearch.toLowerCase())
-  );
-}, [hospitals, debouncedHospitalSearch]);
-
-  const hospitalMap = useMemo(() => {
-    const m = {};
-    for (const hospital of hospitals) {
-      m[String(hospital.id)] = hospital.hospitalName;
-    }
-    return m;
-  }, [hospitals]);
-
-  const resolveHospitalLabel = (val) => {
-    if (val == null) return "";
-    return hospitalMap[String(val)] || String(val);
-  };
-
   const [equip, setEquip] = useState([]);
   const [date, setDate] = useState(new Date());
   const [pickup, setPickup] = useState("");
@@ -125,19 +104,38 @@ const filteredHospitals = useMemo(() => {
   const BOOKING_API_URL = "https://mocki.io/v1/a5267894-5dcd-4423-b13d-6bbcf17509c6";
   const navigate = useNavigate();
 
- const fetchHospitals = async () => {
-  try {
-    const response = await getHospitalDropdown();
-    const sortedHospitals = (response.data || []).sort((a, b) =>
-      a.hospitalName.localeCompare(b.hospitalName)
+  const filteredHospitals = useMemo(() => {
+    if (!debouncedHospitalSearch.trim()) return hospitals;
+    return hospitals.filter((hospital) =>
+      hospital.hospitalName?.toLowerCase().includes(debouncedHospitalSearch.toLowerCase())
     );
-    setHospitals(sortedHospitals);
-  } catch (error) {
-    console.error("Failed to load hospitals:", error);
-    toast.error("Failed to load hospitals");
-  }
-};
+  }, [hospitals, debouncedHospitalSearch]);
 
+  const hospitalMap = useMemo(() => {
+    const m = {};
+    for (const hospital of hospitals) {
+      m[String(hospital.id)] = hospital.hospitalName;
+    }
+    return m;
+  }, [hospitals]);
+
+  const resolveHospitalLabel = (val) => {
+    if (val == null) return "";
+    return hospitalMap[String(val)] || String(val);
+  };
+
+  const fetchHospitals = async () => {
+    try {
+      const response = await getHospitalDropdown();
+      const sortedHospitals = (response.data || []).sort((a, b) =>
+        a.hospitalName.localeCompare(b.hospitalName)
+      );
+      setHospitals(sortedHospitals);
+    } catch (error) {
+      console.error("Failed to load hospitals:", error);
+      toast.error("Failed to load hospitals");
+    }
+  };
 
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(
@@ -632,12 +630,12 @@ const filteredHospitals = useMemo(() => {
     setShowPaymentGateway(true);
   };
 
-  const handlePaymentSuccess = async (paymentData) => {
+  const handlePaymentSuccess = async (method, paymentData) => {
     try {
       await axios.post(BOOKING_API_URL, {
         ...selectedBooking,
-        paymentId: paymentData.paymentId,
-        paymentMethod: paymentData.method,
+        paymentId: paymentData.paymentId || "PAY-" + Math.floor(Math.random() * 10000),
+        paymentMethod: method,
       });
       toast.success("Booking and payment completed successfully!");
       resetForm();
@@ -649,7 +647,7 @@ const filteredHospitals = useMemo(() => {
   };
 
   const handlePaymentFailure = (error) => {
-    toast.error(`Payment failed: ${error.reason}. Please try again or use a different payment method.`);
+    toast.error(`Payment failed: ${error.reason || "Unknown error"}. Please try again or use a different payment method.`);
     setShowPaymentGateway(false);
   };
 
@@ -683,19 +681,19 @@ const filteredHospitals = useMemo(() => {
           </div>
           <div className="space-y-3 sm:space-y-4">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <div className="flex-1 max-w-full sm:max-w-xl relative" ref={searchRef}>
+              <div className="flex-1 max-w-full sm:max-w-xl relative floating-input" data-placeholder="Search by location, ambulance name, service type..." ref={searchRef}>
                 <div className="relative">
                   <Lucide.Search
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4 sm:size-5"
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4 sm:size-5 z-10"
                     size={20}
                   />
                   <input
                     type="text"
-                    placeholder="Search by location (e.g., Hubli, Dharwad), ambulance name, service type..."
+                    placeholder=" "
                     value={searchQuery}
                     onChange={(e) => handleSearchInputChange(e.target.value)}
                     onKeyPress={handleSearchKeyPress}
-                    className="w-full pl-10 pr-10 py-2 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm sm:text-base"
+                    className="peer w-full pl-10 pr-10 py-2 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm sm:text-base"
                   />
                   {searchQuery && (
                     <button
@@ -706,14 +704,14 @@ const filteredHospitals = useMemo(() => {
                         setFilteredAmbulances([]);
                         setHasSearched(false);
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 bg-white rounded-full w-5 h-5 flex items-center justify-center transition-all duration-200 text-xs sm:text-sm"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 bg-white rounded-full w-5 h-5 flex items-center justify-center transition-all duration-200 text-xs sm:text-sm z-10"
                     >
                       ✕
                     </button>
                   )}
                 </div>
                 {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
+                  <div className="absolute z-[99999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto shadow-2xl">
                     {suggestions.map((suggestion, index) => (
                       <button
                         key={`${suggestion.type}-${suggestion.value}-${index}`}
@@ -941,7 +939,7 @@ const filteredHospitals = useMemo(() => {
   );
 
   const renderLocationPopup = () => (
-    <div className="fixed inset-0 backdrop-blur-sm bg-white/10 z-50 overflow-y-auto p-2 sm:p-4">
+    <div className="fixed inset-0 backdrop-blur-sm bg-white/10 z-[99998] overflow-y-auto p-2 sm:p-4">
       <div className="mx-auto max-w-full sm:max-w-4xl bg-white rounded-lg border border-gray-300 h-[95vh] sm:h-[90vh] flex flex-col mt-2 sm:mt-4">
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
@@ -956,24 +954,24 @@ const filteredHospitals = useMemo(() => {
         </div>
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 relative">
-            <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 z-[9999] pointer-events-auto">
+            <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 z-[99999] pointer-events-auto">
               <div className="bg-white rounded-lg border border-gray-300 p-2 sm:p-3 w-full max-w-full sm:max-w-3xl mx-auto">
                 <div className="flex gap-1.5 sm:gap-2" ref={mapSearchRef}>
-                  <div className="flex-1 relative">
-                    <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <div className="flex-1 relative floating-input" data-placeholder="Search location...">
+                    <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4 z-10" />
                     <input
                       type="text"
-                      placeholder="Search location..."
+                      placeholder=" "
                       value={mapSearchQuery}
                       onChange={(e) =>
                         handleLocationSearchInputChange(e.target.value)
                       }
                       onKeyPress={handleLocationSearchKeyPress}
-                      className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
+                      className="peer w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
                     />
                     {showLocationSuggestions &&
                       locationSuggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
+                        <div className="absolute z-[99999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto shadow-2xl">
                           {locationSuggestions.map((suggestion) => (
                             <button
                               key={suggestion.id}
@@ -1049,10 +1047,10 @@ const filteredHospitals = useMemo(() => {
           <div className="w-full sm:w-80 bg-gray-50 p-3 sm:p-4 overflow-y-auto">
             <div className="space-y-3 sm:space-y-4">
               <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2">Add New Address</p>
-              <div>
+              <div className="floating-input" data-placeholder="Flat / House no / Building name *">
                 <input
                   type="text"
-                  placeholder="Flat / House no / Building name *"
+                  placeholder=" "
                   value={addressForm.flatNo}
                   onChange={(e) =>
                     setAddressForm((prev) => ({
@@ -1060,13 +1058,13 @@ const filteredHospitals = useMemo(() => {
                       flatNo: e.target.value,
                     }))
                   }
-                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
+                  className="peer w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
-              <div>
+              <div className="floating-input" data-placeholder="Floor (optional)">
                 <input
                   type="text"
-                  placeholder="Floor (optional)"
+                  placeholder=" "
                   value={addressForm.floor}
                   onChange={(e) =>
                     setAddressForm((prev) => ({
@@ -1074,7 +1072,7 @@ const filteredHospitals = useMemo(() => {
                       floor: e.target.value,
                     }))
                   }
-                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
+                  className="peer w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
               <div>
@@ -1094,10 +1092,10 @@ const filteredHospitals = useMemo(() => {
                   readOnly
                 />
               </div>
-              <div>
+              <div className="floating-input" data-placeholder="Nearby landmark (optional)">
                 <input
                   type="text"
-                  placeholder="Nearby landmark (optional)"
+                  placeholder=" "
                   value={addressForm.landmark}
                   onChange={(e) =>
                     setAddressForm((prev) => ({
@@ -1105,17 +1103,17 @@ const filteredHospitals = useMemo(() => {
                       landmark: e.target.value,
                     }))
                   }
-                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
+                  className="peer w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
               <div className="border-t border-gray-200 my-3 sm:my-4" />
               <p className="text-xs sm:text-sm text-gray-600 mb-2.5 sm:mb-3">
                 Enter your details for seamless delivery experience
               </p>
-              <div>
+              <div className="floating-input" data-placeholder="Your name *">
                 <input
                   type="text"
-                  placeholder="Your name *"
+                  placeholder=" "
                   value={addressForm.name}
                   onChange={(e) =>
                     setAddressForm((prev) => ({
@@ -1123,25 +1121,27 @@ const filteredHospitals = useMemo(() => {
                       name: e.target.value,
                     }))
                   }
-                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
+                  className="peer w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
               <div>
                 <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2">
                   Your phone number *
                 </p>
-                <input
-                  type="tel"
-                  placeholder="9901341763"
-                  value={addressForm.phone}
-                  onChange={(e) =>
-                    setAddressForm((prev) => ({
-                      ...prev,
-                      phone: e.target.value,
-                    }))
-                  }
-                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
-                />
+                <div className="floating-input" data-placeholder="9901341763">
+                  <input
+                    type="tel"
+                    placeholder=" "
+                    value={addressForm.phone}
+                    onChange={(e) =>
+                      setAddressForm((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
+                    }
+                    className="peer w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
+                  />
+                </div>
               </div>
               <button
                 onClick={saveAddress}
@@ -1171,25 +1171,94 @@ const filteredHospitals = useMemo(() => {
     if (step === 0) {
       return (
         <div className="w-full space-y-4 sm:space-y-6">
+          <style jsx>{`
+            .floating-input {
+              position: relative;
+            }
+            
+            .floating-input input:not(:placeholder-shown) + .floating-label,
+            .floating-input input:focus + .floating-label,
+            .floating-input select:not(:placeholder-shown) + .floating-label,
+            .floating-input select:focus + .floating-label {
+              top: -0.5rem;
+              left: 0.75rem;
+              font-size: 0.75rem;
+              background-color: white;
+              padding: 0 0.25rem;
+              color: #3B82F6;
+            }
+            
+            .floating-input .floating-label {
+              position: absolute;
+              left: 0.75rem;
+              top: 50%;
+              transform: translateY(-50%);
+              background-color: transparent;
+              transition: all 0.2s;
+              pointer-events: none;
+              color: #6B7280;
+              font-size: 0.875rem;
+            }
+            
+            .floating-input input:focus,
+            .floating-input select:focus {
+              border-color: #3B82F6;
+              ring: 2px;
+              ring-color: rgba(59, 130, 246, 0.2);
+            }
+            
+            .floating-input[data-placeholder]::before {
+              content: attr(data-placeholder);
+              position: absolute;
+              left: 0.75rem;
+              top: 50%;
+              transform: translateY(-50%);
+              background-color: transparent;
+              transition: all 0.2s;
+              pointer-events: none;
+              color: #6B7280;
+              font-size: 0.875rem;
+              z-index: 1;
+            }
+            
+            .floating-input input:not(:placeholder-shown) ~ *::before,
+            .floating-input input:focus ~ *::before,
+            .floating-input select:not([value=""]) ~ *::before,
+            .floating-input select:focus ~ *::before {
+              top: -0.5rem;
+              left: 0.75rem;
+              font-size: 0.75rem;
+              background-color: white;
+              padding: 0 0.25rem;
+              color: #3B82F6;
+            }
+            
+            .floating-input .peer:not(:placeholder-shown) ~ .floating-label,
+            .floating-input .peer:focus ~ .floating-label {
+              top: -0.5rem;
+              left: 0.75rem;
+              font-size: 0.75rem;
+              background-color: white;
+              padding: 0 0.25rem;
+              color: #3B82F6;
+            }
+          `}</style>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="w-full relative" ref={pickupRef}>
-              <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
-                Pickup Location
-              </label>
-              <div className="relative">
+              <div className="relative floating-input" data-placeholder="Search pickup location">
                 <input
                   type="text"
-                  placeholder="Search pickup location"
+                  placeholder=" "
                   value={pickupSearch}
                   onChange={(e) => setPickupSearch(e.target.value)}
                   onFocus={() => setShowPickupDropdown(true)}
-                  className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
+                  className="peer w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
                   readOnly={!!pickup && !showPickupDropdown}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPickupDropdown(!showPickupDropdown)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
                 >
                   <Lucide.ChevronDown
                     className={`transition-transform duration-200 ${showPickupDropdown ? 'rotate-180' : ''}`}
@@ -1200,7 +1269,7 @@ const filteredHospitals = useMemo(() => {
               {showPickupDropdown &&
                 data.locations &&
                 data.locations.length > 0 && (
-                  <div className="absolute z-[999] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto">
+                  <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
                     {data.locations
                       .filter((item) =>
                         item.name
@@ -1223,80 +1292,73 @@ const filteredHospitals = useMemo(() => {
                   </div>
                 )}
             </div>
-           <div className="w-full relative" ref={hospitalRef}>
-  <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
-    Hospital Location
-  </label>
-  <div className="relative">
-    <input
-      type="text"
-      placeholder="Search hospital..."
-      value={hospitalSearch}
-      onChange={(e) => {
-        setHospitalSearch(e.target.value);
-        setShowHospitalDropdown(true);
-      }}
-      onFocus={() => setShowHospitalDropdown(true)}
-      className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
-    />
-    <button
-      type="button"
-      onClick={() => setShowHospitalDropdown(!showHospitalDropdown)}
-      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-    >
-      <Lucide.ChevronDown
-        className={`transition-transform duration-200 ${showHospitalDropdown ? 'rotate-180' : ''}`}
-        size={16}
-      />
-    </button>
-  </div>
-  {showHospitalDropdown && (
-    <div className="absolute z-[999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-hidden">
-      <div className="max-h-48 overflow-y-auto">
-        {filteredHospitals.map((hospital) => (
-          <div
-            key={hospital.id}
-            onClick={() => {
-              setSelectedHospital(hospital.hospitalName);
-              setSelectedHospitalId(hospital.id);
-              setShowHospitalDropdown(false);
-              setHospitalSearch(hospital.hospitalName);
-            }}
-            className="px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs sm:text-sm text-gray-900"
-          >
-            {hospital.hospitalName}
-          </div>
-        ))}
-        {filteredHospitals.length === 0 && (
-          <div className="px-3 py-4 text-center text-gray-500 text-xs sm:text-sm">
-            No hospitals found
-          </div>
-        )}
-      </div>
-    </div>
-  )}
-</div>
-
+            <div className="w-full relative" ref={hospitalRef}>
+              <div className="relative floating-input" data-placeholder="Search hospital...">
+                <input
+                  type="text"
+                  placeholder=" "
+                  value={hospitalSearch}
+                  onChange={(e) => {
+                    setHospitalSearch(e.target.value);
+                    setShowHospitalDropdown(true);
+                  }}
+                  onFocus={() => setShowHospitalDropdown(true)}
+                  className="peer w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowHospitalDropdown(!showHospitalDropdown)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                >
+                  <Lucide.ChevronDown
+                    className={`transition-transform duration-200 ${showHospitalDropdown ? 'rotate-180' : ''}`}
+                    size={16}
+                  />
+                </button>
+              </div>
+              {showHospitalDropdown && (
+                <div className="absolute z-[10000] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-hidden shadow-2xl">
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredHospitals.map((hospital) => (
+                      <div
+                        key={hospital.id}
+                        onClick={() => {
+                          setSelectedHospital(hospital.hospitalName);
+                          setSelectedHospitalId(hospital.id);
+                          setShowHospitalDropdown(false);
+                          setHospitalSearch(hospital.hospitalName);
+                        }}
+                        className="px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs sm:text-sm text-gray-900"
+                      >
+                        {hospital.hospitalName}
+                      </div>
+                    ))}
+                    {filteredHospitals.length === 0 && (
+                      <div className="px-3 py-4 text-center text-gray-500 text-xs sm:text-sm">
+                        No hospitals found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="w-full relative" ref={typeRef}>
-              <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
-                Select Ambulance Type
-              </label>
-              <div className="relative">
+              <div className="relative floating-input" data-placeholder="Search ambulance type">
                 <input
                   type="text"
-                  placeholder="Search ambulance type"
+                  placeholder=" "
                   value={typeSearch}
                   onChange={(e) => setTypeSearch(e.target.value)}
                   onFocus={() => setShowTypeDropdown(true)}
-                  className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
+                  className="peer w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
                   readOnly={!!type && !showTypeDropdown}
                 />
                 <button
                   type="button"
                   onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
                 >
                   <Lucide.ChevronDown
                     className={`transition-transform duration-200 ${showTypeDropdown ? 'rotate-180' : ''}`}
@@ -1305,7 +1367,7 @@ const filteredHospitals = useMemo(() => {
                 </button>
               </div>
               {showTypeDropdown && (
-                <div className="absolute z-[999] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto">
+                <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
                   {data.ambulanceTypes
                     .filter((item) =>
                       item.name.toLowerCase().includes(typeSearch.toLowerCase())
@@ -1327,23 +1389,20 @@ const filteredHospitals = useMemo(() => {
               )}
             </div>
             <div className="w-full relative" ref={catRef}>
-              <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
-                Select Category
-              </label>
-              <div className="relative">
+              <div className="relative floating-input" data-placeholder="Search category">
                 <input
                   type="text"
-                  placeholder="Search category"
+                  placeholder=" "
                   value={catSearch}
                   onChange={(e) => setCatSearch(e.target.value)}
                   onFocus={() => setShowCatDropdown(true)}
-                  className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
+                  className="peer w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
                   readOnly={!!cat && !showCatDropdown}
                 />
                 <button
                   type="button"
                   onClick={() => setShowCatDropdown(!showCatDropdown)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
                 >
                   <Lucide.ChevronDown
                     className={`transition-transform duration-200 ${showCatDropdown ? 'rotate-180' : ''}`}
@@ -1352,7 +1411,7 @@ const filteredHospitals = useMemo(() => {
                 </button>
               </div>
               {showCatDropdown && (
-                <div className="absolute z-[999] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto">
+                <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
                   {data.categories
                     .filter((item) =>
                       item.name.toLowerCase().includes(catSearch.toLowerCase())
@@ -1376,9 +1435,6 @@ const filteredHospitals = useMemo(() => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="w-full relative" ref={equipRef}>
-              <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
-                Select Equipment Requirements
-              </label>
               <button
                 type="button"
                 className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg flex justify-between items-center cursor-pointer hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
@@ -1395,7 +1451,7 @@ const filteredHospitals = useMemo(() => {
                 />
               </button>
               {showEquip && (
-                <div className="absolute z-[999] mt-1 w-full bg-white border border-gray-200 rounded-lg max-h-48 overflow-auto">
+                <div className="absolute z-[10000] mt-1 w-full bg-white border border-gray-200 rounded-lg max-h-48 overflow-auto shadow-2xl">
                   {data.equipment.map((item) => (
                     <label
                       key={item.id}
@@ -1434,17 +1490,29 @@ const filteredHospitals = useMemo(() => {
                 </div>
               )}
             </div>
-            <div className="w-full">
-              <label className="block text-xs sm:text-sm font-medium mb-2.5 sm:mb-3 text-gray-700">
-                Select Date
-              </label>
+            <div className="w-full relative">
               <ReactDatePicker
                 selected={date}
                 onChange={(selectedDate) => setDate(selectedDate)}
                 minDate={new Date()}
                 className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
                 dateFormat="yyyy-MM-dd"
+                popperProps={{
+                  positionFixed: true,
+                }}
+                popperClassName="react-datepicker-popper-fixed"
               />
+              <style jsx global>{`
+                .react-datepicker-popper-fixed {
+                  z-index: 99999 !important;
+                }
+                .react-datepicker {
+                  z-index: 99999 !important;
+                }
+                .react-datepicker__triangle {
+                  z-index: 99999 !important;
+                }
+              `}</style>
             </div>
           </div>
         </div>
@@ -1615,6 +1683,7 @@ const filteredHospitals = useMemo(() => {
       </>
     );
   }
+
   return (
     <div className="w-full min-h-screen bg-gray-50 py-4 px-2 sm:py-8 sm:px-4">
       <ToastContainer
@@ -1628,14 +1697,38 @@ const filteredHospitals = useMemo(() => {
         pauseOnHover
       />
       {showLocationPopup && renderLocationPopup()}
-      {showPaymentGateway ? (
-        <PaymentGatewayPage
+      {showPaymentGateway && (
+        <PaymentGateway
+          isOpen={showPaymentGateway}
+          onClose={() => setShowPaymentGateway(false)}
           amount={calculateEquipmentTotal()}
-          bookingId={selectedBooking?.id}
-          onPaymentSuccess={handlePaymentSuccess}
-          onPaymentFailure={handlePaymentFailure}
+          bookingId={selectedBooking?.id || "EMG-" + Math.floor(Math.random() * 10000)}
+          onPay={handlePaymentSuccess}
+          bookingDetails={{
+            serviceType: "Emergency Ambulance",
+            doctorName: "N/A",
+            hospitalName: selectedHospital || "N/A",
+            appointmentDate: format(date, "yyyy-MM-dd"),
+            appointmentTime: "ASAP",
+            patient: [
+              {
+                name: addressForm.name || "Patient Name",
+                age: 30,
+                gender: "Unknown",
+                patientId: "PT-" + Math.floor(Math.random() * 10000),
+              },
+            ],
+            contactEmail: "patient@example.com",
+            contactPhone: addressForm.phone || "9999999999",
+            fareBreakup: {
+              consultationFee: calculateEquipmentTotal() * 0.8,
+              taxes: calculateEquipmentTotal() * 0.15,
+              serviceFee: calculateEquipmentTotal() * 0.05,
+            },
+          }}
         />
-      ) : (
+      )}
+      {!showPaymentGateway && (
         <div className="max-w-full sm:max-w-6xl mx-auto bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gray-800">
             <div className="flex items-center gap-2.5 sm:gap-3">

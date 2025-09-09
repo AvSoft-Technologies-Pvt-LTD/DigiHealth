@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Menu } from "lucide-react"; // Assuming you're using lucide-react for the Menu icon
 import {
   FaUsers,
   FaTh,
@@ -9,7 +10,7 @@ import {
   FaCapsules,
   FaUserClock,
   FaListOl,
-  FaBed, // Import the bed icon
+  FaBed,
 } from "react-icons/fa";
 
 const modules = [
@@ -18,17 +19,17 @@ const modules = [
   { name: "NewToken", icon: FaUserClock },
   { name: "DisplayToken", icon: FaListOl },
   { name: "QueueStatus", icon: FaUsers },
-  { name: "BedManagement", icon: FaBed }, // Add the new module
+  { name: "BedManagement", icon: FaBed },
 ];
 
-export default function ModulesMenu({ user }) {
+// ModulesMenu.jsx
+export default function ModulesMenu({ user, onModuleSelect }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const clickOutside = (e) =>
-      !menuRef.current?.contains(e.target) && setOpen(false);
+    const clickOutside = (e) => !menuRef.current?.contains(e.target) && setOpen(false);
     document.addEventListener("mousedown", clickOutside);
     return () => document.removeEventListener("mousedown", clickOutside);
   }, []);
@@ -37,8 +38,8 @@ export default function ModulesMenu({ user }) {
     user?.userType?.toLowerCase() === "doctor"
       ? "/doctordashboard"
       : user?.userType?.toLowerCase() === "hospital"
-      ? "/hospitaldashboard"
-      : "";
+        ? "/hospitaldashboard"
+        : "";
 
   const routes = {
     Admin: "/dr-admin",
@@ -48,48 +49,57 @@ export default function ModulesMenu({ user }) {
     Laboratory: "/labmodule",
     Frontdesk: "/frontdesk",
     QueueStatus: "/queuemanagement",
-    BedroomManagement: "/bedroommanagement", // Add the new route
+    BedManagement: "/bedroommanagement",
+    Reports: "/reports",
   };
 
   const handleClick = (name) => {
     navigate(`${basePath}${routes[name] || ""}`);
     setOpen(false);
+    if (onModuleSelect) {
+      onModuleSelect();
+    }
   };
 
   return (
     <div ref={menuRef} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="p-3 bg-[var(--primary-color)] text-white rounded-full hover:bg-[var(--accent-color)] transition"
+        className="flex flex-row items-center gap-3 p-2 rounded-lg hover:bg-gray-100 w-full"
       >
-        <FaTh size={20} />
+        <div className="w-12 h-12 bg-[var(--primary-color)] rounded-full flex items-center justify-center">
+          <FaTh className="h-6 w-6 text-white" />
+        </div>
+        <span className="text-sm font-medium text-gray-700 xl:hidden">Modules</span>
       </button>
       {open && (
-        <div className="absolute top-14 right-0 bg-white rounded-xl shadow-xl px-4 py-4 flex gap-4 md:flex-row flex-col">
-          {modules.map(({ name, icon: Icon }, i) => (
-            <button
-              key={name}
-              onClick={() => handleClick(name)}
-              className="flex flex-col items-center text-center group transition-all p-2"
-              style={{ animation: `slideUpFadeIn 0.5s ${i * 0.08}s both` }}
-            >
-              <div
-                className="mb-2 w-12 h-12 flex items-center justify-center rounded-full
-                bg-gradient-to-br from-[#1CA4AC]/20 to-[#68C723]/20 text-[var(--primary-color)]
-                group-hover:from-[#1CA4AC] group-hover:to-[#68C723] group-hover:text-white
-                shadow-md group-hover:scale-110 transition duration-300"
-              >
-                <Icon className="text-xl" />
-              </div>
-              <span
-                className="text-sm font-medium text-[var(--primary-color)] group-hover:text-[var(--accent-color)]"
-              >
-                {name}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+  <div className="absolute top-16 right-0 bg-white rounded-xl shadow-xl p-4 w-100 xl:w-auto">
+    <div className="grid grid-cols-3 xl:flex xl:flex-row xl:space-x-2">
+      {modules.map(({ name, icon: Icon }, i) => (
+        <button
+          key={name}
+          onClick={() => handleClick(name)}
+          className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-50"
+        >
+          <div
+            className="w-12 h-12 flex items-center justify-center rounded-full
+            bg-gradient-to-br from-[#1CA4AC]/20 to-[#68C723]/20 text-[var(--primary-color)]
+            group-hover:from-[#1CA4AC] group-hover:to-[#68C723] group-hover:text-white
+            shadow-md group-hover:scale-110 transition duration-300"
+          >
+            <Icon className="text-xl" />
+          </div>
+          <span
+            className="mt-2 text-sm font-medium text-[var(--primary-color)] group-hover:text-[var(--accent-color)]"
+          >
+            {name}
+          </span>
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

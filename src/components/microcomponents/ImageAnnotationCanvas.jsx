@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import {
   ArrowLeft, Save, Download, Trash2, Type, Square, Circle, ArrowRight,
-  Undo, Redo, Move, Loader2, Pencil, Eraser, Printer, Image as ImageIcon
+  Undo, Redo, Move, Loader2, Pencil, Eraser, Printer, Image as ImageIcon, ChevronDown
 } from "lucide-react";
 
 const templateTypes = [
@@ -98,7 +96,6 @@ const ImageAnnotation = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
       saveToHistory();
-      toast.success(`${template.fileName} template loaded successfully!`, { autoClose: 2000 });
     };
     img.src = template.originalFile || `data:image/jpeg;base64,${template.image}`;
   };
@@ -183,7 +180,6 @@ const ImageAnnotation = () => {
     const storedAnnotations = JSON.parse(localStorage.getItem("annotatedImages") || "[]");
     storedAnnotations.push(annotatedImage);
     localStorage.setItem("annotatedImages", JSON.stringify(storedAnnotations));
-    toast.success("Annotated image saved successfully!", { autoClose: 2000 });
   };
 
   const handleDownload = () => {
@@ -192,64 +188,50 @@ const ImageAnnotation = () => {
     link.download = `annotated_image_${new Date().toISOString().split("T")[0]}.png`;
     link.href = canvas.toDataURL();
     link.click();
-    toast.success("Image downloaded successfully!", { autoClose: 2000 });
   };
 
   const clearCanvas = () => {
-    if (window.confirm("Are you sure you want to clear all annotations?")) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-      if (selectedTemplate) {
-        const img = new Image();
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0);
-          saveToHistory();
-        };
-        img.src = selectedTemplate.originalFile || `data:image/jpeg;base64,${selectedTemplate.image}`;
-      } else if (initialImage) {
-        const img = new Image();
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0);
-          saveToHistory();
-        };
-        img.src = initialImage;
-      } else {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (selectedTemplate) {
+      const img = new Image();
+      img.onload = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
         saveToHistory();
-      }
-      toast.success("Canvas cleared!", { autoClose: 2000 });
+      };
+      img.src = selectedTemplate.originalFile || `data:image/jpeg;base64,${selectedTemplate.image}`;
+    } else if (initialImage) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        saveToHistory();
+      };
+      img.src = initialImage;
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      saveToHistory();
     }
   };
 
   return (
     <div
-      className="bg-gray-100 font-sans flex flex-col h-screen"
+      className="bg-gray-100 font-sans flex flex-col"
       onKeyDown={handleKeyDown}
       onKeyUp={handleKeyUp}
       tabIndex={0}
     >
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        limit={1}
-      />
-      <div className="bg-white shadow-sm border-b p-2 flex items-center justify-between">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" /> Back
-        </button>
-        <div className="flex items-center gap-2">
+      <div className="bg-white shadow-sm border-b p-2 flex flex-col md:flex-row items-center justify-between gap-2">
+        <div className="w-full md:w-auto flex items-center">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" /> Back
+          </button>
+        </div>
+        <div className="w-full md:w-auto flex items-center gap-2">
           <input
             type="color"
             value={currentColor}
@@ -281,9 +263,9 @@ const ImageAnnotation = () => {
             <Redo className="w-5 h-5" />
           </button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="w-full md:w-auto flex flex-col md:flex-row items-center gap-2">
           <select
-            className="p-2 border border-gray-300 rounded-lg"
+            className="p-2 border border-gray-300 rounded-lg w-full md:w-auto"
             value={selectedTemplateType}
             onChange={(e) => handleTemplateTypeChange(e.target.value)}
           >
@@ -291,17 +273,18 @@ const ImageAnnotation = () => {
               <option key={type.id} value={type.id}>{type.name}</option>
             ))}
           </select>
-          <div className="relative">
+          <div className="relative w-full md:w-auto mr-">
             <button
               type="button"
               onClick={() => setShowTemplateDropdown(!showTemplateDropdown)}
-              className="p-2 border border-gray-300 rounded-lg bg-white"
+              className="p-2 border border-gray-300 rounded-lg bg-white flex items-center gap-1 w-full md:w-auto"
               disabled={templateLoading || availableTemplates.length === 0}
             >
               {templateLoading ? "Loading..." : selectedTemplate ? selectedTemplate.fileName : "Select template"}
+              <ChevronDown className="w-4 h-4" />
             </button>
             {showTemplateDropdown && availableTemplates.length > 0 && (
-              <div className="absolute top-full right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto w-64">
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto w-full md:w-64">
                 <div className="p-2">
                   <button
                     onClick={() => {
@@ -349,7 +332,7 @@ const ImageAnnotation = () => {
         </div>
       </div>
       <div className="flex-1 p-0 overflow-hidden">
-        <div className="bg-white h-[calc(100vh-120px)] w-full flex items-center justify-center overflow-hidden">
+        <div className="bg-white h-[calc(95vh-120px)] w-full flex items-center justify-center overflow-hidden">
           <canvas
             ref={canvasRef}
             onMouseMove={handleMouseMove}
