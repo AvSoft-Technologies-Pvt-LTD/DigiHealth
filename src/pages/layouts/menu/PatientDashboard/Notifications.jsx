@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import { Bell, MessageCircle, ArrowLeft, Search, Filter, CheckCircle, Circle, X, Clock, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -126,20 +124,26 @@ const PatientNotificationsPage = () => {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Messages & Notifications</h1>
-                <p className="text-sm text-gray-600">
-                  {unreadCount > 0 ? `${unreadCount} unread messages` : "All caught up!"}
-                </p>
-              </div>
-            </div>
+           <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-col sm:flex-row">
+  {/* Back Button */}
+  <button
+    onClick={() => navigate(-1)}
+    className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors self-start sm:self-auto"
+  >
+    <ArrowLeft className="h-5 w-5" />
+  </button>
+
+  {/* Title + Subtitle */}
+  <div className="flex flex-col">
+    <h1 className="text-lg sm:text-2xl font-bold text-gray-900 leading-tight">
+      Messages & Notifications
+    </h1>
+    <p className="text-sm text-gray-600">
+      {unreadCount > 0 ? `${unreadCount} unread messages` : "All caught up!"}
+    </p>
+  </div>
+</div>
+
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
@@ -244,28 +248,29 @@ const PatientNotificationsPage = () => {
                 }`}
               >
                 <div className="p-6">
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-2">
                     <div className={`p-2 rounded-full ${getPriorityColor(notification.priority)}`}>
                       {getTypeIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        {notification.unread && (
-                          <div className="w-2 h-2 bg-[var(--primary-color)] rounded-full flex-shrink-0" />
-                        )}
-                        <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">
-                          {notification.type || "General"}
-                        </span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">{getTimeAgo(notification.createdAt)}</span>
-                        {notification.priority === "high" && (
-                          <>
-                            <span className="text-xs text-gray-400">•</span>
-                            <span className="text-xs font-medium text-red-600">High Priority</span>
-                          </>
-                        )}
-                        {notification.showPayButton && (
-        <button
+                    
+                      <div className="flex items-center gap-1 md:gap-2 mb-2">
+  {notification.unread && (
+    <div className="w-2 h-2 bg-[var(--primary-color)] rounded-full flex-shrink-0" />
+  )}
+  <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+    {notification.type || "General"}
+  </span>
+  <span className="text-xs text-gray-400">•</span>
+  <span className="text-xs text-gray-500">{getTimeAgo(notification.createdAt)}</span>
+  {notification.priority === "high" && (
+    <>
+      <span className="text-xs text-gray-400">•</span>
+      <span className="text-xs font-medium text-red-600">High Priority</span>
+    </>
+  )}
+  {notification.showPayButton && (
+     <button
     onClick={(e) => {
       e.stopPropagation();
       navigate("/patientdashboard/payment");
@@ -274,9 +279,9 @@ const PatientNotificationsPage = () => {
   >
     Pay Now
   </button>
+  )}
+</div>
 
-                        )}
-                      </div>
                       <p className="text-gray-900 font-medium leading-relaxed mb-2">
                         {notification.message}
                       </p>
@@ -298,11 +303,12 @@ const PatientNotificationsPage = () => {
       </div>
 
       {/* Notification Detail Modal */}
-     {isModalOpen && selectedNotification && (
-  <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-end sm:items-center justify-center p-2 sm:p-4 z-50">
+   {isModalOpen && selectedNotification && (
+  <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
     {/* Modal Container */}
     <div className="bg-white rounded-xl sm:rounded-2xl w-full sm:w-[90%] sm:max-w-md max-h-[95vh] sm:max-h-[90vh] overflow-y-auto
-      sm:relative sm:my-auto sm:mx-auto fixed bottom-0 left-0 right-0 sm:static">
+      sm:relative sm:my-auto sm:mx-auto sm:static fixed sm:bottom-auto sm:left-auto sm:right-auto">
+      
       {/* Modal Header (Sticky) */}
       <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4 rounded-t-xl sm:rounded-t-2xl flex items-center justify-between">
         <h2 className="text-sm sm:text-base font-bold text-gray-900">
@@ -315,7 +321,8 @@ const PatientNotificationsPage = () => {
           <X className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
       </div>
-      {/* Modal Content (Same as List Card) */}
+
+      {/* Modal Content */}
       <div className="p-4 sm:p-6">
         <div className="flex items-start gap-3 sm:gap-4">
           <div className={`p-2 sm:p-3 rounded-full ${getPriorityColor(selectedNotification.priority)} flex-shrink-0`}>
@@ -350,21 +357,21 @@ const PatientNotificationsPage = () => {
             )}
           </div>
         </div>
+
         {/* Pay Now Button (if applicable) */}
         {selectedNotification.showPayButton && (
           <div className="mt-4">
-          <div className="flex w-full">
-                 <button
-    onClick={(e) => {
-      e.stopPropagation();
-      navigate("/patientdashboard/payment");
-    }}
-    className="ml-auto bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-xs font-semibold px-3 py-1 rounded-full transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
-  >
-    Pay Now
-  </button>
-</div>
-
+            <div className="flex w-full">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/patientdashboard/payment");
+                }}
+                className="ml-auto bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-xs font-semibold px-3 py-1 rounded-full transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
+              >
+                Pay Now
+              </button>
+            </div>
           </div>
         )}
       </div>
