@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DynamicTable from '../../../../components/microcomponents/DynamicTable';
-import Pagination from '../../../../components/Pagination';
 import { useSelector } from 'react-redux';
 import ReusableModal from '../../../../components/microcomponents/Modal';
 import { Check, X, Calendar, Trash2 } from 'lucide-react';
@@ -44,7 +43,6 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
   const user = useSelector((state) => state.auth.user);
   const [appointments, setAppointments] = useState([]);
   const [tab, setTab] = useState('pending');
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [rejectId, setRejectId] = useState(null);
   const [rescheduleId, setRescheduleId] = useState(null);
@@ -53,7 +51,7 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
   const [doctorName, setDoctorName] = useState('');
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const rowsPerPage = 4;
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -133,15 +131,12 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
       ? ['pending', 'upcoming'].includes(a.status.toLowerCase())
       : a.status.toLowerCase() === tab
   );
+
   const [filteredData, setFilteredData] = useState(tabFiltered);
 
   useEffect(() => {
     setFilteredData(tabFiltered);
-    setPage(1);
   }, [appointments, tab]);
-
-  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-  const current = filteredData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   const updateStatus = (id, updates) => {
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
@@ -198,14 +193,13 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
         type: 'success',
         autoClose: 3000
       });
-      
-      // Store highlight information for the target tab
+
       const targetTab = appt.type === 'Physical' ? 'OPD' : 'Virtual';
       localStorage.setItem("highlightPatientId", response.data.id.toString());
       localStorage.setItem("targetPatientTab", targetTab);
       localStorage.setItem("appointmentAccepted", "true");
       localStorage.setItem("acceptedAppointmentType", appt.type);
-      
+
       navigate('/doctordashboard/patients', {
         state: {
           highlightId: response.data.id,
@@ -283,9 +277,11 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
     setSelectedPatient(patient);
     setIsModalOpen(true);
   };
-const displayTabs = !showOnlyPending;
+
+  const displayTabs = !showOnlyPending;
   const displaySearchBar = !showOnlyPending;
   const displayFilters = !showOnlyPending;
+
   const getRowClassName = (row) => {
     if (row.status === 'Confirmed') {
       return 'bg-green-100 hover:bg-green-200';
@@ -346,6 +342,7 @@ const displayTabs = !showOnlyPending;
   ];
 
   const typeOptions = Array.from(new Set(tabFiltered.map(a => a.type))).map(t => ({ label: t, value: t }));
+
   const filters = [
     { key: 'type', label: 'Type', options: typeOptions }
   ];
@@ -374,21 +371,18 @@ const displayTabs = !showOnlyPending;
   return (
     <div>
       <ToastContainer position="top-right" autoClose={3000} theme="colored" />
-       <div className={isOverview ? "p-0" : "p-2 sm:p-4 md:p-6"}>
-      {!showOnlyPending && !isOverview && <h4 className=""></h4>}
-      <DynamicTable
-        columns={columns}
-        data={current}
-        filters={displayFilters ? filters : []}
-        tabs={displayTabs ? TABS : []}
-        activeTab={tab}
-        onTabChange={setTab}
-        showSearchBar={displaySearchBar}
-        rowClassName={getRowClassName}
-      />
-        <div className="w-full flex justify-end mt-4">
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
+      <div className={isOverview ? "p-0" : "p-2 sm:p-4 md:p-6"}>
+        {!showOnlyPending && !isOverview && <h4 className=""></h4>}
+        <DynamicTable
+          columns={columns}
+          data={filteredData}
+          filters={displayFilters ? filters : []}
+          tabs={displayTabs ? TABS : []}
+          activeTab={tab}
+          onTabChange={setTab}
+          showSearchBar={displaySearchBar}
+          rowClassName={getRowClassName}
+        />
       </div>
       <ReusableModal
         isOpen={isModalOpen}

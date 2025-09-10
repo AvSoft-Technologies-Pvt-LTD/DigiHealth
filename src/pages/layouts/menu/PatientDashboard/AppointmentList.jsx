@@ -1,9 +1,7 @@
-//AppointmentList.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FiCalendar, FiMapPin } from "react-icons/fi";
-import Pagination from "../../../../components/Pagination";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import PaymentGateway from "../../../../components/microcomponents/PaymentGatway";
 
@@ -17,8 +15,6 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
     selectedAppointment: null,
     showPaymentGateway: false,
   });
-  const [page, setPage] = useState(1);
-  const rowsPerPage = isOverview ? 3 : 6;
 
   useEffect(() => {
     localStorage.setItem("appointmentTab", state.t);
@@ -54,7 +50,6 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
 
   const handleTabChange = (tab) => {
     setState((prev) => ({ ...prev, t: tab }));
-    setPage(1);
   };
 
   const handlePayClick = (appointment) => {
@@ -81,7 +76,7 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
         `https://67e3e1e42ae442db76d2035d.mockapi.io/register/book/${state.selectedAppointment.id}`,
         { status: "Paid" }
       );
-    } catch (error) {
+    } catch ( error ) {
       console.error("Error updating appointment status:", error);
     }
   };
@@ -200,16 +195,6 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
     },
   ];
 
-  const totalDoctorPages = Math.ceil(state.d.length / rowsPerPage);
-  const totalLabPages = Math.ceil(state.l.length / rowsPerPage);
-  const totalPages = state.t === "doctor" ? totalDoctorPages : totalLabPages;
-  const currentDoctorAppointments = isOverview
-    ? state.d.slice(0, 3)
-    : state.d.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-  const currentLabAppointments = isOverview
-    ? state.l.slice(0, 6)
-    : state.l.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-
   return (
     <div className={isOverview ? "p-0" : "p-2 sm:p-4 md:p-6"}>
       {state.showPaymentGateway && state.selectedAppointment && (
@@ -229,22 +214,13 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
         <>
           <DynamicTable
             columns={state.t === "doctor" ? doctorColumns : labColumns}
-            data={state.t === "doctor" ? currentDoctorAppointments : currentLabAppointments}
+            data={state.t === "doctor" ? state.d : state.l}
             tabs={tabs}
             tabActions={tabActions}
             activeTab={state.t}
             onTabChange={handleTabChange}
             showSearchBar={!isOverview}
           />
-          {!showOnlyTable && !isOverview && (
-            <div className="w-full flex justify-end mt-2 sm:mt-4">
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
-            </div>
-          )}
         </>
       )}
     </div>

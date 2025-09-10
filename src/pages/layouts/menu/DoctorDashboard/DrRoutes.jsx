@@ -9,8 +9,8 @@ import FormsPage from "./Form";
 // import StaffManagement from "./AdminModule";
 import QuickLinksPanel from "./QuickLinksPanel";
 import NotificationPage from "../../../../components/NotificationPage"; // Adjust the import path as needed
-import MedicalRecordsTemplate from "./MedicalRecordsTemplate";
-import BillingForm from "./BillingForm";
+// import MedicalRecordsTemplate from "./MedicalRecordsTemplate";
+// import BillingForm from "./BillingForm";
 import MedicalRecordDetails from "./MedicalRecordDetails";
 import MedicalRecords from "./MedicalRecords";
 import SecondOpinion from "./SecondOpinion";
