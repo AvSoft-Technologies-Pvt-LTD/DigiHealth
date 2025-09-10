@@ -11,6 +11,7 @@ const AVCard = () => {
     gender: "XXXXX",
     healthId: "XXXXXX-XXXXX-XXXXX",
     helpline: "1800-123-4567",
+    validUpto: "XX/XX/XXXX",
     imageUrl:
       "https://img.freepik.com/vecteurs-premium/icone-profil-avatar-par-defaut-image-utilisateur-medias-sociaux-icone-avatar-gris-silhouette-profil-vide-illustration-vectorielle_561158-3383.jpg",
   });
@@ -27,10 +28,9 @@ const AVCard = () => {
       initial={{ opacity: 0.85, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="relative w-full max-w-[320px] md:max-w-[350px] h-[220px] md:h-[240px] rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-green-600 to-green-800 text-white mx-auto"
+      className="relative w-full max-w-[300px] md:max-w-[320px] h-[200px] md:h-[220px] rounded-2xl overflow-hidden shadow-2xl  text-white mx-auto"
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0E1630] to-[#01D48C] opacity-90"></div>
-
+<div className="absolute inset-0 bg-gradient-to-r from-[#007A50] to-[#050912] opacity-90"></div>
       {/* Background icons */}
       <div className="absolute inset-0 overflow-hidden">
         {bgIcons.map(({ Icon, pos }, i) => (
@@ -55,61 +55,44 @@ const AVCard = () => {
 
       {/* Card content */}
       <div className="relative h-full p-4 flex flex-col">
-        {/* Logo & Title */}
-        <div className="flex justify-start items-center gap-2 mb-1">
-          <img src={logo} alt="AV Logo" className="w-10 h-10" />
-          <div className="text-left">
+        {/* Header: Logo & DigiHealth (right-aligned) */}
+        <div className="flex justify-end items-center">
+          <div className="flex items-center gap-2">
+                  <img src={logo} alt="AV Logo" className="w-12 h-12" />
             <h1 className="text-lg font-extrabold text-[#01D48C]">DigiHealth</h1>
-            <p className="text-xs font-semibold text-gray-300">
-              Healthcare Solutions
-            </p>
+      
           </div>
         </div>
 
         {/* User Info and QR Code */}
-        <div className="flex justify-between items-center flex-grow mt-1">
+        <div className="flex  items-center flex-grow ">
           <div className="flex items-center gap-3">
             <img
               src={formData.imageUrl}
               alt="User"
-              className="w-14 h-14 md:w-16 md:h-16  object-cover border-2 border-white"
+              className="w-16 h-16 md:w-18 md:h-18 rounded-full object-cover border-2 border-white"
             />
             <div className="text-sm">
-              <p className="font-semibold">{formData.name}</p>
-              <div className="mt-1 flex items-center gap-1">
-                <strong className="text-xs text-gray-300">Mobile:</strong>
-                <span className="text-xs">{formData.mobile}</span>
+              <p className="font-semibold">Name: {formData.name}</p>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-xs text-gray-300">DOB: {formData.dob} |</span>
+                <span className="text-xs text-gray-300">Gender: {formData.gender}</span>
               </div>
-              <div className="mt-1 flex items-center gap-1">
-                <strong className="text-xs text-gray-300">DOB:</strong>
-                <span className="text-xs">{formData.dob}</span>
-              </div>
-              <div className="mt-1 flex items-center gap-1">
-                <strong className="text-xs text-gray-300">Gender:</strong>
-                <span className="text-xs">{formData.gender}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* QR Code */}
-          <div className="flex flex-col items-center">
-            <div className="w-15 h-15 md:w-15 md:h-15 bg-white p-1 rounded">
-              <QrCode size={50} className="text-[#01D48C]" />
             </div>
           </div>
         </div>
 
-        {/* Footer: Health ID & Helpline */}
-        <div className="flex flex-col items-center justify-center mt-2  text-gray-300">
-          <div className="text-sm font-semibold">
-            Health ID: {formData.healthId}
+        {/* Footer: Health ID, Valid Upto, and QR Code */}
+        <div className="flex justify-between items-end mt-2 text-gray-300">
+          <div className="text-sm">
+            Health ID: 
+            <div className="font-semibold text-base">{formData.healthId}</div>
+            <div className="text-xs mt-1">Valid Upto: {formData.validUpto}</div>
           </div>
-          <div className="flex items-center gap-2 text-xs mt-1">
-            <Phone className="w-3 h-3" />
-            <span>
-              Helpline:{" "}
-              <span className="font-semibold">{formData.helpline}</span>
-            </span>
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 md:w-12 md:h-12 bg-white p-1 rounded">
+              <QrCode size={40} className="text-[#01D48C]" />
+            </div>
           </div>
         </div>
       </div>

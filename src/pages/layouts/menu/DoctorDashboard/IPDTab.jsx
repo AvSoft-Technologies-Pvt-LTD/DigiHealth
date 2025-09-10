@@ -1,5 +1,4 @@
-//IPD
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
@@ -23,11 +22,9 @@ import {
   Eye,
   EyeOff,
   Camera,
-  Upload,
 } from "lucide-react";
 import { FaNotesMedical, FaVideo } from "react-icons/fa";
 import { FiExternalLink } from "react-icons/fi";
-
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import TeleConsultFlow from "../../../../components/microcomponents/Call";
 import {
@@ -129,14 +126,15 @@ const WARD_ICONS = {
 };
 
 const WIZARD_STEPS = [
-  { id: 1, title: "Basic Patient Details", description: "Patient Information" },
-  { id: 2, title: "Ward Selection", description: "Choose Ward" },
-  { id: 3, title: "Bed Selection", description: "Choose Bed" },
-  { id: 4, title: "IPD Admission Details", description: "Finalize Admission" },
+  { id: 1, title: "Patient Details", description: "Basic Information", shortTitle: "Details" },
+  { id: 2, title: "Ward Selection", description: "Choose Ward", shortTitle: "Ward" },
+  { id: 3, title: "Bed Selection", description: "Choose Bed", shortTitle: "Bed" },
+  { id: 4, title: "Admission", description: "Finalize Details", shortTitle: "Final" },
 ];
 
 const getCurrentDate = () => new Date().toISOString().slice(0, 10);
 const getCurrentTime = () => new Date().toTimeString().slice(0, 5);
+
 const to24Hour = (t) =>
   t.includes("AM") || t.includes("PM")
     ? t.replace(
@@ -152,6 +150,7 @@ const to24Hour = (t) =>
             .padStart(2, "0")}:${m}`
       )
     : t;
+
 const incrementTime = (time) => {
   const [h, m] = time.split(":").map(Number);
   return `${((h + Math.floor((m + 30) / 60)) % 24)
@@ -159,13 +158,14 @@ const incrementTime = (time) => {
     .padStart(2, "0")}:${((m + 30) % 60).toString().padStart(2, "0")}`;
 };
 
-// Photo Upload Component with Base64 Handling
 const PhotoUpload = ({ photoPreview, onPhotoChange, onPreviewClick, error }) => (
-  <div className="floating-input relative w-full" data-placeholder="Upload Photo *">
+  <div className="relative w-full">
     <label className="block relative cursor-pointer">
-      <div className="input-field flex items-center gap-2 peer">
-        <Camera size={16} />
-        <span className="truncate">Upload Photo *</span>
+      <div className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-[#01B07A] focus-within:border-[#01B07A] min-h-[2.5rem]">
+        <Camera size={16} className="text-gray-500" />
+        <span className="truncate text-gray-700">
+          {photoPreview ? "Photo Uploaded" : "Upload Photo *"}
+        </span>
       </div>
       <input
         type="file"
@@ -177,13 +177,17 @@ const PhotoUpload = ({ photoPreview, onPhotoChange, onPreviewClick, error }) => 
     </label>
     {photoPreview && (
       <div className="mt-2 flex items-center gap-2">
-        <span className="text-sm text-gray-700">Photo Uploaded</span>
-        <button type="button" onClick={onPreviewClick} className="text-blue-500 hover:text-blue-700">
-          <Eye size={20} />
+        <span className="text-xs text-green-600 font-medium">✓ Photo Uploaded</span>
+        <button 
+          type="button" 
+          onClick={onPreviewClick} 
+          className="text-blue-500 hover:text-blue-700 p-1"
+        >
+          <Eye size={16} />
         </button>
       </div>
     )}
-    {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+    {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
   </div>
 );
 
@@ -303,7 +307,7 @@ const PatientViewSections = ({
               <p className="text-gray-500 text-sm">No data available</p>
             )
           ) : section.data ? (
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               {Object.entries(section.data).map(([key, value]) => (
                 <p key={key}>
                   <strong>{key}:</strong> {value || "N/A"}
@@ -330,10 +334,9 @@ const PatientViewModal = ({
   onEdit,
 }) => {
   if (!isOpen) return null;
-
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -344,17 +347,17 @@ const PatientViewModal = ({
         animate={{ scale: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="sticky top-0 z-20 bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-t-xl p-4">
+        <div className="sticky top-0 z-20 bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-t-xl p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="relative mr-4 flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#01B07A] text-xl font-bold uppercase shadow-inner">
+              <div className="relative mr-3 sm:mr-4 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-white text-[#01B07A] text-lg sm:text-xl font-bold uppercase shadow-inner">
                 {(patient?.name || "NA").substring(0, 2).toUpperCase()}
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className="text-lg sm:text-xl font-semibold text-white">
                   {patient?.name || "-"}
                 </h2>
-                <p className="text-white text-lg">
+                <p className="text-white text-sm sm:text-lg">
                   IPD #{patient?.sequentialId || "-"}
                 </p>
               </div>
@@ -379,7 +382,7 @@ const PatientViewModal = ({
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-auto p-3 sm:p-6 bg-gray-50">
           <PatientViewSections
             data={patient || {}}
             personalHealthDetails={personalHealthDetails}
@@ -388,10 +391,10 @@ const PatientViewModal = ({
             loading={loading}
           />
         </div>
-        <div className="bg-white border-t p-4 flex justify-end">
+        <div className="bg-white border-t p-3 sm:p-4 flex justify-end">
           <button
             onClick={() => onEdit(patient)}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
           >
             Edit Patient
           </button>
@@ -401,7 +404,7 @@ const PatientViewModal = ({
   );
 };
 
-const IpdTab = ({ doctorName, masterData, location, setTabActions }) => {
+const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, ref) => {
   const navigate = useNavigate();
   const [ipdPatients, setIpdPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -422,14 +425,18 @@ const IpdTab = ({ doctorName, masterData, location, setTabActions }) => {
   const [familyHistory, setFamilyHistory] = useState([]);
   const [vitalSigns, setVitalSigns] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  
-  // New states for enhanced registration fields
   const [showPassword, setShowPassword] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [availableCities, setAvailableCities] = useState([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+
+  useImperativeHandle(ref, () => ({
+    openAddPatientModal: () => {
+      openModal("ipdWizard");
+    },
+  }));
 
   const hasRecording = useCallback((patientEmail, hospitalName) => {
     const videoKeys = Object.keys(localStorage).filter((key) =>
@@ -453,20 +460,6 @@ const IpdTab = ({ doctorName, masterData, location, setTabActions }) => {
     return false;
   }, []);
 
-  useEffect(() => {
-    if (doctorName && !masterData.loading) fetchAllPatients();
-  }, [doctorName, masterData.loading]);
-
-  useEffect(() => {
-    const highlightIdFromState = location.state?.highlightId;
-    if (highlightIdFromState) setNewPatientId(highlightIdFromState);
-  }, [location.state]);
-
-  useEffect(() => {
-    setTabActions(tabActions);
-  }, [setTabActions]);
-
-  // Convert File to Base64
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -503,7 +496,6 @@ const IpdTab = ({ doctorName, masterData, location, setTabActions }) => {
   const handlePincodeChange = async (pincode) => {
     const value = pincode.replace(/\D/g, '').slice(0, 6);
     setIpdWizardData(prev => ({ ...prev, pincode: value }));
-    
     if (value.length === 6) {
       setIsLoadingCities(true);
       try {
@@ -512,7 +504,6 @@ const IpdTab = ({ doctorName, masterData, location, setTabActions }) => {
         if (data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
           const cities = [...new Set(data[0].PostOffice.map(office => office.Name))];
           setAvailableCities(cities);
-          
           setIpdWizardData(prev => ({
             ...prev,
             city: '',
@@ -534,143 +525,53 @@ const IpdTab = ({ doctorName, masterData, location, setTabActions }) => {
       setIpdWizardData(prev => ({ ...prev, city: '', district: '', state: '' }));
     }
   };
-const generateFields = (step) => {
-  if (step === 1)
+
+  const generateFields = (step) => {
+    if (step === 1)
+      return [
+        { name: "firstName", label: "First Name", type: "text", required: true },
+        { name: "middleName", label: "Middle Name", type: "text" },
+        { name: "lastName", label: "Last Name", type: "text", required: true },
+        { name: "phone", label: "Phone Number", type: "text", required: true },
+        { name: "email", label: "Email Address", type: "email", required: true },
+        { name: "aadhaar", label: "Aadhaar Number", type: "text", required: true },
+        { name: "gender", label: "Gender", type: "select", required: true, options: masterData.genders },
+        { name: "dob", label: "Date of Birth", type: "date", required: true },
+        { name: "occupation", label: "Occupation", type: "select", required: true, options: STATIC_DATA.occupations },
+        { name: "pincode", label: "Pincode", type: "text", required: true, maxLength: 6 },
+        { name: "city", label: "City", type: "select", required: true, options: availableCities.map((city) => ({ value: city, label: city })), disabled: isLoadingCities || availableCities.length === 0 },
+        { name: "district", label: "District", type: "text", readonly: true },
+        { name: "state", label: "State", type: "text", readonly: true },
+        {
+          name: "photo",
+          label: "Upload Photo",
+          type: "custom",
+          component: (
+            <PhotoUpload
+              photoPreview={photoPreview}
+              onPhotoChange={handlePhotoChange}
+              onPreviewClick={() => setIsPhotoModalOpen(true)}
+              error={formErrors.photo}
+            />
+          ),
+        },
+        { name: "password", label: "Create Password", type: "password", required: true },
+        { name: "confirmPassword", label: "Confirm Password", type: "password", required: true },
+        { name: "agreeDeclaration", label: "I agree to the declaration / Privacy Policy", type: "checkbox", required: true, colSpan: 3 },
+      ];
     return [
-      {
-        name: "firstName",
-        label: "First Name",
-        type: "text",
-        required: true,
-      },
-      { name: "middleName", label: "Middle Name", type: "text" },
-      { name: "lastName", label: "Last Name", type: "text", required: true },
-      { name: "phone", label: "Phone Number", type: "text", required: true },
-      {
-        name: "email",
-        label: "Email Address",
-        type: "email",
-        required: true,
-      },
-      { name: "aadhaar", label: "Aadhaar Number", type: "text", required: true },
-      {
-        name: "gender",
-        label: "Gender",
-        type: "select",
-        required: true,
-        options: masterData.genders,
-      },
-      { name: "dob", label: "Date of Birth", type: "date", required: true },
-      {
-        name: "occupation",
-        label: "Occupation",
-        type: "select",
-        required: true,
-        options: STATIC_DATA.occupations,
-      },
-      {
-        name: "pincode",
-        label: "Pincode",
-        type: "text",
-        required: true,
-        maxLength: 6,
-      },
-      {
-        name: "city",
-        label: "City",
-        type: "select",
-        required: true,
-        options: availableCities.map((city) => ({ value: city, label: city })),
-        disabled: isLoadingCities || availableCities.length === 0,
-      },
-      {
-        name: "district",
-        label: "District",
-        type: "text",
-        readonly: true,
-      },
-      {
-        name: "state",
-        label: "State",
-        type: "text",
-        readonly: true,
-      },
-      {
-        name: "password",
-        label: "Create Password",
-        type: "password",
-        required: true,
-      },
-      {
-        name: "confirmPassword",
-        label: "Confirm Password",
-        type: "password",
-        required: true,
-      },
-      {
-        name: "agreeDeclaration",
-        label: "I agree to the declaration / Privacy Policy",
-        type: "checkbox",
-        required: true,
-        colSpan: 3,
-      },
-    ];
-    return [
-      {
-        name: "admissionDate",
-        label: "Admission Date",
-        type: "date",
-        required: true,
-      },
-      {
-        name: "admissionTime",
-        label: "Admission Time",
-        type: "time",
-        required: true,
-      },
-      {
-        name: "status",
-        label: "Status",
-        type: "select",
-        required: true,
-        options: STATIC_DATA.status,
-      },
+      { name: "admissionDate", label: "Admission Date", type: "date", required: true },
+      { name: "admissionTime", label: "Admission Time", type: "time", required: true },
+      { name: "status", label: "Status", type: "select", required: true, options: STATIC_DATA.status },
       { name: "wardType", label: "Ward Type", type: "text", readonly: true },
-      {
-        name: "wardNumber",
-        label: "Ward Number",
-        type: "text",
-        readonly: true,
-      },
+      { name: "wardNumber", label: "Ward Number", type: "text", readonly: true },
       { name: "bedNumber", label: "Bed Number", type: "text", readonly: true },
-      {
-        name: "department",
-        label: "Department",
-        type: "select",
-        required: true,
-        options: masterData.departments,
-      },
-      {
-        name: "insuranceType",
-        label: "Insurance Type",
-        type: "select",
-        required: true,
-        options: STATIC_DATA.insurance,
-      },
-      {
-        name: "surgeryRequired",
-        label: "Surgery Required",
-        type: "select",
-        options: STATIC_DATA.surgery,
-      },
+      { name: "department", label: "Department", type: "select", required: true, options: masterData.departments },
+      { name: "insuranceType", label: "Insurance Type", type: "select", required: true, options: STATIC_DATA.insurance },
+      { name: "surgeryRequired", label: "Surgery Required", type: "select", options: STATIC_DATA.surgery },
       { name: "dischargeDate", label: "Discharge Date", type: "date" },
       { name: "diagnosis", label: "Diagnosis", type: "text" },
-      {
-        name: "reasonForAdmission",
-        label: "Reason For Admission",
-        type: "textarea",
-        colSpan: 2,
-      },
+      { name: "reasonForAdmission", label: "Reason For Admission", type: "textarea", colSpan: 2 },
     ];
   };
 
@@ -690,7 +591,6 @@ const generateFields = (step) => {
             .join(" "),
         }))
         .reverse();
-
       setIpdPatients(
         processedPatients
           .filter(
@@ -735,10 +635,8 @@ const generateFields = (step) => {
           .then((data) => ({ data }))
           .catch(() => ({ data: [] })),
       ]);
-
       setPersonalHealthDetails(personalRes.data);
       setFamilyHistory(Array.isArray(familyRes.data) ? familyRes.data : []);
-
       const patientEmail = selectedPatient?.email?.toLowerCase().trim();
       if (patientEmail && Array.isArray(vitalRes.data)) {
         const matchingVitalSigns = vitalRes.data.find(
@@ -858,14 +756,10 @@ const generateFields = (step) => {
   const handleIpdWizardChange = (field, value) => {
     setIpdWizardData((prev) => {
       const updated = { ...prev, [field]: value };
-      
-      // Handle phone number formatting
       if (field === "phone") {
         const formatted = value.replace(/\D/g, "").slice(0, 10);
         updated.phone = formatted;
       }
-      
-      // Handle Aadhaar formatting
       if (field === "aadhaar") {
         const formatted = value
           .replace(/\D/g, "")
@@ -873,60 +767,50 @@ const generateFields = (step) => {
           .replace(/(\d{4})(\d{4})(\d{0,4})/, (_, g1, g2, g3) => [g1, g2, g3].filter(Boolean).join("-"));
         updated.aadhaar = formatted;
       }
-      
-      // Handle pincode change
       if (field === "pincode") {
         handlePincodeChange(value);
-        return prev; // Return early as handlePincodeChange will update state
+        return prev;
       }
-      
-      // Handle same as permanent address checkbox
       if (field === "sameAsPermAddress" && value && prev.permanentAddress) {
         updated.temporaryAddress = prev.permanentAddress;
       }
-      
       return updated;
     });
-    
-    // Clear errors for the field
     setFormErrors(prev => ({ ...prev, [field]: "" }));
   };
 
   const validateStep = (step) => {
     const data = ipdWizardData;
     const errors = {};
-    
- if (step === 1) {
-  const emailRegex = /^\S+@\S+\.\S+$/;
-  const phoneRegex = /^\d{10}$/;
-  const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!]).{8,}$/;
-  if (!data.firstName?.trim()) errors.firstName = "First name is required";
-  if (!data.lastName?.trim()) errors.lastName = "Last name is required";
-  if (!data.phone?.match(phoneRegex)) errors.phone = "Phone must be 10 digits";
-  if (!data.email || !emailRegex.test(data.email)) errors.email = "Enter a valid email";
-  if (!data.aadhaar || data.aadhaar.replace(/-/g, "").length !== 12) {
-    errors.aadhaar = "Aadhaar must be 12 digits";
-  }
-  if (!data.gender) errors.gender = "Gender is required";
-  if (!data.dob) errors.dob = "Date of birth is required";
-  if (!data.occupation?.trim()) errors.occupation = "Occupation is required";
-  if (!data.pincode || data.pincode.length !== 6) errors.pincode = "Pincode must be 6 digits";
-  if (!data.city?.trim()) errors.city = "City is required";
-  if (!data.photo) errors.photo = "Photo is required";
-  if (!passwordRegex.test(data.password)) {
-    errors.password = "Password must include capital letters, numbers, and special characters";
-  }
-  if (data.password !== data.confirmPassword) {
-    errors.confirmPassword = "Passwords do not match";
-  }
-  if (!data.agreeDeclaration) errors.agreeDeclaration = "Please accept the declaration";
-}
-
-    
+    if (step === 1) {
+      const emailRegex = /^\S+@\S+\.\S+$/;
+      const phoneRegex = /^\d{10}$/;
+      const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!]).{8,}$/;
+      if (!data.firstName?.trim()) errors.firstName = "First name is required";
+      if (!data.lastName?.trim()) errors.lastName = "Last name is required";
+      if (!data.phone?.match(phoneRegex)) errors.phone = "Phone must be 10 digits";
+      if (!data.email || !emailRegex.test(data.email)) errors.email = "Enter a valid email";
+      if (!data.aadhaar || data.aadhaar.replace(/-/g, "").length !== 12) {
+        errors.aadhaar = "Aadhaar must be 12 digits";
+      }
+      if (!data.gender) errors.gender = "Gender is required";
+      if (!data.dob) errors.dob = "Date of birth is required";
+      if (!data.occupation?.trim()) errors.occupation = "Occupation is required";
+      if (!data.pincode || data.pincode.length !== 6) errors.pincode = "Pincode must be 6 digits";
+      if (!data.city?.trim()) errors.city = "City is required";
+      if (!data.photo) errors.photo = "Photo is required";
+      if (!passwordRegex.test(data.password)) {
+        errors.password = "Password must include capital letters, numbers, and special characters";
+      }
+      if (data.password !== data.confirmPassword) {
+        errors.confirmPassword = "Passwords do not match";
+      }
+      if (!data.agreeDeclaration) errors.agreeDeclaration = "Please accept the declaration";
+    }
     if (step === 4) {
       const required = [
         "admissionDate",
-        "admissionTime", 
+        "admissionTime",
         "status",
         "department",
         "insuranceType",
@@ -937,15 +821,12 @@ const generateFields = (step) => {
         }
       }
     }
-    
     setFormErrors(errors);
-    
     if (Object.keys(errors).length > 0) {
       const firstError = Object.values(errors)[0];
       toast.error(firstError);
       return false;
     }
-    
     if (step === 2 && !selectedWard) {
       toast.error("Please select a ward");
       return false;
@@ -954,7 +835,6 @@ const generateFields = (step) => {
       toast.error("Please select a bed");
       return false;
     }
-    
     return true;
   };
 
@@ -1088,16 +968,17 @@ const generateFields = (step) => {
 
   const scrollBeds = (direction) => {
     if (!selectedWard) return;
+    const bedsPerPage = window.innerWidth < 640 ? 4 : window.innerWidth < 768 ? 6 : 12;
     const newIndex =
       direction === "left"
-        ? Math.max(0, bedScrollIndex - 1)
-        : Math.min(selectedWard.totalBeds - 12, bedScrollIndex + 1);
+        ? Math.max(0, bedScrollIndex - bedsPerPage)
+        : Math.min(selectedWard.totalBeds - bedsPerPage, bedScrollIndex + bedsPerPage);
     setBedScrollIndex(newIndex);
   };
 
   const getWardIcon = (wardType) => {
     const IconComponent = WARD_ICONS[wardType] || Bed;
-    return <IconComponent className="w-5 h-5" />;
+    return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />;
   };
 
   const renderField = (field) => (
@@ -1105,16 +986,18 @@ const generateFields = (step) => {
       key={field.name}
       className={`col-span-1 ${
         field.colSpan === 1.5
-          ? "md:col-span-1"
+          ? "sm:col-span-1"
           : field.colSpan === 2
-          ? "md:col-span-2"
+          ? "sm:col-span-2"
           : field.colSpan === 3
-          ? "md:col-span-3"
-          : "md:col-span-1"
+          ? "sm:col-span-3"
+          : "sm:col-span-1"
       }`}
     >
-      {field.type === "checkbox" ? (
-        <label className="inline-flex items-center gap-2 text-sm mt-2">
+      {field.type === "custom" ? (
+        field.component
+      ) : field.type === "checkbox" ? (
+        <label className="inline-flex items-start gap-2 text-xs sm:text-sm mt-2">
           <input
             type="checkbox"
             name={field.name}
@@ -1122,9 +1005,9 @@ const generateFields = (step) => {
             onChange={(e) =>
               handleIpdWizardChange(field.name, e.target.checked)
             }
-            className="h-4 w-4 text-blue-600"
+            className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0"
           />
-          <span>{field.label}</span>
+          <span className="leading-4">{field.label}</span>
           {field.required && <span className="text-red-500">*</span>}
         </label>
       ) : (
@@ -1137,17 +1020,16 @@ const generateFields = (step) => {
                   handleIpdWizardChange(field.name, e.target.value)
                 }
                 disabled={field.disabled}
-                className={`w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#01B07A] peer pt-4 pb-1 ${
+                className={`w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#01B07A] peer pt-4 pb-1 ${
                   field.disabled ? "bg-gray-100 cursor-not-allowed" : ""
                 } ${formErrors[field.name] ? "border-red-500" : ""}`}
               >
                 <option value="">
-                  {field.disabled && isLoadingCities 
-                    ? "Loading cities..." 
+                  {field.disabled && isLoadingCities
+                    ? "Loading cities..."
                     : field.disabled && availableCities.length === 0
                     ? "Enter pincode first"
-                    : `Select ${field.label}`
-                  }
+                    : `Select ${field.label}`}
                 </option>
                 {field.options?.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -1168,7 +1050,7 @@ const generateFields = (step) => {
                   handleIpdWizardChange(field.name, e.target.value)
                 }
                 rows={3}
-                className={`w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#01B07A] peer pt-4 pb-1 ${
+                className={`w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#01B07A] peer pt-4 pb-1 ${
                   formErrors[field.name] ? "border-red-500" : ""
                 }`}
               />
@@ -1185,7 +1067,7 @@ const generateFields = (step) => {
                 onChange={(e) =>
                   handleIpdWizardChange(field.name, e.target.value)
                 }
-                className={`w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#01B07A] peer pt-4 pb-1 pr-10 ${
+                className={`w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#01B07A] peer pt-4 pb-1 pr-10 ${
                   formErrors[field.name] ? "border-red-500" : ""
                 }`}
               />
@@ -1210,7 +1092,7 @@ const generateFields = (step) => {
                 }
                 readOnly={field.readonly}
                 maxLength={field.maxLength}
-                className={`w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#01B07A] peer pt-4 pb-1 ${
+                className={`w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#01B07A] peer pt-4 pb-1 ${
                   field.readonly ? "bg-gray-100 cursor-not-allowed" : ""
                 } ${formErrors[field.name] ? "border-red-500" : ""}`}
                 placeholder=" "
@@ -1233,26 +1115,27 @@ const generateFields = (step) => {
 
   const renderBedSelection = () => {
     if (!selectedWard) return null;
+    const bedsPerPage = window.innerWidth < 640 ? 4 : window.innerWidth < 768 ? 6 : 12;
     const visibleBeds = Array.from(
-      { length: 12 },
+      { length: bedsPerPage },
       (_, i) => bedScrollIndex + i + 1
     ).filter((bed) => bed <= selectedWard.totalBeds);
-
+    
     return (
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <h4 className="font-semibold mb-4 text-lg">
+      <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+        <h4 className="font-semibold mb-3 sm:mb-4 text-base sm:text-lg">
           Select Bed for {selectedWard.type} Ward {selectedWard.number}
         </h4>
         <div className="flex items-center gap-2 mb-4">
           {bedScrollIndex > 0 && (
             <button
               onClick={() => scrollBeds("left")}
-              className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition-all duration-200 shadow-md"
+              className="p-1.5 sm:p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition-all duration-200 shadow-md flex-shrink-0"
             >
-              <ChevronLeft className="w-4 h-4 text-blue-600" />
+              <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
             </button>
           )}
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 flex-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 sm:gap-2 flex-1">
             {visibleBeds.map((bedNumber) => {
               const isOccupied =
                 selectedWard.occupiedBedNumbers?.includes(bedNumber);
@@ -1282,32 +1165,31 @@ const generateFields = (step) => {
                 if (status === "maintenance") return "text-gray-400";
                 return "text-[var(--primary-color,#0E1630)]";
               };
-
               return (
                 <div
                   key={bedNumber}
                   onClick={() => handleBedSelection(bedNumber)}
-                  className={`relative p-2 rounded-lg border-2 cursor-pointer transition-all duration-300 ${getBedColors()} ${
+                  className={`relative p-1.5 sm:p-2 rounded-lg border-2 cursor-pointer transition-all duration-300 ${getBedColors()} ${
                     isOccupied || isUnderMaintenance
                       ? "cursor-not-allowed opacity-60"
                       : ""
                   }`}
                 >
-                  <div className="flex flex-col items-center space-y-1">
-                    <div className={`text-2xl ${getBedIcon()}`}>
+                  <div className="flex flex-col items-center space-y-0.5 sm:space-y-1">
+                    <div className={`${getBedIcon()}`}>
                       {getBedStatus() === "maintenance" ? (
-                        <Wrench className="w-5 h-5" />
+                        <Wrench className="w-3 h-3 sm:w-4 sm:h-4" />
                       ) : getBedStatus() === "occupied" ? (
-                        <User className="w-5 h-5" />
+                        <User className="w-3 h-3 sm:w-4 sm:h-4" />
                       ) : isSelected ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
                       ) : (
-                        <Bed className="w-5 h-5" />
+                        <Bed className="w-3 h-3 sm:w-4 sm:h-4" />
                       )}
                     </div>
                     <div className="text-center">
                       <div className="font-bold text-xs">Bed {bedNumber}</div>
-                      <div className="text-[10px] opacity-75 capitalize">
+                      <div className="text-[8px] sm:text-[10px] opacity-75 capitalize">
                         {getBedStatus() === "maintenance"
                           ? "Maintenance"
                           : getBedStatus() === "occupied"
@@ -1315,12 +1197,12 @@ const generateFields = (step) => {
                           : "Available"}
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-0.5 justify-center">
+                    <div className="hidden sm:flex flex-wrap gap-0.5 justify-center">
                       {facilities.map((facility) => {
                         const IconComponent = FACILITY_ICONS[facility];
                         return (
                           <div key={facility} className="relative group">
-                            <IconComponent className="w-3 h-3 opacity-70" />
+                            <IconComponent className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-70" />
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
                               {facility}
                             </div>
@@ -1329,47 +1211,47 @@ const generateFields = (step) => {
                       })}
                     </div>
                     {facilities.length === 0 && (
-                      <div className="text-[10px] opacity-60">Basic Room</div>
+                      <div className="text-[8px] sm:text-[10px] opacity-60 hidden sm:block">Basic Room</div>
                     )}
                   </div>
                 </div>
               );
             })}
           </div>
-          {bedScrollIndex + 12 < selectedWard.totalBeds && (
+          {bedScrollIndex + bedsPerPage < selectedWard.totalBeds && (
             <button
               onClick={() => scrollBeds("right")}
-              className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition-all duration-200 shadow-md"
+              className="p-1.5 sm:p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition-all duration-200 shadow-md flex-shrink-0"
             >
-              <ChevronRight className="w-4 h-4 text-blue-600" />
+              <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
             </button>
           )}
         </div>
         {selectedBed && (
-          <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border-2 border-blue-200">
-            <div className="flex items-center justify-between mb-2">
-              <h5 className="font-semibold text-blue-700 flex items-center gap-2 text-sm">
+          <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border-2 border-blue-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
+              <h5 className="font-semibold text-blue-700 flex items-center gap-2 text-xs sm:text-sm">
                 Selected: {selectedWard.type} Ward {selectedWard.number} - Bed{" "}
                 {selectedBed}
               </h5>
               <button
                 onClick={() => setIpdWizardStep(4)}
-                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs"
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs w-full sm:w-auto"
               >
                 Next
               </button>
             </div>
-            <div className="flex items-center gap-2 text-sm text-blue-700">
-              <span className="font-medium text-xs">Facilities:</span>
-              <div className="flex gap-1.5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-blue-700">
+              <span className="font-medium">Facilities:</span>
+              <div className="flex flex-wrap gap-1 sm:gap-1.5">
                 {(BED_FACILITIES[selectedBed] || []).map((facility) => {
                   const IconComponent = FACILITY_ICONS[facility];
                   return (
                     <div
                       key={facility}
-                      className="flex items-center gap-0.5 bg-white px-2 py-0.5 rounded-full shadow-sm border border-blue-200 text-xs"
+                      className="flex items-center gap-0.5 bg-white px-1.5 sm:px-2 py-0.5 rounded-full shadow-sm border border-blue-200 text-xs"
                     >
-                      {IconComponent && <IconComponent className="w-3 h-3" />}
+                      {IconComponent && <IconComponent className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
                       <span className="text-[10px] font-medium">
                         {facility}
                       </span>
@@ -1394,13 +1276,13 @@ const generateFields = (step) => {
     if (ipdWizardStep === 1)
       return (
         <div>
-          <h3 className="text-lg font-semibold mb-4">Basic Patient Details</h3>
-          <div className="mb-6">
-            <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Basic Patient Details</h3>
+          <div className="mb-4 sm:mb-6">
+            <div className="p-3 sm:p-4 bg-blue-50 rounded-md border border-blue-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                <h4 className="text-xs sm:text-sm font-semibold text-blue-800 flex items-center gap-2">
                   <svg
-                    className="w-4 h-4"
+                    className="w-3 h-3 sm:w-4 sm:h-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1412,61 +1294,49 @@ const generateFields = (step) => {
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                   </svg>
-                  Transfer OPD Patient to IPD{" "}
-                  <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full ml-2">
-                    (optional)
-                  </span>
+                  Transfer OPD Patient to IPD
                 </h4>
                 <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                  Only OPD patients
+                  Optional
                 </span>
               </div>
-              <div className="flex gap-3 items-center">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <input
                   type="text"
                   value={patientIdInput}
                   onChange={(e) => setPatientIdInput(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="flex-1 px-3 py-2 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
                   placeholder="Enter OPD Patient ID"
                 />
                 <button
                   onClick={handleFetchPatientDetails}
                   disabled={!patientIdInput.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-sm font-medium"
+                  className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-xs sm:text-sm font-medium w-full sm:w-auto"
                 >
                   Search
                 </button>
               </div>
             </div>
           </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {generateFields(1).map(renderField)}
-        <div className="col-span-1 md:col-span-1">
-          <PhotoUpload
-            photoPreview={photoPreview}
-            onPhotoChange={handlePhotoChange}
-            onPreviewClick={() => setIsPhotoModalOpen(true)}
-            error={formErrors.photo}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {generateFields(1).map((field) => renderField(field))}
+          </div>
+          {ipdWizardData.password && (
+            <div className="text-xs text-gray-600 mt-2">
+              Include Capital Letters, Numbers, and Special Characters
+            </div>
+          )}
         </div>
-      </div>
-      {ipdWizardData.password && (
-        <div className="text-xs text-gray-600 mt-2">
-          Include Capital Letters, Numbers, and Special Characters
-        </div>
-      )}
-    </div>
-  );
-
+      );
     if (ipdWizardStep === 2)
       return (
         <div>
-          <h3 className="text-lg font-semibold mb-4">Ward Selection</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Ward Selection</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {WARD_DATA.map((ward) => (
               <div
                 key={`${ward.type}-${ward.number}`}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
+                className={`p-3 sm:p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
                   selectedWard?.type === ward.type &&
                   selectedWard?.number === ward.number
                     ? "border-[#01B07A] bg-[#E6FBF5] shadow-lg"
@@ -1477,7 +1347,7 @@ const generateFields = (step) => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     {getWardIcon(ward.type)}
-                    <h4 className="font-semibold text-sm">{ward.type}</h4>
+                    <h4 className="font-semibold text-xs sm:text-sm">{ward.type}</h4>
                   </div>
                   <span className="text-xs bg-gray-100 px-2 py-1 rounded">
                     {ward.number}
@@ -1509,25 +1379,23 @@ const generateFields = (step) => {
             ))}
           </div>
           {selectedWard && (
-            <div className="mt-6 p-4 bg-[#E6FBF5] rounded-lg border border-[#01B07A]">
-              <p className="text-sm text-[#01B07A] font-medium">
+            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-[#E6FBF5] rounded-lg border border-[#01B07A]">
+              <p className="text-xs sm:text-sm text-[#01B07A] font-medium">
                 Selected: {selectedWard.type} Ward {selectedWard.number}
               </p>
             </div>
           )}
         </div>
       );
-
     if (ipdWizardStep === 3) return renderBedSelection();
-
     return (
       <div>
-        <h3 className="text-lg font-semibold mb-4">IPD Admission Details</h3>
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-          <h4 className="font-semibold mb-2 text-sm flex items-center gap-2">
+        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">IPD Admission Details</h3>
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg border">
+          <h4 className="font-semibold mb-2 text-xs sm:text-sm flex items-center gap-2">
             {getWardIcon(ipdWizardData.wardType)}Ward Assignment
           </h4>
-          <div className="grid grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
             <div>
               <span className="text-gray-600">Ward Type:</span>
               <div className="font-medium">{ipdWizardData.wardType}</div>
@@ -1542,7 +1410,7 @@ const generateFields = (step) => {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {generateFields(4).map(renderField)}
         </div>
       </div>
@@ -1551,27 +1419,28 @@ const generateFields = (step) => {
 
   const renderIpdWizardContent = () => (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-1 sm:p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="flex flex-col relative w-full max-w-5xl max-h-[95vh] rounded-xl bg-white shadow-xl overflow-hidden"
+        className="flex flex-col relative w-full max-w-6xl h-[95vh] sm:h-[90vh] rounded-xl bg-white shadow-xl overflow-hidden"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="sticky top-0 z-20 bg-gradient-to-r from-[#01B07A] to-[#004f3d] rounded-t-xl px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <h2 className="text-base sm:text-lg font-bold text-white">
+        {/* Header - Fixed */}
+        <div className="flex-shrink-0 bg-gradient-to-r from-[#01B07A] to-[#004f3d] rounded-t-xl px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <h2 className="text-sm sm:text-lg font-bold text-white">
             IPD Patient Admission
           </h2>
           <button
             onClick={() => closeModal("ipdWizard")}
-            className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-white text-white hover:bg-white hover:text-[#01B07A] transition-all duration-200"
+            className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-white text-white hover:bg-white hover:text-[#01B07A] transition-all duration-200"
           >
             <svg
-              className="w-4 h-4"
+              className="w-3 h-3 sm:w-4 sm:h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -1585,81 +1454,91 @@ const generateFields = (step) => {
             </svg>
           </button>
         </div>
-        <div className="bg-gradient-to-br from-[#E6FBF5] to-[#C1F1E8] px-6 py-4">
-          <div className="flex items-center justify-center space-x-4">
-            {WIZARD_STEPS.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                      ipdWizardStep >= step.id
-                        ? "bg-[#01B07A] text-white"
-                        : "bg-gray-300 text-gray-600"
-                    }`}
-                  >
-                    {ipdWizardStep > step.id ? (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    ) : (
-                      step.id
-                    )}
-                  </div>
-                  <div className="text-center mt-2">
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto bg-gradient-to-br from-[#E6FBF5] to-[#C1F1E8]">
+          {/* Step Indicator */}
+          <div className="flex-shrink-0 px-2 sm:px-6 py-3 sm:py-4">
+            <div className="flex items-center justify-center space-x-2 sm:space-x-4 min-w-max overflow-x-auto pb-2">
+              {WIZARD_STEPS.map((step, index) => (
+                <div key={step.id} className="flex items-center">
+                  <div className="flex flex-col items-center">
                     <div
-                      className={`text-sm font-medium ${
+                      className={`w-6 h-6 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all duration-300 ${
                         ipdWizardStep >= step.id
-                          ? "text-[#01B07A]"
-                          : "text-gray-600"
+                          ? "bg-[#01B07A] text-white"
+                          : "bg-gray-300 text-gray-600"
                       }`}
                     >
-                      {step.title}
+                      {ipdWizardStep > step.id ? (
+                        <svg
+                          className="w-3 h-3 sm:w-5 sm:h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      ) : (
+                        step.id
+                      )}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {step.description}
+                    <div className="text-center mt-1 sm:mt-2">
+                      <div
+                        className={`text-xs sm:text-sm font-medium ${
+                          ipdWizardStep >= step.id
+                            ? "text-[#01B07A]"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        <span className="hidden sm:inline">{step.title}</span>
+                        <span className="sm:hidden">{step.shortTitle}</span>
+                      </div>
+                      <div className="text-xs text-gray-500 hidden sm:block">
+                        {step.description}
+                      </div>
                     </div>
                   </div>
+                  {index < WIZARD_STEPS.length - 1 && (
+                    <div
+                      className={`w-8 sm:w-16 h-0.5 mx-1 sm:mx-2 transition-all duration-500 ${
+                        ipdWizardStep > step.id ? "bg-[#01B07A]" : "bg-gray-300"
+                      }`}
+                    />
+                  )}
                 </div>
-                {index < WIZARD_STEPS.length - 1 && (
-                  <div
-                    className={`w-16 h-0.5 mx-2 transition-all duration-500 ${
-                      ipdWizardStep > step.id ? "bg-[#01B07A]" : "bg-gray-300"
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="px-2 sm:px-6 pb-4">
+            <motion.div
+              className="bg-white rounded-xl p-3 sm:p-6 shadow-inner"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+              key={ipdWizardStep}
+            >
+              {renderWizardStep()}
+            </motion.div>
           </div>
         </div>
-        <div className="flex-1 overflow-auto bg-gradient-to-br from-[#E6FBF5] to-[#C1F1E8] p-6">
-          <motion.div
-            className="bg-white rounded-xl p-6 shadow-inner"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-            key={ipdWizardStep}
-          >
-            {renderWizardStep()}
-          </motion.div>
-        </div>
-        <div className="bg-white border-t p-4 flex justify-between">
+
+        {/* Footer - Fixed */}
+        <div className="flex-shrink-0 bg-white border-t p-3 sm:p-4 flex flex-col-reverse sm:flex-row justify-between gap-2">
           <button
             onClick={
               ipdWizardStep === 1
                 ? () => closeModal("ipdWizard")
                 : () => setIpdWizardStep(ipdWizardStep - 1)
             }
-            className="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
+            className="px-4 sm:px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 text-xs sm:text-sm"
           >
             {ipdWizardStep === 1 ? "Cancel" : "Back"}
           </button>
@@ -1667,21 +1546,21 @@ const generateFields = (step) => {
             onClick={
               ipdWizardStep === 4 ? handleIpdWizardFinish : handleIpdWizardNext
             }
-            className="px-6 py-2 bg-[#01B07A] text-white rounded-lg hover:bg-[#018A65] transition-all duration-200"
+            className="px-4 sm:px-6 py-2 bg-[#01B07A] text-white rounded-lg hover:bg-[#018A65] transition-all duration-200 text-xs sm:text-sm"
           >
             {ipdWizardStep === 4 ? "Save Admission" : "Next"}
           </button>
         </div>
       </motion.div>
-      
+
       {/* Photo Preview Modal */}
       {isPhotoModalOpen && photoPreview && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded shadow-lg relative max-w-2xl max-h-[80vh] overflow-auto">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-2">
+          <div className="bg-white p-2 sm:p-4 rounded shadow-lg relative max-w-2xl max-h-[80vh] overflow-auto">
             <img src={photoPreview} alt="Preview" className="max-h-[60vh] max-w-full object-contain" />
             <button
               onClick={() => setIsPhotoModalOpen(false)}
-              className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
+              className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-red-500 text-white rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-red-600 text-xs sm:text-base"
             >
               ×
             </button>
@@ -1785,8 +1664,7 @@ const generateFields = (step) => {
                 const today = new Date();
                 age = today.getFullYear() - dobDate.getFullYear();
                 const m = today.getMonth() - dobDate.getMonth();
-                if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate()))
-                  age--;
+                if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
               }
               navigate("/doctordashboard/medical-record", {
                 state: {
@@ -1831,18 +1709,25 @@ const generateFields = (step) => {
     },
   ];
 
-  const tabActions = [
-    {
-      label: "Add Patient",
-      onClick: () => openModal("ipdWizard"),
-      className:
-        "btn btn-primary whitespace-nowrap px-4 py-2 text-xs flex items-center gap-2",
-    },
-  ];
+  const tabActions = [];
+
   const filters = [
     { key: "status", label: "Status", options: STATIC_DATA.status },
     { key: "department", label: "Department", options: masterData.departments },
   ];
+
+  useEffect(() => {
+    if (doctorName && !masterData.loading) fetchAllPatients();
+  }, [doctorName, masterData.loading]);
+
+  useEffect(() => {
+    const highlightIdFromState = location.state?.highlightId;
+    if (highlightIdFromState) setNewPatientId(highlightIdFromState);
+  }, [location.state]);
+
+  useEffect(() => {
+    setTabActions(tabActions);
+  }, [setTabActions]);
 
   return (
     <>
@@ -1853,6 +1738,7 @@ const generateFields = (step) => {
         loading={loading}
         onViewPatient={handleViewPatient}
         newRowIds={[newPatientId].filter(Boolean)}
+        tabActions={tabActions}
         rowClassName={(row) =>
           row.sequentialId === newPatientId ||
           row.sequentialId === location.state?.highlightId
@@ -1873,6 +1759,6 @@ const generateFields = (step) => {
       {modals.ipdWizard && renderIpdWizardContent()}
     </>
   );
-};
+});
 
 export default IpdTab;

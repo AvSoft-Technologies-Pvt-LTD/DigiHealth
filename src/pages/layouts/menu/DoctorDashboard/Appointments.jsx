@@ -51,7 +51,6 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
   const [doctorName, setDoctorName] = useState('');
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -132,11 +131,22 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
       : a.status.toLowerCase() === tab
   );
 
-  const [filteredData, setFilteredData] = useState(tabFiltered);
+  // For overview mode, show only recent 4 pending appointments
+  const getDisplayData = () => {
+    if (isOverview && showOnlyPending) {
+      const pendingAppointments = appointments.filter(a => 
+        ['pending', 'upcoming'].includes(a.status.toLowerCase())
+      );
+      return pendingAppointments.slice(0, 4); // Show only recent 4
+    }
+    return tabFiltered;
+  };
+
+  const [filteredData, setFilteredData] = useState(getDisplayData());
 
   useEffect(() => {
-    setFilteredData(tabFiltered);
-  }, [appointments, tab]);
+    setFilteredData(getDisplayData());
+  }, [appointments, tab, isOverview, showOnlyPending]);
 
   const updateStatus = (id, updates) => {
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
@@ -193,13 +203,11 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
         type: 'success',
         autoClose: 3000
       });
-
       const targetTab = appt.type === 'Physical' ? 'OPD' : 'Virtual';
       localStorage.setItem("highlightPatientId", response.data.id.toString());
       localStorage.setItem("targetPatientTab", targetTab);
       localStorage.setItem("appointmentAccepted", "true");
       localStorage.setItem("acceptedAppointmentType", appt.type);
-
       navigate('/doctordashboard/patients', {
         state: {
           highlightId: response.data.id,
@@ -342,7 +350,6 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
   ];
 
   const typeOptions = Array.from(new Set(tabFiltered.map(a => a.type))).map(t => ({ label: t, value: t }));
-
   const filters = [
     { key: 'type', label: 'Type', options: typeOptions }
   ];
@@ -384,6 +391,7 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
           rowClassName={getRowClassName}
         />
       </div>
+
       <ReusableModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -393,6 +401,7 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
         viewFields={viewFields}
         size="md"
       />
+
       {(rejectId || rescheduleId) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-[var(--color-surface)] rounded-lg p-6 w-96">

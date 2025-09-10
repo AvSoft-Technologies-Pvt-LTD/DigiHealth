@@ -5,7 +5,7 @@ import { FiCalendar, FiMapPin } from "react-icons/fi";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import PaymentGateway from "../../../../components/microcomponents/PaymentGatway";
 
-const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = false }) => {
+const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = false, data }) => {
   const navigate = useNavigate();
   const initialType = displayType || localStorage.getItem("appointmentTab") || "doctor";
   const [state, setState] = useState({
@@ -39,14 +39,14 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
         setState((prev) => ({
           ...prev,
           l: labResponse.data.reverse(),
-          d: filteredDoctorAppointments,
+          d: data || filteredDoctorAppointments,
         }));
       } catch (err) {
         console.error(err);
       }
     };
-    fetchData();
-  }, [displayType]);
+    if (!data) fetchData(); // Only fetch if `data` prop is not provided
+  }, [displayType, data]);
 
   const handleTabChange = (tab) => {
     setState((prev) => ({ ...prev, t: tab }));
@@ -76,7 +76,7 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
         `https://67e3e1e42ae442db76d2035d.mockapi.io/register/book/${state.selectedAppointment.id}`,
         { status: "Paid" }
       );
-    } catch ( error ) {
+    } catch (error) {
       console.error("Error updating appointment status:", error);
     }
   };
@@ -180,6 +180,11 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
     return statusClasses[status] || "bg-gray-100 text-gray-800";
   };
 
+  // Only show 4 most recent appointments for the overview
+  const overviewData = isOverview
+    ? (state.t === "doctor" ? state.d : state.l).slice(0, 4)
+    : (state.t === "doctor" ? state.d : state.l);
+
   const tabs = displayType === "doctor" ? [] : [
     { label: "Doctor Appointments", value: "doctor" },
     { label: "Lab Appointments", value: "lab" },
@@ -214,12 +219,13 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
         <>
           <DynamicTable
             columns={state.t === "doctor" ? doctorColumns : labColumns}
-            data={state.t === "doctor" ? state.d : state.l}
-            tabs={tabs}
-            tabActions={tabActions}
+            data={overviewData}
+            tabs={isOverview ? [] : tabs}
+            tabActions={isOverview ? [] : tabActions}
             activeTab={state.t}
             onTabChange={handleTabChange}
             showSearchBar={!isOverview}
+            showPagination={!isOverview}
           />
         </>
       )}

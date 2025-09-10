@@ -595,187 +595,181 @@ const DynamicTable = ({
 
       {/* Mobile & Tablet Card View */}
       <div className="xl:hidden space-y-4">
-        {paginatedData.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="text-6xl mb-4 opacity-50">📋</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No records found
-            </h3>
-            <p className="text-gray-500">Try adjusting your search or filters</p>
+  {paginatedData.length === 0 ? (
+    <div className="text-center py-16 bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="text-6xl mb-4 opacity-50">📋</div>
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        No records found
+      </h3>
+      <p className="text-gray-500">Try adjusting your search or filters</p>
+    </div>
+  ) : (
+    paginatedData.map((row) => {
+      const headerElements = getMobileHeaderElements(row);
+      const bodyElements = getCardBodyElements(row);
+      return (
+        <div
+          key={row.id}
+          className={`bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden ${
+            newRowIds.includes(row.id)
+              ? "border-l-4 border-l-blue-500 bg-blue-50/30"
+              : ""
+          } ${rowClassName ? rowClassName(row) : ""}`}
+        >
+          {/* Card Header - Limited to First 3 Elements */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {/* Render title element if present */}
+              {headerElements
+                .filter(el => el.type === 'title')
+                .map((element, index) => (
+                  <h3
+                    key={index}
+                    className={`text-lg font-semibold text-gray-900 truncate ${
+                      element.column.clickable
+                        ? "text-[var(--primary-color)] cursor-pointer hover:text-[var(--primary-color)] hover:underline"
+                        : ""
+                    }`}
+                    onClick={
+                      element.column.clickable
+                        ? () => onCellClick?.(row, element.column)
+                        : undefined
+                    }
+                  >
+                    {element.content}
+                  </h3>
+                ))}
+              {/* Render ID badge if present in header */}
+              {headerElements
+                .filter(el => el.type === 'id')
+                .map((element, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 flex-shrink-0"
+                  >
+                    #{element.content}
+                  </span>
+                ))}
+            </div>
+            <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+              {/* Render Actions if present in header */}
+              {headerElements
+                .filter(el => el.type === 'actions')
+                .map((element, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-2 rounded-lg hover:from-blue-100 hover:to-blue-200 transition-all duration-200 border border-blue-200 shadow-sm"
+                  >
+                    {element.content}
+                  </div>
+                ))}
+              {/* Render Status if present in header */}
+              {headerElements
+                .filter(el => el.type === 'status')
+                .map((element, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-[var(--accent-color)] border border-green-200"
+                  >
+                    {element.content}
+                  </span>
+                ))}
+            </div>
           </div>
-        ) : (
-          paginatedData.map((row) => {
-            const headerElements = getMobileHeaderElements(row);
-            const bodyElements = getCardBodyElements(row);
-            return (
-              <div
-                key={row.id}
-                className={`bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden ${
-                  newRowIds.includes(row.id)
-                    ? "border-l-4 border-l-blue-500 bg-blue-50/30"
-                    : ""
-                } ${rowClassName ? rowClassName(row) : ""}`}
-              >
-                {/* Card Header - Limited to First 3 Elements */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {/* Render title element if present */}
-                    {headerElements
-                      .filter(el => el.type === 'title')
-                      .map((element, index) => (
-                        <h3
-                          key={index}
-                          className={`text-lg font-semibold text-gray-900 truncate ${
-                            element.column.clickable
-                              ? "text-[var(--primary-color)] cursor-pointer hover:text-[var(--primary-color)] hover:underline"
-                              : ""
-                          }`}
-                          onClick={
-                            element.column.clickable
-                              ? () => onCellClick?.(row, element.column)
-                              : undefined
-                          }
-                        >
-                          {element.content}
-                        </h3>
-                      ))}
-                    
-                    {/* Render ID badge if present in header */}
-                    {headerElements
-                      .filter(el => el.type === 'id')
-                      .map((element, index) => (
-                        <span 
-                          key={index}
-                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 flex-shrink-0"
-                        >
+          {/* Card Content */}
+          <div className="p-4 space-y-3">
+            {/* Elements that didn't fit in header - Always 2 columns */}
+            {bodyElements.length > 0 && (
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                {bodyElements.map((element, index) => (
+                  <div key={`body-${index}`} className="space-y-1">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      {element.column.header}
+                    </div>
+                    <div className="font-medium text-sm text-gray-900">
+                      {element.type === 'id' && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
                           #{element.content}
                         </span>
-                      ))}
-                  </div>
-                  <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                    {/* Render Actions if present in header */}
-                    {headerElements
-                      .filter(el => el.type === 'actions')
-                      .map((element, index) => (
-                        <div 
-                          key={index}
-                          className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-2 rounded-lg hover:from-blue-100 hover:to-blue-200 transition-all duration-200 border border-blue-200 shadow-sm"
-                        >
-                          {element.content}
-                        </div>
-                      ))}
-                    
-                    {/* Render Status if present in header */}
-                    {headerElements
-                      .filter(el => el.type === 'status')
-                      .map((element, index) => (
-                        <span 
-                          key={index}
-                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-[var(--accent-color)] border border-green-200"
-                        >
+                      )}
+                      {element.type === 'status' && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-[var(--accent-color)] border border-green-200">
                           {element.content}
                         </span>
-                      ))}
-                  </div>
-                </div>
-                {/* Card Content */}
-                <div className="p-4 space-y-3">
-                  {/* Elements that didn't fit in header - Always 2 columns */}
-                  {bodyElements.length > 0 && (
-                    <div className="grid grid-cols-2 gap-4 mb-3">
-                      {bodyElements.map((element, index) => (
-                        <div key={`body-${index}`} className="space-y-1">
-                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                            {element.column.header}
-                          </div>
-                          <div className="font-medium text-sm text-gray-900">
-                            {element.type === 'id' && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                #{element.content}
-                              </span>
-                            )}
-                            {element.type === 'status' && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-[var(--accent-color)] border border-green-200">
-                                {element.content}
-                              </span>
-                            )}
-                            {element.type === 'actions' && (
-                              <div className="flex items-center gap-2">
-                                {element.content}
-                              </div>
-                            )}
-                          </div>
+                      )}
+                      {element.type === 'actions' && (
+                        <div className="flex items-center gap-2">
+                          {element.content}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                  {/* Data columns - Always 2 columns per row, excluding date column */}
-                  {columnPairs.map((pair, pairIndex) => (
-                    <div key={pairIndex} className="grid grid-cols-2 gap-4">
-                      {pair
-                        .filter(
-                          (col) =>
-                            !shouldHideColumn(col.header) &&
-                            col.accessor !== dateColumn?.accessor
-                        )
-                        .map((col, colIndex) => (
-                          <div key={colIndex} className="space-y-1">
-                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                              {col.header}
-                            </div>
-                            <div
-                              className={`font-medium text-sm ${
-                                col.clickable
-                                  ? "text-[var(--primary-color)] cursor-pointer hover:text-[var(--primary-color)] hover:underline"
-                                  : "text-gray-900"
-                              }`}
-                              onClick={
-                                col.clickable
-                                  ? () => onCellClick?.(row, col)
-                                  : undefined
-                              }
-                            >
-                              {col.cell ? col.cell(row) : row[col.accessor] ?? "-"}
-                            </div>
-                          </div>
-                        ))}
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Data columns - Always 2 columns per row, excluding date column */}
+            {columnPairs.map((pair, pairIndex) => (
+              <div key={pairIndex} className="grid grid-cols-2 gap-4">
+                {pair
+                  .filter(
+                    (col) =>
+                      !shouldHideColumn(col.header) &&
+                      col.accessor !== dateColumn?.accessor
+                  )
+                  .map((col, colIndex) => (
+                    <div key={colIndex} className="space-y-1">
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        {col.header}
+                      </div>
+                      <div
+                        className={`font-medium text-sm ${
+                          col.clickable
+                            ? "text-[var(--primary-color)] cursor-pointer hover:text-[var(--primary-color)] hover:underline"
+                            : "text-gray-900"
+                        }`}
+                        onClick={
+                          col.clickable
+                            ? () => onCellClick?.(row, col)
+                            : undefined
+                        }
+                      >
+                        {col.cell ? col.cell(row) : row[col.accessor] ?? "-"}
+                      </div>
                     </div>
                   ))}
-                  {/* Date Column - Full width */}
-                  {dateColumn && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          {dateColumn.header}
-                        </div>
-                        <div className="font-medium text-sm text-gray-900">
-                          {dateColumn.cell
-                            ? dateColumn.cell(row)
-                            : row[dateColumn.accessor]}
-                        </div>
-                      </div>
-                      {/* Empty second column to maintain 2-column layout */}
-                      <div></div>
-                    </div>
-                  )}
-                </div>
-                {newRowIds.includes(row.id) && (
-                  <div className="absolute top-3 right-3 z-10">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-[var(--accent-color)] border border-green-200">
-                      New
-                    </span>
-                  </div>
-                )}
               </div>
-            );
-          })
-        )}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
-      </div>
+            ))}
+            {/* Date Column - Full width */}
+            {dateColumn && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    {dateColumn.header}
+                  </div>
+                  <div className="font-medium text-sm text-gray-900">
+                    {dateColumn.cell
+                      ? dateColumn.cell(row)
+                      : row[dateColumn.accessor]}
+                  </div>
+                </div>
+                {/* Empty second column to maintain 2-column layout */}
+                <div></div>
+              </div>
+            )}
+          </div>
+          {newRowIds.includes(row.id) && (
+            <div className="absolute top-3 right-3 z-10">
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-[var(--accent-color)] border border-green-200">
+                New
+              </span>
+            </div>
+          )}
+        </div>
+      );
+    })
+  )}
+</div>
+
 
       {/* Mobile & Tablet Bottom Actions */}
       {tabActions.length > 0 && (

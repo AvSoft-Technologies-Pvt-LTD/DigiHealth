@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { FaNotesMedical } from "react-icons/fa";
@@ -87,18 +87,9 @@ const PatientViewSections = ({ data, personalHealthDetails, familyHistory, vital
           section.data?.length > 0 ? (
             section.data.map((member, i) => (
               <div key={i} className="p-2 bg-gray-50 rounded text-sm mb-2">
-                <p>
-                  <strong>{member.memberName || member.name}</strong> ({member.relationName || member.relation})
-                </p>
-                <p>
-                  <strong>Phone:</strong> {member.phoneNumber || member.phone || "Not provided"}
-                </p>
-                <p>
-                  <strong>Health Conditions:</strong>
-                  {member.healthConditions?.length > 0
-                    ? member.healthConditions.map((condition) => condition.healthConditionName || condition.name).join(", ")
-                    : "None reported"}
-                </p>
+                <p><strong>{member.memberName || member.name}</strong> ({member.relationName || member.relation})</p>
+                <p><strong>Phone:</strong> {member.phoneNumber || member.phone || "Not provided"}</p>
+                <p><strong>Health Conditions:</strong> {member.healthConditions?.length > 0 ? member.healthConditions.map((c) => c.healthConditionName || c.name).join(", ") : "None reported"}</p>
               </div>
             ))
           ) : (
@@ -131,7 +122,7 @@ const PatientViewModal = ({ isOpen, onClose, patient, personalHealthDetails, fam
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-white">{patient?.name || "-"}</h2>
-                <p className="text-white text-lg">{patient?.sequentialId || "-"}</p>
+                <p className="text-white text-lg">OPD #{patient?.sequentialId || "-"}</p>
               </div>
             </div>
             <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full border border-white text-white hover:bg-white hover:text-[#01B07A] transition-all duration-200">
@@ -152,7 +143,7 @@ const PatientViewModal = ({ isOpen, onClose, patient, personalHealthDetails, fam
   );
 };
 
-const OpdTab = ({ doctorName, masterData, location, setTabActions }) => {
+const OpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, ref) => {
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -165,6 +156,13 @@ const OpdTab = ({ doctorName, masterData, location, setTabActions }) => {
   const [familyHistory, setFamilyHistory] = useState([]);
   const [vitalSigns, setVitalSigns] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // Expose the openAddPatientModal function to the parent
+  useImperativeHandle(ref, () => ({
+    openAddPatientModal: () => {
+      openModal("addPatient");
+    },
+  }));
 
   const hasRecording = useCallback((patientEmail, hospitalName) => {
     const videoKeys = Object.keys(localStorage).filter((key) => key.startsWith("consultationVideo_"));
@@ -188,6 +186,7 @@ const OpdTab = ({ doctorName, masterData, location, setTabActions }) => {
         name: p.name || [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
         fullName: [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
       })).reverse();
+
       setPatients(processedPatients.filter((p) => (!p.type || p.type.toLowerCase() === "opd") && p.doctorName === doctorName)
         .map((p, i) => ({
           ...p,
@@ -427,7 +426,8 @@ const OpdTab = ({ doctorName, masterData, location, setTabActions }) => {
     },
   ];
 
-  const tabActions = [{ label: "Add Patient", onClick: () => openModal("addPatient"), className: "btn btn-primary whitespace-nowrap px-4 py-2 text-xs flex items-center gap-2" }];
+  const tabActions = [];
+
   const filters = [
     { key: "status", label: "Status", options: ["Scheduled", "Completed", "Cancelled"].map((status) => ({ value: status, label: status })) },
     { key: "department", label: "Department", options: masterData.departments },
@@ -439,15 +439,28 @@ const OpdTab = ({ doctorName, masterData, location, setTabActions }) => {
 
   return (
     <>
-      <DynamicTable columns={columns} data={patients} filters={filters} loading={loading} onViewPatient={handleViewPatient} newRowIds={[newPatientId].filter(Boolean)}
-        rowClassName={(row) => row.sequentialId === newPatientId || row.sequentialId === location.state?.highlightId ? "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150" : ""} />
+      <DynamicTable
+        columns={columns}
+        data={patients}
+        filters={filters}
+        loading={loading}
+        onViewPatient={handleViewPatient}
+        newRowIds={[newPatientId].filter(Boolean)}
+        tabActions={tabActions}
+        rowClassName={(row) => row.sequentialId === newPatientId || row.sequentialId === location.state?.highlightId ? "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150" : ""}
+      />
+
       <PatientViewModal isOpen={modals.viewPatient} onClose={() => closeModal("viewPatient")} patient={selectedPatient} personalHealthDetails={personalHealthDetails} familyHistory={familyHistory} vitalSigns={vitalSigns} loading={detailsLoading} onEdit={handleEditPatient} />
+
       <ReusableModal isOpen={modals.addPatient} onClose={() => closeModal("addPatient")} mode="add" title="Add OPD Patient" fields={generatePatientBasicFields()} data={formData} onSave={handleSavePatient} onChange={handleFormChange} saveLabel="Next" cancelLabel="Cancel" size="lg" />
+
       <ReusableModal isOpen={modals.appointment} onClose={() => closeModal("appointment")} mode="add" title="Schedule Appointment" fields={APPOINTMENT_FIELDS} data={appointmentFormData} onSave={handleScheduleAppointment} onChange={setAppointmentFormData} saveLabel="Schedule" cancelLabel="Back" size="md"
-        extraContent={<div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200"><h4 className="text-sm font-semibold text-blue-800 mb-2">Patient Information</h4><p className="text-sm text-blue-700">{formData.firstName} {formData.middleName} {formData.lastName}</p><p className="text-xs text-blue-600">{formData.email}</p></div>} />
+        extraContent={<div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200"><h4 className="text-sm font-semibold text-blue-800 mb-2">Patient Information</h4><p className="text-sm text-blue-700">{formData.firstName} {formData.middleName} {formData.lastName}</p><p className="text-xs text-blue-600">{formData.email}</p></div>}
+      />
+
       <ReusableModal isOpen={modals.editPatient} onClose={() => closeModal("editPatient")} mode="edit" title="Edit OPD Patient" fields={generatePatientBasicFields()} data={formData} onSave={handleUpdatePatient} onChange={handleFormChange} saveLabel="Update" cancelLabel="Cancel" size="lg" />
     </>
   );
-};
+});
 
 export default OpdTab;

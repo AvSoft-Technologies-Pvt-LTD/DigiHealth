@@ -451,8 +451,8 @@ const InvoiceTemplate = React.memo(({ invoice, showActions }) => {
     {
       header: "Actions", accessor: "actions", cell: (row) => (
         <div className="flex items-center gap-2 justify-end">
-           <button onClick={() => handleShare(row)} className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="Share"><Share2 className="w-4 h-4" /></button>
           {row.balance > 0 && <button onClick={() => handlePay(row)} className="flex items-center gap-1 px-2 py-1 text-xs text-white bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 rounded-lg transition-colors" title="Pay Now"><span>Pay</span></button>}
+          <button onClick={() => handleShare(row)} className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="Share"><Share2 className="w-4 h-4" /></button>
         </div>
       ),
     },

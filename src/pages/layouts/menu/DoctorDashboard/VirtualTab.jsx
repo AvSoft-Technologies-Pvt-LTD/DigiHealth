@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
@@ -146,7 +146,7 @@ const PatientViewModal = ({ isOpen, onClose, patient, personalHealthDetails, fam
   );
 };
 
-const VirtualTab = ({ doctorName, masterData, location, setTabActions }) => {
+const VirtualTab = forwardRef(({ doctorName, masterData, location, setTabActions }, ref) => {
   const navigate = useNavigate();
   const [virtualPatients, setVirtualPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,6 +158,13 @@ const VirtualTab = ({ doctorName, masterData, location, setTabActions }) => {
   const [familyHistory, setFamilyHistory] = useState([]);
   const [vitalSigns, setVitalSigns] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // Expose the openScheduleConsultationModal function to the parent
+  useImperativeHandle(ref, () => ({
+    openScheduleConsultationModal: () => {
+      openModal("scheduleConsultation");
+    },
+  }));
 
   const CONSULTATION_FIELDS = [
     { name: "firstName", label: "First Name", type: "text", required: true },
@@ -181,6 +188,7 @@ const VirtualTab = ({ doctorName, masterData, location, setTabActions }) => {
         name: p.name || [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
         fullName: [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
       })).reverse();
+
       setVirtualPatients(processedPatients.filter((p) => (p.type?.toLowerCase() === "virtual" || p.consultationType) && p.doctorName === doctorName)
         .map((p, i) => ({
           ...p,
@@ -366,7 +374,8 @@ const VirtualTab = ({ doctorName, masterData, location, setTabActions }) => {
     },
   ];
 
-  const tabActions = [{ label: "Schedule Consultation", onClick: () => openModal("scheduleConsultation"), className: "btn btn-primary whitespace-nowrap px-4 py-2 text-xs flex items-center gap-2" }];
+  const tabActions = [];
+
   const filters = [
     { key: "consultationStatus", label: "Status", options: ["Scheduled", "Completed", "Cancelled"].map((status) => ({ value: status, label: status })) },
     { key: "consultationType", label: "Type", options: ["Video Call", "Voice Call", "Chat"].map((type) => ({ value: type, label: type })) },
@@ -378,14 +387,26 @@ const VirtualTab = ({ doctorName, masterData, location, setTabActions }) => {
 
   return (
     <>
-      <DynamicTable columns={columns} data={virtualPatients} filters={filters} loading={loading} onViewPatient={handleViewPatient} newRowIds={[newPatientId].filter(Boolean)}
-        rowClassName={(row) => row.sequentialId === newPatientId || row.sequentialId === location.state?.highlightId ? "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150" : ""} />
+      <DynamicTable
+        columns={columns}
+        data={virtualPatients}
+        filters={filters}
+        loading={loading}
+        onViewPatient={handleViewPatient}
+        newRowIds={[newPatientId].filter(Boolean)}
+        tabActions={tabActions}
+        rowClassName={(row) => row.sequentialId === newPatientId || row.sequentialId === location.state?.highlightId ? "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150" : ""}
+      />
+
       <PatientViewModal isOpen={modals.viewPatient} onClose={() => closeModal("viewPatient")} patient={selectedPatient} personalHealthDetails={personalHealthDetails} familyHistory={familyHistory} vitalSigns={vitalSigns} loading={detailsLoading} onEdit={handleEditPatient} />
+
       <ReusableModal isOpen={modals.scheduleConsultation} onClose={() => closeModal("scheduleConsultation")} mode="add" title="Schedule Virtual Consultation" fields={CONSULTATION_FIELDS} data={consultationFormData} onSave={handleScheduleConsultation} onChange={setConsultationFormData} saveLabel="Schedule" cancelLabel="Cancel" size="lg"
-        extraContent={<div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200"><h4 className="text-sm font-semibold text-green-800 mb-2">Virtual Consultation Info</h4><p className="text-sm text-green-700">This will create a virtual consultation appointment. The patient will receive notification with joining details.</p></div>} />
+        extraContent={<div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200"><h4 className="text-sm font-semibold text-green-800 mb-2">Virtual Consultation Info</h4><p className="text-sm text-green-700">This will create a virtual consultation appointment. The patient will receive notification with joining details.</p></div>}
+      />
+
       <ReusableModal isOpen={modals.editPatient} onClose={() => closeModal("editPatient")} mode="edit" title="Edit Virtual Consultation" fields={CONSULTATION_FIELDS} data={consultationFormData} onSave={handleUpdateConsultation} onChange={setConsultationFormData} saveLabel="Update" cancelLabel="Cancel" size="lg" />
     </>
   );
-};
+});
 
 export default VirtualTab;

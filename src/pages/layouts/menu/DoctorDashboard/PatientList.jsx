@@ -1,5 +1,4 @@
-//Patientlist
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -22,7 +21,10 @@ const PatientList = () => {
   const [activeTab, setActiveTab] = useState("OPD");
   const [doctorName, setDoctorName] = useState("");
   const [tabActions, setTabActions] = useState([]);
-
+  // Refs for tab components
+  const opdTabRef = useRef();
+  const ipdTabRef = useRef();
+  const virtualTabRef = useRef();
   // Master data state
   const [masterData, setMasterData] = useState({
     genders: [],
@@ -37,13 +39,11 @@ const PatientList = () => {
     const loadMasterData = async () => {
       try {
         setMasterData((prev) => ({ ...prev, loading: true }));
-        const [gendersRes, bloodGroupsRes, hospitalsRes] =
-          await Promise.allSettled([
-            getGenders(),
-            getBloodGroups(),
-            getAllHospitals(),
-          ]);
-        // Process results
+        const [gendersRes, bloodGroupsRes, hospitalsRes] = await Promise.allSettled([
+          getGenders(),
+          getBloodGroups(),
+          getAllHospitals(),
+        ]);
         const genders =
           gendersRes.status === "fulfilled"
             ? gendersRes.value.data.map((g) => ({
@@ -69,7 +69,6 @@ const PatientList = () => {
               ];
         const hospitals =
           hospitalsRes.status === "fulfilled" ? hospitalsRes.value.data : [];
-        // Try to get departments from practice types/specializations
         let departments = [];
         try {
           const specializationsRes = await getSpecializationsByPracticeType(1);
@@ -96,7 +95,6 @@ const PatientList = () => {
         });
       } catch (error) {
         console.error("Error loading master data:", error);
-        // Set fallback data
         setMasterData({
           genders: [
             { value: "Female", label: "Female" },
@@ -191,30 +189,31 @@ const PatientList = () => {
       doctorName,
       masterData,
       location,
-      setTabActions, // Pass setTabActions to child components
+      setTabActions,
+      tabActions,
     };
     switch (activeTab) {
       case "OPD":
-        return <OpdTab {...commonProps} />;
+        return <OpdTab ref={opdTabRef} {...commonProps} />;
       case "IPD":
-        return <IpdTab {...commonProps} />;
+        return <IpdTab ref={ipdTabRef} {...commonProps} />;
       case "Virtual":
-        return <VirtualTab {...commonProps} />;
+        return <VirtualTab ref={virtualTabRef} {...commonProps} />;
       default:
-        return <OpdTab {...commonProps} />;
+        return <OpdTab ref={opdTabRef} {...commonProps} />;
     }
   };
 
   return (
     <div className="p-2 sm:p-4 md:p-2">
-      {/* Tab Navigation */}
-      <div className="flex items-center mb-1 justify-between w-full">
+      {/* Tab Navigation and Action Buttons (Desktop) */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 overflow-x-auto pb-1 mb-4">
         <div className="flex gap-4">
           {["OPD", "IPD", "Virtual"].map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`relative cursor-pointer flex items-center gap-1 px-4 font-medium transition-colors duration-300 ${
+              className={`relative cursor-pointer flex-shrink-0 flex items-center gap-1 px-4 font-medium transition-colors duration-300 ${
                 activeTab === tab
                   ? "text-[var(--primary-color)] after:content-[''] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-[var(--primary-color)]"
                   : "text-gray-500 hover:text-[var(--accent-color)]"
@@ -224,20 +223,85 @@ const PatientList = () => {
             </button>
           ))}
         </div>
-        <div className="flex gap-2">
-          {tabActions.map((action, index) => (
+        {/* Action Buttons (Right side in Desktop) */}
+        <div className="hidden md:flex gap-3">
+          {activeTab === "OPD" && (
             <button
-              key={index}
-              onClick={action.onClick}
-              className={action.className}
+              onClick={() => opdTabRef.current?.openAddPatientModal()}
+              className="btn btn-secondary"
             >
-              {action.label}
+              Add Patient
             </button>
-          ))}
+          )}
+          {activeTab === "IPD" && (
+            <button
+              onClick={() => ipdTabRef.current?.openAddPatientModal()}
+              className="btn btn-secondary"
+            >
+              Add Patient
+            </button>
+          )}
+          {activeTab === "Virtual" && (
+            <button
+              onClick={() => virtualTabRef.current?.openScheduleConsultationModal()}
+              className="btn btn-secondary"
+            >
+              Schedule Consultation
+            </button>
+          )}
         </div>
       </div>
       {/* Render Active Tab */}
-      {renderActiveTab()}
+      <div className="mb-16 md:mb-4">{renderActiveTab()}</div>
+      {/* Action Buttons (Fixed at bottom in mobile view) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm z-50">
+        <div className="flex gap-3 w-full mx-auto">
+          {activeTab === "OPD" && (
+            <button
+              onClick={() => opdTabRef.current?.openAddPatientModal()}
+              className="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 transform active:scale-95 shadow-md bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color)] text-white hover:from-[var(--primary-color)] hover:to-[var(--primary-color)] shadow-lg hover:shadow-xl border-2 border-[var(--primary-color)]"
+            >
+              Add Patient
+            </button>
+          )}
+          {activeTab === "IPD" && (
+            <button
+              onClick={() => ipdTabRef.current?.openAddPatientModal()}
+              className="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 transform active:scale-95 shadow-md bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color)] text-white hover:from-[var(--primary-color)] hover:to-[var(--primary-color)] shadow-lg hover:shadow-xl border-2 border-[var(--primary-color)]"
+            >
+              Add Patient
+            </button>
+          )}
+          {activeTab === "Virtual" && (
+            <button
+              onClick={() => virtualTabRef.current?.openScheduleConsultationModal()}
+              className="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 transform active:scale-95 shadow-md bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color)] text-white hover:from-[var(--primary-color)] hover:to-[var(--primary-color)] shadow-lg hover:shadow-xl border-2 border-[var(--primary-color)]"
+            >
+              Schedule Consultation
+            </button>
+          )}
+        </div>
+      </div>
+      {/* Tab Actions for Mobile/Tablet View */}
+      {tabActions.length > 0 && (
+        <div className="xl:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm">
+          <div className="flex gap-3 w-full mx-auto">
+            {tabActions.map((action, index) => (
+              <button
+                key={action.label}
+                onClick={action.onClick}
+                className={`flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 transform active:scale-95 shadow-md ${
+                  index === 0
+                    ? "bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color)] text-white hover:from-[var(--primary-color)] hover:to-[var(--primary-color)] shadow-lg hover:shadow-xl border-2 border-[var(--primary-color)]"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300 hover:border-gray-400"
+                } ${action.className || ""}`}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

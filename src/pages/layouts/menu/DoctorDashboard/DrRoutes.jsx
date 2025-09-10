@@ -39,8 +39,8 @@ const DrRoutes = () => {
        {/* <Route path="dr-admin" element={<StaffManagement />} /> */}
      <Route path="billing" element={<Payments />} />
       <Route path="settings" element={<Settings />} />
-      <Route path="MedicalRecordsTemplate" element={<MedicalRecordsTemplate/>} />
-            <Route path="add-billing" element={<BillingForm/>} />
+      {/* <Route path="MedicalRecordsTemplate" element={<MedicalRecordsTemplate/>} /> */}
+            {/* <Route path="add-billing" element={<BillingForm/>} /> */}
 
 
     </Routes>
