@@ -18,6 +18,7 @@ import NursingAndTreatment from "./NursingAndTreatment";
 import GatePassModal from "./GatePassModal";
 import DischargeModal from "./DischargeModal";
 
+
 const DrRoutes = () => {
   return (
     <Routes>

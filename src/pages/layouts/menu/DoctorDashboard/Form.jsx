@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -818,7 +819,7 @@ const Form = () => {
 
 
 {/* ==================== TABLET VIEW ==================== */}
-<div className="hidden md:flex lg:hidden flex-col items-center bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-b-xl shadow-md gap-4 p-4 w-full">
+<div className="hidden md:flex lg:hidden flex-col items-center bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-b-xl shadow-md gap-4 p-4 w-[95%] mx-auto">
   {/* Patient Avatar + Name + Details */}
   <div className="relative flex flex-wrap items-start gap-6 p-4 w-full text-white">
     
@@ -835,50 +836,90 @@ const Form = () => {
     )}
 
     {/* Avatar */}
-    <div className="w-16 h-16 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-xl font-bold uppercase shadow">
+    <div className="w-20 h-20 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-xl font-bold uppercase shadow">
       {getPatientName().split(" ").map((n) => n[0]).join("") || "N/A"}
     </div>
 
     {/* Patient Info */}
-    <div className="flex flex-col text-sm space-y-1 min-w-0 break-words">
-      <h2 className="text-xl font-semibold">
-        Name: {getPatientName() || "Unknown Patient"}
-      </h2>
-      <p className="text-base">Contact: {patient?.phone || patient?.contact || "N/A"}</p>
+  <div className="flex flex-col text-sm space-y-1 min-w-0 break-words">
+  <h2 className="text-2xl font-semibold">
+    Name: {getPatientName() || "Unknown Patient"}
+  </h2>
+
+  <div className="grid grid-cols-2 gap-2">
+    <div className="flex flex-col">
       <p className="text-base">Age: {getPatientAge() || "N/A"}</p>
       <p className="text-base">Gender: {patient?.gender || "N/A"}</p>
-      <p className="text-base">Diagnosis: {patient?.diagnosis || "N/A"}</p>
-
       {isIPDPatient && (
-        <>
-          <p className="text-base">Ward: {getCombinedWardInfo()}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-base font-medium">Status:</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-sm font-medium ${
-                patient?.status?.toLowerCase() === "admitted"
-                  ? "bg-green-200 text-green-900"
-                  : patient?.status?.toLowerCase() === "under treatment"
-                  ? "bg-yellow-200 text-yellow-900"
-                  : patient?.status?.toLowerCase() === "discharged"
-                  ? "bg-gray-200 text-gray-900"
-                  : "bg-blue-200 text-blue-900"
-              }`}
-            >
-              {patient?.status || "N/A"}
-            </span>
-          </div>
-        </>
+        <p className="text-base">Ward: {getCombinedWardInfo()}</p>
+      )}
+    </div>
+
+    <div className="flex flex-col">
+      <p className="text-base">Contact: {patient?.phone || patient?.contact || "N/A"}</p>
+      <p className="text-base">Diagnosis: {patient?.diagnosis || "N/A"}</p>
+      {isIPDPatient && (
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-base font-medium">Status:</span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-sm font-medium ${
+              patient?.status?.toLowerCase() === "admitted"
+                ? "bg-green-200 text-green-900"
+                : patient?.status?.toLowerCase() === "under treatment"
+                ? "bg-yellow-200 text-yellow-900"
+                : patient?.status?.toLowerCase() === "discharged"
+                ? "bg-gray-200 text-gray-900"
+                : "bg-blue-200 text-blue-900"
+            }`}
+          >
+            {patient?.status || "N/A"}
+          </span>
+        </div>
       )}
     </div>
   </div>
+</div>
+
+  </div>
 
   {/* Tab Panel */}
-  <div style={{ backgroundColor: '#F8FAF9' }} className=" w-[93%] rounded-2xl mt-4 pt-4 pb-4">
-    {/* First Row: Scrollable Tabs */}
-    <div className="w-full flex justify-center">
-      <div className="flex flex-wrap gap-3 border-b border-gray-200">
-        {["template", "vitals", "prescription", "eye"].map((formId) => {
+<div style={{ backgroundColor: '#F8FAF9' }} className="w-full rounded-2xl mt-4 pt-2 pb-3">
+  {/* First Row: Scrollable Tabs */}
+  <div className="w-full flex justify-center">
+    <div className="flex flex-wrap gap-5 border-b-3 border-gray-200">
+      {["template", "vitals", "prescription", "eye"].map((formId) => {
+        const formType = formTypes[formId];
+        const Icon = formType.icon;
+        const isActive = activeForm === formType.id;
+        return (
+          <button
+            key={formType.id}
+            onClick={() => handleFormTypeClick(formType.id)}
+            className={`flex items-center gap-2 px-1 py-1 text-[20px] md:text-[22px] lg:text-[20px] whitespace-nowrap ${
+              isActive
+                ? "text-[#01B07A]  border-b-2 border-[#01B07A]"
+                : "text-gray-600 hover:text-[#01B07A]"
+            }`}
+          >
+            <Icon className="w-5 h-5 md:w-6 md:h-6" />
+            <span>{formType.name}</span>
+          </button>
+        );
+      })}
+    </div>
+    <button
+      onClick={() => setShowMoreForms(!showMoreForms)}
+      className="flex items-center justify-end rounded-full text-[#01B07A]  font-medium hover:bg-gray-100 whitespace-nowrap ml-3"
+    >
+      {showMoreForms ? <ChevronUp className="w-8 h-8" /> : <ChevronDown className="w-8 h-8" />}
+    </button>
+  </div>
+
+  {/* Second Row: More Forms (if toggled) */}
+  {showMoreForms && (
+    <div className="w-full mt-2">
+      <div className="flex justify-center flex-wrap gap-2 border-b border-gray-200">
+        {["clinical", "lab", "dental"].map((formId) => {
           const formType = formTypes[formId];
           const Icon = formType.icon;
           const isActive = activeForm === formType.id;
@@ -886,63 +927,30 @@ const Form = () => {
             <button
               key={formType.id}
               onClick={() => handleFormTypeClick(formType.id)}
-              className={`flex items-center gap-3 px-3 py-1 text-[18px] font-semibold whitespace-nowrap ${
+              className={`flex items-center gap-3 text-[20px] md:text-[22px] lg:text-[20px] whitespace-nowrap ${
                 isActive
-                  ? "text-[#01B07A] bg-white border-b-2 border-[#01B07A]"
+                  ? "text-[#01B07A] border-b-2 border-[#01B07A]"
                   : "text-gray-600 hover:text-[#01B07A]"
               }`}
             >
-              <Icon className="w-5 h-5" />
+              <Icon className="w-5 h-5 md:w-6 md:h-6" />
               <span>{formType.name}</span>
             </button>
           );
         })}
+        {/* Print All Button */}
+        <button
+          onClick={printAllForms}
+          className="flex items-center gap-2 px-4 py-1 rounded-xl text-[18px] md:text-[18px] lg:text-[18px] font-semibold whitespace-nowrap bg-[#1A223F] text-white hover:bg-[#01B07A]"
+        >
+          <Printer className="w-5 h-5 md:w-6 md:h-6" />
+          <span>Print All</span>
+        </button>
       </div>
-
-      <button
-        onClick={() => setShowMoreForms(!showMoreForms)}
-        className="flex items-center justify-end rounded-full text-[#01B07A] bg-white font-medium hover:bg-gray-100 whitespace-nowrap ml-3"
-      >
-        {showMoreForms ?<ChevronUp className="w-8 h-8" /> : <ChevronDown className="w-6 h-6" />}
-      </button>
     </div>
+  )}
+</div>
 
-    {/* Second Row: More Forms (if toggled) */}
-    {showMoreForms && (
-      <div className="w-full mt-4">
-        <div className="flex justify-center flex-wrap gap-2 border-b border-gray-200">
-          {["clinical", "lab", "dental"].map((formId) => {
-            const formType = formTypes[formId];
-            const Icon = formType.icon;
-            const isActive = activeForm === formType.id;
-            return (
-              <button
-                key={formType.id}
-                onClick={() => handleFormTypeClick(formType.id)}
-                className={`flex items-center gap-3 px-3 py-1 text-[18px] font-semibold whitespace-nowrap ${
-                  isActive
-                    ? "text-[#01B07A] bg-white border-b-2 border-[#01B07A]"
-                    : "text-gray-600 hover:text-[#01B07A]"
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span>{formType.name}</span>
-              </button>
-            );
-          })}
-
-          {/* Print All Button */}
-          <button
-            onClick={printAllForms}
-            className="flex items-center gap-2 px-4 py-1 rounded-xl text-[16px] font-semibold whitespace-nowrap bg-[#1A223F] text-white hover:bg-[#01B07A]"
-          >
-            <Printer className="w-5 h-5" />
-            <span>Print All</span>
-          </button>
-        </div>
-      </div>
-    )}
-  </div>
 </div>
 
 
