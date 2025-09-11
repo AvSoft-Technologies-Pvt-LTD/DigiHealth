@@ -16,6 +16,8 @@ const Overview = () => {
   const [error, setError] = useState(null);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const navigate = useNavigate();
+  const pendingAppointments = appointments.filter(appt => appt.status === 'Pending');
+const recentPendingAppointments = pendingAppointments.slice(0, 4);
 
   useEffect(() => {
     (async () => {
@@ -237,12 +239,11 @@ const Overview = () => {
               View All <ChevronRight size={16} />
             </Link>
           </div>
-          <DoctorAppointments showOnlyPending={true} isOverview={true} />
+          <DoctorAppointments showOnlyPending={true} isOverview={true} appointments={recentPendingAppointments}/>
         </motion.div>
 
         {/* Revenue */}
         <motion.div
-          className="bg-[var(--color-surface)] rounded-xl shadow-sm p-4"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.7 }}

@@ -152,19 +152,19 @@ const DashboardOverview = () => {
     </div>
   );
   return (
-    <div className="bg-[var(--color-surface)] text-[var(--primary-color)] pt-2">
+    <div className="bg-[var(--color-surface)] text-[var(--primary-color)]">
       <div className="max-w-7xl mx-auto custom-scrollbar">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 overflow-x-auto rounded-2xl slide-in-up sm:p-4">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <h4 className="h4-heading flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
                 <FaCalendarAlt className="text-[var(--accent-color)]" />Recent Appointments
               </h4>
-              <Link to="/patientdashboard/app" className="text-[var(--primary-color)] font-medium hover:text-[var(--accent-color)] transition-colors duration-200 flex items-center space-x-1 border-b-2 text-sm">
+              <Link to="/patientdashboard/app" className="text-[var(--primary-color)] font-medium hover:text-[var(--accent-color)] transition-colors duration-200 flex items-center space-x-1 text-sm">
                 <span>View All</span><FaChevronRight className="text-xs" />
               </Link>
             </div>
-            <div className="overflow-x-auto custom-scrollbar -p-6"><AppointmentList displayType="doctor" showOnlyDoctorColumns={true} isOverview={true} /></div>
+            <div className="overflow-x-auto custom-scrollbar -p-2"><AppointmentList displayType="doctor" showOnlyDoctorColumns={true} isOverview={true} /></div>
           </div>
           <div className="w-full lg:w-1/2 rounded-2xl slide-in-up">
             <div className="flex justify-between items-center mb-6">

@@ -1529,26 +1529,27 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
         </div>
 
         {/* Footer - Fixed */}
-        <div className="flex-shrink-0 bg-white border-t p-3 sm:p-4 flex flex-col-reverse sm:flex-row justify-between gap-2">
-          <button
-            onClick={
-              ipdWizardStep === 1
-                ? () => closeModal("ipdWizard")
-                : () => setIpdWizardStep(ipdWizardStep - 1)
-            }
-            className="px-4 sm:px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 text-xs sm:text-sm"
-          >
-            {ipdWizardStep === 1 ? "Cancel" : "Back"}
-          </button>
-          <button
-            onClick={
-              ipdWizardStep === 4 ? handleIpdWizardFinish : handleIpdWizardNext
-            }
-            className="px-4 sm:px-6 py-2 bg-[#01B07A] text-white rounded-lg hover:bg-[#018A65] transition-all duration-200 text-xs sm:text-sm"
-          >
-            {ipdWizardStep === 4 ? "Save Admission" : "Next"}
-          </button>
-        </div>
+     <div className="flex-shrink-0 bg-white border-t p-3 sm:p-4 sticky bottom-0 z-10 flex flex-col-reverse sm:flex-row justify-between gap-2">
+  <button
+    onClick={
+      ipdWizardStep === 1
+        ? () => closeModal("ipdWizard")
+        : () => setIpdWizardStep(ipdWizardStep - 1)
+    }
+    className="px-4 sm:px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 text-xs sm:text-sm"
+  >
+    {ipdWizardStep === 1 ? "Cancel" : "Back"}
+  </button>
+  <button
+    onClick={
+      ipdWizardStep === 4 ? handleIpdWizardFinish : handleIpdWizardNext
+    }
+    className="px-4 sm:px-6 py-2 bg-[#01B07A] text-white rounded-lg hover:bg-[#018A65] transition-all duration-200 text-xs sm:text-sm"
+  >
+    {ipdWizardStep === 4 ? "Save Admission" : "Next"}
+  </button>
+</div>
+
       </motion.div>
 
       {/* Photo Preview Modal */}

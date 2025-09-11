@@ -106,48 +106,48 @@ function Dashboard() {
 
   // Fetch master data options
   useEffect(() => {
-   const fetchOptions = async () => {
-  try {
-    const [coverageRes, healthConditionsRes, familyRelationsRes, bloodGroupsRes] = await Promise.all([
-      getCoverageTypes().catch(() => ({ data: [] })),
-      getHealthConditions().catch(() => ({ data: [] })),
-      getRelations().catch(() => ({ data: [] })),
-      getBloodGroups().catch(() => ({ data: [] })),
-    ]);
+    const fetchOptions = async () => {
+      try {
+        const [coverageRes, healthConditionsRes, familyRelationsRes, bloodGroupsRes] = await Promise.all([
+          getCoverageTypes().catch(() => ({ data: [] })),
+          getHealthConditions().catch(() => ({ data: [] })),
+          getRelations().catch(() => ({ data: [] })),
+          getBloodGroups().catch(() => ({ data: [] })),
+        ]);
 
-    // Map responses safely
-    setBloodGroups(
-      bloodGroupsRes.data?.map((item) => ({
-        label: item.bloodGroupName || 'Unknown',
-        value: item.id,
-      })) || []
-    );
+        // Map responses safely
+        setBloodGroups(
+          bloodGroupsRes.data?.map((item) => ({
+            label: item.bloodGroupName || 'Unknown',
+            value: item.id,
+          })) || []
+        );
 
-    setFamilyRelations(
-      familyRelationsRes.data?.map((item) => ({
-        label: item.relationName || 'Unknown',
-        value: item.id,
-      })) || []
-    );
+        setFamilyRelations(
+          familyRelationsRes.data?.map((item) => ({
+            label: item.relationName || 'Unknown',
+            value: item.id,
+          })) || []
+        );
 
-    setHealthConditions(
-      healthConditionsRes.data?.map((item) => ({
-        label: item.healthConditionName || 'Unknown',
-        value: item.id,
-      })) || []
-    );
+        setHealthConditions(
+          healthConditionsRes.data?.map((item) => ({
+            label: item.healthConditionName || 'Unknown',
+            value: item.id,
+          })) || []
+        );
 
-    setCoverageTypes(
-      coverageRes.data?.map((item) => ({
-        label: item.coverageTypeName || 'Unknown',
-        value: item.coverageTypeName,
-      })) || []
-    );
-  } catch (err) {
-    console.error('Failed to fetch options:', err);
-    showFeedback('Failed to load dropdown options. Please try again.', 'error');
-  }
-};
+        setCoverageTypes(
+          coverageRes.data?.map((item) => ({
+            label: item.coverageTypeName || 'Unknown',
+            value: item.coverageTypeName,
+          })) || []
+        );
+      } catch (err) {
+        console.error('Failed to fetch options:', err);
+        showFeedback('Failed to load dropdown options. Please try again.', 'error');
+      }
+    };
     fetchOptions();
   }, []);
 
@@ -168,60 +168,60 @@ function Dashboard() {
 
   // Fetch user data
   useEffect(() => {
-   const fetchData = async () => {
-  if (!user?.id) return;
-  setLoading(true);
-  try {
-    const [familyRes, healthRes] = await Promise.all([
-      getFamilyMembersByPatient(user.id).catch(() => ({ data: [] })),
-      getPersonalHealthByPatientId(user.id).catch(() => ({ data: null })),
-    ]);
+    const fetchData = async () => {
+      if (!user?.id) return;
+      setLoading(true);
+      try {
+        const [familyRes, healthRes] = await Promise.all([
+          getFamilyMembersByPatient(user.id).catch(() => ({ data: [] })),
+          getPersonalHealthByPatientId(user.id).catch(() => ({ data: null })),
+        ]);
 
-    // Map family members safely
-    const mappedFamilyMembers = familyRes.data?.map((member) => ({
-      id: member.id,
-      name: member.memberName || 'Unknown',
-      relation: member.relationName || 'Unknown',
-      relationId: member.relationId,
-      number: member.phoneNumber || '',
-      diseases: member.healthConditions?.map((hc) => hc.healthConditionName) || [],
-      healthConditionIds: member.healthConditions?.map((hc) => hc.id) || [],
-    })) || [];
+        // Map family members safely
+        const mappedFamilyMembers = familyRes.data?.map((member) => ({
+          id: member.id,
+          name: member.memberName || 'Unknown',
+          relation: member.relationName || 'Unknown',
+          relationId: member.relationId,
+          number: member.phoneNumber || '',
+          diseases: member.healthConditions?.map((hc) => hc.healthConditionName) || [],
+          healthConditionIds: member.healthConditions?.map((hc) => hc.id) || [],
+        })) || [];
 
-    // Map personal health data safely
-    let personalHealthData = {};
-    if (healthRes.data) {
-      personalHealthData = {
-        id: healthRes.data.id,
-        height: healthRes.data.height || '',
-        weight: healthRes.data.weight || '',
-        bloodGroupId: healthRes.data.bloodGroupId,
-        bloodGroupName: healthRes.data.bloodGroupName || '',
-        surgeries: healthRes.data.surgeries || '',
-        allergies: healthRes.data.allergies || '',
-        isSmokerUser: healthRes.data.isSmoker || false,
-        smokingDuration: healthRes.data.yearsSmoking || '',
-        isAlcoholicUser: healthRes.data.isAlcoholic || false,
-        alcoholDuration: healthRes.data.yearsAlcoholic || '',
-        isTobaccoUser: healthRes.data.isTobacco || false,
-        tobaccoDuration: healthRes.data.yearsTobacco || '',
-      };
-    }
+        // Map personal health data safely
+        let personalHealthData = {};
+        if (healthRes.data) {
+          personalHealthData = {
+            id: healthRes.data.id,
+            height: healthRes.data.height || '',
+            weight: healthRes.data.weight || '',
+            bloodGroupId: healthRes.data.bloodGroupId,
+            bloodGroupName: healthRes.data.bloodGroupName || '',
+            surgeries: healthRes.data.surgeries || '',
+            allergies: healthRes.data.allergies || '',
+            isSmokerUser: healthRes.data.isSmoker || false,
+            smokingDuration: healthRes.data.yearsSmoking || '',
+            isAlcoholicUser: healthRes.data.isAlcoholic || false,
+            alcoholDuration: healthRes.data.yearsAlcoholic || '',
+            isTobaccoUser: healthRes.data.isTobacco || false,
+            tobaccoDuration: healthRes.data.yearsTobacco || '',
+          };
+        }
 
-    setUserData((prev) => ({
-      ...prev,
-      ...personalHealthData,
-      familyMembers: mappedFamilyMembers,
-    }));
+        setUserData((prev) => ({
+          ...prev,
+          ...personalHealthData,
+          familyMembers: mappedFamilyMembers,
+        }));
 
-    setHasPersonalHealthData(!!healthRes.data);
-  } catch (err) {
-    console.error('Failed to fetch data:', err);
-    showFeedback('Failed to load your data. Some features may be limited.', 'warning');
-  } finally {
-    setLoading(false);
-  }
-};
+        setHasPersonalHealthData(!!healthRes.data);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        showFeedback('Failed to load your data. Some features may be limited.', 'warning');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchData();
   }, [user]);
 
@@ -233,40 +233,40 @@ function Dashboard() {
   const handleEditClick = () => navigate('/patientdashboard/settings');
   const handleGenerateCard = () => setShowHealthCardModal(true);
 
- const getSectionCompletionStatus = () => {
-  // Basic Details Completion
-  const basicComplete = Boolean(
-    user?.firstName &&
-    user?.lastName &&
-    user?.dob &&
-    user?.gender &&
-    user?.phone
-  );
+  const getSectionCompletionStatus = () => {
+    // Basic Details Completion
+    const basicComplete = Boolean(
+      user?.firstName &&
+      user?.lastName &&
+      user?.dob &&
+      user?.gender &&
+      user?.phone
+    );
 
-  // Personal Health Completion
-  const personalComplete = Boolean(
-    userData.height &&
-    userData.weight &&
-    userData.bloodGroupId
-  );
+    // Personal Health Completion
+    const personalComplete = Boolean(
+      userData.height &&
+      userData.weight &&
+      userData.bloodGroupId
+    );
 
-  // Family Details Completion
-  const familyComplete = Array.isArray(userData.familyMembers) && userData.familyMembers.length > 0;
+    // Family Details Completion
+    const familyComplete = Array.isArray(userData.familyMembers) && userData.familyMembers.length > 0;
 
-  return {
-    basic: basicComplete,
-    personal: personalComplete,
-    family: familyComplete,
+    return {
+      basic: basicComplete,
+      personal: personalComplete,
+      family: familyComplete,
+    };
   };
-};
 
-useEffect(() => {
-  const completionStatus = getSectionCompletionStatus();
-  const completedSections = Object.values(completionStatus).filter(Boolean).length;
-  const totalSections = Object.keys(completionStatus).length;
-  const completion = Math.round((completedSections / totalSections) * 100);
-  setProfileCompletion(completion);
-}, [userData, user]);
+  useEffect(() => {
+    const completionStatus = getSectionCompletionStatus();
+    const completedSections = Object.values(completionStatus).filter(Boolean).length;
+    const totalSections = Object.keys(completionStatus).length;
+    const completion = Math.round((completedSections / totalSections) * 100);
+    setProfileCompletion(completion);
+  }, [userData, user]);
 
 
   const saveUserData = async (updatedData) => {
@@ -300,7 +300,7 @@ useEffect(() => {
       };
 
       let savedData;
-      
+
       if (hasPersonalHealthData) {
         // Update existing record using patientId
         const updateRes = await updatePersonalHealth(user.id, personalHealthData);
@@ -343,7 +343,7 @@ useEffect(() => {
         isTobaccoUser: savedData?.isTobacco !== undefined ? savedData.isTobacco : personalHealthData.isTobacco,
         tobaccoDuration: savedData?.yearsTobacco !== undefined ? savedData.yearsTobacco : personalHealthData.yearsTobacco,
       }));
-      
+
       return true;
     } catch (err) {
       console.error('Failed to save:', err.response?.data || err.message);
@@ -368,7 +368,7 @@ useEffect(() => {
       setModalData({
         height: userData.height || '',
         weight: userData.weight || '',
-      bloodGroup: userData.bloodGroupId || '',
+        bloodGroup: userData.bloodGroupId || '',
         surgeries: userData.surgeries || '',
         allergies: userData.allergies || '',
         isAlcoholicUser: userData.isAlcoholicUser || false,
@@ -565,66 +565,79 @@ useEffect(() => {
   }
 
   return (
-    <div className="min-h-screen p-2 sm:p-4">
+    <div className=" p-2 sm:p-4">
       {/* Profile Card */}
-      <div className="bg-gradient-to-r from-[#0e1630] via-[#1b2545] to-[#038358] text-white p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 shadow-lg w-full">
-        <div className="relative w-16 h-16 sm:w-20 sm:h-20">
-  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 36 36">
-    <circle className="text-gray-300" stroke="currentColor" strokeWidth="2" fill="none" r="16" cx="18" cy="18" />
-    <circle
-      stroke={getProgressColor(profileCompletion || 0)}
-      strokeWidth="2"
-      strokeDasharray="100"
-      strokeDashoffset={100 - (profileCompletion || 0)}
-      strokeLinecap="round"
-      fill="none"
-      r="16"
-      cx="18"
-      cy="18"
-    />
-  </svg>
-  <div className="absolute inset-2 flex items-center justify-center">
-    {profileData?.photo ? (
-      <img src={profileData.photo} alt="Profile" className="w-full h-full object-cover rounded-full" />
-    ) : (
-      <CircleUser className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500" />
-    )}
-  </div>
-  <div className="absolute bottom-0 right-0 bg-yellow-400 text-black px-1.5 py-0.5 text-xs font-bold rounded-full">
-    {profileCompletion}%
-  </div>
-</div>
-
-        <div className="flex flex-row flex-wrap gap-2 sm:gap-2 items-center flex-1 min-w-0">
-          {[
-            { label: "Name", value: `${profileData.firstName || "Guest"} ${profileData.lastName || ""}`.trim() },
-            { label: "Date of Birth", value: profileData.dob || "N/A" },
-            { label: "Gender", value: profileData.gender || "N/A" },
-            { label: "Phone No.", value: profileData.phone || "N/A" },
-            { label: "Blood Group", value: userData.bloodGroupName || "N/A" },
-          ].map((item, i) => (
-            <div key={i} className="flex flex-col whitespace-nowrap text-xs sm:text-sm">
-              <span className="text-[#01D48C] truncate">{item.label}</span>
-              <span className="text-gray-200 truncate">{item.value}</span>
+      <div className="bg-gradient-to-r from-[#0e1630] via-[#1b2545] to-[#038358] text-white p-3 sm:p-4 rounded-xl shadow-lg w-full">
+        {/* Mobile/Tablet: Photo centered, details in a row below */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+          {/* Photo Section - Centered on mobile, left-aligned on desktop */}
+          <div className="flex justify-center sm:justify-start sm:flex-shrink-0">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 36 36">
+                <circle className="text-gray-300" stroke="currentColor" strokeWidth="2" fill="none" r="16" cx="18" cy="18" />
+                <circle
+                  stroke={getProgressColor(profileCompletion || 0)}
+                  strokeWidth="2"
+                  strokeDasharray="100"
+                  strokeDashoffset={100 - (profileCompletion || 0)}
+                  strokeLinecap="round"
+                  fill="none"
+                  r="16"
+                  cx="18"
+                  cy="18"
+                />
+              </svg>
+              <div className="absolute inset-2 flex items-center justify-center">
+                {profileData?.photo ? (
+                  <img src={profileData.photo} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                ) : (
+                  <CircleUser className="w-20 h-20 sm:w-16 sm:h-16 text-gray-500" />
+                )}
+              </div>
+              <div className="absolute bottom-0 right-0 bg-yellow-400 text-black px-1.5 py-0.5 text-xs font-bold rounded-full">
+                {profileCompletion}%
+              </div>
             </div>
-          ))}
-        </div>
-        <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-center justify-center sm:justify-end flex-shrink-0">
-          <button
-            className="px-2 py-1 sm:px-3 sm:py-2 rounded-full border-[var(--accent-color)] text-[var(--accent-color)] bg-white hover:bg-[var(--accent-color)] hover:text-[var(--surface-color)] transition-all duration-300 whitespace-nowrap text-xs sm:text-sm"
-            onClick={handleGenerateCard}
-          >
-            View Health Card
-          </button>
-          <div className="relative group">
-            <Pencil onClick={handleEditClick} className="w-5 h-5 sm:w-6 sm:h-6 p-1 rounded-full bg-white text-black cursor-pointer hover:scale-110 transition-transform duration-200" />
-            <span className="absolute -top-7 sm:-top-10 left-1/2 -translate-x-1/2 text-[10px] sm:text-[11px] bg-white text-black rounded-md px-1.5 py-0.5 opacity-0 scale-90 translate-y-1 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 transition-all duration-300 shadow-lg z-10">
-              Edit
-            </span>
+          </div>
+
+          {/* Details Section - Single row on mobile, inline on desktop */}
+          <div className="mt-3 sm:mt-0 sm:ml-4 flex flex-col sm:flex-row sm:items-center sm:flex-wrap sm:gap-4 w-full">
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+              {[
+                { label: "Name", value: `${profileData.firstName || "Guest"} ${profileData.lastName || ""}`.trim() },
+                { label: "Date of Birth", value: profileData.dob || "N/A" },
+                { label: "Gender", value: profileData.gender || "N/A" },
+                { label: "Phone No.", value: profileData.phone || "N/A" },
+                { label: "Blood Group", value: userData.bloodGroupName || "N/A" },
+              ].map((item, i) => (
+                <div key={i} className="flex flex-col items-center sm:items-start whitespace-nowrap text-sm sm:text-sm">
+                  <span className="text-[#01D48C] truncate">{item.label}</span>
+                  <span className="text-gray-200 truncate">{item.value}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Action Buttons - Centered on mobile, right-aligned on desktop */}
+            <div className="flex justify-center sm:justify-end mt-3 sm:mt-0 sm:ml-auto gap-2">
+              <button
+                className="px-2 py-1 sm:px-3 sm:py-2 rounded-full border-[var(--accent-color)] text-[var(--accent-color)] bg-white hover:bg-[var(--accent-color)] hover:text-[var(--surface-color)] transition-all duration-300 whitespace-nowrap text-xs sm:text-sm"
+                onClick={handleGenerateCard}
+              >
+                View Health Card
+              </button>
+              <div className="relative group">
+                <Pencil
+                  onClick={handleEditClick}
+                  className="w-5 h-5 sm:w-6 sm:h-6 p-1 rounded-full bg-white text-black cursor-pointer hover:scale-110 transition-transform duration-200"
+                />
+                <span className="absolute -top-7 sm:-top-10 left-1/2 -translate-x-1/2 text-[10px] sm:text-[11px] bg-white text-black rounded-md px-1.5 py-0.5 opacity-0 scale-90 translate-y-1 group-hover:opacity-100 group-hover:scale-100 group-hover:translate-y-0 transition-all duration-300 shadow-lg z-10">
+                  Edit
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
       {/* Section Tabs */}
       <div className="mt-4 sm:mt-6 overflow-x-auto custom-scrollbar pb-2">
         <div className="flex gap-2 sm:gap-4 min-w-max">
@@ -634,9 +647,8 @@ useEffect(() => {
               <button
                 key={id}
                 onClick={() => id !== 'basic' && openModal(id)}
-                className={`px-2 py-1 sm:px-3 sm:py-2 rounded-lg flex items-center gap-1 text-white text-xs sm:text-sm whitespace-nowrap ${
-                  activeSection === id ? 'bg-[#0e1630]' : 'bg-[#1f2a4d] hover:bg-[#1b264a]'
-                } transition-all duration-300`}
+                className={`px-2 py-1 sm:px-3 sm:py-2 rounded-lg flex items-center gap-1 text-white text-xs sm:text-sm whitespace-nowrap ${activeSection === id ? 'bg-[#0e1630]' : 'bg-[#1f2a4d] hover:bg-[#1b264a]'
+                  } transition-all duration-300`}
               >
                 <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="truncate">{name}</span>
@@ -649,11 +661,10 @@ useEffect(() => {
 
       {/* Feedback Message */}
       {feedbackMessage.show && (
-        <div className={`fixed top-4 right-4 z-50 p-3 sm:p-4 rounded-lg shadow-lg ${
-          feedbackMessage.type === 'success' ? 'bg-green-100 text-green-800' : 
-          feedbackMessage.type === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
-          'bg-red-100 text-red-800'
-        } transition-all duration-300`}>
+        <div className={`fixed top-4 right-4 z-50 p-3 sm:p-4 rounded-lg shadow-lg ${feedbackMessage.type === 'success' ? 'bg-green-100 text-green-800' :
+            feedbackMessage.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-red-100 text-red-800'
+          } transition-all duration-300`}>
           {feedbackMessage.message}
         </div>
       )}
@@ -670,10 +681,10 @@ useEffect(() => {
         onChange={(updated) => setModalData(updated)}
         onDelete={handleModalDelete}
         saveLabel={
-          activeSection === 'personal' 
+          activeSection === 'personal'
             ? hasPersonalHealthData ? 'Update' : 'Save'
-            : activeSection === 'family' && editFamilyMember?.id 
-              ? 'Update' 
+            : activeSection === 'family' && editFamilyMember?.id
+              ? 'Update'
               : 'Save'
         }
         cancelLabel="Cancel"

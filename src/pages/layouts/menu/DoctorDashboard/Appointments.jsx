@@ -389,6 +389,7 @@ const DoctorAppointments = ({ showOnlyPending = false, isOverview = false }) => 
           onTabChange={setTab}
           showSearchBar={displaySearchBar}
           rowClassName={getRowClassName}
+          showPagination={!isOverview}
         />
       </div>
 

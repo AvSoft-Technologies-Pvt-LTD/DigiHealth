@@ -45,7 +45,7 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
         console.error(err);
       }
     };
-    if (!data) fetchData(); // Only fetch if `data` prop is not provided
+    if (!data) fetchData();
   }, [displayType, data]);
 
   const handleTabChange = (tab) => {
@@ -133,40 +133,35 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
     { header: "Status", accessor: "status", cell: (row) => getStatusBadge(row.status, row) },
   ];
 
-  const labColumns = [
-    { header: "ID", accessor: "bookingId" },
-    { header: "Test", accessor: "testTitle" },
-    { header: "Lab", accessor: "labName" },
-    {
-      header: "Status",
-      accessor: "status",
-      cell: (appointment) => (
-        <span
-          className={`px-2 py-1 rounded-full paragraph text-xs sm:text-sm ${getStatusClass(
-            appointment.status
-          )}`}
-        >
-          {appointment.status || "Pending"}
+ const labColumns = [
+  { header: "ID", accessor: "bookingId" },
+  { header: "Test", accessor: "testTitle" },
+  { header: "Lab", accessor: "labName" },
+  {
+    header: "Status",
+    accessor: "status",
+    cell: (appointment) => (
+      <span className={`px-2 py-1 rounded-full paragraph text-xs sm:text-sm ${getStatusClass(appointment.status)}`}>
+        {appointment.status || "Pending"}
+      </span>
+    ),
+  },
+  {
+    header: "Action", // This must match the detection logic in DynamicTable
+    cell: (appointment) => (
+      <button
+        onClick={() => navigate(`/patientdashboard/track-appointment/${appointment.bookingId}`)}
+        className="group relative inline-flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 border border-[var(--accent-color)] text-[var(--accent-color)] rounded-full font-semibold bg-transparent overflow-hidden transition-colors duration-300 ease-in-out hover:bg-[var(--accent-color)] hover:text-white text-xs sm:text-sm"
+      >
+        <FiMapPin className="text-sm sm:text-lg transition-transform duration-300 ease-in-out group-hover:scale-110" />
+        <span className="tracking-wide transition-all duration-300 ease-in-out">
+          Track
         </span>
-      ),
-    },
-    {
-      header: "Action",
-      cell: (appointment) => (
-        <button
-          onClick={() =>
-            navigate(`/patientdashboard/track-appointment/${appointment.bookingId}`)
-          }
-          className="group relative inline-flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 border border-[var(--accent-color)] text-[var(--accent-color)] rounded-full font-semibold bg-transparent overflow-hidden transition-colors duration-300 ease-in-out hover:bg-[var(--accent-color)] hover:text-white text-xs sm:text-sm"
-        >
-          <FiMapPin className="text-sm sm:text-lg transition-transform duration-300 ease-in-out group-hover:scale-110" />
-          <span className="tracking-wide transition-all duration-300 ease-in-out">
-            Track
-          </span>
-        </button>
-      ),
-    },
-  ];
+      </button>
+    ),
+  },
+];
+
 
   const getStatusClass = (status) => {
     const statusClasses = {
@@ -180,7 +175,6 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
     return statusClasses[status] || "bg-gray-100 text-gray-800";
   };
 
-  // Only show 4 most recent appointments for the overview
   const overviewData = isOverview
     ? (state.t === "doctor" ? state.d : state.l).slice(0, 4)
     : (state.t === "doctor" ? state.d : state.l);
@@ -216,18 +210,16 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
         />
       )}
       {!state.showPaymentGateway && (
-        <>
-          <DynamicTable
-            columns={state.t === "doctor" ? doctorColumns : labColumns}
-            data={overviewData}
-            tabs={isOverview ? [] : tabs}
-            tabActions={isOverview ? [] : tabActions}
-            activeTab={state.t}
-            onTabChange={handleTabChange}
-            showSearchBar={!isOverview}
-            showPagination={!isOverview}
-          />
-        </>
+        <DynamicTable
+          columns={state.t === "doctor" ? doctorColumns : labColumns}
+          data={overviewData}
+          tabs={isOverview ? [] : tabs}
+          tabActions={isOverview ? [] : tabActions}
+          activeTab={state.t}
+          onTabChange={handleTabChange}
+          showSearchBar={!isOverview}
+          showPagination={!isOverview}
+        />
       )}
     </div>
   );
