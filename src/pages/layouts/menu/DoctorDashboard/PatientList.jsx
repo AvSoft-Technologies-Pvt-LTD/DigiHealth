@@ -206,7 +206,7 @@ const PatientList = () => {
 
   return (
     <div className="p-2 sm:p-4 md:p-2">
-      {/* Tab Navigation and Action Buttons (Desktop) */}
+      {/* Tab Navigation */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 overflow-x-auto pb-1 mb-4">
         <div className="flex gap-4">
           {["OPD", "IPD", "Virtual"].map((tab) => (
@@ -223,8 +223,8 @@ const PatientList = () => {
             </button>
           ))}
         </div>
-        {/* Action Buttons (Right side in Desktop) */}
-        <div className="hidden md:flex gap-3">
+        {/* Action Buttons (Hidden in all views, since we want them only at the bottom in tablet/mobile) */}
+        <div className="hidden lg:flex gap-3">
           {activeTab === "OPD" && (
             <button
               onClick={() => opdTabRef.current?.openAddPatientModal()}
@@ -251,10 +251,12 @@ const PatientList = () => {
           )}
         </div>
       </div>
+
       {/* Render Active Tab */}
-      <div className="mb-16 md:mb-4">{renderActiveTab()}</div>
-      {/* Action Buttons (Fixed at bottom in mobile view) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm z-50">
+      <div className="mb-16 lg:mb-4">{renderActiveTab()}</div>
+
+      {/* Action Buttons (Fixed at bottom in tablet and mobile view) */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm z-50">
         <div className="flex gap-3 w-full mx-auto">
           {activeTab === "OPD" && (
             <button
@@ -282,9 +284,10 @@ const PatientList = () => {
           )}
         </div>
       </div>
+
       {/* Tab Actions for Mobile/Tablet View */}
       {tabActions.length > 0 && (
-        <div className="xl:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm">
           <div className="flex gap-3 w-full mx-auto">
             {tabActions.map((action, index) => (
               <button

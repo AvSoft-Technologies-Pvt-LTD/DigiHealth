@@ -1,3 +1,7 @@
+
+
+
+
 import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -499,10 +503,9 @@ const OpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
     
     { name: "occupation", label: "Occupation", type: "select", required: true, options: OCCUPATIONS },
     { name: "pincode", label: "PIN Code", type: "text", required: true, placeholder: "Enter 6-digit PIN code" },
-    { name: "city", label: "City", type: "select", required: true, options: formData.cityOptions || [] },
-    { name: "district", label: "District", type: "text", required: true, disabled: true },
-    
+    { name: "city", label: "City/Locality", type: "select", required: true, options: formData.cityOptions || [] },
     { name: "state", label: "State", type: "text", required: true, disabled: true },
+    { name: "district", label: "District", type: "text", required: true, disabled: true },
     {
       name: "profileImage",
       label: "Upload Profile Image",
