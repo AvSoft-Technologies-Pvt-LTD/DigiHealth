@@ -391,7 +391,7 @@ function Healthcard({ hideLogin }) {
           <div className="mt-3 sm:mt-4 flex justify-between items-center px-2 sm:px-3">
             <div className="flex flex-col">
               <span className={`text-xs font-semibold ${textColor}`}>Health ID</span>
-              <div className={`font-mono text-lg sm:text-2xl tracking-wider font-bold ${textColor} inline-block`}>
+              <div className={`font-mono text-lg sm:text-xl tracking-wider font-bold ${textColor} inline-block`}>
                 {healthId}
               </div>
               <div className={`flex items-center gap-1 sm:gap-2 text-xs mt-1 ${textColor}`}>
