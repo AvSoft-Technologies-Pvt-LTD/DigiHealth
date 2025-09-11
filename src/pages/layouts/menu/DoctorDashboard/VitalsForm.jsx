@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Heart,
@@ -63,6 +64,7 @@ const VitalsForm = ({
     respiratoryRate: "",
     timeOfDay: "morning",
   };
+
   const [formData, setFormData] = useState({ ...emptyVitals, ...data });
   const [headerRecordIdx, setHeaderRecordIdx] = useState(null);
   const [warnings, setWarnings] = useState({});
@@ -73,17 +75,18 @@ const VitalsForm = ({
     if (!ptemail || !hospitalName) return;
     try {
       const response = await axios.get(VITALS_POST_API, {
-        params: {
-          ptemail: ptemail,
-          hospitalName: hospitalName,
-        },
+        params: { ptemail, hospitalName },
       });
+      if (response.status === 404) {
+        toast.error("No vitals records found for this patient/hospital.");
+        return;
+      }
       const serverRecords = response.data || [];
       const stored = localStorage.getItem("vitalsRecords");
       const localRecords = stored ? JSON.parse(stored) : [];
       const allRecords = [...serverRecords, ...localRecords];
       const uniqueRecords = allRecords.reduce((acc, rec) => {
-        if (!acc.some((r) => r.timestamp === rec.timestamp)) {
+        if (!acc.some((r) => r.timestamp === rec.timestamp && r.id === rec.id)) {
           acc.push(rec);
         }
         return acc;
@@ -95,8 +98,12 @@ const VitalsForm = ({
       localStorage.setItem("vitalsRecords", JSON.stringify(sortedRecords));
       onSave("vitals", { ...formData, vitalsRecords: sortedRecords });
     } catch (error) {
-      console.error("Error fetching vitals:", error);
-      toast.error("Failed to fetch vitals from server");
+      if (error.response?.status === 404) {
+        toast.error("No vitals records found for this patient/hospital.");
+      } else {
+        console.error("Error fetching vitals:", error);
+        toast.error("Failed to fetch vitals from server");
+      }
     }
   };
 
@@ -233,6 +240,7 @@ const VitalsForm = ({
         timestamp: now.getTime(),
         date,
         time,
+        id: Date.now().toString(),
       };
       console.log("Saving to VITALS_POST_API:", newRecord);
       await postVitals(newRecord);
@@ -437,244 +445,187 @@ const VitalsForm = ({
     }
   };
 
-return (
+  return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-slideIn">
       {/* Header */}
-<div className="sub-heading px-3 sm:px-4 md:px-6 py-3 flex flex-col gap-2 sm:gap-4">
-  {/* FIRST ROW: Heading + Voice Button (Mobile) / Heading + Icons (Desktop) */}
-  <div className="flex flex-nowrap items-center justify-between gap-1">
-    {/* Heading + Voice Button (Mobile) / Heading Only (Desktop) */}
-    <div className="flex items-center gap-1">
-      <Heart className="text-base text-white" />
-      <h3 className="text-white font-medium text-xs">Vital Signs</h3>
-    </div>
-
-    {/* Voice Button (Mobile + Desktop) + Icons (Mobile) */}
-    <div className="flex items-center gap-1">
-      {/* Mobile: Save/Print/Chart Buttons */}
-      <div className="flex sm:hidden">
-        <button
-          onClick={save}
-          disabled={loading}
-          className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1 rounded-lg transition-colors"
-        >
-          <Save className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => onPrint("vitals")}
-          className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1 rounded-lg transition-colors"
-        >
-          <Printer className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => {
-            setChartVital("heartRate");
-            setIsChartOpen(true);
-          }}
-          className="flex items-center gap-0.5 bg-white/10 px-1.5 py-0.5 rounded-lg text-[8px] font-medium hover:bg-[var(--primary-color)] hover:bg-opacity-20"
-        >
-          <BarChart3 className="w-3 h-3" />
-        </button>
-      </div>
-
-      {/* Voice Button (Mobile + Desktop) */}
-      <VoiceButton
-        isListening={isListening}
-        onToggle={toggleListening}
-        isSupported={isSupported}
-        size="xs"
-        confidence={confidence}
-      />
-      {isListening && (
-        <div className="flex items-center gap-0.5 text-white text-[8px]">
-          <span className="animate-pulse">🎤</span>
-          {confidence > 0 && (
-            <span className="opacity-75">({Math.round(confidence * 100)}%)</span>
-          )}
+      <div className="sub-heading px-2 sm:px-3 md:px-4 py-2 flex flex-col gap-1 sm:gap-2">
+        {/* FIRST ROW: Heading + Voice Button (Mobile) / Heading + Icons (Desktop) */}
+        <div className="flex flex-nowrap items-center justify-between gap-1">
+          {/* Heading + Voice Button (Mobile) / Heading Only (Desktop) */}
+          <div className="flex items-center gap-1">
+            <Heart className="text-base text-white" />
+            <h3 className="text-white font-medium text-xs sm:text-sm md:text-base">
+              Vital Signs
+            </h3>
+          </div>
+          {/* Voice Button (Mobile + Desktop) + Icons (Mobile) */}
+          <div className="flex items-center gap-1">
+            {/* Mobile: Save/Print/Chart Buttons */}
+            <div className="flex sm:hidden">
+              <button
+                onClick={save}
+                disabled={loading}
+                className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1 rounded-lg transition-colors"
+              >
+                <Save className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => onPrint("vitals")}
+                className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1 rounded-lg transition-colors"
+              >
+                <Printer className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => {
+                  setChartVital("heartRate");
+                  setIsChartOpen(true);
+                }}
+                className="flex items-center gap-0.5 bg-white/10 px-1.5 py-0.5 rounded-lg text-[8px] font-medium hover:bg-[var(--primary-color)] hover:bg-opacity-20"
+              >
+                <BarChart3 className="w-3 h-3" />
+              </button>
+            </div>
+            {/* Voice Button (Mobile + Desktop) */}
+            <VoiceButton
+              isListening={isListening}
+              onToggle={toggleListening}
+              isSupported={isSupported}
+              className="!w-6 !h-6 sm:!w-7 sm:!h-7"
+              confidence={confidence}
+            />
+            {isListening && (
+              <div className="flex items-center gap-0.5 text-white text-[8px] sm:text-xs">
+                <span className="animate-pulse">🎤</span>
+                {confidence > 0 && (
+                  <span className="opacity-75">({Math.round(confidence * 100)}%)</span>
+                )}
+              </div>
+            )}
+            {/* Desktop: Save/Print/Chart Buttons */}
+            <div className="hidden sm:flex items-center gap-1">
+              <button
+                onClick={save}
+                disabled={loading}
+                className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1.5 rounded-lg transition-colors"
+              >
+                <Save className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => onPrint("vitals")}
+                className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1.5 rounded-lg transition-colors"
+              >
+                <Printer className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => {
+                  setChartVital("heartRate");
+                  setIsChartOpen(true);
+                }}
+                className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[var(--primary-color)] hover:bg-opacity-20"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span className="text-xs">Charts</span>
+              </button>
+            </div>
+          </div>
         </div>
-      )}
-
-      {/* Desktop: Save/Print/Chart Buttons */}
-      <div className="hidden sm:flex">
-        <button
-          onClick={save}
-          disabled={loading}
-          className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1.5 sm:p-2 rounded-lg transition-colors"
-        >
-          <Save className="w-4 sm:w-5 h-4 sm:h-5" />
-        </button>
-        <button
-          onClick={() => onPrint("vitals")}
-          className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-1.5 sm:p-2 rounded-lg transition-colors"
-        >
-          <Printer className="w-4 sm:w-5 h-4 sm:h-5" />
-        </button>
-        <button
-          onClick={() => {
-            setChartVital("heartRate");
-            setIsChartOpen(true);
-          }}
-          className="flex items-center gap-1 bg-white/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium hover:bg-[var(--primary-color)] hover:bg-opacity-20"
-        >
-          <BarChart3 className="w-3 sm:w-4 h-3 sm:h-4" />
-          <span>Charts</span>
-        </button>
+        {/* SECOND ROW: Record Selector + Time of Day */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Record Selector */}
+          <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg">
+            <span className="text-[10px] sm:text-xs text-white">Record:</span>
+            <div className="relative w-full max-w-[120px] sm:max-w-[150px]">
+              <select
+                className="rounded px-1 py-0.5 text-[8px] sm:text-[12px] bg-white text-[var(--primary-color)]
+                           border border-gray-200 w-full truncate appearance-none
+                           pr-6 bg-right bg-no-repeat"
+                style={{
+                  backgroundImage:
+                    "url('data:image/svg+xml;utf8,<svg fill=\"black\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>)",
+                  backgroundPosition: "right 0.5rem center",
+                  backgroundSize: "1em",
+                }}
+                value={headerRecordIdx === null ? "" : headerRecordIdx}
+                onChange={(e) =>
+                  setHeaderRecordIdx(
+                    e.target.value === "" ? null : Number(e.target.value)
+                  )
+                }
+              >
+                <option value="" className="text-[8px] sm:text-[12px]">
+                  Current
+                </option>
+                {vitalsRecords.map((rec, idx) => (
+                  <option
+                    key={`${rec.timestamp}-${rec.id || idx}`}
+                    value={idx}
+                    className="text-[8px] sm:text-[12px]"
+                  >
+                    {rec.date} {rec.time}{" "}
+                    {rec.timeOfDay === "morning" ? "(Morning)" : "(Evening)"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {/* Time of Day Radio */}
+          <div className="flex items-center gap-x-2 bg-white/10 px-2 py-1 rounded-lg">
+            {["morning", "evening"].map((t) => (
+              <label
+                key={t}
+                className="flex items-center gap-1 text-[10px] sm:text-xs text-white"
+              >
+                <input
+                  type="radio"
+                  name="timeOfDay"
+                  value={t}
+                  checked={formData.timeOfDay === t}
+                  onChange={handleChange}
+                  className="accent-[var(--accent-color)]"
+                />
+                <span className="hidden sm:inline">
+                  {t[0].toUpperCase() + t.slice(1)}
+                </span>
+                <span className="sm:hidden">{t[0].toUpperCase()}</span>
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-
-  {/* SECOND ROW: Record Selector + Time of Day (Mobile) / Record Selector + Time of Day + Action Buttons (Desktop) */}
-<div className="flex flex-wrap items-center">
-  {/* Record Selector */}
-  <div className="flex items-center  gap-1 sm:gap-2 bg-white/10 px-2 py-1 rounded-lg w-fit">
-    <span className="text-[10px] sm:text-xs md:text-sm text-white">
-      Record:
-    </span>
-    <div className="relative w-full max-w-[180px]">
-      <select
-        className="rounded px-1 py-0.5 text-[10px] me-5 sm:text-xs md:text-sm me-1 bg-white text-[var(--primary-color)]
-                   border border-gray-200 w-full max-w-[80px] truncate appearance-none
-                   pr-6 bg-right bg-no-repeat sm:me-3"
-        style={{
-          backgroundImage:
-            "url('data:image/svg+xml;utf8,<svg fill=\"black\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>)",
-          backgroundPosition: "right 0.5rem center",
-          backgroundSize: "1em",
-        }}
-        value={headerRecordIdx === null ? "" : headerRecordIdx}
-        onChange={(e) =>
-          setHeaderRecordIdx(
-            e.target.value === "" ? null : Number(e.target.value)
-          )
-        }
-      >
-        <option
-          value=""
-          className="max-w-[80px] text-[8px] sm:text-[10px] md:text-[10px]"
-        >
-          Current
-        </option>
-        {vitalsRecords.map((rec, idx) => (
-          <option
-            key={rec.timestamp}
-            value={idx}
-            className="truncate max-w-[80px] text-[8px] sm:text-[10px] md:text-[10px]"
-          >
-            {rec.date} {rec.time}{" "}
-            {rec.timeOfDay === "morning" ? "(Morning)" : "(Evening)"}
-          </option>
-        ))}
-      </select>
-    </div>
-  </div>
-
-  {/* Time of Day Radio */}
-  <div className="flex items-center gap-x-2 bg-white/10 px-2 py-1 rounded-lg sm:ml-4 md:ml-6">
-    {["morning", "evening"].map((t) => (
-      <label
-        key={t}
-        className="flex items-center gap-1 text-[10px] sm:text-xs text-white"
-      >
-        <input
-          type="radio"
-          name="timeOfDay"
-          value={t}
-          checked={formData.timeOfDay === t}
-          onChange={handleChange}
-          className="accent-[var(--accent-color)]"
-        />
-        <span className="hidden sm:inline">
-          {t[0].toUpperCase() + t.slice(1)}
-        </span>
-        <span className="sm:hidden">{t[0].toUpperCase()}</span>
-      </label>
-    ))}
-  </div>
-</div>
-
-</div>
-
-
-
-
-
-
       {/* Vitals Input Grid */}
-     {/* <div className="p-3 sm:p-4 md:p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-  {Object.keys(vitalRanges).map((field) => (
-    <div key={field} className="space-y-1 sm:space-y-2">
-      <label className="block text-[12px] sm:text-sm md:text-text-base font-medium text-[var(--primary-color)]">
-        {field.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
-      </label>
-      <div className="relative">
-        <input
-          name={field}
-          value={formData[field]}
-          onChange={handleChange}
-          placeholder={vitalRanges[field].placeholder}
-          className={`w-full rounded-lg border px-2 sm:px-3 py-1 sm:py-1.5 md:py-2 text-[10px] sm:text-xs md:text-sm ${
-            formData[field]
-              ? "bg-green-50 border-green-300 ring-2 ring-green-200"
-              : ""
-          }`}
-        />
-        {formData[field] && (
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] sm:text-xs md:text-sm">
-            {vitalRanges[field].label}
-          </span>
-        )}
+      <div className="p-3 sm:p-4 md:p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        {Object.keys(vitalRanges).map((field) => (
+          <div key={field} className="space-y-1">
+            <div className="relative floating-input">
+              <label className="block text-[12px] sm:text-sm md:text-text-base font-medium text-[var(--primary-color)]">
+                {field.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
+              </label>
+              <input
+                name={field}
+                value={formData[field]}
+                onChange={handleChange}
+                placeholder={vitalRanges[field].placeholder}
+                className={`w-full rounded-lg border px-2 sm:px-3 py-1 sm:py-1.5 md:py-2 text-[10px] sm:text-xs md:text-sm ${
+                  formData[field]
+                    ? "bg-green-50 border-green-300 ring-2 ring-green-200"
+                    : ""
+                }`}
+              />
+              {formData[field] && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] sm:text-xs md:text-sm">
+                  {vitalRanges[field].label}
+                </span>
+              )}
+            </div>
+            {warnings[field] && (
+              <span className="flex items-center text-[10px] sm:text-xs md:text-sm text-yellow-700 bg-yellow-100 rounded-lg px-2 sm:px-3 py-1 gap-1 sm:gap-2">
+                <AlertTriangle className="w-3 sm:w-4 h-3 sm:h-4 text-yellow-500" />
+                {warnings[field]}
+              </span>
+            )}
+          </div>
+        ))}
       </div>
-      {warnings[field] && (
-        <span className="flex items-center text-[10px] sm:text-xs md:text-sm text-yellow-700 bg-yellow-100 rounded-lg px-2 sm:px-3 py-1 gap-1 sm:gap-2">
-          <AlertTriangle className="w-3 sm:w-4 h-3 sm:h-4 text-yellow-500" />
-          {warnings[field]}
-        </span>
-      )}
-    </div>
-  ))}
-</div> */}
-<div className="p-3 sm:p-4 md:p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-  {Object.keys(vitalRanges).map((field) => (
-    <div key={field} className="space-y-1">
-      {/* Floating Input Wrapper */}
-      <div
-        className="relative floating-input"
-        data-placeholder={field
-          .replace(/([A-Z])/g, " $1")
-          .replace(/^./, (c) => c.toUpperCase())}
-      >
-        <input
-          name={field}
-          value={formData[field]}
-          onChange={handleChange}
-          placeholder=" "
-          className={`peer input-field text-[11px] truncate sm:whitespace-normal sm:text-[12px] ${
-            formData[field]
-              ? "bg-green-50 border-green-300 ring-2 ring-green-200"
-              : ""
-          }`}
-        />
-        {formData[field] && (
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] sm:text-[11px] max-w-[60px] truncate sm:max-w-none">
-            {vitalRanges[field].label}
-          </span>
-        )}
-      </div>
-
-      {/* Warnings */}
-      {warnings[field] && (
-        <span className="flex items-center text-[11px] text-yellow-700 bg-yellow-100 rounded-lg px-2 py-1 gap-1">
-          <AlertTriangle className="w-3 h-3 text-yellow-500" />
-          {warnings[field]}
-        </span>
-      )}
-    </div>
-  ))}
-</div>
-
-
-
-
       {/* Voice Transcript */}
       {transcript && (
         <div className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6">

@@ -46,14 +46,17 @@ const ClinicalNotesForm = ({
       });
       return;
     }
+
     const currentDate = new Date().toISOString().split("T")[0];
     const currentTimestamp = new Date().toISOString();
+
     const dateFields = {
       dateOfVisit: currentDate,
       dateOfAdmission: type?.toUpperCase() === "IPD" ? currentDate : null,
       dateOfDischarge: type?.toUpperCase() === "IPD" ? currentDate : null,
       dateOfConsultation: type?.toUpperCase() === "VIRTUAL" ? currentDate : null,
     };
+
     const clinicalNotePayload = {
       chiefcomplaint: formData.chiefComplaint,
       History: formData.history,
@@ -67,6 +70,7 @@ const ClinicalNotesForm = ({
       type: type ? type.toUpperCase() : "OPD",
       createdAt: currentTimestamp,
     };
+
     const patientMRPayload = {
       hospitalName: hospitalname,
       ptemail: ptemail,
@@ -80,6 +84,7 @@ const ClinicalNotesForm = ({
       createdAt: currentTimestamp,
       createdBy: "doctor",
     };
+
     try {
       const clinicalNoteResponse = await fetch(
         "https://68abfd0c7a0bbe92cbb8d633.mockapi.io/clinicalnote",
@@ -89,9 +94,11 @@ const ClinicalNotesForm = ({
           body: JSON.stringify(clinicalNotePayload),
         }
       );
+
       if (!clinicalNoteResponse.ok) {
         throw new Error(`Clinical note API failed: ${clinicalNoteResponse.status}`);
       }
+
       const patientMRResponse = await fetch(
         "https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec",
         {
@@ -100,14 +107,17 @@ const ClinicalNotesForm = ({
           body: JSON.stringify(patientMRPayload),
         }
       );
+
       if (!patientMRResponse.ok) {
         throw new Error(`Patient MR API failed: ${patientMRResponse.status}`);
       }
+
       toast.success("✅ Clinical notes saved and posted successfully!", {
         position: "top-right",
         autoClose: 2000,
         closeOnClick: true,
       });
+
       onSave("clinical", formData);
     } catch (error) {
       console.error("API Error:", error);

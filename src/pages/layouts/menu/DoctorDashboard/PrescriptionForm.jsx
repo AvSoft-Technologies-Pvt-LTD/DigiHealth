@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import {
@@ -141,82 +139,84 @@ const PrescriptionForm = ({
     }
   };
 
-  const handleSave = async () => {
-    const prescriptionPayload = {
-      prescriptions,
-    };
-    try {
-      const result = await postPrescriptionToMockAPI(prescriptionPayload);
-      setIsSaved(true);
-      setPrescriptionId(result.id);
+const handleSave = async () => {
+  const prescriptionPayload = {
+    prescriptions,
+  };
+  try {
+    const result = await postPrescriptionToMockAPI(prescriptionPayload);
+    setIsSaved(true);
+    setPrescriptionId(result.id);
+    setIsEdit(false);
+    if (onSave) {
+      onSave("prescription", { prescriptions, id: result.id });
+    }
+    toast.success("✅ Prescription saved successfully to MockAPI!", {
+      position: "top-right",
+      autoClose: 2000,
+      closeOnClick: true,
+    });
+  } catch (error) {
+    console.error("MockAPI Error:", error);
+    toast.error(`❌ ${error.message}`, {
+      position: "top-right",
+      autoClose: 2000,
+      closeOnClick: true,
+    });
+  }
+};
+
+const handleUpdate = async () => {
+  if (!prescriptionId) {
+    toast.error("❌ Prescription ID is missing.", {
+      position: "top-right",
+      autoClose: 2000,
+      closeOnClick: true,
+    });
+    return;
+  }
+  const prescriptionPayload = {
+    prescriptions,
+    patientName: patientName || patient?.name || "Unknown Patient",
+    patientEmail: email,
+    doctorName: doctorName || "Dr. Kavya Patil",
+    doctorEmail: drEmail || "dr.sheetal@example.com",
+    hospitalName: hospitalName || "AV Hospital",
+  };
+  try {
+    const response = await axios.put(
+      `https://68abfd0c7a0bbe92cbb8d633.mockapi.io/prescription/${prescriptionId}`,
+      prescriptionPayload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (response.status >= 200 && response.status < 300) {
       setIsEdit(false);
       if (onSave) {
-        onSave("prescription", { prescriptions, id: result.id });
+        onSave("prescription", { prescriptions, id: prescriptionId });
       }
-      toast.success("✅ Prescription saved successfully to MockAPI!", {
+      toast.success("✅ Prescription updated successfully!", {
         position: "top-right",
         autoClose: 2000,
         closeOnClick: true,
       });
-    } catch (error) {
-      console.error("MockAPI Error:", error);
-      toast.error(`❌ ${error.message}`, {
-        position: "top-right",
-        autoClose: 2000,
-        closeOnClick: true,
-      });
+    } else {
+      throw new Error(`API failed: ${response.status}`);
     }
-  };
+  } catch (error) {
+    console.error("MockAPI Error:", error);
+    toast.error(`❌ ${error.message}`, {
+      position: "top-right",
+      autoClose: 2000,
+      closeOnClick: true,
+    });
+  }
+};
 
-  const handleUpdate = async () => {
-    if (!prescriptionId) {
-      toast.error("❌ Prescription ID is missing.", {
-        position: "top-right",
-        autoClose: 2000,
-        closeOnClick: true,
-      });
-      return;
-    }
-    const prescriptionPayload = {
-      prescriptions,
-      patientName: patientName || patient?.name || "Unknown Patient",
-      patientEmail: email,
-      doctorName: doctorName || "Dr. Kavya Patil",
-      doctorEmail: drEmail || "dr.sheetal@example.com",
-      hospitalName: hospitalName || "AV Hospital",
-    };
-    try {
-      const response = await axios.put(
-        `https://68abfd0c7a0bbe92cbb8d633.mockapi.io/prescription/${prescriptionId}`,
-        prescriptionPayload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (response.status >= 200 && response.status < 300) {
-        setIsEdit(false);
-        if (onSave) {
-          onSave("prescription", { prescriptions, id: prescriptionId });
-        }
-        toast.success("✅ Prescription updated successfully!", {
-          position: "top-right",
-          autoClose: 2000,
-          closeOnClick: true,
-        });
-      } else {
-        throw new Error(`API failed: ${response.status}`);
-      }
-    } catch (error) {
-      console.error("MockAPI Error:", error);
-      toast.error(`❌ ${error.message}`, {
-        position: "top-right",
-        autoClose: 2000,
-        closeOnClick: true,
-      });
-    }
-  };
+
 
   const fetchDrugSuggestions = async (query) => {
     if (query.length < 2) {
@@ -858,7 +858,7 @@ const PrescriptionForm = ({
                              w-full md:w-auto md:max-w-[200px]"
                 >
                   <Edit className="w-4 h-4" />
-                  Edit Prescription
+               
                 </button>
               </div>
             )}
