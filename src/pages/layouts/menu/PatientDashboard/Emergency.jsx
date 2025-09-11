@@ -70,17 +70,14 @@ const FloatingSelectInput = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const hasValue = displayValue && displayValue.toString().length > 0;
-
   const handleFocus = (e) => {
     setIsFocused(true);
     onFocus?.(e);
   };
-
   const handleBlur = (e) => {
     setIsFocused(false);
     onBlur?.(e);
   };
-
   return (
     <div className={`relative ${className}`}>
       <input
@@ -185,8 +182,7 @@ const Emergency = () => {
   });
   const equipRef = useRef(null);
   const searchRef = useRef(null);
-  const BOOKING_API_URL =
-    "https://mocki.io/v1/c183fd44-05e4-4659-9af9-f1917b1a0d6c";
+  const BOOKING_API_URL = "https://mocki.io/v1/c183fd44-05e4-4659-9af9-f1917b1a0d6c";
   const navigate = useNavigate();
   const [showPaymentGateway, setShowPaymentGateway] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -194,9 +190,7 @@ const Emergency = () => {
   const filteredHospitals = useMemo(() => {
     if (!debouncedHospitalSearch.trim()) return hospitals;
     return hospitals.filter((hospital) =>
-      hospital.hospitalName
-        ?.toLowerCase()
-        .includes(debouncedHospitalSearch.toLowerCase())
+      hospital.hospitalName?.toLowerCase().includes(debouncedHospitalSearch.toLowerCase())
     );
   }, [hospitals, debouncedHospitalSearch]);
 
@@ -445,16 +439,12 @@ const Emergency = () => {
     const queryVariations = getLocationVariations(queryLower);
     const suggestions = [];
     data.ambulanceServices.forEach((ambulance) => {
-      const nameMatches = ambulance.serviceName
-        .toLowerCase()
-        .includes(queryLower);
+      const nameMatches = ambulance.serviceName.toLowerCase().includes(queryLower);
       const locationMatches = queryVariations.some((variation) =>
         ambulance.location.toLowerCase().includes(variation)
       );
       const typeMatches = ambulance.type.toLowerCase().includes(queryLower);
-      const categoryMatches = ambulance.category
-        .toLowerCase()
-        .includes(queryLower);
+      const categoryMatches = ambulance.category.toLowerCase().includes(queryLower);
       if (nameMatches || locationMatches || typeMatches || categoryMatches) {
         suggestions.push({
           type: "ambulance",
@@ -559,26 +549,19 @@ const Emergency = () => {
       };
       const queryVariations = getLocationVariations(queryLower);
       let results = data.ambulanceServices.filter((ambulance) => {
-        const nameMatch = ambulance.serviceName
-          .toLowerCase()
-          .includes(queryLower);
+        const nameMatch = ambulance.serviceName.toLowerCase().includes(queryLower);
         const locationMatch =
           queryVariations.some((variation) =>
             ambulance.location.toLowerCase().includes(variation)
           ) || ambulance.location.toLowerCase().includes(queryLower);
         const typeMatch = ambulance.type.toLowerCase().includes(queryLower);
-        const categoryMatch = ambulance.category
-          .toLowerCase()
-          .includes(queryLower);
+        const categoryMatch = ambulance.category.toLowerCase().includes(queryLower);
         const phoneMatch = ambulance.phone.includes(query);
         return (
           nameMatch || locationMatch || typeMatch || categoryMatch || phoneMatch
         );
       });
-      const filters = selectedFilter
-        .split(",")
-        .map((f) => f.trim())
-        .filter((f) => f && f !== "all");
+      const filters = selectedFilter.split(",").map((f) => f.trim()).filter((f) => f && f !== "all");
       if (filters.length) {
         results = results.filter((ambulance) =>
           filters.every((filter) => {
@@ -595,9 +578,7 @@ const Emergency = () => {
       setFilteredAmbulances(results);
       setSearchLoading(false);
       if (results.length === 0) {
-        toast.info(
-          `No ambulances found for "${query}". Try different search terms.`
-        );
+        toast.info(`No ambulances found for "${query}". Try different search terms.`);
       } else {
         toast.success(`Found ${results.length} ambulances for "${query}"`);
       }
@@ -765,14 +746,9 @@ const Emergency = () => {
           </div>
           <div className="space-y-2 sm:space-y-3 lg:space-y-4">
             <div className="flex flex-col lg:flex-row gap-2 sm:gap-3">
-              <div
-                className="flex-1 max-w-full lg:max-w-xl relative"
-                ref={searchRef}
-              >
+              <div className="flex-1 max-w-full lg:max-w-xl relative" ref={searchRef}>
                 <div className="relative">
-                  <Lucide.Search
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 z-10"
-                  />
+                  <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 z-10" />
                   <input
                     type="text"
                     placeholder="Search by location, ambulance name, service type..."
@@ -796,7 +772,6 @@ const Emergency = () => {
                     </button>
                   )}
                 </div>
-
                 {showSuggestions && suggestions.length > 0 && (
                   <div className="absolute z-[99999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-48 sm:max-h-60 overflow-y-auto shadow-2xl">
                     {suggestions.map((suggestion, index) => (
@@ -806,19 +781,13 @@ const Emergency = () => {
                         className="w-full px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-3 text-left hover:bg-gray-50 flex items-center gap-1.5 sm:gap-2 lg:gap-3 border-b border-gray-100 last:border-b-0 transition-colors text-xs sm:text-sm"
                       >
                         {suggestion.type === "ambulance" && (
-                          <Lucide.Ambulance
-                            className="text-red-500 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4"
-                          />
+                          <Lucide.Ambulance className="text-red-500 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4" />
                         )}
                         {suggestion.type === "location" && (
-                          <Lucide.MapPin
-                            className="text-blue-500 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4"
-                          />
+                          <Lucide.MapPin className="text-blue-500 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4" />
                         )}
                         {suggestion.type === "service-type" && (
-                          <Lucide.Activity
-                            className="text-green-500 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4"
-                          />
+                          <Lucide.Activity className="text-green-500 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4" />
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="font-medium truncate">
@@ -854,7 +823,6 @@ const Emergency = () => {
                   </div>
                 )}
               </div>
-
               <div className="flex gap-2 sm:gap-3">
                 <button
                   onClick={searchByCurrentLocation}
@@ -897,8 +865,6 @@ const Emergency = () => {
             </div>
           </div>
         </div>
-
-        {/* Results section */}
         {filteredAmbulances.length > 0 && (
           <div className="space-y-3 sm:space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
@@ -993,8 +959,6 @@ const Emergency = () => {
             </div>
           </div>
         )}
-
-        {/* Loading state */}
         {searchLoading && (
           <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 lg:p-12 text-center">
             <Lucide.Loader2
@@ -1005,8 +969,6 @@ const Emergency = () => {
             </p>
           </div>
         )}
-
-        {/* No results state */}
         {!searchLoading &&
           filteredAmbulances.length === 0 &&
           hasSearched &&
@@ -1067,7 +1029,6 @@ const Emergency = () => {
                       onKeyPress={handleLocationSearchKeyPress}
                       className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
                     />
-
                     {showLocationSuggestions &&
                       locationSuggestions.length > 0 && (
                         <div className="absolute z-[99999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-48 sm:max-h-60 overflow-y-auto shadow-2xl">
@@ -1099,7 +1060,6 @@ const Emergency = () => {
                         </div>
                       )}
                   </div>
-
                   <button
                     onClick={searchLocation}
                     disabled={isSearching}
@@ -1260,265 +1220,256 @@ const Emergency = () => {
         </div>
       );
     }
-
     if (step === 0) {
       return (
-        <div className="w-full space-y-3 sm:space-y-4 lg:space-y-6">
+        <div className="w-full space-y-3 sm:space-y-4 lg:space-y-6 min-h-[500px]">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-            {/* Pickup Location */}
-           <div className="w-full relative" ref={pickupRef}>
-  <div className="relative">
-    <input
-      id="pickup-input"
-      type="text"
-      value={pickup ? data.locations.find((l) => l.id === pickup)?.name : pickupSearch}
-      onChange={(e) => {
-        setPickupSearch(e.target.value);
-        setShowPickupDropdown(true);
-      }}
-      onFocus={() => setShowPickupDropdown(true)}
-      className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
-    />
-    <label
-      htmlFor="pickup-input"
-      className={`
-        absolute left-3 transition-all duration-200 pointer-events-none
-        ${pickup || pickupSearch
-          ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
-          : "top-3 text-sm text-gray-500"
-        }
-      `}
-    >
-      Search pickup location
-    </label>
-    <button
-      type="button"
-      onClick={() => setShowPickupDropdown(!showPickupDropdown)}
-      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
-    >
-      <Lucide.ChevronDown
-        className={`transition-transform duration-200 ${
-          showPickupDropdown ? "rotate-180" : ""
-        }`}
-        size={16}
-      />
-    </button>
-  </div>
-  {showPickupDropdown && data.locations?.length > 0 && (
-    <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
-      {data.locations
-        .filter((item) =>
-          item.name.toLowerCase().includes(pickupSearch.toLowerCase())
-        )
-        .map((item) => (
-          <div
-            key={item.id}
-            onClick={() => {
-              setPickup(item.id);
-              setPickupSearch(item.name);
-              setShowPickupDropdown(false);
-            }}
-            className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
-          >
-            {item.name}
+            <div className="w-full relative" ref={pickupRef}>
+              <div className="relative">
+                <input
+                  id="pickup-input"
+                  type="text"
+                  value={pickup ? data.locations.find((l) => l.id === pickup)?.name : pickupSearch}
+                  onChange={(e) => {
+                    setPickupSearch(e.target.value);
+                    setShowPickupDropdown(true);
+                  }}
+                  onFocus={() => setShowPickupDropdown(true)}
+                  className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+                />
+                <label
+                  htmlFor="pickup-input"
+                  className={`
+                    absolute left-3 transition-all duration-200 pointer-events-none
+                    ${
+                      pickup || pickupSearch
+                        ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
+                        : "top-3 text-sm text-gray-500"
+                    }
+                  `}
+                >
+                  Search pickup location
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowPickupDropdown(!showPickupDropdown)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+                >
+                  <Lucide.ChevronDown
+                    className={`transition-transform duration-200 ${
+                      showPickupDropdown ? "rotate-180" : ""
+                    }`}
+                    size={16}
+                  />
+                </button>
+              </div>
+              {showPickupDropdown && data.locations?.length > 0 && (
+                <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
+                  {data.locations
+                    .filter((item) =>
+                      item.name.toLowerCase().includes(pickupSearch.toLowerCase())
+                    )
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          setPickup(item.id);
+                          setPickupSearch(item.name);
+                          setShowPickupDropdown(false);
+                        }}
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
+                      >
+                        {item.name}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+            <div className="w-full relative" ref={hospitalRef}>
+              <div className="relative">
+                <input
+                  id="hospital-input"
+                  type="text"
+                  value={selectedHospital || hospitalSearch}
+                  onChange={(e) => {
+                    setHospitalSearch(e.target.value);
+                    setShowHospitalDropdown(true);
+                  }}
+                  onFocus={() => setShowHospitalDropdown(true)}
+                  className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+                />
+                <label
+                  htmlFor="hospital-input"
+                  className={`
+                    absolute left-3 transition-all duration-200 pointer-events-none
+                    ${
+                      selectedHospital || hospitalSearch
+                        ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
+                        : "top-3 text-sm text-gray-500"
+                    }
+                  `}
+                >
+                  Search hospital...
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowHospitalDropdown(!showHospitalDropdown)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+                >
+                  <Lucide.ChevronDown
+                    className={`transition-transform duration-200 ${
+                      showHospitalDropdown ? "rotate-180" : ""
+                    }`}
+                    size={16}
+                  />
+                </button>
+              </div>
+              {showHospitalDropdown && (
+                <div className="absolute z-[10000] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-hidden shadow-2xl">
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredHospitals.map((hospital) => (
+                      <div
+                        key={hospital.id}
+                        onClick={() => {
+                          setSelectedHospital(hospital.hospitalName);
+                          setSelectedHospitalId(hospital.id);
+                          setHospitalSearch(hospital.hospitalName);
+                          setShowHospitalDropdown(false);
+                        }}
+                        className="px-2.5 py-1.5 sm:px-3 sm:py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs sm:text-sm text-gray-900 transition-colors"
+                      >
+                        {hospital.hospitalName}
+                      </div>
+                    ))}
+                    {filteredHospitals.length === 0 && (
+                      <div className="px-3 py-4 text-center text-gray-500 text-xs sm:text-sm">
+                        No hospitals found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        ))}
-    </div>
-  )}
-</div>
-
-
-            {/* Hospital */}
-          <div className="w-full relative" ref={hospitalRef}>
-  <div className="relative">
-    <input
-      id="hospital-input"
-      type="text"
-      value={selectedHospital || hospitalSearch}
-      onChange={(e) => {
-        setHospitalSearch(e.target.value);
-        setShowHospitalDropdown(true);
-      }}
-      onFocus={() => setShowHospitalDropdown(true)}
-      className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
-    />
-    <label
-      htmlFor="hospital-input"
-      className={`
-        absolute left-3 transition-all duration-200 pointer-events-none
-        ${selectedHospital || hospitalSearch
-          ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
-          : "top-3 text-sm text-gray-500"
-        }
-      `}
-    >
-      Search hospital...
-    </label>
-    <button
-      type="button"
-      onClick={() => setShowHospitalDropdown(!showHospitalDropdown)}
-      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
-    >
-      <Lucide.ChevronDown
-        className={`transition-transform duration-200 ${
-          showHospitalDropdown ? "rotate-180" : ""
-        }`}
-        size={16}
-      />
-    </button>
-  </div>
-  {showHospitalDropdown && (
-    <div className="absolute z-[10000] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-hidden shadow-2xl">
-      <div className="max-h-48 overflow-y-auto">
-        {filteredHospitals.map((hospital) => (
-          <div
-            key={hospital.id}
-            onClick={() => {
-              setSelectedHospital(hospital.hospitalName);
-              setSelectedHospitalId(hospital.id);
-              setHospitalSearch(hospital.hospitalName);
-              setShowHospitalDropdown(false);
-            }}
-            className="px-2.5 py-1.5 sm:px-3 sm:py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs sm:text-sm text-gray-900 transition-colors"
-          >
-            {hospital.hospitalName}
-          </div>
-        ))}
-        {filteredHospitals.length === 0 && (
-          <div className="px-3 py-4 text-center text-gray-500 text-xs sm:text-sm">
-            No hospitals found
-          </div>
-        )}
-      </div>
-    </div>
-  )}
-</div>
-
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-            {/* Ambulance Type */}
-           <div className="w-full relative" ref={typeRef}>
-  <div className="relative">
-    <input
-      id="ambulance-type-input"
-      type="text"
-      value={type ? data.ambulanceTypes.find((t) => t.id === type)?.name : typeSearch}
-      onChange={(e) => setTypeSearch(e.target.value)}
-      onFocus={() => setShowTypeDropdown(true)}
-      className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
-    />
-    <label
-      htmlFor="ambulance-type-input"
-      className={`
-        absolute left-3 transition-all duration-200 pointer-events-none
-        ${type || typeSearch
-          ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
-          : "top-3 text-sm text-gray-500"
-        }
-      `}
-    >
-      Search ambulance type
-    </label>
-    <button
-      type="button"
-      onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
-    >
-      <Lucide.ChevronDown
-        className={`transition-transform duration-200 ${
-          showTypeDropdown ? "rotate-180" : ""
-        }`}
-        size={16}
-      />
-    </button>
-  </div>
-  {showTypeDropdown && (
-    <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
-      {data.ambulanceTypes
-        .filter((item) =>
-          item.name.toLowerCase().includes(typeSearch.toLowerCase())
-        )
-        .map((item) => (
-          <div
-            key={item.id}
-            onClick={() => {
-              setType(item.id);
-              setTypeSearch(item.name);
-              setShowTypeDropdown(false);
-            }}
-            className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
-          >
-            {item.name}
+            <div className="w-full relative" ref={typeRef}>
+              <div className="relative">
+                <input
+                  id="ambulance-type-input"
+                  type="text"
+                  value={type ? data.ambulanceTypes.find((t) => t.id === type)?.name : typeSearch}
+                  onChange={(e) => setTypeSearch(e.target.value)}
+                  onFocus={() => setShowTypeDropdown(true)}
+                  className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+                />
+                <label
+                  htmlFor="ambulance-type-input"
+                  className={`
+                    absolute left-3 transition-all duration-200 pointer-events-none
+                    ${
+                      type || typeSearch
+                        ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
+                        : "top-3 text-sm text-gray-500"
+                    }
+                  `}
+                >
+                  Search ambulance type
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+                >
+                  <Lucide.ChevronDown
+                    className={`transition-transform duration-200 ${
+                      showTypeDropdown ? "rotate-180" : ""
+                    }`}
+                    size={16}
+                  />
+                </button>
+              </div>
+              {showTypeDropdown && (
+                <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
+                  {data.ambulanceTypes
+                    .filter((item) =>
+                      item.name.toLowerCase().includes(typeSearch.toLowerCase())
+                    )
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          setType(item.id);
+                          setTypeSearch(item.name);
+                          setShowTypeDropdown(false);
+                        }}
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
+                      >
+                        {item.name}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+            <div className="w-full relative" ref={catRef}>
+              <div className="relative">
+                <input
+                  id="category-input"
+                  type="text"
+                  value={cat ? data.categories.find((c) => c.id === cat)?.name : catSearch}
+                  onChange={(e) => setCatSearch(e.target.value)}
+                  onFocus={() => setShowCatDropdown(true)}
+                  className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+                />
+                <label
+                  htmlFor="category-input"
+                  className={`
+                    absolute left-3 transition-all duration-200 pointer-events-none
+                    ${
+                      cat || catSearch
+                        ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
+                        : "top-3 text-sm text-gray-500"
+                    }
+                  `}
+                >
+                  Search category
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowCatDropdown(!showCatDropdown)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+                >
+                  <Lucide.ChevronDown
+                    className={`transition-transform duration-200 ${
+                      showCatDropdown ? "rotate-180" : ""
+                    }`}
+                    size={16}
+                  />
+                </button>
+              </div>
+              {showCatDropdown && (
+                <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
+                  {data.categories
+                    .filter((item) =>
+                      item.name.toLowerCase().includes(catSearch.toLowerCase())
+                    )
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          setCat(item.id);
+                          setCatSearch(item.name);
+                          setShowCatDropdown(false);
+                        }}
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
+                      >
+                        {item.name}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
-        ))}
-    </div>
-  )}
-</div>
-
-
-            {/* Category */}
-        <div className="w-full relative" ref={catRef}>
-  <div className="relative">
-    <input
-      id="category-input"
-      type="text"
-      value={cat ? data.categories.find((c) => c.id === cat)?.name : catSearch}
-      onChange={(e) => setCatSearch(e.target.value)}
-      onFocus={() => setShowCatDropdown(true)}
-      className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
-    />
-    <label
-      htmlFor="category-input"
-      className={`
-        absolute left-3 transition-all duration-200 pointer-events-none
-        ${cat || catSearch
-          ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
-          : "top-3 text-sm text-gray-500"
-        }
-      `}
-    >
-      Search category
-    </label>
-    <button
-      type="button"
-      onClick={() => setShowCatDropdown(!showCatDropdown)}
-      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
-    >
-      <Lucide.ChevronDown
-        className={`transition-transform duration-200 ${
-          showCatDropdown ? "rotate-180" : ""
-        }`}
-        size={16}
-      />
-    </button>
-  </div>
-  {showCatDropdown && (
-    <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
-      {data.categories
-        .filter((item) =>
-          item.name.toLowerCase().includes(catSearch.toLowerCase())
-        )
-        .map((item) => (
-          <div
-            key={item.id}
-            onClick={() => {
-              setCat(item.id);
-              setCatSearch(item.name);
-              setShowCatDropdown(false);
-            }}
-            className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
-          >
-            {item.name}
-          </div>
-        ))}
-    </div>
-  )}
-</div>
-
-          </div>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {/* Equipment */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="w-full relative" ref={equipRef}>
               <button
                 type="button"
@@ -1579,7 +1530,6 @@ const Emergency = () => {
                 </div>
               )}
             </div>
-            {/* Date Picker */}
             <div className="w-full relative">
               <ReactDatePicker
                 selected={date}
@@ -1608,9 +1558,8 @@ const Emergency = () => {
         </div>
       );
     }
-
     return (
-      <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+      <div className="space-y-3 sm:space-y-4 lg:space-y-6 min-h-[500px]">
         <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-3 sm:p-4 lg:p-6 mb-3 sm:mb-4 lg:mb-6 text-white">
           <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
             <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 rounded-full flex items-center justify-center">
@@ -1628,7 +1577,6 @@ const Emergency = () => {
             </div>
           </div>
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
           <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6">
             <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
@@ -1711,7 +1659,6 @@ const Emergency = () => {
             </div>
           </div>
         </div>
-
         <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6">
           <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
             <Lucide.Package
@@ -1842,7 +1789,7 @@ const Emergency = () => {
         />
       )}
       {!showPaymentGateway && (
-        <div className="max-w-full sm:max-w-4xl lg:max-w-6xl mx-auto bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="max-w-full sm:max-w-4xl lg:max-w-6xl mx-auto bg-white rounded-xl border border-gray-200 overflow-hidden min-h-[500px]">
           <div className="px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 bg-gray-800">
             <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3">
               <div
@@ -1869,7 +1816,6 @@ const Emergency = () => {
               <span>Near By Ambulance</span>
             </button>
           </div>
-
           <div className="px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4 border-b border-gray-200">
             <div className="flex justify-center items-center w-full max-w-xs sm:max-w-md mx-auto">
               {["Details", "Confirm"].map((stepName, index) => (
@@ -1926,9 +1872,9 @@ const Emergency = () => {
               ))}
             </div>
           </div>
-
-          <div className="px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-6">{renderStep()}</div>
-
+          <div className="px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-6">
+            {renderStep()}
+          </div>
           <div className="px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between gap-2 sm:gap-3">
             {step > 0 && (
               <button
