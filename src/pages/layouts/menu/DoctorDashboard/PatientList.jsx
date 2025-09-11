@@ -256,7 +256,7 @@ const PatientList = () => {
       <div className="mb-16 lg:mb-4">{renderActiveTab()}</div>
 
       {/* Action Buttons (Fixed at bottom in tablet and mobile view) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm z-50">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm z-30">
         <div className="flex gap-3 w-full mx-auto">
           {activeTab === "OPD" && (
             <button
@@ -287,7 +287,7 @@ const PatientList = () => {
 
       {/* Tab Actions for Mobile/Tablet View */}
       {tabActions.length > 0 && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm z-30">
           <div className="flex gap-3 w-full mx-auto">
             {tabActions.map((action, index) => (
               <button

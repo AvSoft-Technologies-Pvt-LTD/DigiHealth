@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import PaymentGateway from "../../../../components/microcomponents/PaymentGatway";
 import { getHospitalDropdown } from "../../../../utils/masterService";
 
+// Fix for Leaflet's default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -29,6 +30,7 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
+// Custom hook for debouncing
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -40,18 +42,178 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
+// Filter options for the dropdown
 const filterOptions = [
-  { label: "All Ambulances", value: "all" },
-  { label: "Available Only", value: "available" },
-  { label: "Government", value: "government" },
-  { label: "Private", value: "private" },
-  { label: "Hospital", value: "hospital" },
-  { label: "NGO", value: "ngo" },
-  { label: "BLS Ambulance", value: "bls" },
-  { label: "ALS Ambulance", value: "als" },
-  { label: "ICU Ambulance", value: "icu" },
+  {
+    key: "ambulanceType",
+    label: "Ambulance Type",
+    options: [
+      { label: "BLS", value: "bls" },
+      { label: "ALS", value: "als" },
+      { label: "ICU", value: "icu" },
+    ],
+  },
+  {
+    key: "category",
+    label: "Category",
+    options: [
+      { label: "Government", value: "government" },
+      { label: "Private", value: "private" },
+      { label: "Hospital", value: "hospital" },
+      { label: "NGO", value: "ngo" },
+    ],
+  },
+  {
+    key: "availability",
+    label: "Availability",
+    options: [
+      { label: "Available", value: "available" },
+      { label: "Busy", value: "busy" },
+    ],
+  },
 ];
 
+// Filter Dropdown Component
+const FilterDropdown = ({ filter, activeFilters, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selected = activeFilters[filter.key] || [];
+
+  const handleCheckboxChange = (value) => {
+    const newSelected = selected.includes(value)
+      ? selected.filter((v) => v !== value)
+      : [...selected, value];
+    onChange(filter.key, newSelected);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all duration-200"
+      >
+        <Lucide.Filter className="text-[var(--primary-color)] w-4 h-4" />
+        {filter.label || "Filter"}
+        {selected.length > 0 && (
+          <span className="ml-1 text-xs bg-blue-100 text-[var(--primary-color)] px-2 py-0.5 rounded-full">
+            {selected.length}
+          </span>
+        )}
+        {isOpen ? (
+          <Lucide.ChevronUp className="ml-1 w-3 h-3" />
+        ) : (
+          <Lucide.ChevronDown className="ml-1 w-3 h-3" />
+        )}
+      </button>
+      {isOpen && (
+        <div className="absolute left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-2">
+          {filter.options.map((opt) => (
+            <label
+              key={opt.value}
+              className="flex items-center gap-2 p-2 hover:bg-gray-50 cursor-pointer rounded transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(opt.value)}
+                onChange={() => handleCheckboxChange(opt.value)}
+                className="h-4 w-4 text-[var(--primary-color)] rounded focus:ring-[var(--primary-color)]"
+              />
+              <span className="text-sm text-gray-700">{opt.label}</span>
+            </label>
+          ))}
+          {selected.length > 0 && (
+            <button
+              onClick={() => onChange(filter.key, [])}
+              className="mt-2 text-xs text-red-500 hover:text-red-700 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+            >
+              <Lucide.X className="w-3 h-3" /> Clear All
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Mobile Filter Modal Component
+const MobileFilterModal = ({
+  isOpen,
+  onClose,
+  filters,
+  activeFilters,
+  onChange,
+  onReset,
+  onApply,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 xl:hidden">
+      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
+      <div className="fixed inset-0 flex flex-col bg-white">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-800 text-white">
+          <h2 className="text-lg font-semibold">Filter</h2>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onReset}
+              className="text-sm text-gray-300 hover:text-white transition-colors"
+            >
+              Reset
+            </button>
+            <button
+              onClick={onClose}
+              className="text-sm text-gray-300 hover:text-white transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {filters.map((filter) => {
+            const selected = activeFilters[filter.key] || [];
+            return (
+              <div key={filter.key} className="space-y-3">
+                <h3 className="font-medium text-gray-900 uppercase text-sm tracking-wide">
+                  {filter.label}
+                </h3>
+                <div className="space-y-2">
+                  {filter.options.map((opt) => (
+                    <label
+                      key={opt.value}
+                      className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors border-b border-gray-100"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(opt.value)}
+                        onChange={() => {
+                          const newSelected = selected.includes(opt.value)
+                            ? selected.filter((v) => v !== opt.value)
+                            : [...selected, opt.value];
+                          onChange(filter.key, newSelected);
+                        }}
+                        className="h-5 w-5 text-[var(--primary-color)] rounded focus:ring-[var(--primary-color)]"
+                      />
+                      <span className="text-gray-700 flex-1">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="p-4 border-t border-gray-200">
+          <button
+            onClick={onApply}
+            className="w-full py-4 bg-[var(--accent-color)] text-white rounded-lg font-semibold text-lg transition-all duration-200 shadow-lg"
+          >
+            APPLY
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Floating Select Input Component
 const FloatingSelectInput = ({
   label,
   value,
@@ -70,14 +232,17 @@ const FloatingSelectInput = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const hasValue = displayValue && displayValue.toString().length > 0;
+
   const handleFocus = (e) => {
     setIsFocused(true);
     onFocus?.(e);
   };
+
   const handleBlur = (e) => {
     setIsFocused(false);
     onBlur?.(e);
   };
+
   return (
     <div className={`relative ${className}`}>
       <input
@@ -127,6 +292,7 @@ const FloatingSelectInput = ({
   );
 };
 
+// Main Emergency Component
 const Emergency = () => {
   const [step, setStep] = useState(0);
   const [type, setType] = useState("");
@@ -186,6 +352,7 @@ const Emergency = () => {
   const navigate = useNavigate();
   const [showPaymentGateway, setShowPaymentGateway] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [activeFilters, setActiveFilters] = useState({});
 
   const filteredHospitals = useMemo(() => {
     if (!debouncedHospitalSearch.trim()) return hospitals;
@@ -529,6 +696,7 @@ const Emergency = () => {
     }
     setSearchLoading(true);
     setHasSearched(true);
+
     setTimeout(() => {
       const queryLower = query.toLowerCase();
       const locationAliases = {
@@ -548,6 +716,7 @@ const Emergency = () => {
         return variations;
       };
       const queryVariations = getLocationVariations(queryLower);
+
       let results = data.ambulanceServices.filter((ambulance) => {
         const nameMatch = ambulance.serviceName.toLowerCase().includes(queryLower);
         const locationMatch =
@@ -561,22 +730,27 @@ const Emergency = () => {
           nameMatch || locationMatch || typeMatch || categoryMatch || phoneMatch
         );
       });
-      const filters = selectedFilter.split(",").map((f) => f.trim()).filter((f) => f && f !== "all");
-      if (filters.length) {
-        results = results.filter((ambulance) =>
-          filters.every((filter) => {
-            if (filter === "available") return ambulance.available;
-            if (["government", "private", "hospital", "ngo"].includes(filter))
-              return ambulance.category.toLowerCase() === filter;
-            if (["bls", "als", "icu"].includes(filter))
-              return ambulance.type.toLowerCase().includes(filter);
+
+      // Apply active filters
+      Object.entries(activeFilters).forEach(([key, values]) => {
+        if (values.length > 0) {
+          results = results.filter((ambulance) => {
+            if (key === "ambulanceType") {
+              return values.includes(ambulance.type.toLowerCase());
+            } else if (key === "category") {
+              return values.includes(ambulance.category.toLowerCase());
+            } else if (key === "availability") {
+              return values.includes(ambulance.available ? "available" : "busy");
+            }
             return true;
-          })
-        );
-      }
+          });
+        }
+      });
+
       results.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
       setFilteredAmbulances(results);
       setSearchLoading(false);
+
       if (results.length === 0) {
         toast.info(`No ambulances found for "${query}". Try different search terms.`);
       } else {
@@ -601,7 +775,18 @@ const Emergency = () => {
     }
   };
 
-  const handleFilterChange = (f) => setSelectedFilter(f);
+  const handleFilterChange = (key, value) => {
+    setActiveFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleMobileFilterApply = () => {
+    setShowMobileFilterModal(false);
+    searchAmbulances();
+  };
+
+  const handleMobileFilterReset = () => {
+    setActiveFilters({});
+  };
 
   const getIcon = (name, size = 20) => {
     const icons = {
@@ -833,17 +1018,22 @@ const Emergency = () => {
                   <span className="hidden sm:inline">Current Location</span>
                   <span className="sm:hidden">Location</span>
                 </button>
-                <select
-                  value={selectedFilter}
-                  onChange={(e) => handleFilterChange(e.target.value)}
-                  className="px-2 py-2 sm:px-3 sm:py-2.5 lg:px-4 lg:py-3 border border-gray-300 rounded-lg focus:border-blue-500 min-w-20 sm:min-w-28 lg:min-w-32 text-xs sm:text-sm lg:text-base"
+                <button
+                  onClick={() => setShowMobileFilterModal(true)}
+                  className="flex xl:hidden items-center justify-center w-10 h-10 bg-[var(--accent-color)] rounded-lg text-white transition-colors"
                 >
-                  {filterOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
+                  <Lucide.Filter className="w-4 h-4" />
+                </button>
+                <div className="hidden xl:flex items-center gap-2">
+                  {filterOptions.map((filter) => (
+                    <FilterDropdown
+                      key={filter.key}
+                      filter={filter}
+                      activeFilters={activeFilters}
+                      onChange={handleFilterChange}
+                    />
                   ))}
-                </select>
+                </div>
                 <button
                   onClick={() => searchAmbulances()}
                   disabled={searchLoading}
@@ -995,6 +1185,15 @@ const Emergency = () => {
             </div>
           )}
       </div>
+      <MobileFilterModal
+        isOpen={showMobileFilterModal}
+        onClose={() => setShowMobileFilterModal(false)}
+        filters={filterOptions}
+        activeFilters={activeFilters}
+        onChange={handleFilterChange}
+        onReset={handleMobileFilterReset}
+        onApply={handleMobileFilterApply}
+      />
     </div>
   );
 
