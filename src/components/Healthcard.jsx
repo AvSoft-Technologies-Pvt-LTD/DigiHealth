@@ -90,9 +90,10 @@ function Healthcard({ hideLogin }) {
   const [qrImage, setQrImage] = useState("");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [showModal, setShowModal] = useState(false);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(true);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscription, setSubscription] = useState(localStorage.getItem("subscription") || null);
-  const [selectedPlan, setSelectedPlan] = useState(subscriptionPlans.find(p => p.id === "gold"));
+  const [selectedPlan, setSelectedPlan] = useState(subscription ? subscriptionPlans.find(p => p.id === subscription) : subscriptionPlans.find(p => p.id === "gold"));
+
   const navigate = useNavigate();
   const userEmail = useSelector((state) => state.auth.user?.email);
   const cardRef = useRef(null);
@@ -129,6 +130,12 @@ function Healthcard({ hideLogin }) {
       );
     }
   }, [healthId, subscription]);
+
+  useEffect(() => {
+    if (!subscription) {
+      setShowSubscriptionModal(true);
+    }
+  }, [subscription]);
 
   const generateHealthId = (userData) => {
     const now = new Date();
@@ -212,7 +219,7 @@ function Healthcard({ hideLogin }) {
 
   if (!userData) return <div className="text-center p-4">Loading user data...</div>;
 
-  if (!subscription || showSubscriptionModal) {
+  if (showSubscriptionModal) {
     return (
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-md flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-6 w-full max-w-4xl mx-auto max-h-[90vh] overflow-y-auto shadow-xl relative">
@@ -313,16 +320,22 @@ function Healthcard({ hideLogin }) {
       <ToastContainer position="top-right" />
       {currentPlan && (
         <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-          <div className={`inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-gradient-to-r ${currentPlan.gradient} text-white font-bold shadow-xl text-sm sm:text-lg`}>
-            <currentPlan.icon className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span>{currentPlan.name} Member</span>
+          <div
+            className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl
+              bg-gradient-to-r ${currentPlan.gradient} text-white font-bold
+              text-sm sm:text-lg shadow-lg ring-1 ring-white/20 relative overflow-hidden
+              [box-shadow:inset_2px_2px_6px_rgba(0,0,0,0.25),inset_-2px_-2px_6px_rgba(255,255,255,0.2),0_4px_12px_rgba(0,0,0,0.2)]`}>
+            <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white/20 rounded-full shadow-inner">
+              <currentPlan.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+            <span className="tracking-wide">{currentPlan.name} Member</span>
+            <button
+              onClick={handleChangePlan}
+              className="ml-2 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-xs sm:text-sm text-white font-medium transition-all shadow-inner"
+            >
+              Change Plan
+            </button>
           </div>
-          <button
-            onClick={handleChangePlan}
-            className="text-xs sm:text-sm text-gray-300 hover:underline font-medium"
-          >
-            Change Plan
-          </button>
         </div>
       )}
       <div
@@ -335,6 +348,7 @@ function Healthcard({ hideLogin }) {
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-30"></div>
         <div className="relative h-full p-1.5 sm:p-2 px-3 sm:px-4 flex flex-col">
           <div className="flex justify-between items-start">
             <div className="flex items-center"></div>
@@ -407,7 +421,7 @@ function Healthcard({ hideLogin }) {
             document.title = title;
           }}
           className={`flex items-center gap-1.5 sm:gap-2 font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.03] shadow-lg text-xs sm:text-sm ${
-            currentPlan ? `bg-gradient-to-r ${currentPlan.gradient} text-white hover:shadow-xl` : 'bg-gray-600 text-white hover:bg-gray-700'
+            currentPlan ? `bg-gradient-to-r ${currentPlan.gradient} text-white hover:shadow-xl` : 'bg-gray-600 text-white hover:bg-gray-700 '
           }`}
         >
           <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

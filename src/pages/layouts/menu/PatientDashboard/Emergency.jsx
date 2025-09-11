@@ -1266,168 +1266,263 @@ const Emergency = () => {
         <div className="w-full space-y-3 sm:space-y-4 lg:space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             {/* Pickup Location */}
-            <div className="w-full relative" ref={pickupRef}>
-              <FloatingSelectInput
-                label="Search pickup location"
-                value={pickup}
-                displayValue={pickup ? data.locations.find(l => l.id === pickup)?.name : ""}
-                searchValue={pickupSearch}
-                onSearchChange={setPickupSearch}
-                onFocus={() => setShowPickupDropdown(true)}
-                onToggleDropdown={() => setShowPickupDropdown(!showPickupDropdown)}
-                showDropdown={showPickupDropdown}
-                className="w-full"
-              >
-                {showPickupDropdown && data.locations?.length > 0 && (
-                  <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
-                    {data.locations
-                      .filter((item) => item.name.toLowerCase().includes(pickupSearch.toLowerCase()))
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => {
-                            setPickup(item.id);
-                            setPickupSearch(item.name);
-                            setShowPickupDropdown(false);
-                          }}
-                          className="px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
-                        >
-                          {item.name}
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </FloatingSelectInput>
-            </div>
+           <div className="w-full relative" ref={pickupRef}>
+  <div className="relative">
+    <input
+      id="pickup-input"
+      type="text"
+      value={pickup ? data.locations.find((l) => l.id === pickup)?.name : pickupSearch}
+      onChange={(e) => {
+        setPickupSearch(e.target.value);
+        setShowPickupDropdown(true);
+      }}
+      onFocus={() => setShowPickupDropdown(true)}
+      className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+    />
+    <label
+      htmlFor="pickup-input"
+      className={`
+        absolute left-3 transition-all duration-200 pointer-events-none
+        ${pickup || pickupSearch
+          ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
+          : "top-3 text-sm text-gray-500"
+        }
+      `}
+    >
+      Search pickup location
+    </label>
+    <button
+      type="button"
+      onClick={() => setShowPickupDropdown(!showPickupDropdown)}
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+    >
+      <Lucide.ChevronDown
+        className={`transition-transform duration-200 ${
+          showPickupDropdown ? "rotate-180" : ""
+        }`}
+        size={16}
+      />
+    </button>
+  </div>
+  {showPickupDropdown && data.locations?.length > 0 && (
+    <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
+      {data.locations
+        .filter((item) =>
+          item.name.toLowerCase().includes(pickupSearch.toLowerCase())
+        )
+        .map((item) => (
+          <div
+            key={item.id}
+            onClick={() => {
+              setPickup(item.id);
+              setPickupSearch(item.name);
+              setShowPickupDropdown(false);
+            }}
+            className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
+          >
+            {item.name}
+          </div>
+        ))}
+    </div>
+  )}
+</div>
+
 
             {/* Hospital */}
-            <div className="w-full relative" ref={hospitalRef}>
-              <FloatingSelectInput
-                label="Search hospital..."
-                value={selectedHospitalId}
-                displayValue={selectedHospital}
-                searchValue={hospitalSearch}
-                onSearchChange={(value) => {
-                  setHospitalSearch(value);
-                  setShowHospitalDropdown(true);
-                }}
-                onFocus={() => setShowHospitalDropdown(true)}
-                onToggleDropdown={() => setShowHospitalDropdown(!showHospitalDropdown)}
-                showDropdown={showHospitalDropdown}
-                className="w-full"
-              >
-                {showHospitalDropdown && (
-                  <div className="absolute z-[10000] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-48 sm:max-h-60 overflow-hidden shadow-2xl">
-                    <div className="max-h-48 overflow-y-auto">
-                      {filteredHospitals.map((hospital) => (
-                        <div
-                          key={hospital.id}
-                          onClick={() => {
-                            setSelectedHospital(hospital.hospitalName);
-                            setSelectedHospitalId(hospital.id);
-                            setHospitalSearch(hospital.hospitalName);
-                            setShowHospitalDropdown(false);
-                          }}
-                          className="px-2 py-1.5 sm:px-3 sm:py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs sm:text-sm text-gray-900 transition-colors"
-                        >
-                          {hospital.hospitalName}
-                        </div>
-                      ))}
+          <div className="w-full relative" ref={hospitalRef}>
+  <div className="relative">
+    <input
+      id="hospital-input"
+      type="text"
+      value={selectedHospital || hospitalSearch}
+      onChange={(e) => {
+        setHospitalSearch(e.target.value);
+        setShowHospitalDropdown(true);
+      }}
+      onFocus={() => setShowHospitalDropdown(true)}
+      className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+    />
+    <label
+      htmlFor="hospital-input"
+      className={`
+        absolute left-3 transition-all duration-200 pointer-events-none
+        ${selectedHospital || hospitalSearch
+          ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
+          : "top-3 text-sm text-gray-500"
+        }
+      `}
+    >
+      Search hospital...
+    </label>
+    <button
+      type="button"
+      onClick={() => setShowHospitalDropdown(!showHospitalDropdown)}
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+    >
+      <Lucide.ChevronDown
+        className={`transition-transform duration-200 ${
+          showHospitalDropdown ? "rotate-180" : ""
+        }`}
+        size={16}
+      />
+    </button>
+  </div>
+  {showHospitalDropdown && (
+    <div className="absolute z-[10000] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-hidden shadow-2xl">
+      <div className="max-h-48 overflow-y-auto">
+        {filteredHospitals.map((hospital) => (
+          <div
+            key={hospital.id}
+            onClick={() => {
+              setSelectedHospital(hospital.hospitalName);
+              setSelectedHospitalId(hospital.id);
+              setHospitalSearch(hospital.hospitalName);
+              setShowHospitalDropdown(false);
+            }}
+            className="px-2.5 py-1.5 sm:px-3 sm:py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs sm:text-sm text-gray-900 transition-colors"
+          >
+            {hospital.hospitalName}
+          </div>
+        ))}
+        {filteredHospitals.length === 0 && (
+          <div className="px-3 py-4 text-center text-gray-500 text-xs sm:text-sm">
+            No hospitals found
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+</div>
 
-                      {filteredHospitals.length === 0 && (
-                        <div className="px-3 py-4 text-center text-gray-500 text-xs sm:text-sm">
-                          No hospitals found
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </FloatingSelectInput>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             {/* Ambulance Type */}
-            <div className="w-full relative" ref={typeRef}>
-              <FloatingSelectInput
-                label="Search ambulance type"
-                value={type}
-                displayValue={type ? data.ambulanceTypes.find(t => t.id === type)?.name : ""}
-                searchValue={typeSearch}
-                onSearchChange={setTypeSearch}
-                onFocus={() => setShowTypeDropdown(true)}
-                onToggleDropdown={() => setShowTypeDropdown(!showTypeDropdown)}
-                showDropdown={showTypeDropdown}
-                className="w-full"
-              >
-                {showTypeDropdown && (
-                  <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
-                    {data.ambulanceTypes
-                      .filter((item) =>
-                        item.name.toLowerCase().includes(typeSearch.toLowerCase())
-                      )
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => {
-                            setType(item.id);
-                            setTypeSearch(item.name);
-                            setShowTypeDropdown(false);
-                          }}
-                          className="px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
-                        >
-                          {item.name}
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </FloatingSelectInput>
-            </div>
+           <div className="w-full relative" ref={typeRef}>
+  <div className="relative">
+    <input
+      id="ambulance-type-input"
+      type="text"
+      value={type ? data.ambulanceTypes.find((t) => t.id === type)?.name : typeSearch}
+      onChange={(e) => setTypeSearch(e.target.value)}
+      onFocus={() => setShowTypeDropdown(true)}
+      className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+    />
+    <label
+      htmlFor="ambulance-type-input"
+      className={`
+        absolute left-3 transition-all duration-200 pointer-events-none
+        ${type || typeSearch
+          ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
+          : "top-3 text-sm text-gray-500"
+        }
+      `}
+    >
+      Search ambulance type
+    </label>
+    <button
+      type="button"
+      onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+    >
+      <Lucide.ChevronDown
+        className={`transition-transform duration-200 ${
+          showTypeDropdown ? "rotate-180" : ""
+        }`}
+        size={16}
+      />
+    </button>
+  </div>
+  {showTypeDropdown && (
+    <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
+      {data.ambulanceTypes
+        .filter((item) =>
+          item.name.toLowerCase().includes(typeSearch.toLowerCase())
+        )
+        .map((item) => (
+          <div
+            key={item.id}
+            onClick={() => {
+              setType(item.id);
+              setTypeSearch(item.name);
+              setShowTypeDropdown(false);
+            }}
+            className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
+          >
+            {item.name}
+          </div>
+        ))}
+    </div>
+  )}
+</div>
+
 
             {/* Category */}
-            <div className="w-full relative" ref={catRef}>
-              <FloatingSelectInput
-                label="Search category"
-                value={cat}
-                displayValue={cat ? data.categories.find(c => c.id === cat)?.name : ""}
-                searchValue={catSearch}
-                onSearchChange={setCatSearch}
-                onFocus={() => setShowCatDropdown(true)}
-                onToggleDropdown={() => setShowCatDropdown(!showCatDropdown)}
-                showDropdown={showCatDropdown}
-                className="w-full"
-              >
-                {showCatDropdown && (
-                  <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
-                    {data.categories
-                      .filter((item) =>
-                        item.name.toLowerCase().includes(catSearch.toLowerCase())
-                      )
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => {
-                            setCat(item.id);
-                            setCatSearch(item.name);
-                            setShowCatDropdown(false);
-                          }}
-                          className="px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
-                        >
-                          {item.name}
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </FloatingSelectInput>
-            </div>
+        <div className="w-full relative" ref={catRef}>
+  <div className="relative">
+    <input
+      id="category-input"
+      type="text"
+      value={cat ? data.categories.find((c) => c.id === cat)?.name : catSearch}
+      onChange={(e) => setCatSearch(e.target.value)}
+      onFocus={() => setShowCatDropdown(true)}
+      className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+    />
+    <label
+      htmlFor="category-input"
+      className={`
+        absolute left-3 transition-all duration-200 pointer-events-none
+        ${cat || catSearch
+          ? "-top-2.5 text-xs bg-white px-1 text-[var(--primary-color)] font-medium"
+          : "top-3 text-sm text-gray-500"
+        }
+      `}
+    >
+      Search category
+    </label>
+    <button
+      type="button"
+      onClick={() => setShowCatDropdown(!showCatDropdown)}
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+    >
+      <Lucide.ChevronDown
+        className={`transition-transform duration-200 ${
+          showCatDropdown ? "rotate-180" : ""
+        }`}
+        size={16}
+      />
+    </button>
+  </div>
+  {showCatDropdown && (
+    <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
+      {data.categories
+        .filter((item) =>
+          item.name.toLowerCase().includes(catSearch.toLowerCase())
+        )
+        .map((item) => (
+          <div
+            key={item.id}
+            onClick={() => {
+              setCat(item.id);
+              setCatSearch(item.name);
+              setShowCatDropdown(false);
+            }}
+            className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
+          >
+            {item.name}
           </div>
+        ))}
+    </div>
+  )}
+</div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+          </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Equipment */}
             <div className="w-full relative" ref={equipRef}>
               <button
                 type="button"
-                className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 lg:px-3 lg:py-4 border border-gray-300 rounded-lg flex justify-between items-center cursor-pointer hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm lg:text-base"
+                className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg flex justify-between items-center cursor-pointer hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
                 onClick={() => setShowEquip((prev) => !prev)}
               >
                 <span>
@@ -1438,7 +1533,8 @@ const Emergency = () => {
                 <Lucide.ChevronDown
                   className={`transition-transform duration-200 ${
                     showEquip ? "rotate-180" : ""
-                  } w-4 h-4 sm:w-4 sm:h-4`}
+                  }`}
+                  size={14}
                 />
               </button>
               {showEquip && (
@@ -1483,14 +1579,13 @@ const Emergency = () => {
                 </div>
               )}
             </div>
-
             {/* Date Picker */}
             <div className="w-full relative">
               <ReactDatePicker
                 selected={date}
                 onChange={(selectedDate) => setDate(selectedDate)}
                 minDate={new Date()}
-                className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 lg:px-3 lg:py-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm lg:text-base"
+                className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
                 dateFormat="yyyy-MM-dd"
                 popperProps={{
                   positionFixed: true,
