@@ -40,6 +40,87 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
+const filterOptions = [
+  { label: "All Ambulances", value: "all" },
+  { label: "Available Only", value: "available" },
+  { label: "Government", value: "government" },
+  { label: "Private", value: "private" },
+  { label: "Hospital", value: "hospital" },
+  { label: "NGO", value: "ngo" },
+  { label: "BLS Ambulance", value: "bls" },
+  { label: "ALS Ambulance", value: "als" },
+  { label: "ICU Ambulance", value: "icu" },
+];
+
+const FloatingInput = ({
+  label,
+  value,
+  onChange,
+  onFocus,
+  onBlur,
+  type = "text",
+  readOnly = false,
+  showDropdownIcon = false,
+  onClick,
+  placeholder = " ",
+  className = "",
+  ...props
+}) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const hasValue = value && value.toString().length > 0;
+
+  const handleFocus = (e) => {
+    setIsFocused(true);
+    onFocus?.(e);
+  };
+
+  const handleBlur = (e) => {
+    setIsFocused(false);
+    onBlur?.(e);
+  };
+
+  return (
+    <div className={`relative ${className}`}>
+      <input
+        type={type}
+        value={value || ""}
+        onChange={onChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onClick={onClick}
+        readOnly={readOnly}
+        placeholder={placeholder}
+        className={`
+          peer w-full px-3 py-3 sm:py-4 text-sm sm:text-base
+          border border-gray-300 rounded-lg
+          focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none
+          bg-white transition-all duration-200
+          ${readOnly ? "bg-gray-50 cursor-pointer" : ""}
+          ${showDropdownIcon ? "pr-10" : ""}
+        `}
+        {...props}
+      />
+      <label
+        className={`
+          absolute left-3 transition-all duration-200 pointer-events-none
+          ${
+            isFocused || hasValue
+              ? "-top-2.5 text-xs bg-white px-1 text-blue-600 font-medium"
+              : "top-3 sm:top-4 text-sm sm:text-base text-gray-500"
+          }
+        `}
+      >
+        {label}
+      </label>
+      {showDropdownIcon && (
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+          <Lucide.ChevronDown size={16} />
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Emergency = () => {
   const [step, setStep] = useState(0);
   const [type, setType] = useState("");
@@ -53,9 +134,6 @@ const Emergency = () => {
   const [pickupSearch, setPickupSearch] = useState("");
   const [showPickupDropdown, setShowPickupDropdown] = useState(false);
   const pickupRef = useRef(null);
-  const [dropLocationSearch, setDropLocationSearch] = useState("");
-  const [showDropLocationDropdown, setShowDropLocationDropdown] = useState(false);
-  const dropLocationRef = useRef(null);
   const [hospitals, setHospitals] = useState([]);
   const [selectedHospital, setSelectedHospital] = useState("");
   const [selectedHospitalId, setSelectedHospitalId] = useState("");
@@ -66,7 +144,6 @@ const Emergency = () => {
   const [equip, setEquip] = useState([]);
   const [date, setDate] = useState(new Date());
   const [pickup, setPickup] = useState("");
-  const [dropLocation, setDropLocation] = useState("");
   const [currentLocation, setCurrentLocation] = useState("");
   const [data, setData] = useState(null);
   const [showEquip, setShowEquip] = useState(false);
@@ -78,10 +155,8 @@ const Emergency = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const [bookingData, setBookingData] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const [showPaymentGateway, setShowPaymentGateway] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showMobileFilterModal, setShowMobileFilterModal] = useState(false);
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [mapPosition, setMapPosition] = useState([15.3647, 75.124]);
   const [markerPosition, setMarkerPosition] = useState([15.3647, 75.124]);
@@ -101,13 +176,18 @@ const Emergency = () => {
   });
   const equipRef = useRef(null);
   const searchRef = useRef(null);
-  const BOOKING_API_URL = "https://mocki.io/v1/a5267894-5dcd-4423-b13d-6bbcf17509c6";
+  const BOOKING_API_URL =
+    "https://mocki.io/v1/c183fd44-05e4-4659-9af9-f1917b1a0d6c";
   const navigate = useNavigate();
+  const [showPaymentGateway, setShowPaymentGateway] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   const filteredHospitals = useMemo(() => {
     if (!debouncedHospitalSearch.trim()) return hospitals;
     return hospitals.filter((hospital) =>
-      hospital.hospitalName?.toLowerCase().includes(debouncedHospitalSearch.toLowerCase())
+      hospital.hospitalName
+        ?.toLowerCase()
+        .includes(debouncedHospitalSearch.toLowerCase())
     );
   }, [hospitals, debouncedHospitalSearch]);
 
@@ -118,11 +198,6 @@ const Emergency = () => {
     }
     return m;
   }, [hospitals]);
-
-  const resolveHospitalLabel = (val) => {
-    if (val == null) return "";
-    return hospitalMap[String(val)] || String(val);
-  };
 
   const fetchHospitals = async () => {
     try {
@@ -184,12 +259,6 @@ const Emergency = () => {
       )
         setShowPickupDropdown(false);
       if (
-        showDropLocationDropdown &&
-        dropLocationRef.current &&
-        !dropLocationRef.current.contains(e.target)
-      )
-        setShowDropLocationDropdown(false);
-      if (
         showHospitalDropdown &&
         hospitalRef.current &&
         !hospitalRef.current.contains(e.target)
@@ -222,7 +291,6 @@ const Emergency = () => {
     showTypeDropdown,
     showCatDropdown,
     showPickupDropdown,
-    showDropLocationDropdown,
     showHospitalDropdown,
     showLocationSuggestions,
   ]);
@@ -563,11 +631,11 @@ const Emergency = () => {
 
   const getAmbulanceTypeIcon = (type) =>
     ({
-      ICU: <Lucide.Heart className="text-red-600" size={24} />,
-      ALS: <Lucide.HeartPulse className="text-blue-600" size={24} />,
-      BLS: <Lucide.Activity className="text-green-600" size={24} />,
+      ICU: <Lucide.Heart className="text-red-600" size={20} />,
+      ALS: <Lucide.HeartPulse className="text-blue-600" size={20} />,
+      BLS: <Lucide.Activity className="text-green-600" size={20} />,
     }[type.split(" ")[0]] || (
-      <Lucide.Ambulance className="text-red-600" size={24} />
+      <Lucide.Ambulance className="text-red-600" size={20} />
     ));
 
   const getCategoryColor = (c) =>
@@ -591,7 +659,7 @@ const Emergency = () => {
     category: data.categories.find((c) => c.id === cat)?.name,
     equipment: equip,
     pickupLocation: data.locations.find((l) => l.id === pickup)?.name,
-    dropLocation: data.locations.find((l) => l.id === dropLocation)?.name,
+    dropLocation: "N/A",
     hospitalLocation: selectedHospital,
     hospitalId: selectedHospitalId,
     date: format(date, "yyyy-MM-dd"),
@@ -604,7 +672,6 @@ const Emergency = () => {
     setCat("");
     setEquip([]);
     setPickup("");
-    setDropLocation("");
     setSelectedHospital("");
     setSelectedHospitalId("");
     setHospitalSearch("");
@@ -614,7 +681,6 @@ const Emergency = () => {
   const handleSubmit = async () => {
     if (!data) return;
     const booking = buildBooking();
-    setBookingData(booking);
     try {
       await axios.post(BOOKING_API_URL, booking);
       toast.success("Booking submitted successfully!");
@@ -634,7 +700,8 @@ const Emergency = () => {
     try {
       await axios.post(BOOKING_API_URL, {
         ...selectedBooking,
-        paymentId: paymentData.paymentId || "PAY-" + Math.floor(Math.random() * 10000),
+        paymentId:
+          paymentData.paymentId || "PAY-" + Math.floor(Math.random() * 10000),
         paymentMethod: method,
       });
       toast.success("Booking and payment completed successfully!");
@@ -647,7 +714,11 @@ const Emergency = () => {
   };
 
   const handlePaymentFailure = (error) => {
-    toast.error(`Payment failed: ${error.reason || "Unknown error"}. Please try again or use a different payment method.`);
+    toast.error(
+      `Payment failed: ${
+        error.reason || "Unknown error"
+      }. Please try again or use a different payment method.`
+    );
     setShowPaymentGateway(false);
   };
 
@@ -681,7 +752,10 @@ const Emergency = () => {
           </div>
           <div className="space-y-3 sm:space-y-4">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <div className="flex-1 max-w-full sm:max-w-xl relative floating-input" data-placeholder="Search by location, ambulance name, service type..." ref={searchRef}>
+              <div
+                className="flex-1 max-w-full sm:max-w-xl relative"
+                ref={searchRef}
+              >
                 <div className="relative">
                   <Lucide.Search
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-4 sm:size-5 z-10"
@@ -689,11 +763,11 @@ const Emergency = () => {
                   />
                   <input
                     type="text"
-                    placeholder=" "
+                    placeholder="Search by location, ambulance name, service type..."
                     value={searchQuery}
                     onChange={(e) => handleSearchInputChange(e.target.value)}
                     onKeyPress={handleSearchKeyPress}
-                    className="peer w-full pl-10 pr-10 py-2 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm sm:text-base"
+                    className="w-full pl-10 pr-10 py-2 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm sm:text-base"
                   />
                   {searchQuery && (
                     <button
@@ -710,6 +784,7 @@ const Emergency = () => {
                     </button>
                   )}
                 </div>
+
                 {showSuggestions && suggestions.length > 0 && (
                   <div className="absolute z-[99999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto shadow-2xl">
                     {suggestions.map((suggestion, index) => (
@@ -742,7 +817,9 @@ const Emergency = () => {
                           </div>
                           {suggestion.location && (
                             <div className="text-xs sm:text-sm text-gray-500 flex items-center gap-1">
-                              <span className="truncate">{suggestion.location}</span>
+                              <span className="truncate">
+                                {suggestion.location}
+                              </span>
                               {suggestion.available !== undefined && (
                                 <span
                                   className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${
@@ -768,26 +845,25 @@ const Emergency = () => {
                   </div>
                 )}
               </div>
+
               <button
                 onClick={searchByCurrentLocation}
                 style={{ backgroundColor: "var(--accent-color)" }}
                 className="px-3 py-2 sm:px-4 sm:py-3 text-white rounded-lg hover:brightness-90 flex items-center gap-1 sm:gap-2 whitespace-nowrap text-sm sm:text-base"
               >
-                <Lucide.MapPin size={16} className="sm:size-5" /> Current Location
+                <Lucide.MapPin size={16} className="sm:size-5" /> Current
+                Location
               </button>
               <select
                 value={selectedFilter}
                 onChange={(e) => handleFilterChange(e.target.value)}
                 className="px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 min-w-28 sm:min-w-32 text-sm sm:text-base"
               >
-                <option value="all">All Filters</option>
-                <option value="available">Available Only</option>
-                <option value="government">Government</option>
-                <option value="private">Private</option>
-                <option value="hospital">Hospital</option>
-                <option value="bls">BLS Ambulance</option>
-                <option value="als">ALS Ambulance</option>
-                <option value="icu">ICU Ambulance</option>
+                {filterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
               <button
                 onClick={() => searchAmbulances()}
@@ -798,7 +874,10 @@ const Emergency = () => {
                 }`}
               >
                 {searchLoading ? (
-                  <Lucide.Loader2 className="animate-spin size-4 sm:size-5" size={20} />
+                  <Lucide.Loader2
+                    className="animate-spin size-4 sm:size-5"
+                    size={20}
+                  />
                 ) : (
                   <Lucide.Search size={16} className="sm:size-5" />
                 )}
@@ -880,7 +959,8 @@ const Emergency = () => {
                         }
                         className="flex-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
                       >
-                        <Lucide.Phone size={14} className="sm:size-4" /> Call Now
+                        <Lucide.Phone size={14} className="sm:size-4" /> Call
+                        Now
                       </button>
                       <button
                         onClick={() =>
@@ -905,7 +985,9 @@ const Emergency = () => {
               className="animate-spin mx-auto mb-3 sm:mb-4 text-green-500 size-6 sm:size-8"
               size={32}
             />
-            <p className="text-gray-600 text-sm sm:text-base">Searching ambulances...</p>
+            <p className="text-gray-600 text-sm sm:text-base">
+              Searching ambulances...
+            </p>
           </div>
         )}
         {!searchLoading &&
@@ -957,18 +1039,19 @@ const Emergency = () => {
             <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 z-[99999] pointer-events-auto">
               <div className="bg-white rounded-lg border border-gray-300 p-2 sm:p-3 w-full max-w-full sm:max-w-3xl mx-auto">
                 <div className="flex gap-1.5 sm:gap-2" ref={mapSearchRef}>
-                  <div className="flex-1 relative floating-input" data-placeholder="Search location...">
+                  <div className="flex-1 relative">
                     <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4 z-10" />
                     <input
                       type="text"
-                      placeholder=" "
+                      placeholder="Search location..."
                       value={mapSearchQuery}
                       onChange={(e) =>
                         handleLocationSearchInputChange(e.target.value)
                       }
                       onKeyPress={handleLocationSearchKeyPress}
-                      className="peer w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
+                      className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
                     />
+
                     {showLocationSuggestions &&
                       locationSuggestions.length > 0 && (
                         <div className="absolute z-[99999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto shadow-2xl">
@@ -1001,6 +1084,7 @@ const Emergency = () => {
                         </div>
                       )}
                   </div>
+
                   <button
                     onClick={searchLocation}
                     disabled={isSearching}
@@ -1046,8 +1130,13 @@ const Emergency = () => {
           </div>
           <div className="w-full sm:w-80 bg-gray-50 p-3 sm:p-4 overflow-y-auto">
             <div className="space-y-3 sm:space-y-4">
-              <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2">Add New Address</p>
-              <div className="floating-input" data-placeholder="Flat / House no / Building name *">
+              <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2">
+                Add New Address
+              </p>
+              <div
+                className="floating-input"
+                data-placeholder="Flat / House no / Building name *"
+              >
                 <input
                   type="text"
                   placeholder=" "
@@ -1061,7 +1150,10 @@ const Emergency = () => {
                   className="peer w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
                 />
               </div>
-              <div className="floating-input" data-placeholder="Floor (optional)">
+              <div
+                className="floating-input"
+                data-placeholder="Floor (optional)"
+              >
                 <input
                   type="text"
                   placeholder=" "
@@ -1092,7 +1184,10 @@ const Emergency = () => {
                   readOnly
                 />
               </div>
-              <div className="floating-input" data-placeholder="Nearby landmark (optional)">
+              <div
+                className="floating-input"
+                data-placeholder="Nearby landmark (optional)"
+              >
                 <input
                   type="text"
                   placeholder=" "
@@ -1164,7 +1259,9 @@ const Emergency = () => {
             className="animate-spin mx-auto mb-3 sm:mb-4 text-blue-500 size-6 sm:size-8"
             size={32}
           />
-          <p className="text-gray-600 text-sm sm:text-base">Loading booking data...</p>
+          <p className="text-gray-600 text-sm sm:text-base">
+            Loading booking data...
+          </p>
         </div>
       );
     }
@@ -1175,7 +1272,6 @@ const Emergency = () => {
             .floating-input {
               position: relative;
             }
-            
             .floating-input input:not(:placeholder-shown) + .floating-label,
             .floating-input input:focus + .floating-label,
             .floating-input select:not(:placeholder-shown) + .floating-label,
@@ -1185,9 +1281,8 @@ const Emergency = () => {
               font-size: 0.75rem;
               background-color: white;
               padding: 0 0.25rem;
-              color: #3B82F6;
+              color: #3b82f6;
             }
-            
             .floating-input .floating-label {
               position: absolute;
               left: 0.75rem;
@@ -1196,17 +1291,15 @@ const Emergency = () => {
               background-color: transparent;
               transition: all 0.2s;
               pointer-events: none;
-              color: #6B7280;
+              color: #6b7280;
               font-size: 0.875rem;
             }
-            
             .floating-input input:focus,
             .floating-input select:focus {
-              border-color: #3B82F6;
+              border-color: #3b82f6;
               ring: 2px;
               ring-color: rgba(59, 130, 246, 0.2);
             }
-            
             .floating-input[data-placeholder]::before {
               content: attr(data-placeholder);
               position: absolute;
@@ -1216,11 +1309,10 @@ const Emergency = () => {
               background-color: transparent;
               transition: all 0.2s;
               pointer-events: none;
-              color: #6B7280;
+              color: #6b7280;
               font-size: 0.875rem;
               z-index: 1;
             }
-            
             .floating-input input:not(:placeholder-shown) ~ *::before,
             .floating-input input:focus ~ *::before,
             .floating-input select:not([value=""]) ~ *::before,
@@ -1230,9 +1322,8 @@ const Emergency = () => {
               font-size: 0.75rem;
               background-color: white;
               padding: 0 0.25rem;
-              color: #3B82F6;
+              color: #3b82f6;
             }
-            
             .floating-input .peer:not(:placeholder-shown) ~ .floating-label,
             .floating-input .peer:focus ~ .floating-label {
               top: -0.5rem;
@@ -1240,132 +1331,167 @@ const Emergency = () => {
               font-size: 0.75rem;
               background-color: white;
               padding: 0 0.25rem;
-              color: #3B82F6;
+              color: #3b82f6;
             }
           `}</style>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="w-full relative" ref={pickupRef}>
-              <div className="relative floating-input" data-placeholder="Search pickup location">
-                <input
-                  type="text"
-                  placeholder=" "
-                  value={pickupSearch}
-                  onChange={(e) => setPickupSearch(e.target.value)}
-                  onFocus={() => setShowPickupDropdown(true)}
-                  className="peer w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
-                  readOnly={!!pickup && !showPickupDropdown}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPickupDropdown(!showPickupDropdown)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
-                >
-                  <Lucide.ChevronDown
-                    className={`transition-transform duration-200 ${showPickupDropdown ? 'rotate-180' : ''}`}
-                    size={16}
-                  />
-                </button>
-              </div>
-              {showPickupDropdown &&
-                data.locations &&
-                data.locations.length > 0 && (
-                  <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
-                    {data.locations
-                      .filter((item) =>
-                        item.name
-                          .toLowerCase()
-                          .includes(pickupSearch.toLowerCase())
-                      )
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => {
-                            setPickup(item.id);
-                            setPickupSearch(item.name);
-                            setShowPickupDropdown(false);
-                          }}
-                          className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0"
-                        >
-                          {item.name}
-                        </div>
-                      ))}
-                  </div>
-                )}
+         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+  {/* Pickup */}
+  <div className="w-full relative" ref={pickupRef}>
+    <div className="relative">
+      <input
+        id="pickup-input"
+        type="text"
+        placeholder=" "                       // important: single space
+        value={pickupSearch}
+        onChange={(e) => setPickupSearch(e.target.value)}
+        onFocus={() => setShowPickupDropdown(true)}
+        className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 placeholder-transparent focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+        readOnly={!!pickup && !showPickupDropdown}
+      />
+      <label
+        htmlFor="pickup-input"
+        className="absolute left-3 top-3 z-10 px-1 text-base text-gray-400 transition-all duration-200 pointer-events-none
+                   peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
+                   peer-focus:top-[-0.6rem] peer-focus:text-xs peer-focus:text-[var(--primary-color)] bg-white"
+      >
+        Search pickup location
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setShowPickupDropdown(!showPickupDropdown)}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+      >
+        <Lucide.ChevronDown
+          className={`transition-transform duration-200 ${showPickupDropdown ? "rotate-180" : ""}`}
+          size={16}
+        />
+      </button>
+    </div>
+
+    {/* dropdown unchanged */}
+    {showPickupDropdown && data.locations?.length > 0 && (
+      <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
+        {data.locations
+          .filter((item) => item.name.toLowerCase().includes(pickupSearch.toLowerCase()))
+          .map((item) => (
+            <div
+              key={item.id}
+              onClick={() => {
+                setPickup(item.id);
+                setPickupSearch(item.name);
+                
+                setShowPickupDropdown(false);
+              }}
+              className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0"
+            >
+              {item.name}
             </div>
-            <div className="w-full relative" ref={hospitalRef}>
-              <div className="relative floating-input" data-placeholder="Search hospital...">
-                <input
-                  type="text"
-                  placeholder=" "
-                  value={hospitalSearch}
-                  onChange={(e) => {
-                    setHospitalSearch(e.target.value);
-                    setShowHospitalDropdown(true);
-                  }}
-                  onFocus={() => setShowHospitalDropdown(true)}
-                  className="peer w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowHospitalDropdown(!showHospitalDropdown)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
-                >
-                  <Lucide.ChevronDown
-                    className={`transition-transform duration-200 ${showHospitalDropdown ? 'rotate-180' : ''}`}
-                    size={16}
-                  />
-                </button>
-              </div>
-              {showHospitalDropdown && (
-                <div className="absolute z-[10000] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-hidden shadow-2xl">
-                  <div className="max-h-48 overflow-y-auto">
-                    {filteredHospitals.map((hospital) => (
-                      <div
-                        key={hospital.id}
-                        onClick={() => {
-                          setSelectedHospital(hospital.hospitalName);
-                          setSelectedHospitalId(hospital.id);
-                          setShowHospitalDropdown(false);
-                          setHospitalSearch(hospital.hospitalName);
-                        }}
-                        className="px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs sm:text-sm text-gray-900"
-                      >
-                        {hospital.hospitalName}
-                      </div>
-                    ))}
-                    {filteredHospitals.length === 0 && (
-                      <div className="px-3 py-4 text-center text-gray-500 text-xs sm:text-sm">
-                        No hospitals found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+          ))}
+      </div>
+    )}
+  </div>
+
+  {/* Hospital */}
+  <div className="w-full relative" ref={hospitalRef}>
+    <div className="relative">
+      <input
+        id="hospital-input"
+        type="text"
+        placeholder=" "
+        value={hospitalSearch}
+        onChange={(e) => {
+          setHospitalSearch(e.target.value);
+          setShowHospitalDropdown(true);
+        }}
+        onFocus={() => setShowHospitalDropdown(true)}
+        className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 placeholder-transparent focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+      />
+      <label
+        htmlFor="hospital-input"
+        className="absolute left-3 top-3 z-10 px-1 text-base text-gray-400 transition-all duration-200 pointer-events-none
+                   peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
+                   peer-focus:top-[-0.6rem] peer-focus:text-xs peer-focus:text-[var(--primary-color)] bg-white"
+      >
+        Search hospital...
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setShowHospitalDropdown(!showHospitalDropdown)}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+      >
+        <Lucide.ChevronDown
+          className={`transition-transform duration-200 ${showHospitalDropdown ? "rotate-180" : ""}`}
+          size={16}
+        />
+      </button>
+    </div>
+
+    {/* hospital dropdown unchanged */}
+    {showHospitalDropdown && (
+      <div className="absolute z-[10000] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-hidden shadow-2xl">
+        <div className="max-h-48 overflow-y-auto">
+          {filteredHospitals.map((hospital) => (
+            <div
+              key={hospital.id}
+              onClick={() => {
+                setSelectedHospital(hospital.hospitalName);
+                setSelectedHospitalId(hospital.id);
+                setShowHospitalDropdown(false);
+                setHospitalSearch(hospital.hospitalName);
+              }}
+              className="px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs sm:text-sm text-gray-900"
+            >
+              {hospital.hospitalName}
             </div>
-          </div>
+          ))}
+
+          {filteredHospitals.length === 0 && (
+            <div className="px-3 py-4 text-center text-gray-500 text-xs sm:text-sm">
+              No hospitals found
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="w-full relative" ref={typeRef}>
-              <div className="relative floating-input" data-placeholder="Search ambulance type">
-                <input
-                  type="text"
-                  placeholder=" "
-                  value={typeSearch}
-                  onChange={(e) => setTypeSearch(e.target.value)}
-                  onFocus={() => setShowTypeDropdown(true)}
-                  className="peer w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
-                  readOnly={!!type && !showTypeDropdown}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
-                >
-                  <Lucide.ChevronDown
-                    className={`transition-transform duration-200 ${showTypeDropdown ? 'rotate-180' : ''}`}
-                    size={16}
-                  />
-                </button>
-              </div>
+             <div className="relative">
+  <input
+    id="ambulance-type-input"
+    type="text"
+    placeholder=" "
+    value={typeSearch}
+    onChange={(e) => setTypeSearch(e.target.value)}
+    onFocus={() => setShowTypeDropdown(true)}
+    className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 placeholder-transparent focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+    readOnly={!!type && !showTypeDropdown}
+  />
+  <label
+    htmlFor="ambulance-type-input"
+    className="absolute left-3 top-3 z-10 px-1 text-base text-gray-400 transition-all duration-200 pointer-events-none
+               peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
+               peer-focus:top-[-0.6rem] peer-focus:text-xs peer-focus:text-[var(--primary-color)] bg-white"
+  >
+    Search ambulance type
+  </label>
+
+  <button
+    type="button"
+    onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+  >
+    <Lucide.ChevronDown
+      className={`transition-transform duration-200 ${showTypeDropdown ? "rotate-180" : ""}`}
+      size={16}
+    />
+  </button>
+</div>
+
               {showTypeDropdown && (
                 <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
                   {data.ambulanceTypes
@@ -1388,50 +1514,62 @@ const Emergency = () => {
                 </div>
               )}
             </div>
-            <div className="w-full relative" ref={catRef}>
-              <div className="relative floating-input" data-placeholder="Search category">
-                <input
-                  type="text"
-                  placeholder=" "
-                  value={catSearch}
-                  onChange={(e) => setCatSearch(e.target.value)}
-                  onFocus={() => setShowCatDropdown(true)}
-                  className="peer w-full px-2.5 py-2.5 sm:px-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
-                  readOnly={!!cat && !showCatDropdown}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCatDropdown(!showCatDropdown)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
-                >
-                  <Lucide.ChevronDown
-                    className={`transition-transform duration-200 ${showCatDropdown ? 'rotate-180' : ''}`}
-                    size={16}
-                  />
-                </button>
-              </div>
-              {showCatDropdown && (
-                <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
-                  {data.categories
-                    .filter((item) =>
-                      item.name.toLowerCase().includes(catSearch.toLowerCase())
-                    )
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => {
-                          setCat(item.id);
-                          setCatSearch(item.name);
-                          setShowCatDropdown(false);
-                        }}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0"
-                      >
-                        {item.name}
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
+           <div className="w-full relative" ref={catRef}>
+  <div className="relative">
+    <input
+      id="category-input"
+      type="text"
+      placeholder=" "
+      value={catSearch}
+      onChange={(e) => setCatSearch(e.target.value)}
+      onFocus={() => setShowCatDropdown(true)}
+      className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 placeholder-transparent focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
+      readOnly={!!cat && !showCatDropdown}
+    />
+    <label
+      htmlFor="category-input"
+      className="absolute left-3 top-3 z-10 px-1 text-base text-gray-400 transition-all duration-200 pointer-events-none
+                 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400
+                 peer-focus:top-[-0.6rem] peer-focus:text-xs peer-focus:text-[var(--primary-color)] bg-white"
+    >
+      Search category
+    </label>
+
+    <button
+      type="button"
+      onClick={() => setShowCatDropdown(!showCatDropdown)}
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
+    >
+      <Lucide.ChevronDown
+        className={`transition-transform duration-200 ${showCatDropdown ? "rotate-180" : ""}`}
+        size={16}
+      />
+    </button>
+  </div>
+
+  {showCatDropdown && (
+    <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
+      {data.categories
+        .filter((item) =>
+          item.name.toLowerCase().includes(catSearch.toLowerCase())
+        )
+        .map((item) => (
+          <div
+            key={item.id}
+            onClick={() => {
+              setCat(item.id);
+              setCatSearch(item.name);
+              setShowCatDropdown(false);
+            }}
+            className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0"
+          >
+            {item.name}
+          </div>
+        ))}
+    </div>
+  )}
+</div>
+
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="w-full relative" ref={equipRef}>
@@ -1446,7 +1584,9 @@ const Emergency = () => {
                     : `${equip.length} items selected`}
                 </span>
                 <Lucide.ChevronDown
-                  className={`transition-transform duration-200 ${showEquip ? 'rotate-180' : ''}`}
+                  className={`transition-transform duration-200 ${
+                    showEquip ? "rotate-180" : ""
+                  }`}
                   size={14}
                 />
               </button>
@@ -1472,7 +1612,9 @@ const Emergency = () => {
                         />
                         <span className="flex items-center gap-1.5 sm:gap-2">
                           {getIcon(item.icon, 14)}
-                          <span className="text-xs sm:text-sm">{item.name}</span>
+                          <span className="text-xs sm:text-sm">
+                            {item.name}
+                          </span>
                         </span>
                       </div>
                       <span className="text-xs sm:text-sm font-semibold text-green-600">
@@ -1523,7 +1665,10 @@ const Emergency = () => {
         <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-white">
           <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <Lucide.CheckCircle className="text-white size-5 sm:size-6" size={24} />
+              <Lucide.CheckCircle
+                className="text-white size-5 sm:size-6"
+                size={24}
+              />
             </div>
             <div>
               <h3 className="text-white font-bold text-lg sm:text-xl">
@@ -1538,7 +1683,10 @@ const Emergency = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
-              <Lucide.Ambulance className="text-red-600 size-5 sm:size-6" size={24} />
+              <Lucide.Ambulance
+                className="text-red-600 size-5 sm:size-6"
+                size={24}
+              />
               <h4 className="text-base sm:text-lg font-semibold text-gray-800">
                 Service Details
               </h4>
@@ -1553,7 +1701,9 @@ const Emergency = () => {
                 </span>
               </div>
               <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">Category:</span>
+                <span className="text-gray-600 font-medium text-xs sm:text-sm">
+                  Category:
+                </span>
                 <span className="font-semibold text-gray-800 text-xs sm:text-sm">
                   {data.categories.find((c) => c.id === cat)?.name}
                 </span>
@@ -1578,26 +1728,35 @@ const Emergency = () => {
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
-              <Lucide.Calendar className="text-blue-600 size-5 sm:size-6" size={24} />
+              <Lucide.Calendar
+                className="text-blue-600 size-5 sm:size-6"
+                size={24}
+              />
               <h4 className="text-base sm:text-lg font-semibold text-gray-800">
                 Schedule & Location
               </h4>
             </div>
             <div className="space-y-2.5 sm:space-y-3">
               <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">Booking Date:</span>
+                <span className="text-gray-600 font-medium text-xs sm:text-sm">
+                  Booking Date:
+                </span>
                 <span className="font-semibold text-gray-800 text-xs sm:text-sm">
                   {format(date, "dd MMM yyyy")}
                 </span>
               </div>
               <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">Day:</span>
+                <span className="text-gray-600 font-medium text-xs sm:text-sm">
+                  Day:
+                </span>
                 <span className="font-semibold text-gray-800 text-xs sm:text-sm">
                   {format(date, "EEEE")}
                 </span>
               </div>
               <div className="flex justify-between items-center py-1.5 sm:py-2">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">Status:</span>
+                <span className="text-gray-600 font-medium text-xs sm:text-sm">
+                  Status:
+                </span>
                 <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                   Confirmed
                 </span>
@@ -1607,7 +1766,10 @@ const Emergency = () => {
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
-            <Lucide.Package className="text-purple-600 size-5 sm:size-6" size={24} />
+            <Lucide.Package
+              className="text-purple-600 size-5 sm:size-6"
+              size={24}
+            />
             <h4 className="text-base sm:text-lg font-semibold text-gray-800">
               Equipment & Billing
             </h4>
@@ -1657,7 +1819,9 @@ const Emergency = () => {
                 className="mx-auto mb-2.5 sm:mb-3 text-gray-400 size-6 sm:size-8"
                 size={32}
               />
-              <p className="text-gray-500 text-xs sm:text-sm">No additional equipment selected</p>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                No additional equipment selected
+              </p>
             </div>
           )}
         </div>
@@ -1702,8 +1866,11 @@ const Emergency = () => {
           isOpen={showPaymentGateway}
           onClose={() => setShowPaymentGateway(false)}
           amount={calculateEquipmentTotal()}
-          bookingId={selectedBooking?.id || "EMG-" + Math.floor(Math.random() * 10000)}
+          bookingId={
+            selectedBooking?.id || "EMG-" + Math.floor(Math.random() * 10000)
+          }
           onPay={handlePaymentSuccess}
+          onFail={handlePaymentFailure}
           bookingDetails={{
             serviceType: "Emergency Ambulance",
             doctorName: "N/A",
@@ -1774,9 +1941,14 @@ const Emergency = () => {
                       }
                     >
                       {step > index ? (
-                        <Lucide.CheckCircle2 className="size-4 sm:size-5" size={20} />
+                        <Lucide.CheckCircle2
+                          className="size-4 sm:size-5"
+                          size={20}
+                        />
                       ) : (
-                        <span className="font-semibold text-xs sm:text-sm">{index + 1}</span>
+                        <span className="font-semibold text-xs sm:text-sm">
+                          {index + 1}
+                        </span>
                       )}
                     </div>
                     <p
@@ -1818,7 +1990,9 @@ const Emergency = () => {
                 Back
               </button>
             )}
-            <div className={`flex gap-2.5 sm:gap-3 ${step === 0 ? "ml-auto" : ""}`}>
+            <div
+              className={`flex gap-2.5 sm:gap-3 ${step === 0 ? "ml-auto" : ""}`}
+            >
               {step === 1 ? (
                 <>
                   <button
@@ -1832,8 +2006,11 @@ const Emergency = () => {
                       onClick={handlePayNow}
                       className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm w-full sm:w-auto justify-center"
                     >
-                      <Lucide.CreditCard className="size-3.5 sm:size-4" size={16} /> Pay Now ₹
-                      {calculateEquipmentTotal()}
+                      <Lucide.CreditCard
+                        className="size-3.5 sm:size-4"
+                        size={16}
+                      />{" "}
+                      Pay Now ₹{calculateEquipmentTotal()}
                     </button>
                   )}
                 </>

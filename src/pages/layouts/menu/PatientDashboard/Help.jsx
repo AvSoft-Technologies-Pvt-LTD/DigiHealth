@@ -121,12 +121,8 @@ const Help = ({ onBackToPayment }) => {
   };
 
   const handleBack = () => {
-    if (onBackToPayment) {
-      onBackToPayment();
-    } else {
-      // Fallback navigation
-      window.history.back();
-    }
+    // Navigate back to previous page
+    window.history.back();
   };
 
   return (
