@@ -1228,46 +1228,44 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
           )}
         </div>
         {selectedBed && (
-          <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border-2 border-blue-200">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
-              <h5 className="font-semibold text-blue-700 flex items-center gap-2 text-xs sm:text-sm">
-                Selected: {selectedWard.type} Ward {selectedWard.number} - Bed{" "}
-                {selectedBed}
-              </h5>
-              <button
-                onClick={() => setIpdWizardStep(4)}
-                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs w-full sm:w-auto"
-              >
-                Next
-              </button>
+  <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border-2 border-blue-200">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
+      <h5 className="font-semibold text-blue-700 flex items-center gap-2 text-xs sm:text-sm">
+        Selected: {selectedWard.type} Ward {selectedWard.number} - Bed {selectedBed}
+      </h5>
+      <button
+        onClick={() => setIpdWizardStep(4)}
+        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs w-full sm:w-auto"
+      >
+        Next
+      </button>
+    </div>
+    {/* Facilities display remains the same */}
+    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-blue-700">
+      <span className="font-medium">Facilities:</span>
+      <div className="flex flex-wrap gap-1 sm:gap-1.5">
+        {(BED_FACILITIES[selectedBed] || []).map((facility) => {
+          const IconComponent = FACILITY_ICONS[facility];
+          return (
+            <div
+              key={facility}
+              className="flex items-center gap-0.5 bg-white px-1.5 sm:px-2 py-0.5 rounded-full shadow-sm border border-blue-200 text-xs"
+            >
+              {IconComponent && <IconComponent className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+              <span className="text-[10px] font-medium">{facility}</span>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-blue-700">
-              <span className="font-medium">Facilities:</span>
-              <div className="flex flex-wrap gap-1 sm:gap-1.5">
-                {(BED_FACILITIES[selectedBed] || []).map((facility) => {
-                  const IconComponent = FACILITY_ICONS[facility];
-                  return (
-                    <div
-                      key={facility}
-                      className="flex items-center gap-0.5 bg-white px-1.5 sm:px-2 py-0.5 rounded-full shadow-sm border border-blue-200 text-xs"
-                    >
-                      {IconComponent && <IconComponent className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
-                      <span className="text-[10px] font-medium">
-                        {facility}
-                      </span>
-                    </div>
-                  );
-                })}
-                {(!BED_FACILITIES[selectedBed] ||
-                  BED_FACILITIES[selectedBed].length === 0) && (
-                  <span className="text-[10px] bg-white px-2 py-0.5 rounded-full shadow-sm border border-blue-200">
-                    Basic Room
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+          );
+        })}
+        {(!BED_FACILITIES[selectedBed] || BED_FACILITIES[selectedBed].length === 0) && (
+          <span className="text-[10px] bg-white px-2 py-0.5 rounded-full shadow-sm border border-blue-200">
+            Basic Room
+          </span>
         )}
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     );
   };
