@@ -1121,8 +1121,42 @@ const allTabs = [
   </div>
 </div>
 
-<div className="flex mb-3 sm:mb-4 overflow-x-auto custom-scrollbar ">
-  {/* Tabs */}
+{/* Desktop View: Tabs + Right-aligned "Refer to Doctor" button */}
+<div className="hidden sm:flex mb-3 sm:mb-4 overflow-x-auto custom-scrollbar justify-between">
+  <div className="flex">
+    {detailsTabs.map((tab) => {
+      const IconComponent = tab.icon;
+      return (
+        <button
+          key={tab.id}
+          onClick={() => updateState({ detailsActiveTab: tab.id })}
+          className={`flex-shrink-0 flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 font-medium transition-colors duration-300 whitespace-nowrap ${
+            state.detailsActiveTab === tab.id
+              ? "border-b-2 text-[var(--primary-color)] border-[var(--primary-color)]"
+              : "text-gray-500 hover:text-[var(--accent-color)]"
+          }`}
+        >
+          <IconComponent size={14} />
+          <span className="text-xs sm:text-sm">{tab.label}</span>
+        </button>
+      );
+    })}
+  </div>
+  {selectedRecord?.type && !selectedRecord?.isNewlyAdded && (
+    <div className="flex-shrink-0">
+      <button
+        onClick={handleSecondOpinion}
+        className="btn btn-primary text-white px-2 sm:px-4 py-1 sm:py-2 text-xs flex items-center gap-1 hover:opacity-90 transition-opacity"
+      >
+        <Stethoscope size={14} />
+        <span className="text-xs sm:text-sm">Refer to Doctor</span>
+      </button>
+    </div>
+  )}
+</div>
+
+{/* Mobile View: Tabs + Inline "Refer to Doctor" button */}
+<div className="flex sm:hidden mb-3 sm:mb-4 overflow-x-auto custom-scrollbar">
   {detailsTabs.map((tab) => {
     const IconComponent = tab.icon;
     return (
@@ -1140,7 +1174,6 @@ const allTabs = [
       </button>
     );
   })}
-  {/* Refer button (MOBILE + DESKTOP) */}
   {selectedRecord?.type && !selectedRecord?.isNewlyAdded && (
     <div className="flex-shrink-0 flex justify-end ml-2">
       <button
