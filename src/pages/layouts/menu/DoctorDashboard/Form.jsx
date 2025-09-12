@@ -15,7 +15,7 @@ import {
   Globe,
   Upload,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from "lucide-react";
 import VitalsForm from "./VitalsForm";
 import ClinicalNotesForm from "./ClinicalNotesForm";
@@ -26,7 +26,7 @@ import PrescriptionForm from "./PrescriptionForm";
 import QuickLinksPanel from "./QuickLinksPanel";
 import SignatureCanvas from "react-signature-canvas";
 import AVLogo from "../../../../assets/AV.png";
-import VitalsChart from "./VitalsChart";
+import { ChartModal } from "./VitalsChart";
 
 const formTypes = {
   all: {
@@ -85,94 +85,6 @@ const formTypes = {
     color: "from-[var(--primary-color)] to-[var(--accent-color)]",
     description: "Vision and eye health advice",
   },
-};
-
-const ChartModal = ({ isOpen, onClose, vital, records, selectedIdx }) => {
-  const [chartType, setChartType] = useState("bar");
-  const vitalRanges = {
-    heartRate: {
-      min: 60,
-      max: 100,
-      label: "bpm",
-      name: "Heart Rate",
-      optimal: 70,
-    },
-    temperature: {
-      min: 36.1,
-      max: 37.2,
-      label: "°C",
-      name: "Temperature",
-      optimal: 36.5,
-    },
-    bloodSugar: {
-      min: 70,
-      max: 140,
-      label: "mg/dL",
-      name: "Blood Sugar",
-      optimal: 90,
-    },
-    bloodPressure: {
-      min: 90,
-      max: 120,
-      label: "mmHg",
-      name: "Blood Pressure",
-      optimal: 110,
-    },
-    height: { min: 100, max: 220, label: "cm", name: "Height", optimal: 170 },
-    weight: { min: 30, max: 200, label: "kg", name: "Weight", optimal: 70 },
-  };
-  const chartTypes = [
-    { id: "bar", name: "Bar Chart", icon: "📊" },
-    { id: "line", name: "Line Chart", icon: "📈" },
-    { id: "area", name: "Area Chart", icon: "🌄" },
-    { id: "pie", name: "Pie Chart", icon: "🥧" },
-    { id: "radar", name: "Radar Chart", icon: "🕸️" },
-  ];
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fadeIn">
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-3xl relative">
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 text-gray-500 hover:text-red-500"
-        >
-          <X className="w-5 h-5" />
-        </button>
-        <h3 className="h4-heading mb-4">
-          {vital
-            ? `${vital
-                .replace(/([A-Z])/g, " $1")
-                .replace(/^./, (c) => c.toUpperCase())} Chart (7 Days)`
-            : "Vitals Chart & Records (7 Days)"}
-        </h3>
-        <div className="flex flex-wrap gap-2 mb-4 border-b border-gray-200 pb-3">
-          {chartTypes.map((type) => (
-            <button
-              key={type.id}
-              onClick={() => setChartType(type.id)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                chartType === type.id
-                  ? "bg-[var(--primary-color)] text-white"
-                  : "bg-gray-100 text-[var(--primary-color)] hover:bg-gray-200"
-              }`}
-            >
-              <span>{type.icon}</span>
-              <span>{type.name}</span>
-            </button>
-          ))}
-        </div>
-        <div className="h-96 flex flex-col w-full">
-          <VitalsChart
-            vital={vital}
-            records={records}
-            selectedIdx={selectedIdx}
-            range={vitalRanges[vital]}
-            chartType={chartType}
-          />
-        </div>
-      </div>
-    </div>
-  );
 };
 
 const ShareModalContent = ({ onClose, prescriptions, patient }) => (
@@ -312,10 +224,10 @@ const ShareModalContent = ({ onClose, prescriptions, patient }) => (
         </div>
         <div className="flex flex-wrap gap-3">
           <button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition">
-            <Phone size={16} /> WhatsApp
+            <Globe size={16} /> WhatsApp
           </button>
           <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
-            <Mail size={16} /> Email
+            <Globe size={16} /> Email
           </button>
           <button
             onClick={() => window.print()}
@@ -503,8 +415,8 @@ const Form = () => {
       printWindowRef.current.print();
     }
   };
-  const [isDualScreen, setIsDualScreen] = useState(false);
 
+  const [isDualScreen, setIsDualScreen] = useState(false);
   useEffect(() => {
     if (
       window.matchMedia &&
@@ -675,326 +587,167 @@ const Form = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Sticky Back Button */}
-      <div className="sticky top-0 z-10 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3">
-          <button
-            onClick={handleBackToPatients}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 text-[10px] sm:text-sm text-[var(--primary-color)] rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-4 sm:w-5 h-4 sm:h-5" />
-            Back to Patient List
-          </button>
-        </div>
-      </div>
-
-{/* ==================== MOBILE VIEW ==================== */}
-<div className="md:hidden flex  bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-b-xl  flex-col items-center gap-2 p-2 xs:p-4 w-full">
-  {/* Patient Avatar + Name + Details */}
-  <div className="relative flex flex-nowrap xs:flex-wrap items-center xs:items-start gap-4  p-4  w-full text-white">
-    
-    {/* ✅ Show Quick Links only for IPD patients */}
-    {isIPDPatient && (
-      <div className="absolute top-6 right-2 z-10">
-        <QuickLinksPanel
-          isOpen={isMobileMenuOpen}
-          setActiveForm={setActiveForm}
-          patient={patient}
-          onToggle={setIsMobileMenuOpen}
-        />
-      </div>
-    )}
-
-    {/* Avatar */}
-    <div className="w-14 h-14 flex mb-18 items-center justify-center rounded-full bg-white text-[#01B07A] text-base font-bold uppercase shadow flex-shrink-0">
-      {getPatientName().split(" ").map((n) => n[0]).join("") || "N/A"}
-    </div>
-
-    {/* Patient Info */}
-    <div className="flex flex-col text-sm space-y-1 min-w-0 break-words max-w-[calc(100%-56px)]">
-      <h2 className="text-base font-semibold">
-        Name: {getPatientName() || "Unknown Patient"}
-      </h2>
-      <p>Contact: {patient?.phone || patient?.contact || "N/A"}</p>
-      <p>Age: {getPatientAge() || "N/A"}</p>
-      <p>Gender: {patient?.gender || "N/A"}</p>
-      <p>Diagnosis: {patient?.diagnosis || "N/A"}</p>
-
-      {isIPDPatient && (
-        <>
-          <p>Ward: {getCombinedWardInfo()}</p>
-          <p>
-            Status:
-            <span
-              className={`ml-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                patient?.status?.toLowerCase() === "admitted"
-                  ? "bg-green-200 text-green-900"
-                  : patient?.status?.toLowerCase() === "under treatment"
-                  ? "bg-yellow-200 text-yellow-900"
-                  : patient?.status?.toLowerCase() === "discharged"
-                  ? "bg-gray-200 text-gray-900"
-                  : "bg-blue-200 text-blue-900"
-              }`}
-            >
-              {patient?.status || "N/A"}
-            </span>
-          </p>
-        </>
-      )}
-    </div>
-  </div>
-  <div style={{ backgroundColor: '#F8FAF9' }} className=" w-full rounded-xl mt-2 pt-2 pb-2 ">
-    {/* First Row: Scrollable Tabs */}
-    <div className="w-full flex justify-center">
-      <div className="flex flex-wrap gap-0.5 sm:gap-2 md:gap-4 border-b border-gray-200">
-        {["template", "vitals", "prescription", "eye"].map((formId) => {
-          const formType = formTypes[formId];
-          const Icon = formType.icon;
-          const isActive = activeForm === formType.id;
-          return (
+    <div className="flex min-h-screen">
+      <div className="flex-1 flex flex-col relative z-0">
+        <div className="sticky top-0 z-30 bg-white shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3">
             <button
-              key={formType.id}
-              onClick={() => handleFormTypeClick(formType.id)}
-              className={`flex items-center gap-0.6 sm:gap-2 md:gap-3 px-1 py-1 text-[11px] sm:text-[14px] font-medium whitespace-nowrap ${
-                isActive
-                  ? "text-[#01B07A] bg-white font-semibold border-b-2 border-[#01B07A]"
-                  : "text-gray-600 hover:text-[#01B07A]"
-              }`}
+              onClick={handleBackToPatients}
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 text-[10px] sm:text-sm text-[var(--primary-color)] rounded-lg transition-colors"
             >
-              <Icon className="w-3 h-3" />
-              <span className="ps-1">{formType.name}</span>
+              <ArrowLeft className="w-4 sm:w-5 h-4 sm:h-5" />
+              Back to Patient List
             </button>
-          );
-        })}
-      </div>
-
-      <button
-        onClick={() => setShowMoreForms(!showMoreForms)}
-        className="flex items-center justify-end rounded-full text-[#01B07A] bg-white font-medium hover:bg-gray-100 whitespace-nowrap ml-2"
-      >
-        {showMoreForms ?  <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-5 h-5" />}
-      </button>
-    </div>
-
-    {/* Second Row: More Forms (if toggled) */}
-    {showMoreForms && (
-      <div className="w-full mt-1">
-        <div className="flex justify-center flex-wrap gap-0 border-b border-gray-200">
-          {["clinical", "lab", "dental"].map((formId) => {
-            const formType = formTypes[formId];
-            const Icon = formType.icon;
-            const isActive = activeForm === formType.id;
-            return (
-              <button
-                key={formType.id}
-                onClick={() => handleFormTypeClick(formType.id)}
-                className={`flex items-center px-1 py-1 text-[10px] font-medium whitespace-nowrap ${
-                  isActive
-                    ? "text-[#01B07A] bg-white font-semibold border-b-2 border-[#01B07A]"
-                    : "text-gray-600 hover:text-[#01B07A]"
-                }`}
-              >
-                <Icon className="w-3 h-3" />
-                <span className="ps-1">{formType.name}</span>
-              </button>
-            );
-          })}
-
-          {/* Print All Button */}
-          <button
-            onClick={printAllForms}
-            className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-medium whitespace-nowrap bg-[#1A223F] text-white hover:bg-[#01B07A]"
-          >
-            <Printer className="w-3 h-3" />
-            <span>Print All</span>
-          </button>
+          </div>
         </div>
-      </div>
-    )}
-  </div>
-</div>
 
-
-
-{/* ==================== TABLET VIEW ==================== */}
-<div className="hidden md:flex lg:hidden flex-col items-center bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-b-xl shadow-md gap-4 p-4 w-[95%] mx-auto">
-  {/* Patient Avatar + Name + Details */}
-  <div className="relative flex flex-wrap items-start gap-6 p-4 w-full text-white">
-    
-    {/* ✅ Show Quick Links only if IPD */}
-    {isIPDPatient && (
-      <div className="absolute top-4 right-4 z-10">
-        <QuickLinksPanel
-          isOpen={isMobileMenuOpen}
-          setActiveForm={setActiveForm}
-          patient={patient}
-          onToggle={setIsMobileMenuOpen}
-        />
-      </div>
-    )}
-
-    {/* Avatar */}
-    <div className="w-20 h-20 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-xl font-bold uppercase shadow">
-      {getPatientName().split(" ").map((n) => n[0]).join("") || "N/A"}
-    </div>
-
-    {/* Patient Info */}
-  <div className="flex flex-col text-sm space-y-1 min-w-0 break-words">
-  <h2 className="text-2xl font-semibold">
-    Name: {getPatientName() || "Unknown Patient"}
-  </h2>
-
-  <div className="grid grid-cols-2 gap-2">
-    <div className="flex flex-col">
-      <p className="text-base">Age: {getPatientAge() || "N/A"}</p>
-      <p className="text-base">Gender: {patient?.gender || "N/A"}</p>
-      {isIPDPatient && (
-        <p className="text-base">Ward: {getCombinedWardInfo()}</p>
-      )}
-    </div>
-
-    <div className="flex flex-col">
-      <p className="text-base">Contact: {patient?.phone || patient?.contact || "N/A"}</p>
-      <p className="text-base">Diagnosis: {patient?.diagnosis || "N/A"}</p>
-      {isIPDPatient && (
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-base font-medium">Status:</span>
-          <span
-            className={`px-2 py-0.5 rounded-full text-sm font-medium ${
-              patient?.status?.toLowerCase() === "admitted"
-                ? "bg-green-200 text-green-900"
-                : patient?.status?.toLowerCase() === "under treatment"
-                ? "bg-yellow-200 text-yellow-900"
-                : patient?.status?.toLowerCase() === "discharged"
-                ? "bg-gray-200 text-gray-900"
-                : "bg-blue-200 text-blue-900"
-            }`}
-          >
-            {patient?.status || "N/A"}
-          </span>
-        </div>
-      )}
-    </div>
-  </div>
-</div>
-
-  </div>
-
-  {/* Tab Panel */}
-<div style={{ backgroundColor: '#F8FAF9' }} className="w-full rounded-2xl mt-4 pt-2 pb-3">
-  {/* First Row: Scrollable Tabs */}
-  <div className="w-full flex justify-center">
-    <div className="flex flex-wrap gap-5 border-b-3 border-gray-200">
-      {["template", "vitals", "prescription", "eye"].map((formId) => {
-        const formType = formTypes[formId];
-        const Icon = formType.icon;
-        const isActive = activeForm === formType.id;
-        return (
-          <button
-            key={formType.id}
-            onClick={() => handleFormTypeClick(formType.id)}
-            className={`flex items-center gap-2 px-1 py-1 text-[20px] md:text-[22px] lg:text-[20px] whitespace-nowrap ${
-              isActive
-                ? "text-[#01B07A]  border-b-2 border-[#01B07A]"
-                : "text-gray-600 hover:text-[#01B07A]"
-            }`}
-          >
-            <Icon className="w-5 h-5 md:w-6 md:h-6" />
-            <span>{formType.name}</span>
-          </button>
-        );
-      })}
-    </div>
-    <button
-      onClick={() => setShowMoreForms(!showMoreForms)}
-      className="flex items-center justify-end rounded-full text-[#01B07A]  font-medium hover:bg-gray-100 whitespace-nowrap ml-3"
-    >
-      {showMoreForms ? <ChevronUp className="w-8 h-8" /> : <ChevronDown className="w-8 h-8" />}
-    </button>
-  </div>
-
-  {/* Second Row: More Forms (if toggled) */}
-  {showMoreForms && (
-    <div className="w-full mt-2">
-      <div className="flex justify-center flex-wrap gap-2 border-b border-gray-200">
-        {["clinical", "lab", "dental"].map((formId) => {
-          const formType = formTypes[formId];
-          const Icon = formType.icon;
-          const isActive = activeForm === formType.id;
-          return (
-            <button
-              key={formType.id}
-              onClick={() => handleFormTypeClick(formType.id)}
-              className={`flex items-center gap-3 text-[20px] md:text-[22px] lg:text-[20px] whitespace-nowrap ${
-                isActive
-                  ? "text-[#01B07A] border-b-2 border-[#01B07A]"
-                  : "text-gray-600 hover:text-[#01B07A]"
-              }`}
-            >
-              <Icon className="w-5 h-5 md:w-6 md:h-6" />
-              <span>{formType.name}</span>
-            </button>
-          );
-        })}
-        {/* Print All Button */}
-        <button
-          onClick={printAllForms}
-          className="flex items-center gap-2 px-4 py-1 rounded-xl text-[18px] md:text-[18px] lg:text-[18px] font-semibold whitespace-nowrap bg-[#1A223F] text-white hover:bg-[#01B07A]"
-        >
-          <Printer className="w-5 h-5 md:w-6 md:h-6" />
-          <span>Print All</span>
-        </button>
-      </div>
-    </div>
-  )}
-</div>
-
-</div>
-
-
-      {/* Desktop Header Section */}
-    <header className="hidden lg:block sticky top-0 z-50 bg-gradient-to-r from-[#01B07A] to-[#1A223F] w-full mx-auto mt-1 text-white rounded-b-xl shadow-md">
-  <div className="w-full px-3 py-2 sm:px-4 md:px-6 sm:py-3">
-    {showPatientDetails && (
-      <div className="flex flex-col gap-2 md:gap-3">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4">
-          <div className="flex flex-row items-center md:items-start gap-2 md:gap-4 w-full">
-            <div className="w-10 h-10 sm:w-12 md:w-12 md:h-12 flex md:px-4 sm:h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full bg-white text-xs sm:text-sm md:text-lg font-bold text-[#01B07A] shadow-md uppercase mb-10 sm:mb-0">
-              {getPatientName().split(" ").map((n) => n[0]).join("") || "N/A"}
-            </div>
-            <div className="flex flex-col text-left w-full md:w-auto">
-              <h2 className="text-sm sm:text-base md:text-xl font-medium md:font-semibold mb-0.5 truncate max-w-[200px] sm:max-w-[300px] md:max-w-none">
-                {getPatientName() || "Unknown Patient"}
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-2 sm:gap-x-3 md:gap-x-4 gap-y-1 text-[10px] sm:text-xs md:text-sm">
-                <div className="flex items-center gap-1 truncate">
-                  <span className="font-medium">Contact:</span>
-                  <span className="break-all truncate max-w-[120px]">{patient?.phone || patient?.contact || "N/A"}</span>
+        <div className="sticky top-12 z-20 bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-b-xl shadow-md w-full">
+          <div className="md:hidden flex flex-col items-center gap-2 p-2 xs:p-4 w-full text-white">
+            <div className="relative flex flex-nowrap xs:flex-wrap items-center xs:items-start gap-4 p-4 w-full">
+              {isIPDPatient && (
+                <div className="absolute top-6 right-2 z-10">
+                  <QuickLinksPanel
+                    isOpen={isMobileMenuOpen}
+                    setActiveForm={setActiveForm}
+                    patient={patient}
+                    onToggle={setIsMobileMenuOpen}
+                  />
                 </div>
-                <div className="truncate">
-                  <span className="font-medium">Age:</span>
-                  <span> {getPatientAge() || "N/A"}</span>
-                </div>
-                <div className="truncate">
-                  <span className="font-medium">Gender:</span>
-                  <span> {patient?.gender || "N/A"}</span>
-                </div>
-                <div className="col-span-2 sm:col-span-1 md:col-span-1 truncate">
-                  <span className="font-medium">Diagnosis:</span>
-                  <span> {patient?.diagnosis || "N/A"}</span>
-                </div>
+              )}
+              <div className="w-14 h-14 flex mb-18 items-center justify-center rounded-full bg-white text-[#01B07A] text-base font-bold uppercase shadow flex-shrink-0">
+                {getPatientName().split(" ").map((n) => n[0]).join("") || "N/A"}
+              </div>
+              <div className="flex flex-col text-sm space-y-1 min-w-0 break-words max-w-[calc(100%-56px)]">
+                <h2 className="text-base font-semibold">
+                  Name: {getPatientName() || "Unknown Patient"}
+                </h2>
+                <p>Contact: {patient?.phone || patient?.contact || "N/A"}</p>
+                <p>Age: {getPatientAge() || "N/A"}</p>
+                <p>Gender: {patient?.gender || "N/A"}</p>
+                <p>Diagnosis: {patient?.diagnosis || "N/A"}</p>
                 {isIPDPatient && (
                   <>
-                    <div className="col-span-2 sm:col-span-1 truncate">
-                      <span className="font-medium">Ward:</span>
-                      <span> {getCombinedWardInfo()}</span>
-                    </div>
-                    <div className="col-span-2 sm:col-span-1 md:col-span-2 flex">
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">Status:</span>
+                    <p>Ward: {getCombinedWardInfo()}</p>
+                    <p>
+                      Status:
+                      <span
+                        className={`ml-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                          patient?.status?.toLowerCase() === "admitted"
+                            ? "bg-green-200 text-green-900"
+                            : patient?.status?.toLowerCase() === "under treatment"
+                            ? "bg-yellow-200 text-yellow-900"
+                            : patient?.status?.toLowerCase() === "discharged"
+                            ? "bg-gray-200 text-gray-900"
+                            : "bg-blue-200 text-blue-900"
+                        }`}
+                      >
+                        {patient?.status || "N/A"}
+                      </span>
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+            <div style={{ backgroundColor: '#F8FAF9' }} className="w-full rounded-xl mt-2 pt-2 pb-2">
+              <div className="w-full flex justify-center">
+                <div className="flex flex-wrap gap-0.5 sm:gap-2 md:gap-4 border-b border-gray-200">
+                  {["template", "vitals", "prescription", "eye"].map((formId) => {
+                    const formType = formTypes[formId];
+                    const Icon = formType.icon;
+                    const isActive = activeForm === formType.id;
+                    return (
+                      <button
+                        key={formType.id}
+                        onClick={() => handleFormTypeClick(formType.id)}
+                        className={`flex items-center gap-0.6 sm:gap-2 md:gap-3 px-1 py-1 text-[11px] sm:text-[14px] font-medium whitespace-nowrap ${
+                          isActive
+                            ? "text-[#01B07A] bg-white font-semibold border-b-2 border-[#01B07A]"
+                            : "text-gray-600 hover:text-[#01B07A]"
+                        }`}
+                      >
+                        <Icon className="w-3 h-3" />
+                        <span className="ps-1">{formType.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setShowMoreForms(!showMoreForms)}
+                  className="flex items-center justify-end rounded-full text-[#01B07A] bg-white font-medium hover:bg-gray-100 whitespace-nowrap ml-2"
+                >
+                  {showMoreForms ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-5 h-5" />}
+                </button>
+              </div>
+              {showMoreForms && (
+                <div className="w-full mt-1">
+                  <div className="flex justify-center flex-wrap gap-0 border-b border-gray-200">
+                    {["clinical", "lab", "dental"].map((formId) => {
+                      const formType = formTypes[formId];
+                      const Icon = formType.icon;
+                      const isActive = activeForm === formType.id;
+                      return (
+                        <button
+                          key={formType.id}
+                          onClick={() => handleFormTypeClick(formType.id)}
+                          className={`flex items-center px-1 py-1 text-[10px] font-medium whitespace-nowrap ${
+                            isActive
+                              ? "text-[#01B07A] bg-white font-semibold border-b-2 border-[#01B07A]"
+                              : "text-gray-600 hover:text-[#01B07A]"
+                          }`}
+                        >
+                          <Icon className="w-3 h-3" />
+                          <span className="ps-1">{formType.name}</span>
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={printAllForms}
+                      className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-medium whitespace-nowrap bg-[#1A223F] text-white hover:bg-[#01B07A]"
+                    >
+                      <Printer className="w-3 h-3" />
+                      <span>Print All</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="hidden md:flex lg:hidden flex-col items-center gap-4 p-4 w-[95%] mx-auto">
+            <div className="relative flex flex-wrap items-start gap-6 p-4 w-full text-white">
+              {isIPDPatient && (
+                <div className="absolute top-4 right-4 z-10">
+                  <QuickLinksPanel
+                    isOpen={isMobileMenuOpen}
+                    setActiveForm={setActiveForm}
+                    patient={patient}
+                    onToggle={setIsMobileMenuOpen}
+                  />
+                </div>
+              )}
+              <div className="w-20 h-20 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-xl font-bold uppercase shadow">
+                {getPatientName().split(" ").map((n) => n[0]).join("") || "N/A"}
+              </div>
+              <div className="flex flex-col text-sm space-y-1 min-w-0 break-words">
+                <h2 className="text-2xl font-semibold">
+                  Name: {getPatientName() || "Unknown Patient"}
+                </h2>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col">
+                    <p className="text-base">Age: {getPatientAge() || "N/A"}</p>
+                    <p className="text-base">Gender: {patient?.gender || "N/A"}</p>
+                    {isIPDPatient && (
+                      <p className="text-base">Ward: {getCombinedWardInfo()}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <p className="text-base">Contact: {patient?.phone || patient?.contact || "N/A"}</p>
+                    <p className="text-base">Diagnosis: {patient?.diagnosis || "N/A"}</p>
+                    {isIPDPatient && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-base font-medium">Status:</span>
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
+                          className={`px-2 py-0.5 rounded-full text-sm font-medium ${
                             patient?.status?.toLowerCase() === "admitted"
                               ? "bg-green-200 text-green-900"
                               : patient?.status?.toLowerCase() === "under treatment"
@@ -1007,131 +760,248 @@ const Form = () => {
                           {patient?.status || "N/A"}
                         </span>
                       </div>
-                    </div>
-                  </>
-                )}
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-            {isIPDPatient && (
-              <div className="w-full md:w-auto md:ml-auto mt-2 md:mt-0">
-                <QuickLinksPanel
-                  isOpen={isMobileMenuOpen}
-                  setActiveForm={setActiveForm}
-                  patient={patient}
-                  onToggle={setIsMobileMenuOpen}
-                />
+            <div style={{ backgroundColor: '#F8FAF9' }} className="w-full rounded-2xl mt-4 pt-2 pb-3">
+              <div className="w-full flex justify-center">
+                <div className="flex flex-wrap gap-5 border-b-3 border-gray-200">
+                  {["template", "vitals", "prescription", "eye"].map((formId) => {
+                    const formType = formTypes[formId];
+                    const Icon = formType.icon;
+                    const isActive = activeForm === formType.id;
+                    return (
+                      <button
+                        key={formType.id}
+                        onClick={() => handleFormTypeClick(formType.id)}
+                        className={`flex items-center gap-2 px-1 py-1 text-[20px] md:text-[22px] lg:text-[20px] whitespace-nowrap ${
+                          isActive
+                            ? "text-[#01B07A] border-b-2 border-[#01B07A]"
+                            : "text-gray-600 hover:text-[#01B07A]"
+                        }`}
+                      >
+                        <Icon className="w-5 h-5 md:w-6 md:h-6" />
+                        <span>{formType.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setShowMoreForms(!showMoreForms)}
+                  className="flex items-center justify-end rounded-full text-[#01B07A] font-medium hover:bg-gray-100 whitespace-nowrap ml-3"
+                >
+                  {showMoreForms ? <ChevronUp className="w-8 h-8" /> : <ChevronDown className="w-8 h-8" />}
+                </button>
               </div>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-1.5 md:gap-2 justify-start mt-3 md:mt-4">
-          {Object.values(formTypes).map((formType) => {
-            const Icon = formType.icon;
-            const isActive = activeForm === formType.id;
-            return (
-              <button
-                key={formType.id}
-                onClick={() => handleFormTypeClick(formType.id)}
-                className={`flex items-center gap-1 px-3 py-2 rounded-md text-xs md:text-sm font-medium transition-all ${
-                  isActive ? "bg-white text-[#01B07A] shadow-md" : "bg-white/10 hover:bg-white/20 text-white"
-                }`}
-              >
-                {Icon && <Icon className="w-3.5 h-3.5" />}
-                {formType.name}
-              </button>
-            );
-          })}
-          <button
-            onClick={printAllForms}
-            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md bg-white text-[#01B07A] text-xs md:text-sm font-medium hover:shadow-lg transition-all"
-          >
-            <Printer className="w-4 h-4" />
-            Print All
-          </button>
-        </div>
-      </div>
-    )}
-  </div>
-</header>
-
-      {/* ---------------- CONTENT ---------------- */}
-      <div
-        className={`max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 ${
-          isMobileMenuOpen ? "mr-0 sm:mr-72" : ""
-        } relative z-0`}
-      >
-        <div className="mb-6 sm:mb-8">{renderActiveForm()}</div>
-
-        {/* Digital Signature */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-8 animate-fadeIn">
-          <h3 className="text-base sm:text-lg font-medium sm:font-semibold mb-4 sm:mb-6">
-            Digital Signature
-          </h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            {/* Upload */}
-            <div className="space-y-3 sm:space-y-4">
-              <label className="block text-[10px] sm:text-sm font-medium text-[var(--primary-color)] mb-2">
-                Upload Signature:
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleSignatureUpload}
-                className="input-field text-[10px] sm:text-sm"
-              />
-              {doctorSignature && (
-                <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <span className="text-[10px] sm:text-sm font-medium text-blue-800">
-                    Preview:
-                  </span>
-                  <img
-                    src={doctorSignature}
-                    alt="Doctor's Signature"
-                    className="h-8 sm:h-12 border border-blue-300 rounded shadow-sm"
-                  />
+              {showMoreForms && (
+                <div className="w-full mt-2">
+                  <div className="flex justify-center flex-wrap gap-2 border-b border-gray-200">
+                    {["clinical", "lab", "dental"].map((formId) => {
+                      const formType = formTypes[formId];
+                      const Icon = formType.icon;
+                      const isActive = activeForm === formType.id;
+                      return (
+                        <button
+                          key={formType.id}
+                          onClick={() => handleFormTypeClick(formType.id)}
+                          className={`flex items-center gap-3 text-[20px] md:text-[22px] lg:text-[20px] whitespace-nowrap ${
+                            isActive
+                              ? "text-[#01B07A] border-b-2 border-[#01B07A]"
+                              : "text-gray-600 hover:text-[#01B07A]"
+                          }`}
+                        >
+                          <Icon className="w-5 h-5 md:w-6 md:h-6" />
+                          <span>{formType.name}</span>
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={printAllForms}
+                      className="flex items-center gap-2 px-4 py-1 rounded-xl text-[18px] md:text-[18px] lg:text-[18px] font-semibold whitespace-nowrap bg-[#1A223F] text-white hover:bg-[#01B07A]"
+                    >
+                      <Printer className="w-5 h-5 md:w-6 md:h-6" />
+                      <span>Print All</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
-            {/* Draw */}
-            <div className="space-y-3 sm:space-y-4">
-              <label className="block text-[10px] sm:text-sm font-medium text-[var(--primary-color)]">
-                Or Draw Signature:
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 sm:p-4">
-                <SignatureCanvas
-                  ref={signaturePadRef}
-                  canvasProps={{
-                    width: 400,
-                    height: 100,
-                    className:
-                      "border border-gray-300 rounded-lg shadow-sm w-full bg-white",
-                  }}
+          </div>
+
+          <div className="hidden lg:block w-full mx-auto text-white rounded-b-xl shadow-md">
+            <div className="w-full px-3 py-2 sm:px-4 md:px-6 sm:py-3">
+              {showPatientDetails && (
+                <div className="flex flex-col gap-2 md:gap-3">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4">
+                    <div className="flex flex-row items-center md:items-start gap-2 md:gap-4 w-full">
+                      <div className="w-10 h-10 sm:w-12 md:w-12 md:h-12 flex md:px-4 sm:h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full bg-white text-xs sm:text-sm md:text-lg font-bold text-[#01B07A] shadow-md uppercase mb-10 sm:mb-0">
+                        {getPatientName().split(" ").map((n) => n[0]).join("") || "N/A"}
+                      </div>
+                      <div className="flex flex-col text-left w-full md:w-auto">
+                        <h2 className="text-sm sm:text-base md:text-xl font-medium md:font-semibold mb-0.5 truncate max-w-[200px] sm:max-w-[300px] md:max-w-none">
+                          {getPatientName() || "Unknown Patient"}
+                        </h2>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-2 sm:gap-x-3 md:gap-x-4 gap-y-1 text-[10px] sm:text-xs md:text-sm">
+                          <div className="flex items-center gap-1 truncate">
+                            <span className="font-medium">Contact:</span>
+                            <span className="break-all truncate max-w-[120px]">
+                              {patient?.phone || patient?.contact || "N/A"}
+                            </span>
+                          </div>
+                          <div className="truncate">
+                            <span className="font-medium">Age:</span>
+                            <span> {getPatientAge() || "N/A"}</span>
+                          </div>
+                          <div className="truncate">
+                            <span className="font-medium">Gender:</span>
+                            <span> {patient?.gender || "N/A"}</span>
+                          </div>
+                          <div className="col-span-2 sm:col-span-1 md:col-span-1 truncate">
+                            <span className="font-medium">Diagnosis:</span>
+                            <span> {patient?.diagnosis || "N/A"}</span>
+                          </div>
+                          {isIPDPatient && (
+                            <>
+                              <div className="col-span-2 sm:col-span-1 truncate">
+                                <span className="font-medium">Ward:</span>
+                                <span> {getCombinedWardInfo()}</span>
+                              </div>
+                              <div className="col-span-2 sm:col-span-1 md:col-span-2 flex">
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium">Status:</span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
+                                      patient?.status?.toLowerCase() === "admitted"
+                                        ? "bg-green-200 text-green-900"
+                                        : patient?.status?.toLowerCase() === "under treatment"
+                                        ? "bg-yellow-200 text-yellow-900"
+                                        : patient?.status?.toLowerCase() === "discharged"
+                                        ? "bg-gray-200 text-gray-900"
+                                        : "bg-blue-200 text-blue-900"
+                                    }`}
+                                  >
+                                    {patient?.status || "N/A"}
+                                  </span>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {isIPDPatient && (
+                        <div className="w-full md:w-auto md:ml-auto mt-2 md:mt-0">
+                          <QuickLinksPanel
+                            isOpen={isMobileMenuOpen}
+                            setActiveForm={setActiveForm}
+                            patient={patient}
+                            onToggle={setIsMobileMenuOpen}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 md:gap-2 justify-start mt-3 md:mt-4">
+                    {Object.values(formTypes).map((formType) => {
+                      const Icon = formType.icon;
+                      const isActive = activeForm === formType.id;
+                      return (
+                        <button
+                          key={formType.id}
+                          onClick={() => handleFormTypeClick(formType.id)}
+                          className={`flex items-center gap-1 px-3 py-2 rounded-md text-xs md:text-sm font-medium transition-all ${
+                            isActive ? "bg-white text-[#01B07A] shadow-md" : "bg-white/10 hover:bg-white/20 text-white"
+                          }`}
+                        >
+                          {Icon && <Icon className="w-3.5 h-3.5" />}
+                          {formType.name}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={printAllForms}
+                      className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md bg-white text-[#01B07A] text-xs md:text-sm font-medium hover:shadow-lg transition-all"
+                    >
+                      <Printer className="w-4 h-4" />
+                      Print All
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
+          <div className="mb-6 sm:mb-8">{renderActiveForm()}</div>
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-8 animate-fadeIn">
+            <h3 className="text-base sm:text-lg font-medium sm:font-semibold mb-4 sm:mb-6">
+              Digital Signature
+            </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+              <div className="space-y-3 sm:space-y-4">
+                <label className="block text-[10px] sm:text-sm font-medium text-[var(--primary-color)] mb-2">
+                  Upload Signature:
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleSignatureUpload}
+                  className="input-field text-[10px] sm:text-sm"
                 />
+                {doctorSignature && (
+                  <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <span className="text-[10px] sm:text-sm font-medium text-blue-800">
+                      Preview:
+                    </span>
+                    <img
+                      src={doctorSignature}
+                      alt="Doctor's Signature"
+                      className="h-8 sm:h-12 border border-blue-300 rounded shadow-sm"
+                    />
+                  </div>
+                )}
               </div>
-              <div className="flex gap-2 sm:gap-3">
-                <button
-                  onClick={handleSaveSignature}
-                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--accent-color)] transition-colors text-[10px] sm:text-sm"
-                >
-                  <Save className="w-3 h-3 sm:w-4 sm:h-4" />
-                  Save
-                </button>
-                <button
-                  onClick={handleClearSignature}
-                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-[10px] sm:text-sm"
-                >
-                  <X className="w-3 h-3 sm:w-4 sm:h-4" />
-                  Clear
-                </button>
+              <div className="space-y-3 sm:space-y-4">
+                <label className="block text-[10px] sm:text-sm font-medium text-[var(--primary-color)]">
+                  Or Draw Signature:
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 sm:p-4">
+                  <SignatureCanvas
+                    ref={signaturePadRef}
+                    canvasProps={{
+                      width: 400,
+                      height: 100,
+                      className:
+                        "border border-gray-300 rounded-lg shadow-sm w-full bg-white",
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2 sm:gap-3">
+                  <button
+                    onClick={handleSaveSignature}
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--accent-color)] transition-colors text-[10px] sm:text-sm"
+                  >
+                    <Save className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Save
+                  </button>
+                  <button
+                    onClick={handleClearSignature}
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-[10px] sm:text-sm"
+                  >
+                    <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Clear
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modals */}
       {showShareModal && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <ShareModalContent
             onClose={() => setShowShareModal(false)}
             prescriptions={formsData.prescription?.prescriptions || []}
@@ -1150,7 +1020,6 @@ const Form = () => {
   );
 };
 
-// Template functions remain the same as in your original code
 const getVitalsTemplate = (d) => `
   <h4 style="color:#16a085;">Vitals Report</h4>
   <table style="width:100%;border-collapse:collapse;margin-top:10px;">
@@ -1188,6 +1057,7 @@ const getVitalsTemplate = (d) => `
     </tbody>
   </table>
 `;
+
 const getClinicalNotesTemplate = (d) => `
   <h4 style="color:#2980b9;">Clinical Notes</h4>
   <table style="width:100%;border-collapse:collapse;margin-top:10px;">
@@ -1217,6 +1087,7 @@ const getClinicalNotesTemplate = (d) => `
     </tbody>
   </table>
 `;
+
 const getLabResultsTemplate = (d) => `
   <h4 style="color:#8e44ad;">Lab Results</h4>
   <table style="width:100%;border-collapse:collapse;margin-top:10px;">
@@ -1248,6 +1119,7 @@ const getLabResultsTemplate = (d) => `
     </tbody>
   </table>
 `;
+
 const getDentalTemplate = (d) => `
   <h4 style="color:#e67e22;">Dental Problem Action Plan</h4>
   <table style="width:100%;border-collapse:collapse;margin-top:10px;">
@@ -1283,6 +1155,7 @@ const getDentalTemplate = (d) => `
     </tbody>
   </table>
 `;
+
 const getEyeTestTemplate = (d) => `
   <h4 style="color:#1976d2;background:#e3f2fd;padding:10px 16px;border-radius:8px;">Eye Test Report</h4>
   <table style="width:100%;border-collapse:collapse;margin-top:10px;">
@@ -1370,6 +1243,7 @@ const getEyeTestTemplate = (d) => `
     </tbody>
   </table>
 `;
+
 const getPrescriptionTemplate = (prescriptions = []) => {
   const rows = prescriptions.map((m) => ({
     ...m,
@@ -1419,6 +1293,7 @@ const getPrescriptionTemplate = (prescriptions = []) => {
     </table>
   `;
 };
+
 const getStyledPrescriptionHTML = (
   doctor,
   patient,
@@ -1517,6 +1392,3 @@ const getStyledPrescriptionHTML = (
 `;
 
 export default Form;
-
-
-

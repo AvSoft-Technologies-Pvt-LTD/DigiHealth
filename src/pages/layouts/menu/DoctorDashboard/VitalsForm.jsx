@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Heart,
@@ -23,7 +20,8 @@ import VitalsChart from "./VitalsChart";
 
 const API_URL = "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary";
 const VITALS_POST_API = "https://689887d3ddf05523e55f1e6c.mockapi.io/vitals";
-const PATIENT_MR_API = "https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec";
+const PATIENT_MR_API =
+  "https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec";
 
 const vitalRanges = {
   heartRate: { min: 60, max: 100, label: "bpm", placeholder: "e.g. 72" },
@@ -86,7 +84,9 @@ const VitalsForm = ({
       const localRecords = stored ? JSON.parse(stored) : [];
       const allRecords = [...serverRecords, ...localRecords];
       const uniqueRecords = allRecords.reduce((acc, rec) => {
-        if (!acc.some((r) => r.timestamp === rec.timestamp && r.id === rec.id)) {
+        if (
+          !acc.some((r) => r.timestamp === rec.timestamp && r.id === rec.id)
+        ) {
           acc.push(rec);
         }
         return acc;
@@ -136,12 +136,7 @@ const VitalsForm = ({
     if (field === "bloodPressure") {
       const [systolic, diastolic] = value.split("/").map(Number);
       if (!systolic || !diastolic) return "Enter as systolic/diastolic";
-      if (
-        systolic < 90 ||
-        systolic > 180 ||
-        diastolic < 60 ||
-        diastolic > 120
-      )
+      if (systolic < 90 || systolic > 180 || diastolic < 60 || diastolic > 120)
         return "Out of normal range";
       return "";
     }
@@ -174,8 +169,15 @@ const VitalsForm = ({
       toast.success("🔧 Vitals saved to server!");
       return response.data;
     } catch (error) {
-      console.error("Error saving vitals:", error.response?.data || error.message);
-      toast.error(`❌ Failed to save vitals: ${error.response?.data?.message || error.message}`);
+      console.error(
+        "Error saving vitals:",
+        error.response?.data || error.message
+      );
+      toast.error(
+        `❌ Failed to save vitals: ${
+          error.response?.data?.message || error.message
+        }`
+      );
       throw error;
     }
   };
@@ -206,8 +208,15 @@ const VitalsForm = ({
       toast.success("📝 Patient MR saved successfully!");
       return response.data;
     } catch (error) {
-      console.error("Error saving Patient MR:", error.response?.data || error.message);
-      toast.error(`❌ Failed to save Patient MR: ${error.response?.data?.message || error.message}`);
+      console.error(
+        "Error saving Patient MR:",
+        error.response?.data || error.message
+      );
+      toast.error(
+        `❌ Failed to save Patient MR: ${
+          error.response?.data?.message || error.message
+        }`
+      );
       throw error;
     }
   };
@@ -234,7 +243,10 @@ const VitalsForm = ({
       const response = await axios.post(API_URL, payload);
       console.log("API response:", response.data);
       const date = now.toISOString().split("T")[0];
-      const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const time = now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
       const newRecord = {
         ...formData,
         timestamp: now.getTime(),
@@ -265,17 +277,31 @@ const VitalsForm = ({
       });
       await fetchVitals();
     } catch (error) {
-      if (error.response?.data === "Max number of elements reached for this resource!") {
-        toast.error("❌ Max entries reached! Please delete old entries or upgrade your MockAPI plan.", {
-          position: "top-right",
-          autoClose: 5000,
-        });
+      if (
+        error.response?.data ===
+        "Max number of elements reached for this resource!"
+      ) {
+        toast.error(
+          "❌ Max entries reached! Please delete old entries or upgrade your MockAPI plan.",
+          {
+            position: "top-right",
+            autoClose: 5000,
+          }
+        );
       } else {
-        console.error("Full error response:", error.response?.data || error.message);
-        toast.error(`❌ Failed to save vitals: ${error.response?.data?.message || error.message}`, {
-          position: "top-right",
-          autoClose: 5000,
-        });
+        console.error(
+          "Full error response:",
+          error.response?.data || error.message
+        );
+        toast.error(
+          `❌ Failed to save vitals: ${
+            error.response?.data?.message || error.message
+          }`,
+          {
+            position: "top-right",
+            autoClose: 5000,
+          }
+        );
       }
     } finally {
       setLoading(false);
@@ -497,7 +523,9 @@ const VitalsForm = ({
               <div className="flex items-center gap-0.5 text-white text-[8px] sm:text-xs">
                 <span className="animate-pulse">🎤</span>
                 {confidence > 0 && (
-                  <span className="opacity-75">({Math.round(confidence * 100)}%)</span>
+                  <span className="opacity-75">
+                    ({Math.round(confidence * 100)}%)
+                  </span>
                 )}
               </div>
             )}
@@ -541,7 +569,7 @@ const VitalsForm = ({
                            pr-6 bg-right bg-no-repeat"
                 style={{
                   backgroundImage:
-                    "url('data:image/svg+xml;utf8,<svg fill=\"black\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>)",
+                    'url(\'data:image/svg+xml;utf8,<svg fill="black" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>)',
                   backgroundPosition: "right 0.5rem center",
                   backgroundSize: "1em",
                 }}
@@ -598,7 +626,9 @@ const VitalsForm = ({
           <div key={field} className="space-y-1">
             <div className="relative floating-input">
               <label className="block text-[12px] sm:text-sm md:text-text-base font-medium text-[var(--primary-color)]">
-                {field.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
+                {field
+                  .replace(/([A-Z])/g, " $1")
+                  .replace(/^./, (c) => c.toUpperCase())}
               </label>
               <input
                 name={field}
@@ -630,8 +660,12 @@ const VitalsForm = ({
       {transcript && (
         <div className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3 md:p-4 max-h-24 overflow-y-auto">
-            <strong className="text-blue-800 text-[10px] sm:text-xs md:text-sm">Voice Input:</strong>
-            <span className="text-blue-700 ml-1 text-[10px] sm:text-xs md:text-sm">{transcript}</span>
+            <strong className="text-blue-800 text-[10px] sm:text-xs md:text-sm">
+              Voice Input:
+            </strong>
+            <span className="text-blue-700 ml-1 text-[10px] sm:text-xs md:text-sm">
+              {transcript}
+            </span>
             {isListening && (
               <div className="text-[10px] sm:text-xs md:text-sm text-blue-600 mt-1">
                 <em>Speaking... Fields will update automatically</em>
