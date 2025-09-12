@@ -1064,75 +1064,69 @@ const Form = () => {
 
         {/* Digital Signature */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-8 animate-fadeIn">
-  <h3 className="text-base sm:text-lg font-medium sm:font-semibold mb-4 sm:mb-6">
-    Digital Signature
-  </h3>
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-    {/* Upload */}
-    <div className="space-y-3 sm:space-y-4">
-      <label className="block text-[10px] sm:text-sm font-medium text-[var(--primary-color)] mb-2">
-        Upload Signature:
-      </label>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleSignatureUpload}
-        className="input-field text-[10px] sm:text-sm"
-      />
-      {doctorSignature && (
-        <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <span className="text-[10px] sm:text-sm font-medium text-blue-800">
-            Preview:
-          </span>
-          <img
-            src={doctorSignature}
-            alt="Doctor's Signature"
-            className="h-8 sm:h-12 border border-blue-300 rounded shadow-sm"
-          />
+          <h3 className="text-base sm:text-lg font-medium sm:font-semibold mb-4 sm:mb-6">
+            Digital Signature
+          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            {/* Upload */}
+            <div className="space-y-3 sm:space-y-4">
+              <label className="block text-[10px] sm:text-sm font-medium text-[var(--primary-color)] mb-2">
+                Upload Signature:
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleSignatureUpload}
+                className="input-field text-[10px] sm:text-sm"
+              />
+              {doctorSignature && (
+                <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <span className="text-[10px] sm:text-sm font-medium text-blue-800">
+                    Preview:
+                  </span>
+                  <img
+                    src={doctorSignature}
+                    alt="Doctor's Signature"
+                    className="h-8 sm:h-12 border border-blue-300 rounded shadow-sm"
+                  />
+                </div>
+              )}
+            </div>
+            {/* Draw */}
+            <div className="space-y-3 sm:space-y-4">
+              <label className="block text-[10px] sm:text-sm font-medium text-[var(--primary-color)]">
+                Or Draw Signature:
+              </label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 sm:p-4">
+                <SignatureCanvas
+                  ref={signaturePadRef}
+                  canvasProps={{
+                    width: 400,
+                    height: 100,
+                    className:
+                      "border border-gray-300 rounded-lg shadow-sm w-full bg-white",
+                  }}
+                />
+              </div>
+              <div className="flex gap-2 sm:gap-3">
+                <button
+                  onClick={handleSaveSignature}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--accent-color)] transition-colors text-[10px] sm:text-sm"
+                >
+                  <Save className="w-3 h-3 sm:w-4 sm:h-4" />
+                  Save
+                </button>
+                <button
+                  onClick={handleClearSignature}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-[10px] sm:text-sm"
+                >
+                  <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
-    </div>
-    {/* Draw */}
-    <div className="space-y-3 sm:space-y-4">
-      <label className="block text-[10px] sm:text-sm font-medium text-[var(--primary-color)]">
-        Or Draw Signature:
-      </label>
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 sm:p-4">
-        <SignatureCanvas
-          ref={signaturePadRef}
-          canvasProps={{
-            width: 500,
-            height: 150,
-            className: "signature-canvas border border-gray-300 rounded-lg shadow-sm w-full bg-white",
-          }}
-          penColor="black"
-          backgroundColor="white"
-          velocityFilterWeight={0.7}
-          minWidth={0.5}
-          maxWidth={2.5}
-          throttle={16}
-          onEnd={() => {}}
-        />
-      </div>
-      <div className="flex gap-2 sm:gap-3">
-        <button
-          onClick={handleSaveSignature}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--accent-color)] transition-colors text-[10px] sm:text-sm"
-        >
-          <Save className="w-3 h-3 sm:w-4 sm:h-4" />
-          Save
-        </button>
-        <button
-          onClick={handleClearSignature}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-[10px] sm:text-sm"
-        >
-          <X className="w-3 h-3 sm:w-4 sm:h-4" />
-          Clear
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
       </div>
 
       {/* Modals */}
