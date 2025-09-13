@@ -344,40 +344,51 @@ function Dashboard() {
         </div>
       </div>
       {/* Unified Profile Card - Responsive */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-        <div className="flex flex-col md:flex-row items-start gap-6">
-          {/* Profile Image and Name */}
-          <div className="flex-shrink-0 flex flex-col items-center md:items-start">
-            <div className="w-24 h-24 md:w-24 md:h-24 rounded-full overflow-hidden mb-3">
-              {profileData?.photo ? (
-                <img src={profileData.photo} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-[var(--primary-color)] flex items-center justify-center">
-                  <CircleUser className="w-12 h-12 md:w-16 md:h-16 text-gray-500" />
-                </div>
-              )}
-            </div>
-            <h2 className="text-l md:text-l font-bold text-gray-900 text-center md:text-left">
-              {`${profileData.firstName || "NA"} ${profileData.lastName || "NA"}`.trim()}
-            </h2>
+<div className="bg-white rounded-lg shadow-sm p-2 md:p-4 mb-6">
+  <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+    {/* Profile Image and Name */}
+    <div className="flex-shrink-0 flex flex-col items-center md:items-start text-center md:text-left">
+      <div className="w-24 h-24 md:w-24 md:h-24 rounded-full overflow-hidden mb-3">
+        {profileData?.photo ? (
+          <img
+            src={profileData.photo}
+            alt="Profile"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-[var(--primary-color)] flex items-center justify-center">
+            <CircleUser className="w-12 h-12 md:w-16 md:h-16 text-gray-500" />
           </div>
-          {/* Details and Progress */}
-          <div className="flex-1 w-full">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4 mt-6">
-              {profileDetails.map((detail, index) => (
-                <ProfileDetail key={index} {...detail} />
-              ))}
-            </div>
-            {/* Progress Bar */}
-            <div className="flex items-center gap-3">
-              <div className="relative w-full h-2 bg-[var(--primary-color)] rounded-full">
-                <div className="absolute top-0 left-0 h-2 bg-[var(--accent-color)] rounded-full" style={{ width: `${profileCompletion}%` }} />
-              </div>
-              <span className="text-sm font-semibold px-3 py-1 bg-[var(--accent-color)] text-white rounded">{profileCompletion}%</span>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
+      <h2 className="text-l md:text-l font-bold text-gray-900">
+        {`${profileData.firstName || "NA"} ${profileData.lastName || "NA"}`.trim()}
+      </h2>
+    </div>
+
+    {/* Details and Progress */}
+    <div className="flex-1 w-full">
+     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-0 mb-0 md:mt-6 md:mb-4">
+        {profileDetails.map((detail, index) => (
+          <ProfileDetail key={index} {...detail} />
+        ))}
+      </div>
+
+      {/* Progress Bar */}
+      <div className="flex items-center gap-3">
+        <div className="relative w-full h-2 bg-[var(--primary-color)] rounded-full">
+          <div
+            className="absolute top-0 left-0 h-2 bg-[var(--accent-color)] rounded-full"
+            style={{ width: `${profileCompletion}%` }}
+          />
+        </div>
+        <span className="text-sm font-semibold px-3 py-1 bg-[var(--accent-color)] text-white rounded">
+          {profileCompletion}%
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
       {/* Section Tabs */}
       <div className="overflow-x-auto custom-scrollbar pb-2 mb-6">
         <div className="flex gap-2 sm:gap-4 min-w-max">
