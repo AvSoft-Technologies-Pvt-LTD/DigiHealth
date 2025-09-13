@@ -114,8 +114,8 @@ export default function ModulesMenu({ user, onModuleSelect }) {
           <span className="text-sm font-medium text-gray-700">Modules</span>
         </button>
         <div
-          className={`
-    absolute top-0 right-65 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-xl p-4 w-48
+  className={`
+    absolute top-12 md:top-0 right-0 md:right-65 bg-white rounded-xl shadow-xl p-4 w-48
     transform transition-all duration-300 ease-in-out
     ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
   `}

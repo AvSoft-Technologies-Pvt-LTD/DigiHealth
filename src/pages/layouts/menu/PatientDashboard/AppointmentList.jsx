@@ -132,7 +132,18 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
     { header: "Time", accessor: "time" },
     { header: "Status", accessor: "status", cell: (row) => getStatusBadge(row.status, row) },
   ];
-
+  const doctorFilters = [
+    {
+      key: "status",
+      label: "Status",
+      options: [
+        { value: "Paid", label: "Paid" },
+        { value: "Confirmed", label: "Confirmed" },
+        { value: "Pending", label: "Pending" },
+        { value: "Rejected", label: "Rejected" },
+      ],
+    },
+  ];
  const labColumns = [
   { header: "ID", accessor: "bookingId" },
   { header: "Test", accessor: "testTitle" },
@@ -161,6 +172,21 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
     ),
   },
 ];
+ const labFilters = [
+    {
+      key: "status",
+      label: "Status",
+      options: [
+        { value: "Appointment Confirmed", label: "Appointment Confirmed" },
+        { value: "Technician On the Way", label: "Technician On the Way" },
+        { value: "Sample Collected", label: "Sample Collected" },
+        { value: "Test Processing", label: "Test Processing" },
+        { value: "Report Ready", label: "Report Ready" },
+        { value: "Cancelled", label: "Cancelled" },
+      ],
+    },
+    
+  ];
 
 
   const getStatusClass = (status) => {
@@ -219,6 +245,7 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
           onTabChange={handleTabChange}
           showSearchBar={!isOverview}
           showPagination={!isOverview}
+         filters={isOverview ? [] : (state.t === "doctor" ? doctorFilters : labFilters)}
         />
       )}
     </div>

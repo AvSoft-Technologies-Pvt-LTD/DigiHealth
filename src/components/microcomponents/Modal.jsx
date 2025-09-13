@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import SignatureCanvas from "react-signature-canvas";
-import { Eye, X, Save, ChevronDown } from "lucide-react";
+import { Eye, EyeOff, X, Save, ChevronDown } from "lucide-react";
 
 const getColSpanClass = (colSpan = 1) => {
   switch (colSpan) {
@@ -336,7 +336,34 @@ const ReusableModal = ({
                                     </div>
                                   )}
                                 </div>
-                              ) : field.type === "textarea" ? (
+                              ) :field.type === "password" ? (
+  <div className="relative">
+    <input
+      type={formValues[`${field.name}Visible`] ? "text" : "password"}
+      name={field.name}
+      value={formValues[field.name] || ""}
+      onChange={(e) => handleInputChange(e, field)}
+      className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 pr-8 sm:pr-10"
+      placeholder=" "
+    />
+    <button
+      type="button"
+      onClick={() =>
+        setFormValues((p) => ({
+          ...p,
+          [`${field.name}Visible`]: !p[`${field.name}Visible`],
+        }))
+      }
+      className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    >
+      {formValues[`${field.name}Visible`] ? (
+        <EyeOff size={14} className="sm:size-4" />
+      ) : (
+        <Eye size={14} className="sm:size-4" />
+      )}
+    </button>
+  </div>
+)  :field.type === "textarea" ? (
                                 <textarea
                                   name={field.name}
                                   value={formValues[field.name] || ""}

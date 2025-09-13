@@ -3,6 +3,7 @@ import { Bell, Pill, Menu, X, FileText, Ambulance, MoreHorizontal } from "lucide
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import ModulesMenu from "../../components/microcomponents/ModulesMenu";
+import logo from '../../assets/logo.png'; 
 
 const HeaderWithNotifications = ({ toggleSidebar }) => {
   const [notifications, setNotifications] = useState([]);
@@ -111,6 +112,16 @@ const HeaderWithNotifications = ({ toggleSidebar }) => {
                 <Menu className="h-5 w-5" />
               </button>
             </div>
+              <div className="xl:hidden flex items-center gap-2">
+    <img
+      src={logo} // Replace with your logo path
+      alt="DigiHealth Logo"
+      className="h-8 w-8 sm:h-10 sm:w-10"
+    />
+    <span className="text-[var(--primary-color)] font-bold text-lg sm:text-xl">
+      DigiHealth
+    </span>
+  </div>
             {/* Center - User Name (Desktop) */}
             {user && (
               <div className="hidden xl:block text-[var(--primary-color)] font-bold text-lg sm:text-xl">
