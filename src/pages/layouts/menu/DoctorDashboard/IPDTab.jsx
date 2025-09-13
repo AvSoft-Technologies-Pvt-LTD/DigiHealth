@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandl
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
+import { XCircle } from "lucide-react";
 import {
   Bed,
   Users,
@@ -32,15 +33,14 @@ import {
   getPersonalHealthByPatientId,
 } from "../../../../utils/CrudService";
 
+// API endpoints
 const API = {
   FORM: "https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient",
   VITAL_SIGNS: "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary",
+  MASTERS: "https://hospital-masters-api.mockapi.io/masters"
 };
 
 const STATIC_DATA = {
-  occupations: ["Doctor", "Engineer", "Teacher", "Student", "Retired"].map(
-    (v) => ({ value: v, label: v })
-  ),
   insurance: ["None", "CGHS", "ESIC", "Private Insurance", "Other"].map(
     (v) => ({ value: v, label: v })
   ),
@@ -48,66 +48,94 @@ const STATIC_DATA = {
   surgery: ["No", "Yes"].map((v) => ({ value: v, label: v })),
 };
 
-const WARD_DATA = [
-  {
-    type: "General",
-    number: "A",
-    totalBeds: 30,
-    availableBeds: 16,
-    occupiedBeds: 14,
-    occupiedBedNumbers: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27],
-  },
-  {
-    type: "General",
-    number: "B",
-    totalBeds: 30,
-    availableBeds: 18,
-    occupiedBeds: 12,
-    occupiedBedNumbers: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24],
-  },
-  {
-    type: "ICU Ward",
-    number: "C",
-    totalBeds: 10,
-    availableBeds: 3,
-    occupiedBeds: 7,
-    occupiedBedNumbers: [1, 2, 3, 5, 6, 8, 9],
-  },
-  {
-    type: "Emergency",
-    number: "D",
-    totalBeds: 20,
-    availableBeds: 12,
-    occupiedBeds: 8,
-    occupiedBedNumbers: [1, 3, 5, 7, 9, 11, 13, 15],
-  },
-  {
-    type: "Private",
-    number: "F",
-    totalBeds: 15,
-    availableBeds: 10,
-    occupiedBeds: 5,
-    occupiedBedNumbers: [1, 3, 7, 10, 15],
-  },
-  {
-    type: "Maternity",
-    number: "I",
-    totalBeds: 20,
-    availableBeds: 14,
-    occupiedBeds: 6,
-    occupiedBedNumbers: [1, 5, 8, 12, 16, 20],
-  },
-];
+const getWardData = async () => {
+  try {
+    const response = await fetch(`${API.MASTERS}/wards`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    return [
+      {
+        id: "general-a",
+        type: "General",
+        number: "A",
+        floor: "1st Floor",
+        totalBeds: 30,
+        availableBeds: 16,
+        occupiedBeds: 14,
+        occupiedBedNumbers: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27],
+      },
+      {
+        id: "general-b",
+        type: "General",
+        number: "B",
+        floor: "1st Floor",
+        totalBeds: 30,
+        availableBeds: 18,
+        occupiedBeds: 12,
+        occupiedBedNumbers: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24],
+      },
+      {
+        id: "icu-c",
+        type: "ICU Ward",
+        number: "C",
+        floor: "2nd Floor",
+        totalBeds: 10,
+        availableBeds: 3,
+        occupiedBeds: 7,
+        occupiedBedNumbers: [1, 2, 3, 5, 6, 8, 9],
+      },
+      {
+        id: "emergency-d",
+        type: "Emergency",
+        number: "D",
+        floor: "Ground Floor",
+        totalBeds: 20,
+        availableBeds: 12,
+        occupiedBeds: 8,
+        occupiedBedNumbers: [1, 3, 5, 7, 9, 11, 13, 15],
+      },
+      {
+        id: "private-f",
+        type: "Private",
+        number: "F",
+        floor: "3rd Floor",
+        totalBeds: 15,
+        availableBeds: 10,
+        occupiedBeds: 5,
+        occupiedBedNumbers: [1, 3, 7, 10, 15],
+      },
+      {
+        id: "maternity-i",
+        type: "Maternity",
+        number: "I",
+        floor: "2nd Floor",
+        totalBeds: 20,
+        availableBeds: 14,
+        occupiedBeds: 6,
+        occupiedBedNumbers: [1, 5, 8, 12, 16, 20],
+      },
+    ];
+  }
+};
 
-const BED_FACILITIES = Object.fromEntries(
-  Array.from({ length: 30 }, (_, i) => [
-    i + 1,
-    ["AC", "TV", "Bathroom", "Oxygen"].slice(
-      0,
-      Math.floor(Math.random() * 4) + 1
-    ),
-  ])
-);
+const getBedFacilities = async () => {
+  try {
+    const response = await fetch(`${API.MASTERS}/bed-amenities`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    return Object.fromEntries(
+      Array.from({ length: 30 }, (_, i) => [
+        i + 1,
+        ["AC", "TV", "Bathroom", "Oxygen"].slice(
+          0,
+          Math.floor(Math.random() * 4) + 1
+        ),
+      ])
+    );
+  }
+};
 
 const FACILITY_ICONS = {
   AC: Snowflake,
@@ -178,9 +206,9 @@ const PhotoUpload = ({ photoPreview, onPhotoChange, onPreviewClick, error }) => 
     {photoPreview && (
       <div className="mt-2 flex items-center gap-2">
         <span className="text-xs text-green-600 font-medium">✓ Photo Uploaded</span>
-        <button 
-          type="button" 
-          onClick={onPreviewClick} 
+        <button
+          type="button"
+          onClick={onPreviewClick}
           className="text-blue-500 hover:text-blue-700 p-1"
         >
           <Eye size={16} />
@@ -267,7 +295,6 @@ const PatientViewSections = ({
         : null,
     },
   ];
-
   return (
     <div className="space-y-4">
       {sections.map((section) => (
@@ -432,6 +459,10 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
+  // Dynamic data states
+  const [wardData, setWardData] = useState([]);
+  const [bedFacilities, setBedFacilities] = useState({});
+
   useImperativeHandle(ref, () => ({
     openAddPatientModal: () => {
       openModal("ipdWizard");
@@ -458,6 +489,24 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
       }
     }
     return false;
+  }, []);
+
+  // Load dynamic master data
+  useEffect(() => {
+    const loadMasterData = async () => {
+      try {
+        const [wards, facilities] = await Promise.all([
+          getWardData(),
+          getBedFacilities()
+        ]);
+        setWardData(wards);
+        setBedFacilities(facilities);
+      } catch (error) {
+        console.error("Failed to load master data:", error);
+        toast.error("Failed to load ward and bed data");
+      }
+    };
+    loadMasterData();
   }, []);
 
   const fileToBase64 = (file) => {
@@ -537,7 +586,7 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
         { name: "aadhaar", label: "Aadhaar Number", type: "text", required: true },
         { name: "gender", label: "Gender", type: "select", required: true, options: masterData.genders },
         { name: "dob", label: "Date of Birth", type: "date", required: true },
-        { name: "occupation", label: "Occupation", type: "select", required: true, options: STATIC_DATA.occupations },
+        { name: "occupation", label: "Occupation", type: "text", required: true },
         { name: "pincode", label: "Pincode", type: "text", required: true, maxLength: 6 },
         { name: "city", label: "City", type: "select", required: true, options: availableCities.map((city) => ({ value: city, label: city })), disabled: isLoadingCities || availableCities.length === 0 },
         { name: "district", label: "District", type: "text", readonly: true },
@@ -1080,6 +1129,16 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
               <label className="absolute left-3 -top-2 text-xs text-gray-600 bg-white px-1 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:text-xs peer-focus:text-[#01B07A]">
                 {field.label}{field.required && " *"}
               </label>
+              {formErrors[field.name] && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors[field.name]}
+                </p>
+              )}
+              {field.name === "password" && ipdWizardData.password && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Include Capital Letters, Numbers, and Special Characters
+                </p>
+              )}
             </>
           ) : (
             <>
@@ -1100,10 +1159,12 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
               <label className="absolute left-3 -top-2 text-xs text-gray-600 bg-white px-1 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-sm peer-focus:-top-2 peer-focus:text-xs peer-focus:text-[#01B07A]">
                 {field.label}{field.required && " *"}
               </label>
+              {formErrors[field.name] && (
+                <p className="text-red-600 text-xs mt-1">
+                  {formErrors[field.name]}
+                </p>
+              )}
             </>
-          )}
-          {formErrors[field.name] && (
-            <p className="text-red-600 text-xs mt-1">{formErrors[field.name]}</p>
           )}
         </div>
       )}
@@ -1120,7 +1181,7 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
       { length: bedsPerPage },
       (_, i) => bedScrollIndex + i + 1
     ).filter((bed) => bed <= selectedWard.totalBeds);
-    
+
     return (
       <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
         <h4 className="font-semibold mb-3 sm:mb-4 text-base sm:text-lg">
@@ -1140,7 +1201,7 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
               const isOccupied =
                 selectedWard.occupiedBedNumbers?.includes(bedNumber);
               const isSelected = selectedBed === bedNumber;
-              const facilities = BED_FACILITIES[bedNumber] || [];
+              const facilities = bedFacilities[bedNumber] || [];
               const isUnderMaintenance = Math.random() < 0.05;
               const getBedStatus = () =>
                 isUnderMaintenance
@@ -1228,44 +1289,42 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
           )}
         </div>
         {selectedBed && (
-  <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border-2 border-blue-200">
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
-      <h5 className="font-semibold text-blue-700 flex items-center gap-2 text-xs sm:text-sm">
-        Selected: {selectedWard.type} Ward {selectedWard.number} - Bed {selectedBed}
-      </h5>
-      <button
-        onClick={() => setIpdWizardStep(4)}
-        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs w-full sm:w-auto"
-      >
-        Next
-      </button>
-    </div>
-    {/* Facilities display remains the same */}
-    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-blue-700">
-      <span className="font-medium">Facilities:</span>
-      <div className="flex flex-wrap gap-1 sm:gap-1.5">
-        {(BED_FACILITIES[selectedBed] || []).map((facility) => {
-          const IconComponent = FACILITY_ICONS[facility];
-          return (
-            <div
-              key={facility}
-              className="flex items-center gap-0.5 bg-white px-1.5 sm:px-2 py-0.5 rounded-full shadow-sm border border-blue-200 text-xs"
-            >
-              {IconComponent && <IconComponent className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
-              <span className="text-[10px] font-medium">{facility}</span>
+          <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border-2 border-blue-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
+              <h5 className="font-semibold text-blue-700 flex items-center gap-2 text-xs sm:text-sm">
+                Selected: {selectedWard.type} Ward {selectedWard.number} - Bed {selectedBed}
+              </h5>
+              <button
+                onClick={() => setIpdWizardStep(4)}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs w-full sm:w-auto"
+              >
+                Next
+              </button>
             </div>
-          );
-        })}
-        {(!BED_FACILITIES[selectedBed] || BED_FACILITIES[selectedBed].length === 0) && (
-          <span className="text-[10px] bg-white px-2 py-0.5 rounded-full shadow-sm border border-blue-200">
-            Basic Room
-          </span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs sm:text-sm text-blue-700">
+              <span className="font-medium">Facilities:</span>
+              <div className="flex flex-wrap gap-1 sm:gap-1.5">
+                {(bedFacilities[selectedBed] || []).map((facility) => {
+                  const IconComponent = FACILITY_ICONS[facility];
+                  return (
+                    <div
+                      key={facility}
+                      className="flex items-center gap-0.5 bg-white px-1.5 sm:px-2 py-0.5 rounded-full shadow-sm border border-blue-200 text-xs"
+                    >
+                      {IconComponent && <IconComponent className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+                      <span className="text-[10px] font-medium">{facility}</span>
+                    </div>
+                  );
+                })}
+                {(!bedFacilities[selectedBed] || bedFacilities[selectedBed].length === 0) && (
+                  <span className="text-[10px] bg-white px-2 py-0.5 rounded-full shadow-sm border border-blue-200">
+                    Basic Room
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         )}
-      </div>
-    </div>
-  </div>
-)}
-
       </div>
     );
   };
@@ -1319,11 +1378,6 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {generateFields(1).map((field) => renderField(field))}
           </div>
-          {ipdWizardData.password && (
-            <div className="text-xs text-gray-600 mt-2">
-              Include Capital Letters, Numbers, and Special Characters
-            </div>
-          )}
         </div>
       );
     if (ipdWizardStep === 2)
@@ -1331,7 +1385,7 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
         <div>
           <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Ward Selection</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {WARD_DATA.map((ward) => (
+            {wardData.map((ward) => (
               <div
                 key={`${ward.type}-${ward.number}`}
                 className={`p-3 sm:p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
@@ -1351,18 +1405,21 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
                     {ward.number}
                   </span>
                 </div>
-                <div className="text-xs text-gray-600 space-y-1">
-                  <div className="flex justify-between">
-                    <span>Total:</span>
-                    <span>{ward.totalBeds}</span>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="bg-blue-50 rounded-xl p-2 text-center shadow-sm flex flex-col items-center">
+                    <Bed className="w-4 h-4 text-blue-600 mb-1" />
+                    <p className="text-[10px] text-gray-500 font-medium">Total</p>
+                    <p className="text-blue-600 font-bold text-sm">{ward.totalBeds}</p>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Available:</span>
-                    <span className="text-green-600">{ward.availableBeds}</span>
+                  <div className="bg-green-50 rounded-xl p-2 text-center shadow-sm flex flex-col items-center">
+                    <CheckCircle className="w-4 h-4 text-green-600 mb-1" />
+                    <p className="text-[10px] text-gray-500 font-medium">Available</p>
+                    <p className="text-green-600 font-bold text-sm">{ward.availableBeds}</p>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Occupied:</span>
-                    <span className="text-red-600">{ward.occupiedBeds}</span>
+                  <div className="bg-red-50 rounded-xl p-2 text-center shadow-sm flex flex-col items-center">
+                    <XCircle className="w-4 h-4 text-red-600 mb-1" />
+                    <p className="text-[10px] text-gray-500 font-medium">Occupied</p>
+                    <p className="text-red-600 font-bold text-sm">{ward.occupiedBeds}</p>
                   </div>
                 </div>
                 <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
@@ -1428,7 +1485,6 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
         animate={{ scale: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Header - Fixed */}
         <div className="flex-shrink-0 bg-gradient-to-r from-[#01B07A] to-[#004f3d] rounded-t-xl px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <h2 className="text-sm sm:text-lg font-bold text-white">
             IPD Patient Admission
@@ -1452,10 +1508,7 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
             </svg>
           </button>
         </div>
-
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto bg-gradient-to-br from-[#E6FBF5] to-[#C1F1E8]">
-          {/* Step Indicator */}
           <div className="flex-shrink-0 px-2 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-center space-x-2 sm:space-x-4 min-w-max overflow-x-auto pb-2">
               {WIZARD_STEPS.map((step, index) => (
@@ -1513,8 +1566,6 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
               ))}
             </div>
           </div>
-
-          {/* Content */}
           <div className="px-2 sm:px-6 pb-4">
             <motion.div
               className="bg-white rounded-xl p-3 sm:p-6 shadow-inner"
@@ -1527,32 +1578,27 @@ const IpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, 
             </motion.div>
           </div>
         </div>
-
-        {/* Footer - Fixed */}
-     <div className="flex-shrink-0 bg-white border-t p-3 sm:p-4 sticky bottom-0 z-10 flex flex-col-reverse sm:flex-row justify-between gap-2">
-  <button
-    onClick={
-      ipdWizardStep === 1
-        ? () => closeModal("ipdWizard")
-        : () => setIpdWizardStep(ipdWizardStep - 1)
-    }
-    className="px-4 sm:px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 text-xs sm:text-sm"
-  >
-    {ipdWizardStep === 1 ? "Cancel" : "Back"}
-  </button>
-  <button
-    onClick={
-      ipdWizardStep === 4 ? handleIpdWizardFinish : handleIpdWizardNext
-    }
-    className="px-4 sm:px-6 py-2 bg-[#01B07A] text-white rounded-lg hover:bg-[#018A65] transition-all duration-200 text-xs sm:text-sm"
-  >
-    {ipdWizardStep === 4 ? "Save Admission" : "Next"}
-  </button>
-</div>
-
+        <div className="flex-shrink-0 bg-white border-t p-3 sm:p-4 sticky bottom-0 z-10 flex flex-col-reverse sm:flex-row justify-between gap-2">
+          <button
+            onClick={
+              ipdWizardStep === 1
+                ? () => closeModal("ipdWizard")
+                : () => setIpdWizardStep(ipdWizardStep - 1)
+            }
+            className="px-4 sm:px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 text-xs sm:text-sm"
+          >
+            {ipdWizardStep === 1 ? "Cancel" : "Back"}
+          </button>
+          <button
+            onClick={
+              ipdWizardStep === 4 ? handleIpdWizardFinish : handleIpdWizardNext
+            }
+            className="px-4 sm:px-6 py-2 bg-[#01B07A] text-white rounded-lg hover:bg-[#018A65] transition-all duration-200 text-xs sm:text-sm"
+          >
+            {ipdWizardStep === 4 ? "Save Admission" : "Next"}
+          </button>
+        </div>
       </motion.div>
-
-      {/* Photo Preview Modal */}
       {isPhotoModalOpen && photoPreview && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-2">
           <div className="bg-white p-2 sm:p-4 rounded shadow-lg relative max-w-2xl max-h-[80vh] overflow-auto">
