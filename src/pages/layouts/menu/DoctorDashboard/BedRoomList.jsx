@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
@@ -9,30 +8,28 @@ const statusColors = {
   Active: "text-green-600 bg-green-100",
   Inactive: "text-red-600 bg-red-100",
 };
+
 const BedRoomList = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
- const [bedroomData, setBedroomData] = useState([
-  { id: 1, bedNo: "101", categoryName: "General Ward", floor: "1st Floor", bookingStatus: "Booked", status: "Active", currentPatient: "Sanjay", productName: "1001 General Bed", salePrice: 300 },
-  { id: 2, bedNo: "102", categoryName: "ICU", floor: "1st Floor", bookingStatus: "Pre-Booked", status: "Inactive", currentPatient: "Trupti", productName: "Bariatric", salePrice: 400 },
-  { id: 3, bedNo: "103", categoryName: "General Ward", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1002 Semi-Fowler", salePrice: 250 },
-  { id: 4, bedNo: "104", categoryName: "ICU", floor: "2nd Floor", bookingStatus: "Booked", status: "Active", currentPatient: "Meena", productName: "1007 ICU Bed", salePrice: 500 },
-  { id: 5, bedNo: "105", categoryName: "Private", floor: "3rd Floor", bookingStatus: "Available", status: "Inactive", currentPatient: "Vaishnavi", productName: "1010 Private Deluxe", salePrice: 600 },
-  { id: 6, bedNo: "106", categoryName: "General Ward", floor: "3rd Floor", bookingStatus: "Pre-Booked", status: "Active", currentPatient: "Ravi", productName: "1003 General Bed Plus", salePrice: 320 },
-  { id: 7, bedNo: "107", categoryName: "ICU", floor: "1st Floor", bookingStatus: "Booked", status: "Inactive", currentPatient: "Anita", productName: "1008 Pediatric ICU", salePrice: 550 },
-  { id: 8, bedNo: "108", categoryName: "Private", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "Roshani", productName: "1011 Suite Room", salePrice: 800 },
-
-  // Additional 8 from previous list
-  { id: 9, bedNo: "109", categoryName: "Private Room", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1012 Premium Private", salePrice: 750 },
-  { id: 10, bedNo: "110", categoryName: "Semi-Private", floor: "2nd Floor", bookingStatus: "Booked", status: "Active", currentPatient: "Raj", productName: "1013 Twin Sharing", salePrice: 450 },
-  { id: 11, bedNo: "111", categoryName: "Deluxe Suite", floor: "3rd Floor", bookingStatus: "Available", status: "Inactive", currentPatient: "", productName: "1014 Deluxe Suite", salePrice: 900 },
-  { id: 12, bedNo: "112", categoryName: "ICU", floor: "3rd Floor", bookingStatus: "Pre-Booked", status: "Active", currentPatient: "Sheetal", productName: "1009 Advanced ICU", salePrice: 520 },
-  { id: 13, bedNo: "113", categoryName: "Private Room", floor: "1st Floor", bookingStatus: "Booked", status: "Inactive", currentPatient: "Sameer", productName: "1015 Private Comfort", salePrice: 700 },
-  { id: 14, bedNo: "114", categoryName: "General Ward", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1004 General Light", salePrice: 260 },
-  { id: 15, bedNo: "115", categoryName: "Semi-Private", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1016 Semi-Private Plus", salePrice: 470 },
-  { id: 16, bedNo: "116", categoryName: "Deluxe Suite", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1017 Executive Suite", salePrice: 950 },
-]);
-
+  const [bedroomData, setBedroomData] = useState([
+    { id: 1, bedNo: "101", categoryName: "General Ward", floor: "1st Floor", bookingStatus: "Booked", status: "Active", currentPatient: "Sanjay", productName: "1001 General Bed", salePrice: 300 },
+    { id: 2, bedNo: "102", categoryName: "ICU", floor: "1st Floor", bookingStatus: "Pre-Booked", status: "Inactive", currentPatient: "Trupti", productName: "Bariatric", salePrice: 400 },
+    { id: 3, bedNo: "103", categoryName: "General Ward", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1002 Semi-Fowler", salePrice: 250 },
+    { id: 4, bedNo: "104", categoryName: "ICU", floor: "2nd Floor", bookingStatus: "Booked", status: "Active", currentPatient: "Meena", productName: "1007 ICU Bed", salePrice: 500 },
+    { id: 5, bedNo: "105", categoryName: "Private", floor: "3rd Floor", bookingStatus: "Available", status: "Inactive", currentPatient: "Vaishnavi", productName: "1010 Private Deluxe", salePrice: 600 },
+    { id: 6, bedNo: "106", categoryName: "General Ward", floor: "3rd Floor", bookingStatus: "Pre-Booked", status: "Active", currentPatient: "Ravi", productName: "1003 General Bed Plus", salePrice: 320 },
+    { id: 7, bedNo: "107", categoryName: "ICU", floor: "1st Floor", bookingStatus: "Booked", status: "Inactive", currentPatient: "Anita", productName: "1008 Pediatric ICU", salePrice: 550 },
+    { id: 8, bedNo: "108", categoryName: "Private", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "Roshani", productName: "1011 Suite Room", salePrice: 800 },
+    { id: 9, bedNo: "109", categoryName: "Private Room", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1012 Premium Private", salePrice: 750 },
+    { id: 10, bedNo: "110", categoryName: "Semi-Private", floor: "2nd Floor", bookingStatus: "Booked", status: "Active", currentPatient: "Raj", productName: "1013 Twin Sharing", salePrice: 450 },
+    { id: 11, bedNo: "111", categoryName: "Deluxe Suite", floor: "3rd Floor", bookingStatus: "Available", status: "Inactive", currentPatient: "", productName: "1014 Deluxe Suite", salePrice: 900 },
+    { id: 12, bedNo: "112", categoryName: "ICU", floor: "3rd Floor", bookingStatus: "Pre-Booked", status: "Active", currentPatient: "Sheetal", productName: "1009 Advanced ICU", salePrice: 520 },
+    { id: 13, bedNo: "113", categoryName: "Private Room", floor: "1st Floor", bookingStatus: "Booked", status: "Inactive", currentPatient: "Sameer", productName: "1015 Private Comfort", salePrice: 700 },
+    { id: 14, bedNo: "114", categoryName: "General Ward", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1004 General Light", salePrice: 260 },
+    { id: 15, bedNo: "115", categoryName: "Semi-Private", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1016 Semi-Private Plus", salePrice: 470 },
+    { id: 16, bedNo: "116", categoryName: "Deluxe Suite", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1017 Executive Suite", salePrice: 950 },
+  ]);
 
   const [categoryOptions, setCategoryOptions] = useState([
     { label: "General Ward", value: "General Ward" },
@@ -58,6 +55,42 @@ const BedRoomList = () => {
   const [inlineModalOpen, setInlineModalOpen] = useState(false);
   const [inlineModalMode, setInlineModalMode] = useState("");
   const [inlineModalData, setInlineModalData] = useState({});
+  const [formErrors, setFormErrors] = useState({});
+
+  // Transform data for the table
+  const transformBedroomData = (data) => {
+    const grouped = data.reduce((acc, bed) => {
+      const key = `${bed.categoryName}-${bed.floor}`;
+      if (!acc[key]) {
+        acc[key] = {
+          categoryName: bed.categoryName,
+          floor: bed.floor,
+          total: 0,
+          occupied: 0,
+          available: 0,
+          status: "Active",
+          beds: [],
+        };
+      }
+      acc[key].total += 1;
+      if (bed.bookingStatus === "Booked" || bed.bookingStatus === "Pre-Booked") {
+        acc[key].occupied += 1;
+      }
+      acc[key].available = acc[key].total - acc[key].occupied;
+      if (acc[key].available === 0) {
+        acc[key].status = "Inactive";
+      }
+      acc[key].beds.push(bed);
+      return acc;
+    }, {});
+
+    return Object.values(grouped).map((item, index) => ({
+      id: index + 1,
+      ...item,
+    }));
+  };
+
+  const transformedData = transformBedroomData(bedroomData);
 
   const openInlineModal = (type) => {
     setInlineModalMode(type);
@@ -77,14 +110,12 @@ const BedRoomList = () => {
     } else if (inlineModalMode === "floor") {
       const number = parseInt(data.value);
       if (isNaN(number)) return;
-
       const getOrdinal = (n) => {
         if (n % 10 === 1 && n % 100 !== 11) return `${n}st Floor`;
         if (n % 10 === 2 && n % 100 !== 12) return `${n}nd Floor`;
         if (n % 10 === 3 && n % 100 !== 13) return `${n}rd Floor`;
         return `${n}th Floor`;
       };
-
       const formattedName = getOrdinal(number);
       const newOption = { label: formattedName, value: formattedName };
       if (!floorOptions.some((opt) => opt.value === formattedName)) {
@@ -92,7 +123,6 @@ const BedRoomList = () => {
         setSelectedData((prev) => ({ ...prev, floor: formattedName }));
       }
     }
-
     setInlineModalOpen(false);
   };
 
@@ -101,66 +131,70 @@ const BedRoomList = () => {
     setSelectedData({});
     setIsModalOpen(true);
   };
-const bedroomReport = () => {
-  navigate("/hospitaldashboard/bedroom-report", { state: { bedroomData } });
-};
-  const handleEdit = (row) => {
+
+  const bedroomReport = () => {
+    navigate("/hospitaldashboard/bedroom-report", { state: { bedroomData } });
+  };
+
+  const handleEditGroup = (row) => {
+    // For simplicity, just open the first bed in the group for editing
+    // You can customize this logic as needed
+    const firstBed = row.beds[0];
     setModalMode("edit");
-    setSelectedData(row);
+    setSelectedData(firstBed);
     setIsModalOpen(true);
   };
 
-  const handleView = (row) => {
-    setModalMode("viewProfile");
-    setSelectedData(row);
-    setIsModalOpen(true);
+  const handleDeleteGroup = (row) => {
+    // Delete all beds in the group
+    const bedIdsToDelete = row.beds.map((bed) => bed.id);
+    setBedroomData((prev) => prev.filter((bed) => !bedIdsToDelete.includes(bed.id)));
   };
 
   const handleDeletePrompt = (row) => {
-    setModalMode("delete");
+    setModalMode("deleteGroup");
     setSelectedData(row);
     setIsModalOpen(true);
   };
 
   const handleDelete = () => {
-    setBedroomData((prev) => prev.filter((item) => item.id !== selectedData.id));
+    if (modalMode === "deleteGroup") {
+      const bedIdsToDelete = selectedData.beds.map((bed) => bed.id);
+      setBedroomData((prev) => prev.filter((bed) => !bedIdsToDelete.includes(bed.id)));
+    } else {
+      setBedroomData((prev) => prev.filter((item) => item.id !== selectedData.id));
+    }
     setIsModalOpen(false);
     setSelectedData({});
   };
 
- const [formErrors, setFormErrors] = useState({});
-
-const handleSave = (data) => {
-  const errors = {};
-  if (!data.bedNo) errors.bedNo = "Bed No is required.";
-  if (!data.categoryName) errors.categoryName = "Category Name is required.";
-  if (!data.floor) errors.floor = "Floor is required.";
-  if (!data.bookingStatus) errors.bookingStatus = "Booking Status is required.";
-  if (!data.status) errors.status = "Status is required.";
-  if (!data.productName) errors.productName = "Product Name is required.";
-  if (!data.salePrice || isNaN(data.salePrice) || Number(data.salePrice) <= 0) {
-    errors.salePrice = "Sale Price must be a positive number.";
-  }
-
-  if (Object.keys(errors).length > 0) {
-    setFormErrors(errors);
-    return;
-  }
-
-  setFormErrors({}); // clear errors if all good
-
-  const newData = { ...data };
-  if (modalMode === "add") {
-    setBedroomData((prev) => [...prev, { id: Date.now(), ...newData }]);
-  } else if (modalMode === "edit") {
-    setBedroomData((prev) =>
-      prev.map((b) => (b.id === selectedData.id ? { ...b, ...newData } : b))
-    );
-  }
-  setIsModalOpen(false);
-  setSelectedData({});
-};
-
+  const handleSave = (data) => {
+    const errors = {};
+    if (!data.bedNo) errors.bedNo = "Bed No is required.";
+    if (!data.categoryName) errors.categoryName = "Category Name is required.";
+    if (!data.floor) errors.floor = "Floor is required.";
+    if (!data.bookingStatus) errors.bookingStatus = "Booking Status is required.";
+    if (!data.status) errors.status = "Status is required.";
+    if (!data.productName) errors.productName = "Product Name is required.";
+    if (!data.salePrice || isNaN(data.salePrice) || Number(data.salePrice) <= 0) {
+      errors.salePrice = "Sale Price must be a positive number.";
+    }
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
+    const newData = { ...data };
+    if (modalMode === "add") {
+      setBedroomData((prev) => [...prev, { id: Date.now(), ...newData }]);
+    } else if (modalMode === "edit") {
+      setBedroomData((prev) =>
+        prev.map((b) => (b.id === selectedData.id ? { ...b, ...newData } : b))
+      );
+    }
+    setIsModalOpen(false);
+    setSelectedData({});
+  };
 
   const fields = [
     { name: "bedNo", label: "Bed No" },
@@ -218,8 +252,8 @@ const handleSave = (data) => {
   ];
 
   const viewFields = [
-    { key: "currentPatient", label: "current Patient", titleKey: true ,initialsKey:true},
-    { key: "categoryName", label: "Category",subtitleKey:true },
+    { key: "currentPatient", label: "Current Patient", titleKey: true, initialsKey: true },
+    { key: "categoryName", label: "Category", subtitleKey: true },
     { key: "floor", label: "Floor" },
     { key: "bookingStatus", label: "Booking Status" },
     { key: "status", label: "Status" },
@@ -229,17 +263,11 @@ const handleSave = (data) => {
   ];
 
   const columns = [
-    { header: "Bed No", accessor: "bedNo" },
-    {
-      header: "Category Name",
-      accessor: "categoryName",
-      clickable: true,
-      cell: (row) => row.categoryName,
-    },
-    { header: "Bed/Cabin Floor", accessor: "floor" },
-    { header: "Booking Status", accessor: "bookingStatus" },
-    
-    { header: "current Patient", accessor: "currentPatient" },
+    { header: "Category Name", accessor: "categoryName" },
+    { header: "Floor", accessor: "floor" },
+    { header: "Total", accessor: "total" },
+    { header: "Available", accessor: "available" },
+    { header: "Occupied", accessor: "occupied" },
     {
       header: "Status",
       accessor: "status",
@@ -254,10 +282,18 @@ const handleSave = (data) => {
       accessor: "actions",
       cell: (row) => (
         <div className="flex gap-2">
-          <button onClick={() => handleEdit(row)} className="edit-btn flex items-center justify-center hover:bg-[--primary-color]/10 rounded p-1 transition" title="Edit">
+          <button
+            onClick={() => handleEditGroup(row)}
+            className="edit-btn flex items-center justify-center hover:bg-[--primary-color]/10 rounded p-1 transition"
+            title="Edit"
+          >
             <FaEdit className="text-[--primary-color]" />
           </button>
-          <button onClick={() => handleDeletePrompt(row)} className="delete-btn flex items-center justify-center hover:bg-red-100 rounded p-1 transition hover:animate-bounce" title="Delete">
+          <button
+            onClick={() => handleDeletePrompt(row)}
+            className="delete-btn flex items-center justify-center hover:bg-red-100 rounded p-1 transition hover:animate-bounce"
+            title="Delete"
+          >
             <FaTrash />
           </button>
         </div>
@@ -268,23 +304,19 @@ const handleSave = (data) => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-  <h4 className="h4-heading">Bedroom List</h4>
-
-  {/* Buttons aligned right */}
-  <div className="flex items-center gap-2 ml-auto">
-    <button onClick={bedroomReport} className="flex items-center gap-2 edit-btn rounded rounded-full">
-       Bedroom Report
-    </button>
-    <button onClick={handleAdd} className="flex items-center gap-2 btn btn-primary">
-      <FaPlus className="text-sm" /> Add Bedroom
-    </button>
-  </div>
-</div>
-
-
+        <h4 className="h4-heading">Bedroom List</h4>
+        <div className="flex items-center gap-2 ml-auto">
+          <button onClick={bedroomReport} className="flex items-center gap-2 edit-btn rounded rounded-full">
+            Bedroom Report
+          </button>
+          <button onClick={handleAdd} className="flex items-center gap-2 btn btn-primary">
+            <FaPlus className="text-sm" /> Create Master
+          </button>
+        </div>
+      </div>
       <DynamicTable
         columns={columns}
-        data={bedroomData}
+        data={transformedData}
         filters={[
           {
             key: "combinedFilter",
@@ -292,11 +324,7 @@ const handleSave = (data) => {
             options: categoryOptions.map((opt) => ({ value: opt.value, label: opt.label })),
           },
         ]}
-        onCellClick={(row, col) => {
-          if (col.accessor === "categoryName") handleView(row);
-        }}
       />
-
       <ReusableModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -306,18 +334,17 @@ const handleSave = (data) => {
             ? "Add Bedroom"
             : modalMode === "edit"
             ? "Edit Bedroom"
-            : modalMode === "viewProfile"
-            ? "View Bedroom"
+            : modalMode === "deleteGroup"
+            ? "Delete Group"
             : "Delete Bedroom"
         }
         data={selectedData}
         fields={fields}
-         errors={formErrors}
+        errors={formErrors}
         viewFields={viewFields}
         onSave={handleSave}
         onDelete={handleDelete}
       />
-
       <ReusableModal
         isOpen={inlineModalOpen}
         onClose={() => setInlineModalOpen(false)}
@@ -340,10 +367,14 @@ const handleSave = (data) => {
                 },
               ]
             : [
-                { name: "floorType", label: "Floor Type", type: "select", options: [
+                {
+                  name: "floorType",
+                  label: "Floor Type",
+                  type: "select",
+                  options: [
                     { label: "General", value: "General" },
                     { label: "Private", value: "Private" },
-                  ]
+                  ],
                 },
                 { name: "value", label: "Floor Number (e.g., 3)" },
                 {
@@ -363,4 +394,3 @@ const handleSave = (data) => {
 };
 
 export default BedRoomList;
-
