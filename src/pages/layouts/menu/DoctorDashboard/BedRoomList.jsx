@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
-import DynamicTable from "../../../../components/microcomponents/DynamicTable";
-import ReusableModal from "../../../../components/microcomponents/Modal";
+import React, { useState, useEffect } from "react";
+import { FaPlus, FaEdit, FaTrash, FaEye } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import DynamicTable from "../../../../components/microcomponents/DynamicTable";
+import { toast } from "react-toastify";
 
 const statusColors = {
   Active: "text-green-600 bg-green-100",
@@ -11,384 +11,240 @@ const statusColors = {
 
 const BedRoomList = () => {
   const navigate = useNavigate();
-
-  const [bedroomData, setBedroomData] = useState([
-    { id: 1, bedNo: "101", categoryName: "General Ward", floor: "1st Floor", bookingStatus: "Booked", status: "Active", currentPatient: "Sanjay", productName: "1001 General Bed", salePrice: 300 },
-    { id: 2, bedNo: "102", categoryName: "ICU", floor: "1st Floor", bookingStatus: "Pre-Booked", status: "Inactive", currentPatient: "Trupti", productName: "Bariatric", salePrice: 400 },
-    { id: 3, bedNo: "103", categoryName: "General Ward", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1002 Semi-Fowler", salePrice: 250 },
-    { id: 4, bedNo: "104", categoryName: "ICU", floor: "2nd Floor", bookingStatus: "Booked", status: "Active", currentPatient: "Meena", productName: "1007 ICU Bed", salePrice: 500 },
-    { id: 5, bedNo: "105", categoryName: "Private", floor: "3rd Floor", bookingStatus: "Available", status: "Inactive", currentPatient: "Vaishnavi", productName: "1010 Private Deluxe", salePrice: 600 },
-    { id: 6, bedNo: "106", categoryName: "General Ward", floor: "3rd Floor", bookingStatus: "Pre-Booked", status: "Active", currentPatient: "Ravi", productName: "1003 General Bed Plus", salePrice: 320 },
-    { id: 7, bedNo: "107", categoryName: "ICU", floor: "1st Floor", bookingStatus: "Booked", status: "Inactive", currentPatient: "Anita", productName: "1008 Pediatric ICU", salePrice: 550 },
-    { id: 8, bedNo: "108", categoryName: "Private", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "Roshani", productName: "1011 Suite Room", salePrice: 800 },
-    { id: 9, bedNo: "109", categoryName: "Private Room", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1012 Premium Private", salePrice: 750 },
-    { id: 10, bedNo: "110", categoryName: "Semi-Private", floor: "2nd Floor", bookingStatus: "Booked", status: "Active", currentPatient: "Raj", productName: "1013 Twin Sharing", salePrice: 450 },
-    { id: 11, bedNo: "111", categoryName: "Deluxe Suite", floor: "3rd Floor", bookingStatus: "Available", status: "Inactive", currentPatient: "", productName: "1014 Deluxe Suite", salePrice: 900 },
-    { id: 12, bedNo: "112", categoryName: "ICU", floor: "3rd Floor", bookingStatus: "Pre-Booked", status: "Active", currentPatient: "Sheetal", productName: "1009 Advanced ICU", salePrice: 520 },
-    { id: 13, bedNo: "113", categoryName: "Private Room", floor: "1st Floor", bookingStatus: "Booked", status: "Inactive", currentPatient: "Sameer", productName: "1015 Private Comfort", salePrice: 700 },
-    { id: 14, bedNo: "114", categoryName: "General Ward", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1004 General Light", salePrice: 260 },
-    { id: 15, bedNo: "115", categoryName: "Semi-Private", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1016 Semi-Private Plus", salePrice: 470 },
-    { id: 16, bedNo: "116", categoryName: "Deluxe Suite", floor: "2nd Floor", bookingStatus: "Available", status: "Active", currentPatient: "", productName: "1017 Executive Suite", salePrice: 950 },
+  const [bedData, setBedData] = useState([
+    {
+      id: "1",
+      department: "Cardiology",
+      ward: "ICU",
+      totalBeds: 20,
+      occupied: 10,
+      available: 10,
+      status: "Active",
+      rooms: 5,
+      createdAt: "2024-01-15",
+    },
+    {
+      id: "2", 
+      department: "Orthopedics",
+      ward: "General",
+      totalBeds: 30,
+      occupied: 18,
+      available: 12,
+      status: "Active",
+      rooms: 8,
+      createdAt: "2024-01-14",
+    },
+    {
+      id: "3",
+      department: "Pediatrics", 
+      ward: "Private",
+      totalBeds: 15,
+      occupied: 7,
+      available: 8,
+      status: "Inactive",
+      rooms: 6,
+      createdAt: "2024-01-13",
+    },
   ]);
 
-  const [categoryOptions, setCategoryOptions] = useState([
-    { label: "General Ward", value: "General Ward" },
-    { label: "ICU", value: "ICU" },
-    { label: "Private Room", value: "Private Room" },
-  ]);
-
-  const [floorOptions, setFloorOptions] = useState([
-    { label: "1st Floor", value: "1st Floor" },
-    { label: "2nd Floor", value: "2nd Floor" },
-  ]);
-
-  const productOptions = [
-    { label: "1001 General Bed (300)", value: "1001 General Bed" },
-    { label: "1006 Bariatric (400)", value: "1006 Bariatric" },
-    { label: "201 Ac Cabin (1500)", value: "201 Ac Cabin" },
-    { label: "Non Ac Cabin (1000)", value: "Non Ac Cabin" },
-  ];
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("add");
-  const [selectedData, setSelectedData] = useState({});
-  const [inlineModalOpen, setInlineModalOpen] = useState(false);
-  const [inlineModalMode, setInlineModalMode] = useState("");
-  const [inlineModalData, setInlineModalData] = useState({});
-  const [formErrors, setFormErrors] = useState({});
-
-  // Transform data for the table
-  const transformBedroomData = (data) => {
-    const grouped = data.reduce((acc, bed) => {
-      const key = `${bed.categoryName}-${bed.floor}`;
-      if (!acc[key]) {
-        acc[key] = {
-          categoryName: bed.categoryName,
-          floor: bed.floor,
-          total: 0,
-          occupied: 0,
-          available: 0,
-          status: "Active",
-          beds: [],
-        };
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem("bedMasterData");
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        if (Array.isArray(parsedData) && parsedData.length > 0) {
+          setBedData(parsedData);
+        }
+      } catch (error) {
+        console.error("Error parsing saved bed data:", error);
       }
-      acc[key].total += 1;
-      if (bed.bookingStatus === "Booked" || bed.bookingStatus === "Pre-Booked") {
-        acc[key].occupied += 1;
-      }
-      acc[key].available = acc[key].total - acc[key].occupied;
-      if (acc[key].available === 0) {
-        acc[key].status = "Inactive";
-      }
-      acc[key].beds.push(bed);
-      return acc;
-    }, {});
+    }
+  }, []);
 
-    return Object.values(grouped).map((item, index) => ({
-      id: index + 1,
-      ...item,
-    }));
+  // Save data to localStorage whenever bedData changes
+  useEffect(() => {
+    localStorage.setItem("bedMasterData", JSON.stringify(bedData));
+  }, [bedData]);
+
+  const handleCreateMaster = () => {
+    navigate("/doctordashboard/bedroommanagement/bedmaster");
   };
 
-  const transformedData = transformBedroomData(bedroomData);
-
-  const openInlineModal = (type) => {
-    setInlineModalMode(type);
-    setInlineModalData({ name: "", floorType: "", value: "", status: "Active" });
-    setInlineModalOpen(true);
+  const handleEdit = (row) => {
+    navigate("/doctordashboard/bedroommanagement/bedmaster", {
+      state: { editData: row },
+    });
   };
 
-  const handleInlineSave = (data) => {
-    const name = data.name?.trim();
-    if (inlineModalMode === "category") {
-      if (!name) return;
-      const newOption = { label: name, value: name };
-      if (!categoryOptions.some((opt) => opt.value === name)) {
-        setCategoryOptions((prev) => [...prev, newOption]);
-        setSelectedData((prev) => ({ ...prev, categoryName: name }));
-      }
-    } else if (inlineModalMode === "floor") {
-      const number = parseInt(data.value);
-      if (isNaN(number)) return;
-      const getOrdinal = (n) => {
-        if (n % 10 === 1 && n % 100 !== 11) return `${n}st Floor`;
-        if (n % 10 === 2 && n % 100 !== 12) return `${n}nd Floor`;
-        if (n % 10 === 3 && n % 100 !== 13) return `${n}rd Floor`;
-        return `${n}th Floor`;
+  const handleDelete = (id) => {
+    setBedData(bedData.filter((item) => item.id !== id));
+    toast.success("Record deleted successfully");
+  };
+
+  const handleView = (row) => {
+    // Create a detailed view modal or navigate to a detail page
+    toast.info(`Viewing details for ${row.department} - ${row.ward}`);
+  };
+
+  // Function to add new bed data from BedMaster
+  const addBedData = (newData) => {
+    setBedData(prev => [...prev, {
+      ...newData,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString().split('T')[0],
+    }]);
+  };
+
+ const columns = [
+  {
+    header: "Department",
+    accessor: "department",
+    cell: (row) => (
+      <div className="flex items-center gap-2">
+        <span className="font-medium text-gray-900">{row.department}</span>
+      </div>
+    ),
+  },
+  {
+    header: "Ward",
+    accessor: "ward",
+    cell: (row) => {
+      const wardColors = {
+        'ICU': 'bg-red-50 text-red-700 border-red-200',
+        'ICCU': 'bg-purple-50 text-purple-700 border-purple-200',
+        'General': 'bg-blue-50 text-blue-700 border-blue-200',
+        'Private': 'bg-green-50 text-green-700 border-green-200',
+        'Emergency': 'bg-orange-50 text-orange-700 border-orange-200',
+        'Maternity': 'bg-pink-50 text-pink-700 border-pink-200',
       };
-      const formattedName = getOrdinal(number);
-      const newOption = { label: formattedName, value: formattedName };
-      if (!floorOptions.some((opt) => opt.value === formattedName)) {
-        setFloorOptions((prev) => [...prev, newOption]);
-        setSelectedData((prev) => ({ ...prev, floor: formattedName }));
-      }
-    }
-    setInlineModalOpen(false);
-  };
-
-  const handleAdd = () => {
-    setModalMode("add");
-    setSelectedData({});
-    setIsModalOpen(true);
-  };
-
-  const bedroomReport = () => {
-    navigate("/hospitaldashboard/bedroom-report", { state: { bedroomData } });
-  };
-
-  const handleEditGroup = (row) => {
-    // For simplicity, just open the first bed in the group for editing
-    // You can customize this logic as needed
-    const firstBed = row.beds[0];
-    setModalMode("edit");
-    setSelectedData(firstBed);
-    setIsModalOpen(true);
-  };
-
-  const handleDeleteGroup = (row) => {
-    // Delete all beds in the group
-    const bedIdsToDelete = row.beds.map((bed) => bed.id);
-    setBedroomData((prev) => prev.filter((bed) => !bedIdsToDelete.includes(bed.id)));
-  };
-
-  const handleDeletePrompt = (row) => {
-    setModalMode("deleteGroup");
-    setSelectedData(row);
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = () => {
-    if (modalMode === "deleteGroup") {
-      const bedIdsToDelete = selectedData.beds.map((bed) => bed.id);
-      setBedroomData((prev) => prev.filter((bed) => !bedIdsToDelete.includes(bed.id)));
-    } else {
-      setBedroomData((prev) => prev.filter((item) => item.id !== selectedData.id));
-    }
-    setIsModalOpen(false);
-    setSelectedData({});
-  };
-
-  const handleSave = (data) => {
-    const errors = {};
-    if (!data.bedNo) errors.bedNo = "Bed No is required.";
-    if (!data.categoryName) errors.categoryName = "Category Name is required.";
-    if (!data.floor) errors.floor = "Floor is required.";
-    if (!data.bookingStatus) errors.bookingStatus = "Booking Status is required.";
-    if (!data.status) errors.status = "Status is required.";
-    if (!data.productName) errors.productName = "Product Name is required.";
-    if (!data.salePrice || isNaN(data.salePrice) || Number(data.salePrice) <= 0) {
-      errors.salePrice = "Sale Price must be a positive number.";
-    }
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-    setFormErrors({});
-    const newData = { ...data };
-    if (modalMode === "add") {
-      setBedroomData((prev) => [...prev, { id: Date.now(), ...newData }]);
-    } else if (modalMode === "edit") {
-      setBedroomData((prev) =>
-        prev.map((b) => (b.id === selectedData.id ? { ...b, ...newData } : b))
-      );
-    }
-    setIsModalOpen(false);
-    setSelectedData({});
-  };
-
-  const fields = [
-    { name: "bedNo", label: "Bed No" },
-    {
-      name: "categoryName",
-      label: "Category Name",
-      type: "select",
-      options: categoryOptions,
-      placeholder: "Select category",
-      extraNode: (
-        <button type="button" className="text-blue-600 underline text-sm ml-2" onClick={() => openInlineModal("category")}>
-          + Add Category
-        </button>
-      ),
-    },
-    {
-      name: "floor",
-      label: "Floor",
-      type: "select",
-      options: floorOptions,
-      placeholder: "Select floor",
-      extraNode: (
-        <button type="button" className="text-blue-600 underline text-sm ml-2" onClick={() => openInlineModal("floor")}>
-          + Add Floor
-        </button>
-      ),
-    },
-    {
-      name: "bookingStatus",
-      label: "Booking Status",
-      type: "select",
-      options: [
-        { label: "Booked", value: "Booked" },
-        { label: "Pre-Booked", value: "Pre-Booked" },
-        { label: "Available", value: "Available" },
-      ],
-    },
-    {
-      name: "status",
-      label: "Status",
-      type: "select",
-      options: [
-        { label: "Active", value: "Active" },
-        { label: "Inactive", value: "Inactive" },
-      ],
-    },
-    { name: "currentPatient", label: "Current Patient" },
-    {
-      name: "productName",
-      label: "Product Name",
-      type: "select",
-      options: productOptions,
-    },
-    { name: "salePrice", label: "Sale Price", type: "number" },
-  ];
-
-  const viewFields = [
-    { key: "currentPatient", label: "Current Patient", titleKey: true, initialsKey: true },
-    { key: "categoryName", label: "Category", subtitleKey: true },
-    { key: "floor", label: "Floor" },
-    { key: "bookingStatus", label: "Booking Status" },
-    { key: "status", label: "Status" },
-    { key: "currentPatient", label: "Current Patient" },
-    { key: "productName", label: "Product Name" },
-    { key: "salePrice", label: "Sale Price" },
-  ];
-
-  const columns = [
-    { header: "Category Name", accessor: "categoryName" },
-    { header: "Floor", accessor: "floor" },
-    { header: "Total", accessor: "total" },
-    { header: "Available", accessor: "available" },
-    { header: "Occupied", accessor: "occupied" },
-    {
-      header: "Status",
-      accessor: "status",
-      cell: (row) => (
-        <span className={`px-2 py-1 rounded-full text-sm font-medium ${statusColors[row.status] || ""}`}>
-          {row.status}
+      return (
+        <span className={`px-2 py-1 rounded-full text-sm font-medium border ${wardColors[row.ward] || 'bg-gray-50 text-gray-700 border-gray-200'}`}>
+          {row.ward}
         </span>
-      ),
+      );
+    },
+  },
+  {
+    header: "Beds (Occupied/Total)",
+    accessor: "beds",
+    cell: (row) => (
+      <div className="flex items-center gap-1">
+        <span className="font-medium text-red-600">{row.occupied}</span>
+        <span className="font-medium text-gray-900">/{row.totalBeds}</span>
+      </div>
+    ),
+  },
+  {
+    header: "Available",
+    accessor: "available",
+    cell: (row) => (
+      <div className="flex items-center gap-2">
+        <span className="font-medium text-green-600">
+          {row.totalBeds - row.occupied}
+        </span>
+      </div>
+    ),
+  },
+  {
+    header: "Status",
+    accessor: "status",
+    cell: (row) => (
+      <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[row.status] || ""}`}>
+        {row.status}
+      </span>
+    ),
+  },
+  {
+    header: "Actions",
+    accessor: "actions",
+    cell: (row) => (
+      <div className="flex items-center gap-2">
+       
+        <button
+          onClick={() => handleEdit(row)}
+          className="p-2 text-green-500 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+          title="Edit"
+        >
+          <FaEdit size={14} />
+        </button>
+        <button
+          onClick={() => handleDelete(row.id)}
+          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+          title="Delete"
+        >
+          <FaTrash size={14} />
+        </button>
+      </div>
+    ),
+  },
+];
+
+
+  const filters = [
+    {
+      key: "department",
+      label: "Department",
+      options: [
+        { value: "Cardiology", label: "Cardiology" },
+        { value: "Orthopedics", label: "Orthopedics" },
+        { value: "Pediatrics", label: "Pediatrics" },
+        { value: "Neurology", label: "Neurology" },
+        { value: "Emergency", label: "Emergency" },
+      ],
     },
     {
-      header: "Actions",
-      accessor: "actions",
-      cell: (row) => (
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleEditGroup(row)}
-            className="edit-btn flex items-center justify-center hover:bg-[--primary-color]/10 rounded p-1 transition"
-            title="Edit"
-          >
-            <FaEdit className="text-[--primary-color]" />
-          </button>
-          <button
-            onClick={() => handleDeletePrompt(row)}
-            className="delete-btn flex items-center justify-center hover:bg-red-100 rounded p-1 transition hover:animate-bounce"
-            title="Delete"
-          >
-            <FaTrash />
-          </button>
-        </div>
-      ),
+      key: "ward",
+      label: "Ward Type",
+      options: [
+        { value: "ICU", label: "ICU" },
+        { value: "ICCU", label: "ICCU" },
+        { value: "General", label: "General" },
+        { value: "Private", label: "Private" },
+        { value: "Emergency", label: "Emergency" },
+        { value: "Maternity", label: "Maternity" },
+      ],
+    },
+    {
+      key: "status",
+      label: "Status",
+      options: [
+        { value: "Active", label: "Active" },
+        { value: "Inactive", label: "Inactive" },
+      ],
     },
   ];
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h4 className="h4-heading">Bedroom List</h4>
-        <div className="flex items-center gap-2 ml-auto">
-          <button onClick={bedroomReport} className="flex items-center gap-2 edit-btn rounded rounded-full">
-            Bedroom Report
-          </button>
-          <button onClick={handleAdd} className="flex items-center gap-2 btn btn-primary">
-            <FaPlus className="text-sm" /> Create Master
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Bed Management</h1>
+        </div>
+        <div className="flex items-center gap-3">
+      
+          <button
+            onClick={handleCreateMaster}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            <FaPlus className="text-sm" />
+            Create Master
           </button>
         </div>
       </div>
-      <DynamicTable
-        columns={columns}
-        data={transformedData}
-        filters={[
-          {
-            key: "combinedFilter",
-            label: "Category",
-            options: categoryOptions.map((opt) => ({ value: opt.value, label: opt.label })),
-          },
-        ]}
-      />
-      <ReusableModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        mode={modalMode}
-        title={
-          modalMode === "add"
-            ? "Add Bedroom"
-            : modalMode === "edit"
-            ? "Edit Bedroom"
-            : modalMode === "deleteGroup"
-            ? "Delete Group"
-            : "Delete Bedroom"
-        }
-        data={selectedData}
-        fields={fields}
-        errors={formErrors}
-        viewFields={viewFields}
-        onSave={handleSave}
-        onDelete={handleDelete}
-      />
-      <ReusableModal
-        isOpen={inlineModalOpen}
-        onClose={() => setInlineModalOpen(false)}
-        mode="add"
-        title={`Add New ${inlineModalMode === "category" ? "Category" : "Floor"}`}
-        data={inlineModalData}
-        onSave={handleInlineSave}
-        fields={
-          inlineModalMode === "category"
-            ? [
-                { name: "name", label: "Category Name" },
-                {
-                  name: "status",
-                  label: "Status",
-                  type: "select",
-                  options: [
-                    { label: "Active", value: "Active" },
-                    { label: "Inactive", value: "Inactive" },
-                  ],
-                },
-              ]
-            : [
-                {
-                  name: "floorType",
-                  label: "Floor Type",
-                  type: "select",
-                  options: [
-                    { label: "General", value: "General" },
-                    { label: "Private", value: "Private" },
-                  ],
-                },
-                { name: "value", label: "Floor Number (e.g., 3)" },
-                {
-                  name: "status",
-                  label: "Status",
-                  type: "select",
-                  options: [
-                    { label: "Active", value: "Active" },
-                    { label: "Inactive", value: "Inactive" },
-                  ],
-                },
-              ]
-        }
-      />
+
+      <div >
+        <DynamicTable
+          columns={columns}
+          data={bedData}
+          filters={filters}
+          title=""
+          showSearchBar={true}
+          showPagination={true}
+        />
+      </div>
+
+   
     </div>
   );
 };
