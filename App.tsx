@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'react-native';
+import { PaperProvider, MD3LightTheme } from 'react-native-paper';
+import { Provider } from 'react-redux';
+import { store } from './src/store';
 import AppNavigator from './src/navigation/AppNavigation';
 import { COLORS } from './src/constants/colors';
 import { getStatusBarStyle } from './src/utils/statusBar';
@@ -10,6 +13,18 @@ const App: React.FC = () => {
   const defaultBackgroundColor = COLORS.WHITE; // Change this to your app's primary background
   const statusBarStyle = getStatusBarStyle(defaultBackgroundColor);
 
+  // Custom theme for React Native Paper
+  const theme = {
+    ...MD3LightTheme,
+    colors: {
+      ...MD3LightTheme.colors,
+      primary: COLORS.SECONDARY,
+      secondary: COLORS.PRIMARY,
+      surface: COLORS.WHITE,
+      background: COLORS.BG_OFF_WHITE,
+    },
+  };
+
   useEffect(() => {
     // Set initial status bar configuration
     StatusBar.setBarStyle(statusBarStyle, true);
@@ -17,14 +32,20 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <NavigationContainer>
-      <StatusBar 
-        barStyle={statusBarStyle}
-        backgroundColor={defaultBackgroundColor}
-        translucent={false}
-      />
-      <AppNavigator />
-    </NavigationContainer>
+    <Provider store={store}>
+      <PaperProvider 
+        theme={theme}
+      >
+        <NavigationContainer>
+          <StatusBar 
+            barStyle={statusBarStyle}
+            backgroundColor={defaultBackgroundColor}
+            translucent={false}
+          />
+          <AppNavigator />
+        </NavigationContainer>
+      </PaperProvider>
+    </Provider>
   );
 };
 
