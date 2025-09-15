@@ -57,10 +57,24 @@ const BedMaster = () => {
   const [selectedWardForRoom, setSelectedWardForRoom] = useState(null);
   const [bedCount, setBedCount] = useState(1);
 
+  const fallbackDepartments = [
+    { id: "fallback-1", name: "Cardiology", specializationId: "fallback-1" },
+    { id: "fallback-2", name: "Neurology", specializationId: "fallback-2" },
+    { id: "fallback-3", name: "Orthopedics", specializationId: "fallback-3" },
+    { id: "fallback-4", name: "Pediatrics", specializationId: "fallback-4" },
+    { id: "fallback-5", name: "Oncology", specializationId: "fallback-5" },
+    { id: "fallback-6", name: "Gastroenterology", specializationId: "fallback-6" },
+    { id: "fallback-7", name: "Dermatology", specializationId: "fallback-7" },
+    { id: "fallback-8", name: "Psychiatry", specializationId: "fallback-8" },
+    { id: "fallback-9", name: "Urology", specializationId: "fallback-9" },
+    { id: "fallback-10", name: "Endocrinology", specializationId: "fallback-10" },
+    { id: "fallback-11", name: "Ophthalmology", specializationId: "fallback-11" },
+  ];
+
   const steps = [
     { id: 0, title: "Department Setup", icon: Building, description: "Create and manage hospital departments", color: "text-[var(--primary-color)]" },
     { id: 1, title: "Ward Creation", icon: Building2, description: "Set up wards within departments", color: "text-purple-600" },
-    { id:2, title: "Room & Amenities", icon: Door, description: "Configure rooms and their amenities", color: "text-[var(--accent-color)]" },
+    { id: 2, title: "Room & Amenities", icon: Door, description: "Configure rooms and their amenities", color: "text-[var(--accent-color)]" },
     { id: 3, title: "Bed Configuration", icon: Bed, description: "Set up beds and bed-specific amenities", color: "text-orange-600" },
     { id: 4, title: "Review & Save", icon: Check, description: "Review configuration and save", color: "text-gray-600" },
   ];
@@ -103,10 +117,11 @@ const BedMaster = () => {
     try {
       const response = await getAllSpecializations();
       const data = response.data?.data || response.data || [];
-      setSpecializations(Array.isArray(data) ? data : []);
+      setSpecializations(Array.isArray(data) ? data : fallbackDepartments);
     } catch (error) {
       setSpecializationError("Failed to load specializations");
-      toast.error("Failed to load specializations");
+      toast.error("Failed to load specializations, using fallback options.");
+      setSpecializations(fallbackDepartments);
     } finally {
       setLoadingSpecializations(false);
     }
@@ -377,7 +392,6 @@ const BedMaster = () => {
             >
               <Plus size={16} /> Add
             </button>
-            
           </div>
         </div>
         {specializationError && (
@@ -392,7 +406,6 @@ const BedMaster = () => {
         {!loadingSpecializations && specializations.length === 0 && !specializationError && (
           <p className="text-gray-500 text-sm mt-2">No specializations available</p>
         )}
-     
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         <AnimatePresence>
@@ -809,76 +822,7 @@ const BedMaster = () => {
           <Check className="text-green-600" size={20} />
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Review & Save</h2>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="bg-[var(--primary-color)] rounded-lg p-3 sm:p-4 border border-[var(--accent-color)]">
-            <div className="flex items-center gap-2 mb-2">
-              <Building className="text-white" size={16} />
-              <span className="font-semibold text-white text-xs sm:text-sm">Departments</span>
-            </div>
-            <p className="text-xl sm:text-2xl font-bold text-white">{bedMasterData.departments.length}</p>
-          </div>
-          <div className="bg-purple-50 rounded-lg p-3 sm:p-4 border border-purple-200">
-            <div className="flex items-center gap-2 mb-2">
-              <Building2 className="text-purple-600" size={16} />
-              <span className="font-semibold text-purple-900 text-xs sm:text-sm">Wards</span>
-            </div>
-            <p className="text-xl sm:text-2xl font-bold text-purple-700">{bedMasterData.wards.length}</p>
-          </div>
-          <div className="bg-[var(--accent-color)] rounded-lg p-3 sm:p-4 border border-[var(--accent-color)]">
-            <div className="flex items-center gap-2 mb-2">
-              <Door className="text-white" size={16} />
-              <span className="font-semibold text-white text-xs sm:text-sm">Rooms</span>
-            </div>
-            <p className="text-xl sm:text-2xl font-bold text-white">{bedMasterData.rooms.length}</p>
-          </div>
-          <div className="bg-orange-50 rounded-lg p-3 sm:p-4 border border-orange-200">
-            <div className="flex items-center gap-2 mb-2">
-              <Bed className="text-orange-600" size={16} />
-              <span className="font-semibold text-orange-900 text-xs sm:text-sm">Beds</span>
-            </div>
-            <p className="text-xl sm:text-2xl font-bold text-orange-700">{bedMasterData.beds.length}</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
-          <h3 className="text-base sm:text-lg font-semibold mb-4">Configuration Preview</h3>
-          <div className="space-y-3 sm:space-y-4">
-            {bedMasterData.departments.map((dept) => (
-              <div key={dept.id} className="border border-gray-200 rounded-lg p-3 sm:p-4">
-                <h4 className="font-semibold text-gray-900 flex items-center gap-2 mb-3 text-sm sm:text-base">
-                  <Building className="text-[var(--primary-color)]" size={16} />
-                  <span className="break-words">{dept.name}</span>
-                </h4>
-                <div className="space-y-2 sm:space-y-3 pl-2 sm:pl-4">
-                  {bedMasterData.wards
-                    .filter((w) => w.departmentId === dept.id)
-                    .map((ward) => (
-                      <div key={ward.id} className="border-l-2 border-gray-200 pl-3 sm:pl-4">
-                        <h5 className="font-medium text-gray-800 flex items-center gap-2 mb-2 text-sm">
-                          <Building2 className="text-purple-600" size={14} />
-                          <span className="break-words">{ward.name}</span>
-                        </h5>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 pl-2 sm:pl-4">
-                          {bedMasterData.rooms
-                            .filter((r) => r.wardId === ward.id)
-                            .map((room) => {
-                              const roomBeds = bedMasterData.beds.filter((b) => b.roomId === room.id);
-                              return (
-                                <div key={room.id} className="text-xs sm:text-sm text-gray-600">
-                                  <span className="flex items-center gap-1">
-                                    <Door size={12} />
-                                    <span className="break-words">{room.name} ({roomBeds.length} beds)</span>
-                                  </span>
-                                </div>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+
         {summaryData.length > 0 && (
           <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
             <h3 className="text-base sm:text-lg font-semibold mb-4">Data Summary</h3>
