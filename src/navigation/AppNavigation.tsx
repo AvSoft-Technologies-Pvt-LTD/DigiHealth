@@ -1,7 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Home, Login, Register, SplashScreen, PatientRegister, DoctorRegister } from '../screens';
+import { Login, Register, SplashScreen, PatientRegister, DoctorRegister, Home } from '../screens';
 import { PAGES } from '../constants/pages';
+// import DrawerNavigator from './DrawerNavigator';
 
 export type RootStackParamList = {
   [PAGES.SPLASH]: undefined;
@@ -22,6 +23,7 @@ const AppNavigator: React.FC = () => {
       <Stack.Screen name={PAGES.SPLASH} component={SplashScreen} />
       <Stack.Screen name={PAGES.LOGIN} component={Login} />
       <Stack.Screen name={PAGES.HOME} component={Home} />
+      {/* <Stack.Screen name={PAGES.HOME} component={DrawerNavigator} options={{ headerShown: false }} /> */}
       <Stack.Screen name={PAGES.REGISTER} component={Register} />
       <Stack.Screen name={PAGES.PATIENT_REGISTER} component={PatientRegister} />
       <Stack.Screen name={PAGES.DOCTOR_REGISTER} component={DoctorRegister} />

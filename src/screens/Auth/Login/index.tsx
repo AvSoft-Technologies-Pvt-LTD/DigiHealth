@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginView from './LoginView';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/AppNavigation';
+import { post } from '../../../services/apiServices';
+import { API } from '../../../config/api';
+import { PAGES } from '../../../constants/pages';
+import StorageService from '../../../services/storageService';
 
 // Validation utility functions
 const validateEmail = (email: string): string | null => {
@@ -38,7 +44,14 @@ const validateOTP = (otp: string): string | null => {
 
 type LoginProps = {};
 
+interface LoginResponse {
+    token: string;
+    role: string;
+    message?: string;
+}
+
 const Login: React.FC<LoginProps> = () => {
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const [loading, setLoading] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
     const [snackbarVisible, setSnackbarVisible] = useState(false);
@@ -62,13 +75,31 @@ const Login: React.FC<LoginProps> = () => {
             return;
         }
         
-        setLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
-            setSnackbarMessage('Login successful!');
+            setLoading(true);
+        try {
+            const responseData = await post<LoginResponse>(API.LOGIN_API, { identifier: email, password });
+            console.log("Login response:", responseData);
+            
+            // Save token and role to AsyncStorage
+            await StorageService.save("userToken", responseData.token);
+            await StorageService.save("userRole", responseData.role);
+            
+            // Show success message
+            setSnackbarMessage(responseData.message || 'Login successful!');
             setSnackbarVisible(true);
-        }, 2000);
+            
+            // Navigate to home screen after a short delay
+            setTimeout(() => {
+                navigation.replace(PAGES.HOME);
+            }, 1000);
+        } catch (error: unknown) {
+            console.error('Login error:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
+            setSnackbarMessage(errorMessage);
+            setSnackbarVisible(true);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSendOTP = async (phoneNumber: string) => {
@@ -108,7 +139,6 @@ const Login: React.FC<LoginProps> = () => {
         }, 2000);
     };
 
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     return (
         <LoginView 
             loading={loading}

@@ -3,10 +3,18 @@ import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'react-native';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { Provider } from 'react-redux';
+// import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { store } from './src/store';
 import AppNavigator from './src/navigation/AppNavigation';
 import { COLORS } from './src/constants/colors';
 import { getStatusBarStyle } from './src/utils/statusBar';
+
+// // This is needed for react-native-gesture-handler to work in the whole app
+// const GestureHandlerWrapper: React.FC<{children: React.ReactNode}> = ({ children }) => (
+//   <GestureHandlerRootView style={{ flex: 1 }}>
+//     {children}
+//   </GestureHandlerRootView>
+// );
 
 const App: React.FC = () => {
   // Set global status bar configuration
@@ -32,20 +40,22 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <Provider store={store}>
-      <PaperProvider 
-        theme={theme}
-      >
-        <NavigationContainer>
-          <StatusBar 
-            barStyle={statusBarStyle}
-            backgroundColor={defaultBackgroundColor}
+    // <GestureHandlerWrapper>
+      <Provider store={store}>
+        <PaperProvider 
+          theme={theme}
+        >
+          <NavigationContainer>
+            <StatusBar 
+              barStyle={statusBarStyle}
+              backgroundColor={defaultBackgroundColor}
             translucent={false}
-          />
-          <AppNavigator />
-        </NavigationContainer>
-      </PaperProvider>
-    </Provider>
+            />
+            <AppNavigator />
+          </NavigationContainer>
+        </PaperProvider>
+      </Provider>
+    // </GestureHandlerWrapper>
   );
 };
 

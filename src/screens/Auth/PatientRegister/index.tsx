@@ -6,7 +6,7 @@ import PatientRegisterView, { PatientFormData } from './PatientRegisterView';
 import { RootStackParamList } from '../../../navigation/AppNavigation';
 import { API } from '../../../config/api';
 import { PAGES } from '../../../constants/pages';
-import { postFormData } from '../../../services/apiServices';
+import { post, postFormData } from '../../../services/apiServices';
 
 type PatientRegisterProps = {};
 
@@ -21,48 +21,61 @@ const PatientRegister: React.FC<PatientRegisterProps> = () => {
       // Create FormData for multipart/form-data request
       const formDataToSend = new FormData();
       
-      // Add all form fields
+      // Add all form fields according to API specification
       formDataToSend.append('firstName', formData.firstName);
-      formDataToSend.append('middleName', formData.middleName);
+      formDataToSend.append('middleName', formData.middleName || ''); // Send empty value if not provided
       formDataToSend.append('lastName', formData.lastName);
-      formDataToSend.append('phoneNumber', formData.phoneNumber);
+      formDataToSend.append('phone', formData.phone);
       formDataToSend.append('email', formData.email);
-      formDataToSend.append('aadharNumber', formData.aadharNumber);
-      formDataToSend.append('gender', formData.gender);
-      formDataToSend.append('dateOfBirth', formData.dateOfBirth?.toISOString() || '');
+      formDataToSend.append('password', formData.password);
+      formDataToSend.append('confirmPassword', formData.confirmPassword);
+      formDataToSend.append('aadhaar', formData.aadhaar || ''); // Send empty value if not provided
+      formDataToSend.append('genderId', formData.genderId.toString());
+      formDataToSend.append('dob', formData.dob);
       formDataToSend.append('occupation', formData.occupation);
       formDataToSend.append('pinCode', formData.pinCode);
       formDataToSend.append('city', formData.city);
       formDataToSend.append('district', formData.district);
       formDataToSend.append('state', formData.state);
-      formDataToSend.append('password', formData.password);
-      formDataToSend.append('userType', 'patient');
+      formDataToSend.append('agreeDeclaration', formData.agreeDeclaration.toString());
       
       // Add photo if available
       if (formData.photo && formData.photo.uri) {
-        formDataToSend.append('photo', {
+        // Create a file-like object for the photo
+        const photo = {
           uri: formData.photo.uri,
           type: formData.photo.type || 'image/jpeg',
-          name: formData.photo.fileName || 'photo.jpg',
-        } as any);
+          name: formData.photo.fileName || `photo_${Date.now()}.jpg`,
+        };
+        
+        // For React Native, we need to append the file object directly
+        formDataToSend.append('photo', photo as any);
+        
+        console.log("Photo prepared for upload:", {
+          name: photo.name,
+          type: photo.type,
+          size: formData.photo.fileSize
+        });
+      } else {
+        console.log("No photo provided for upload");
       }
 
-      console.log("Payload",formDataToSend);
+      console.log("Payload",formData);
       
-      // Make API call using axios
-      // const responseData = await postFormData(API.PATIENT_REGISTER_API, formDataToSend);
-      // console.log("Registration response:", responseData);
+      // Make API call using the imported postFormData function
+      const responseData = await postFormData(API.PATIENT_REGISTER_API, formDataToSend);
+      console.log("Registration response:", responseData);
       
-      // Alert.alert(
-      //   'Registration Successful',
-      //   responseData.message || 'Your patient registration has been completed successfully. Please login to continue.',
-      //   [
-      //     {
-      //       text: 'Login Now',
-      //       onPress: () => navigation.navigate(PAGES.LOGIN)
-      //     }
-      //   ]
-      // );
+      Alert.alert(
+        'Registration Successful',
+        responseData.message || 'Your patient registration has been completed successfully. Please login to continue.',
+        [
+          {
+            text: 'Login Now',
+            onPress: () => navigation.navigate(PAGES.LOGIN)
+          }
+        ]
+      );
     } catch (error: any) {
       console.error('Registration error:', error);
       

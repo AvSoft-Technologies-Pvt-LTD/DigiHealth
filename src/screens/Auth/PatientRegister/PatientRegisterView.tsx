@@ -6,6 +6,8 @@ import {
     TouchableOpacity,
     Alert,
     Image,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { launchImageLibrary, MediaType, ImagePickerResponse, Asset } from 'react-native-image-picker';
@@ -18,20 +20,20 @@ export interface PatientFormData {
     firstName: string;
     middleName: string;
     lastName: string;
-    phoneNumber: string;
+    phone: string;
     email: string;
-    aadharNumber: string;
-    gender: string;
-    dateOfBirth: Date | null;
+    password: string;
+    confirmPassword: string;
+    aadhaar: string;
+    genderId: number;
+    dob: string;
     occupation: string;
-    photo: Asset | null;
     pinCode: string;
     city: string;
     district: string;
     state: string;
-    password: string;
-    confirmPassword: string;
-    agreeToTerms: boolean;
+    agreeDeclaration: boolean;
+    photo: Asset | null;
 }
 
 type FormErrors = Partial<Record<keyof PatientFormData, string>>;
@@ -51,20 +53,20 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         firstName: '',
         middleName: '',
         lastName: '',
-        phoneNumber: '',
+        phone: '',
         email: '',
-        aadharNumber: '',
-        gender: '',
-        dateOfBirth: null,
+        password: '',
+        confirmPassword: '',
+        aadhaar: '',
+        genderId: 0,
+        dob: '',
         occupation: '',
-        photo: null,
         pinCode: '',
         city: '',
         district: '',
         state: '',
-        password: '',
-        confirmPassword: '',
-        agreeToTerms: false,
+        agreeDeclaration: false,
+        photo: null,
     });
 
     const [errors, setErrors] = useState<FormErrors>({});
@@ -82,29 +84,28 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
 
         if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
         if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
-        if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
+        if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
         if (!formData.email.trim()) newErrors.email = 'Email is required';
-        if (!formData.aadharNumber.trim()) newErrors.aadharNumber = 'Aadhar number is required';
-        if (!formData.gender) newErrors.gender = 'Gender is required';
-        if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
-        if (!formData.occupation.trim()) newErrors.occupation = 'Occupation is required';
-        if (!formData.photo) newErrors.photo = 'Photo is required';
-        if (!formData.pinCode.trim()) newErrors.pinCode = 'Pin code is required';
-        if (!formData.city.trim()) newErrors.city = 'City is required';
         if (!formData.password.trim()) newErrors.password = 'Password is required';
         if (!formData.confirmPassword.trim()) newErrors.confirmPassword = 'Confirm password is required';
-        if (!formData.agreeToTerms) newErrors.agreeToTerms = 'You must agree to terms and conditions';
+        if (!formData.genderId || formData.genderId === 0) newErrors.genderId = 'Gender is required';
+        if (!formData.dob.trim()) newErrors.dob = 'Date of birth is required';
+        if (!formData.occupation.trim()) newErrors.occupation = 'Occupation is required';
+        if (!formData.pinCode.trim()) newErrors.pinCode = 'Pin code is required';
+        if (!formData.city.trim()) newErrors.city = 'City is required';
+        if (!formData.district.trim()) newErrors.district = 'District is required';
+        if (!formData.state.trim()) newErrors.state = 'State is required';
 
         if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = 'Please enter a valid email address';
         }
 
-        if (formData.phoneNumber && !/^[0-9]{10}$/.test(formData.phoneNumber)) {
-            newErrors.phoneNumber = 'Please enter a valid 10-digit phone number';
+        if (formData.phone && !/^[0-9]{10}$/.test(formData.phone)) {
+            newErrors.phone = 'Please enter a valid 10-digit phone number';
         }
 
-        if (formData.aadharNumber && !/^[0-9]{12}$/.test(formData.aadharNumber)) {
-            newErrors.aadharNumber = 'Please enter a valid 12-digit Aadhar number';
+        if (formData.aadhaar && !/^[0-9]{12}$/.test(formData.aadhaar)) {
+            newErrors.aadhaar = 'Please enter a valid 12-digit Aadhaar number';
         }
 
         if (formData.pinCode && !/^[0-9]{6}$/.test(formData.pinCode)) {
@@ -197,12 +198,14 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         
         if (selectedDate && selectedDate instanceof Date && !isNaN(selectedDate.getTime())) {
             console.log('Valid date selected:', selectedDate.toISOString());
-            updateFormData('dateOfBirth', selectedDate);
+            const formattedDate = selectedDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+            updateFormData('dob', formattedDate);
         } else if (event?.nativeEvent?.timestamp) {
             // Fallback for some Android versions
             const dateFromTimestamp = new Date(event.nativeEvent.timestamp);
-            console.log('Date from timestamp:', dateFromTimestamp);
-            updateFormData('dateOfBirth', dateFromTimestamp);
+            console.log('Date from timestamp:', dateFromTimestamp.toISOString());
+            const formattedDate = dateFromTimestamp.toISOString().split('T')[0];
+            updateFormData('dob', formattedDate);
         } else {
             console.log('No valid date selected');
         }
@@ -245,14 +248,23 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
     };
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        >
             <Header
                 title="Patient Registration"
                 showBackButton={true}
                 backgroundColor={COLORS.WHITE}
                 titleColor={COLORS.BLACK}
             />
-            <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={true}>
+            <ScrollView 
+                style={styles.scrollContainer} 
+                contentContainerStyle={styles.scrollContentContainer}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
                 <View style={styles.content}>
                     <AvText type="body" style={styles.subtitle}>Please fill in all the required information</AvText>
                     <View style={styles.form}>
@@ -262,9 +274,9 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                         {renderInput('First Name', formData.firstName, text => updateFormData('firstName', text), 'Enter your first name', 'default', false, true, 'firstName')}
                         {renderInput('Middle Name', formData.middleName, text => updateFormData('middleName', text), 'Enter your middle name')}
                         {renderInput('Last Name', formData.lastName, text => updateFormData('lastName', text), 'Enter your last name', 'default', false, true, 'lastName')}
-                        {renderInput('Phone Number', formData.phoneNumber, text => updateFormData('phoneNumber', text), 'Enter your phone number', 'phone-pad', false, true, 'phoneNumber')}
+                        {renderInput('Phone Number', formData.phone, text => updateFormData('phone', text), 'Enter your phone number', 'phone-pad', false, true, 'phone')}
                         {renderInput('Email', formData.email, text => updateFormData('email', text), 'Enter your email address', 'email-address', false, true, 'email')}
-                        {renderInput('Aadhar Number', formData.aadharNumber, text => updateFormData('aadharNumber', text), 'Enter your 12-digit Aadhar number', 'numeric', false, true, 'aadharNumber')}
+                        {renderInput('Aadhaar Number', formData.aadhaar, text => updateFormData('aadhaar', text), 'Enter your 12-digit Aadhaar number', 'numeric')}
 
                         {/* Gender */}
                         <View style={styles.inputContainer}>
@@ -272,25 +284,25 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                                 Gender <AvText type="caption" style={styles.mandatory}>*</AvText>
                             </AvText>
                             <TouchableOpacity
-                                style={[styles.pickerButton, errors.gender ? styles.inputError : {}]}
+                                style={[styles.pickerButton, errors.genderId ? styles.inputError : {}]}
                                 onPress={() => {
                                     Alert.alert(
                                         'Select Gender',
                                         '',
                                         [
-                                            { text: 'Male', onPress: () => updateFormData('gender', 'male') },
-                                            { text: 'Female', onPress: () => updateFormData('gender', 'female') },
-                                            { text: 'Other', onPress: () => updateFormData('gender', 'other') },
+                                            { text: 'Male', onPress: () => updateFormData('genderId', 1) },
+                                            { text: 'Female', onPress: () => updateFormData('genderId', 2) },
+                                            { text: 'Other', onPress: () => updateFormData('genderId', 3) },
                                             { text: 'Cancel', style: 'cancel' }
                                         ]
                                     );
                                 }}
                             >
-                                <AvText type="body" style={[styles.pickerText, !formData.gender ? styles.placeholderText : {}]}>
-                                    {formData.gender ? formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1) : 'Select Gender'}
+                                <AvText type="body" style={[styles.pickerText, !formData.genderId ? styles.placeholderText : {}]}>
+                                    {formData.genderId === 1 ? 'Male' : formData.genderId === 2 ? 'Female' : formData.genderId === 3 ? 'Other' : 'Select Gender'}
                                 </AvText>
                             </TouchableOpacity>
-                            {errors.gender && <AvText type="caption" style={styles.errorText}>{errors.gender}</AvText>}
+                            {errors.genderId && <AvText type="caption" style={styles.errorText}>{errors.genderId}</AvText>}
                         </View>
 
                         {/* Date of Birth */}
@@ -299,18 +311,18 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                                 Date of Birth <AvText type="caption" style={styles.mandatory}>*</AvText>
                             </AvText>
                             <TouchableOpacity
-                                style={[styles.dateButton, errors.dateOfBirth ? styles.inputError : {}]}
+                                style={[styles.dateButton, errors.dob ? styles.inputError : {}]}
                                 onPress={() => setShowDatePicker(true)}
                             >
-                                <AvText type="body" style={[styles.dateText, !formData.dateOfBirth ? styles.placeholderText : {}]}>
-                                    {formData.dateOfBirth ? formData.dateOfBirth.toDateString() : 'Select Date of Birth'}
+                                <AvText type="body" style={[styles.dateText, !formData.dob ? styles.placeholderText : {}]}>
+                                    {formData.dob ? new Date(formData.dob).toDateString() : 'Select Date of Birth'}
                                 </AvText>
                             </TouchableOpacity>
-                            {errors.dateOfBirth && <AvText type="caption" style={styles.errorText}>{errors.dateOfBirth}</AvText>}
+                            {errors.dob && <AvText type="caption" style={styles.errorText}>{errors.dob}</AvText>}
                         </View>
                         {showDatePicker && (
                             <DateTimePicker
-                                value={formData.dateOfBirth || new Date()}
+                                value={formData.dob ? new Date(formData.dob) : new Date()}
                                 mode="date"
                                 display="default"
                                 onChange={handleDateChange}
@@ -342,8 +354,8 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                         <AvText type="title_2" style={styles.sectionTitle}>Address Information</AvText>
                         {renderInput('Pin Code', formData.pinCode, text => updateFormData('pinCode', text), 'Enter your pin code', 'numeric', false, true, 'pinCode')}
                         {renderInput('City', formData.city, text => updateFormData('city', text), 'Enter your city', 'default', false, true, 'city')}
-                        {renderInput('District', formData.district, text => updateFormData('district', text), 'Enter your district')}
-                        {renderInput('State', formData.state, text => updateFormData('state', text), 'Enter your state')}
+                        {renderInput('District', formData.district, text => updateFormData('district', text), 'Enter your district', 'default', false, true, 'district')}
+                        {renderInput('State', formData.state, text => updateFormData('state', text), 'Enter your state', 'default', false, true, 'state')}
 
                         {/* Security */}
                         <AvText type="title_2" style={styles.sectionTitle}>Security</AvText>
@@ -354,16 +366,16 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                         <View style={styles.checkboxContainer}>
                             <TouchableOpacity
                                 style={styles.checkbox}
-                                onPress={() => updateFormData('agreeToTerms', !formData.agreeToTerms)}
+                                onPress={() => updateFormData('agreeDeclaration', !formData.agreeDeclaration)}
                             >
-                                <View style={[styles.checkboxInner, formData.agreeToTerms && styles.checkboxChecked]}>
-                                    {formData.agreeToTerms && <AvText type="caption" style={styles.checkmark}>✓</AvText>}
+                                <View style={[styles.checkboxInner, formData.agreeDeclaration && styles.checkboxChecked]}>
+                                    {formData.agreeDeclaration && <AvText type="caption" style={styles.checkmark}>✓</AvText>}
                                 </View>
                                 <AvText type="body" style={styles.checkboxText}>
-                                    I agree to the terms and conditions <AvText type="caption" style={styles.mandatory}>*</AvText>
+                                    I agree to the declaration
                                 </AvText>
                             </TouchableOpacity>
-                            {errors.agreeToTerms && <AvText type="caption" style={styles.errorText}>{errors.agreeToTerms}</AvText>}
+                            {errors.agreeDeclaration && <AvText type="caption" style={styles.errorText}>{errors.agreeDeclaration}</AvText>}
                         </View>
 
                         {/* Submit Button */}
@@ -388,7 +400,7 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                     </View>
                 </View>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 };
 
@@ -399,9 +411,16 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         flex: 1,
+        width: '100%',
+    },
+    scrollContentContainer: {
+        flexGrow: 1,
+        paddingBottom: 20,
     },
     content: {
         padding: 20,
+        flex: 1,
+        width: '100%',
     },
     header: {
         paddingHorizontal: 20,
