@@ -45,6 +45,7 @@ import Frontdesk from "./components/FrontendDesk";
 import TokenDisplay from "./components/Token-Display";
 import BedRoomList from "./pages/layouts/menu/DoctorDashboard/BedRoomList"
 import ImageAnnotationCanvas from "./components/microcomponents/ImageAnnotationCanvas";
+import BedMaster from "./pages/layouts/menu/DoctorDashboard/BedMaster";
 
 // Toast
 import { ToastContainer } from "react-toastify";
@@ -201,6 +202,8 @@ const App = () => {
             {sharedRoutes}
             <Route path="template" element={<ImageAnnotationCanvas />} />
             <Route path="*" element={<DrRoutes />} />
+                       <Route path="bedroommanagement/bedmaster" element={<BedMaster />} />
+
           </Route>
         </Route>
 
