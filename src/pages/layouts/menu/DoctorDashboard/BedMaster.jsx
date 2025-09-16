@@ -33,6 +33,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import { getAllSpecializations } from "../../../../utils/masterService";
+import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 
 const BedMaster = () => {
   const navigate = useNavigate();
@@ -309,9 +310,9 @@ const BedMaster = () => {
   };
 
   const renderStepIndicator = () => (
-    <div className="max-w-7xl mx-auto mb-6 sm:mb-8">
-      <div className="flex items-center justify-center px-2 sm:px-4 overflow-x-auto custom-scrollbar">
-        <div className="flex items-center min-w-max space-x-2 sm:space-x-4">
+    <div className="max-w-7xl mx-auto mb-6 sm:mb-8 px-2 sm:px-4 w-full">
+      <div className="flex items-center justify-center w-full overflow-hidden">
+        <div className="flex items-center justify-center w-full space-x-1 sm:space-x-2 md:space-x-4">
           {steps.map((step, index) => {
             const isCompleted = index < currentStep;
             const isCurrent = index === currentStep;
@@ -319,13 +320,13 @@ const BedMaster = () => {
             return (
               <React.Fragment key={step.id}>
                 <motion.div
-                  className="flex flex-col items-center min-w-max"
+                  className="flex flex-col items-center min-w-[60px] sm:min-w-[80px] md:min-w-[100px]"
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: index * 0.1 }}
                 >
                   <div
-                    className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${
+                    className={`relative w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${
                       isCompleted
                         ? "bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-lg"
                         : isCurrent
@@ -333,19 +334,19 @@ const BedMaster = () => {
                         : "bg-white text-gray-400 border-gray-300"
                     }`}
                   >
-                    <IconComponent size={16} className="sm:w-5 sm:h-5" />
+                    <IconComponent size={14} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
                   </div>
                   <div
-                    className={`mt-2 text-center transition-all duration-300 ${
+                    className={`mt-1 text-center transition-all duration-300 text-[10px] sm:text-xs md:text-sm ${
                       isCurrent ? "text-[var(--primary-color)] font-semibold" : "text-gray-500"
                     }`}
                   >
-                    <div className="text-xs sm:text-sm whitespace-nowrap max-w-20 sm:max-w-none">{step.title}</div>
+                    {step.title}
                   </div>
                 </motion.div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`flex-1 h-0.5 mx-2 sm:mx-4 transition-all duration-300 min-w-8 sm:min-w-12 ${
+                    className={`hidden sm:flex flex-1 h-0.5 mx-1 sm:mx-2 md:mx-4 transition-all duration-300 ${
                       isCompleted ? "bg-[var(--primary-color)]" : "bg-gray-300"
                     }`}
                   />
@@ -407,7 +408,7 @@ const BedMaster = () => {
           <p className="text-gray-500 text-sm mt-2">No specializations available</p>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <AnimatePresence>
           {bedMasterData.departments.map((dept) => (
             <motion.div
@@ -445,7 +446,7 @@ const BedMaster = () => {
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4 sm:space-y-6">
       <div className="flex items-center gap-2 mb-4 sm:mb-6">
         <Building2 className="text-purple-600" size={20} />
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Ward Creation</h2>
+        <h2 className="h4-heading">Ward Creation</h2>
       </div>
       {bedMasterData.departments.length === 0 ? (
         <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-lg">
@@ -460,7 +461,7 @@ const BedMaster = () => {
               <Building className="text-[var(--primary-color)]" size={16} />
               <span className="break-words">{department.name}</span>
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 mb-4">
               {wardTypes.map((wardType) => {
                 const IconComponent = wardType.icon;
                 const isAdded = bedMasterData.wards.some((w) => w.departmentId === department.id && w.type === wardType.id);
@@ -489,7 +490,7 @@ const BedMaster = () => {
             </div>
             <div className="space-y-2">
               <h4 className="text-sm font-semibold text-gray-700">Created Wards:</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 <AnimatePresence>
                   {bedMasterData.wards
                     .filter((w) => w.departmentId === department.id)
@@ -614,7 +615,7 @@ const BedMaster = () => {
                 <Plus size={14} /> Add Room
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <AnimatePresence>
                 {bedMasterData.rooms
                   .filter((r) => r.wardId === ward.id)
@@ -807,53 +808,59 @@ const BedMaster = () => {
       const wardBeds = bedMasterData.beds.filter((b) => wardRooms.some((room) => room.id === b.roomId));
       const occupiedBeds = wardBeds.filter((b) => b.status === "occupied").length;
       return {
+        id: ward.id,
         department: department?.name || "Unknown",
         ward: ward.name,
+        rooms: wardRooms.length,
         totalBeds: wardBeds.length,
         occupied: occupiedBeds,
         available: wardBeds.length - occupiedBeds,
         status: "Active",
-        rooms: wardRooms.length,
       };
     });
-    return (
-      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4 sm:space-y-6">
+
+    const columns = [
+      { header: "Department", accessor: "department" },
+      { header: "Ward", accessor: "ward" },
+      { header: "Rooms", accessor: "rooms" },
+      { header: "Total Beds", accessor: "totalBeds" },
+      { header: "Occupied", accessor: "occupied" },
+      { header: "Available", accessor: "available" },
+    ];
+
+      return (
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="space-y-4 sm:space-y-6"
+      >
         <div className="flex items-center gap-2 mb-4 sm:mb-6">
           <Check className="text-green-600" size={20} />
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Review & Save</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Review & Save
+          </h2>
         </div>
 
         {summaryData.length > 0 && (
-          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
-            <h3 className="text-base sm:text-lg font-semibold mb-4">Data Summary</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full table-auto min-w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="text-left p-2 sm:p-3 font-semibold text-gray-900 text-xs sm:text-sm">Department</th>
-                    <th className="text-left p-2 sm:p-3 font-semibold text-gray-900 text-xs sm:text-sm">Ward</th>
-                    <th className="text-left p-2 sm:p-3 font-semibold text-gray-900 text-xs sm:text-sm">Rooms</th>
-                    <th className="text-left p-2 sm:p-3 font-semibold text-gray-900 text-xs sm:text-sm">Total Beds</th>
-                    <th className="text-left p-2 sm:p-3 font-semibold text-gray-900 text-xs sm:text-sm">Occupied</th>
-                    <th className="text-left p-2 sm:p-3 font-semibold text-gray-900 text-xs sm:text-sm">Available</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {summaryData.map((row, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="p-2 sm:p-3 text-xs sm:text-sm break-words max-w-32">{row.department}</td>
-                      <td className="p-2 sm:p-3 text-xs sm:text-sm break-words max-w-24">{row.ward}</td>
-                      <td className="p-2 sm:p-3 text-xs sm:text-sm">{row.rooms}</td>
-                      <td className="p-2 sm:p-3 text-xs sm:text-sm">{row.totalBeds}</td>
-                      <td className="p-2 sm:p-3 text-xs sm:text-sm text-red-600">{row.occupied}</td>
-                      <td className="p-2 sm:p-3 text-xs sm:text-sm text-green-600">{row.available}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+  <h3 className="text-base sm:text-lg font-semibold pt-4 sm:pt-6 px-4 sm:px-6 pb-2">
+    Data Summary
+  </h3>
+  <div className="px-4 sm:px-6 pb-4">
+    <DynamicTable
+      columns={columns}
+      data={summaryData}
+      showSearchBar={false}
+      showFilters={false}
+      showTabs={false}
+      showPagination={false}
+      title=""
+    />
+  </div>
+</div>
+
         )}
+
         <div className="flex justify-center">
           <button
             onClick={handleSave}
@@ -864,6 +871,7 @@ const BedMaster = () => {
         </div>
       </motion.div>
     );
+  
   };
 
   const renderStepContent = () => {
@@ -884,11 +892,11 @@ const BedMaster = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-white p-2 sm:p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6 sm:mb-8">
-          <motion.div className="mb-4 sm:mb-6" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-3 mb-3 sm:mb-4">
+        <div className="mb-4 sm:mb-6 md:mb-8">
+          <motion.div className="mb-3 sm:mb-4 md:mb-6" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="flex items-center gap-2 mb-2 sm:mb-3 md:mb-4">
               <button
                 onClick={() => navigate("/doctordashboard/bedroommanagement")}
                 className="flex items-center text-xs sm:text-sm text-[var(--primary-color)] hover:underline"
@@ -896,39 +904,38 @@ const BedMaster = () => {
                 ← Back to List
               </button>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
               {editData ? "Edit" : "Create"} Bed Management Master
             </h1>
           </motion.div>
           {renderStepIndicator()}
         </div>
         <div className="max-w-7xl mx-auto">
-          <div className="p-4 sm:p-6 lg:p-8">
+          <div className="p-2 sm:p-4 md:p-6 lg:p-8">
             {renderStepContent()}
-            {/* Stepper Navigation Footer */}
-            <div className="flex justify-between items-center mt-6 sm:mt-8">
+            <div className="flex justify-between items-center mt-4 sm:mt-6 md:mt-8">
               <button
                 onClick={handleBack}
                 disabled={currentStep === 0}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                   currentStep === 0
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-gray-100 hover:bg-gray-200 text-gray-800 hover:text-gray-900"
                 }`}
               >
-                <ArrowLeft size={16} /> Back
+                <ArrowLeft size={14} /> Back
               </button>
               {currentStep < steps.length - 1 ? (
                 <button
                   onClick={handleNext}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                     canGoNext()
                       ? "bg-[var(--accent-color)] hover:bg-opacity-90 text-white"
                       : "bg-gray-200 text-gray-400 cursor-not-allowed"
                   }`}
                   disabled={!canGoNext()}
                 >
-                  Next <ArrowRight size={16} />
+                  Next <ArrowRight size={14} />
                 </button>
               ) : null}
             </div>
