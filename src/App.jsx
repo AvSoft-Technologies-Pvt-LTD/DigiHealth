@@ -14,6 +14,9 @@ import Login from "./form/Login";
 import RegisterSelect from "./form/RegisterSelect";
 import Registration from "./form/Registration";
 import Verification from "./form/Verification";
+import ForgotPassword from "./form/ForgotPassword";
+import VerifyOtp from "./form/VerifyOtp";
+import ResetPassword from "./form/ResetPassword";
 import Healthcard from "./components/Healthcard";
 import BookApp from "./components/BookApp";
 import Home from "./pages/Home";
@@ -42,7 +45,6 @@ import Frontdesk from "./components/FrontendDesk";
 import TokenDisplay from "./components/Token-Display";
 import BedRoomList from "./pages/layouts/menu/DoctorDashboard/BedRoomList"
 import ImageAnnotationCanvas from "./components/microcomponents/ImageAnnotationCanvas";
-import BedMaster from "./pages/layouts/menu/DoctorDashboard/BedMaster";
 
 // Toast
 import { ToastContainer } from "react-toastify";
@@ -167,6 +169,9 @@ const App = () => {
         <Route path="/registration" element={<Registration />} />
         <Route path="/verification" element={<Verification />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-otp" element={<VerifyOtp />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/healthcard" element={<Healthcard />} />
         <Route path="/bookconsultation" element={<BookApp />} />
          {/* <Route path="/paymentgateway" element={<PaymentGatewayPage />} /> */}
@@ -196,7 +201,6 @@ const App = () => {
             {sharedRoutes}
             <Route path="template" element={<ImageAnnotationCanvas />} />
             <Route path="*" element={<DrRoutes />} />
-               <Route path="bedroommanagement/bedmaster" element={<BedMaster />} />
           </Route>
         </Route>
 

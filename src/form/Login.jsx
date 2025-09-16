@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { useDispatch, useSelector } from "react-redux";
 import { setUser, loginUser, sendLoginOTP, verifyOTP } from "../context-api/authSlice";
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { loading, error, isOTPSent } = useSelector(state => state.auth || {});
   const [loginMode, setLoginMode] = useState("password");
@@ -27,7 +29,39 @@ const Login = () => {
 
   useEffect(() => {
     localStorage.removeItem("user");
-  }, []);
+    
+    // Load remembered email on component mount
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+      setPhoneOrEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+
+    // Show success message if coming from password reset
+    if (location.state?.message) {
+      toast.success(location.state.message, { duration: 5000 });
+      if (location.state.email) {
+        setPhoneOrEmail(location.state.email);
+      }
+    }
+  }, [location]);
+
+  // Handle remember me functionality
+  const handleRememberMeChange = (checked) => {
+    setRememberMe(checked);
+    if (checked && phoneOrEmail) {
+      localStorage.setItem('rememberedEmail', phoneOrEmail);
+    } else {
+      localStorage.removeItem('rememberedEmail');
+    }
+  };
+
+  // Update remembered email when email changes
+  useEffect(() => {
+    if (rememberMe && phoneOrEmail) {
+      localStorage.setItem('rememberedEmail', phoneOrEmail);
+    }
+  }, [phoneOrEmail, rememberMe]);
 
   const routeToDashboard = (userType) => {
     if (userType === "superadmin") navigate("/superadmindashboard");
@@ -61,6 +95,7 @@ const Login = () => {
             localStorage.setItem("user", JSON.stringify(user));
             localStorage.setItem("token", "dummyToken");
             dispatch(setUser(user));
+            toast.success('Login successful!');
             routeToDashboard(user.userType);
           } else {
             setLocalError("Invalid credentials");
@@ -84,6 +119,7 @@ const Login = () => {
                 localStorage.setItem("user", JSON.stringify(userByPhone));
                 localStorage.setItem("token", "dummyToken");
                 dispatch(setUser(userByPhone));
+                toast.success('Login successful!');
                 routeToDashboard(userByPhone.userType);
               } else {
                 setLocalError("User not found");
@@ -95,6 +131,7 @@ const Login = () => {
               localStorage.setItem("user", JSON.stringify(userByPhone));
               localStorage.setItem("token", "dummyToken");
               dispatch(setUser(userByPhone));
+              toast.success('Login successful!');
               routeToDashboard(userByPhone.userType);
             } else {
               setLocalError("User not found");
@@ -120,10 +157,12 @@ const Login = () => {
 
       if (sendLoginOTP.fulfilled.match(resultAction)) {
         setOtpSent(true);
+        toast.success('OTP sent successfully!');
       } else {
         const userByPhone = predefinedUsers.find(u => u.phone === phoneOrEmail);
         if (userByPhone) {
           setOtpSent(true);
+          toast.success('OTP sent successfully!');
         } else {
           setLocalError("User not found");
         }
@@ -132,6 +171,7 @@ const Login = () => {
       const userByPhone = predefinedUsers.find(u => u.phone === phoneOrEmail);
       if (userByPhone) {
         setOtpSent(true);
+        toast.success('OTP sent successfully!');
       } else {
         setLocalError("Failed to send OTP.");
       }
@@ -219,12 +259,15 @@ const Login = () => {
                   <input
                     type="checkbox"
                     checked={rememberMe}
-                    onChange={() => setRememberMe(!rememberMe)}
+                    onChange={(e) => handleRememberMeChange(e.target.checked)}
                     className="accent-[var(--accent-color)]"
                   />
                   <span>Remember me</span>
                 </label>
-                <span className="text-sm text-[var(--accent-color)] hover:underline cursor-pointer">
+                <span 
+                  className="text-sm text-[var(--accent-color)] hover:underline cursor-pointer"
+                  onClick={() => navigate('/forgot-password')}
+                >
                   Forgot Password?
                 </span>
               </div>
@@ -281,12 +324,15 @@ const Login = () => {
                       <input
                         type="checkbox"
                         checked={rememberMe}
-                        onChange={() => setRememberMe(!rememberMe)}
+                        onChange={(e) => handleRememberMeChange(e.target.checked)}
                         className="accent-[var(--accent-color)]"
                       />
                       <span>Remember me</span>
                     </label>
-                    <span className="text-sm text-[var(--accent-color)] hover:underline cursor-pointer">
+                    <span 
+                      className="text-sm text-[var(--accent-color)] hover:underline cursor-pointer"
+                      onClick={() => navigate('/forgot-password')}
+                    >
                       Forgot Password?
                     </span>
                   </div>

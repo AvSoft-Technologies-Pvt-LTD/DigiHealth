@@ -14,6 +14,7 @@ import NearbyPharmacies from "./NearbyPharmacy"
 import PatientNotifications from './Notifications';
 import PaymentForm from './PaymentForm';
 import LabHome from './LabHome';
+import PrescriptionUpload from "./PrescriptionUpload";
 import TestDetail from './TestDetail';
 import CartPage from './CartPage';
 import AvailableLabs from "./AvailableLab";
@@ -35,6 +36,7 @@ import DocsReader from "../../../../components/DocsReader";
 import SecondOpinion from "./SecondOpinion";
 import MedicalRecordDetails from "./MedicalRecordDetails";
 import Help from "./Help";
+
 const PdashboardRoutes = () => {
   return (
     <Routes>
@@ -53,10 +55,12 @@ const PdashboardRoutes = () => {
       <Route path="emergency" element={<h1>Emergency Info</h1>} />
       <Route path="lab-tests" element={<LabHome />} />
       <Route path="lab-tests/test/:id" element={<TestDetail />} />
+      <Route path="package-details/:id" element={<TestDetail />} />
       <Route path="cart" element={<CartPage />} />
-      <Route path="available-labs/:id" element={<AvailableLabs />} />
-      <Route path="lab-booking/:id" element={<LabBooking />} />
-      <Route path="book-app/:id" element={<BookLab />} />
+      <Route path="available-labs"element={<AvailableLabs />}/>
+      <Route path="lab-booking" element={<LabBooking />} />
+      <Route path="prescription-upload" element={<PrescriptionUpload />} />
+      <Route path="book-app" element={<BookLab />} />
       <Route path="payment1" element={<PaymentLab />} />
       <Route path="track-appointment/:bookingId" element={<TrackAppointment />} />
       <Route path="/alldoctors" element={<DoctorList />} />

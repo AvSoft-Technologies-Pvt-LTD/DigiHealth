@@ -65,12 +65,18 @@ const OtpVerification = () => {
         {/* Image (hidden on mobile, visible on tablet+) */}
         <div className="md:w-1/2 p-4 hidden md:block">
           <img
-            src="https://img.freepik.com/premium-vector/doctor-examines-report-disease-medical-checkup-annual-doctor-health-test-appointment-tiny-person-concept-preventive-examination-patient-consults-hospital-specialist-vector-illustration_419010-581.jpg?ga=GA1.1.587832214.1744916073&semt=ais_hybrid&w=740"
+            src="https://img.freepik.com/free-vector/secure-login-concept-illustration_114360-4582.jpg"
             alt="OTP illustration"
             className="w-full h-auto object-cover rounded-lg"
           />
         </div>
-
+        <div className="md:hidden p-4">
+          <img
+            src="https://img.freepik.com/free-vector/secure-login-concept-illustration_114360-4582.jpg"
+            alt="OTP illustration"
+            className="w-full h-48 object-contain mx-auto"
+          />
+        </div>
         {/* Form */}
         <div className="md:w-1/2 p-6 sm:p-8 space-y-6">
           <h2 className="text-2xl sm:text-3xl font-bold text-center">OTP Verification</h2>
@@ -113,13 +119,7 @@ const OtpVerification = () => {
         </div>
 
         {/* Image (visible only on mobile) */}
-        <div className="md:hidden p-4">
-          <img
-            src="https://img.freepik.com/premium-vector/doctor-examines-report-disease-medical-checkup-annual-doctor-health-test-appointment-tiny-person-concept-preventive-examination-patient-consults-hospital-specialist-vector-illustration_419010-581.jpg?ga=GA1.1.587832214.1744916073&semt=ais_hybrid&w=740"
-            alt="OTP illustration"
-            className="w-full h-48 object-contain mx-auto"
-          />
-        </div>
+      
       </div>
     </div>
   );

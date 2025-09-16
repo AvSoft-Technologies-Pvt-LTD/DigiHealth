@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Calendar, Pencil, Users, UserPlus, Video, UserCheck, ChevronRight } from 'lucide-react';
+import { Calendar, Pencil, Users, UserPlus, Video, UserCheck, ChevronRight,Mail, GraduationCap, Edit3  } from 'lucide-react';
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import DoctorAppointments from "./Appointments";
@@ -125,49 +125,57 @@ const recentPendingAppointments = pendingAppointments.slice(0, 4);
     >
       {/* Main Container: Flex Layout for Profile and Stats */}
       <div className="flex flex-col lg:flex-row gap-6 mb-6">
-  {/* Profile Card (Left Side) - 70% Width */}
-  <motion.div
-    className="w-full lg:w-[70%] bg-[var(--color-surface)] rounded-xl shadow-md p-4"
-    initial={{ y: 40, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    transition={{ duration: 0.7, delay: 0.2 }}
-  >
-    <div className="flex flex-col  md:flex-row items-center gap-4">
-      <div className="w-32 h-32 bg-gradient-to-r from-[#0e1630] via-[#1b2545] to-[#038358] rounded-lg flex items-center justify-center p-2">
-        <img
+   <div className="w-full lg:w-[70%] bg-[var(--color-surface)] rounded-xl shadow-md p-4">
+      {/* Top Section */}
+      <div className="flex justify-between items-start">
+        {/* Left Section: Profile Image & Name */}
+        <div className="flex items-center gap-4">
+          <img
           src={doctor.photo}
           alt={doctor.name}
           className="w-24 h-24 rounded-full border-3 border-white shadow-md"
         />
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{doctor.name}</h2>
+            <p className="text-gray-500 text-sm">{doctor.specialty}</p>
+          </div>
+        </div>
+
+        {/* Edit Icon */}
+        <button onClick={handleEditClick} className="bg-green-500 text-white rounded-full p-2 shadow-md hover:bg-green-600 transition">
+          <Edit3 size={20} />
+        </button>
       </div>
-      <div className="flex-1 p-2">
-        <h2 className="text-xl font-bold text-gray-800">{doctor.name}</h2>
-        <p className="text-sm text-[var(--accent-color)] font-medium mt-1">{doctor.specialty}</p>
-        <div className="mt-2 space-y-2">
-          <div className="flex items-center text-sm text-gray-600">
-            <span className="font-medium w-20">Qualification:</span>
-            <span className="ml-2 truncate">{doctor.qualifications}</span>
+
+      {/* Details Section */}
+      {/* For desktop & tablet → horizontal | For mobile → vertical */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex items-center gap-3">
+          <GraduationCap className="text-gray-400" size={22} />
+          <div>
+            <p className="text-gray-500 text-sm">Qualification</p>
+            <p className="text-gray-900 font-semibold">{doctor.qualifications}</p>
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <span className="font-medium w-20">Reg No:</span>
-            <span className="ml-2 truncate">{doctor.registrationId}</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Mail className="text-gray-400" size={22} />
+          <div>
+            <p className="text-gray-500 text-sm">Email</p>
+            <p className="text-gray-900 font-semibold">{doctor.email}</p>
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <span className="font-medium w-20">Email:</span>
-            <span className="ml-2 truncate">{doctor.email}</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Edit3 className="text-gray-400" size={22} />
+          <div>
+            <p className="text-gray-500 text-sm">Reg No.</p>
+            <p className="text-gray-900 font-semibold">{doctor.registrationId}</p>
           </div>
         </div>
       </div>
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={handleEditClick}
-          className="flex items-center gap-1 bg-[var(--primary-color)] text-white px-4 py-1.5 rounded-full text-sm font-medium  transition-colors"
-        >
-          <Pencil size={16} /> Edit Profile
-        </button>
-      </div>
     </div>
-  </motion.div>
+
 
   {/* Stats Cards (Right Side) - 30% Width, 2 cards per row */}
   <div className="w-full lg:w-[30%] grid grid-cols-2 gap-3">

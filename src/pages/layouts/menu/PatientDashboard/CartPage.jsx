@@ -117,11 +117,9 @@ const CartPage = () => {
           {cart.length > 0 && (
             <button
               className="btn btn-primary w-full text-xs sm:text-sm py-2 sm:py-3"
-              onClick={() =>
-                navigate(`/patientdashboard/available-labs/${cart[0]?.id}`, {
-                  state: { test: cart[0] },
-                })
-              }
+              onClick={() => navigate(`/patientdashboard/available-labs`, {
+                state: { cart }, // Pass the entire cart
+              })}
             >
               Proceed to Book
             </button>
