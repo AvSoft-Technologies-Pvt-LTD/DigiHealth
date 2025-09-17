@@ -298,29 +298,69 @@ const SecondOpinion = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state) => state.auth.user);
-
   const printContentRef = useRef();
   const selectedRecord = location.state?.selectedRecord || {
     patientName: "John Doe", age: "45", sex: "Male", id: "P001", hospitalName: "General Hospital", diagnosis: "Chest Pain", dateOfVisit: "2024-01-15", "K/C/O": "Hypertension", vitals: { bp: "140/90", pulse: "80", temp: "98.6" }, medicalDetails: {
       chiefComplaint: "Chest pain since 2 days", pastHistory: "Hypertension for 5 years", examination: "Tenderness over chest",
     }, prescriptionsData: [{ date: "2024-01-15", doctorName: "Dr. Smith", medicines: "Aspirin 75mg", instructions: "Once daily", }], labTestsData: [{ date: "2024-01-15", testName: "ECG", result: "Normal", normalRange: "Normal", status: "Normal", }],
   };
-  const [formData, setFormData] = useState({ selectedDoctor: "", urgencyLevel: "", preferredMode: "", additionalNotes: "", contactEmail: "", contactPhone: "", });
+
+  const [formData, setFormData] = useState({
+    selectedDoctor: "",
+    urgencyLevel: "",
+    preferredMode: "",
+    additionalNotes: "",
+    contactEmail: "",
+    contactPhone: "",
+  });
+
   const [showMedicalRecords, setShowMedicalRecords] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSending, setIsSending] = useState({ whatsapp: false, email: false });
+
   const doctors = ["Dr. Rajesh Kumar (Cardiologist)", "Dr. Priya Sharma (Physician)", "Dr. Amit Patel (Neurologist)", "Dr. Sunita Reddy (Gastroenterologist)"];
   const urgencyLevels = [{ label: "Normal (3-5 days)", value: "normal" }, { label: "Urgent (1-2 days)", value: "urgent" }, { label: "Critical (Same day)", value: "critical" }];
   const consultationModes = [{ label: "In-person Visit", value: "in-person" }, { label: "Teleconsultation", value: "teleconsultation" }, { label: "Email Report", value: "email" }, { label: "Phone Consultation", value: "phone" }];
+
   const handleInputChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
   const handleDoctorSelect = (doctor) => { setFormData((prev) => ({ ...prev, selectedDoctor: doctor })); setIsDropdownOpen(false); };
   const handleBack = () => navigate(-1);
-  const generateRequestData = () => ({ id: `SO-${Date.now()}`, requestDate: new Date().toLocaleDateString("en-GB"), patientInfo: { Name: user?.firstName || 'N/A', Age: selectedRecord.age, Sex: selectedRecord.sex, patientId: selectedRecord.id, HospitalName: selectedRecord.hospitalName, Diagnosis: selectedRecord.diagnosis, VisitDate: selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation, }, });
+
+  const isFormValid = () => {
+    return formData.selectedDoctor && formData.urgencyLevel && formData.preferredMode;
+  };
+
+  const handlePreview = () => {
+    if (!isFormValid()) {
+      toast.error("Please fill in all required fields (Doctor, Urgency Level, and Preferred Consultation Mode).");
+      return;
+    }
+    setShowPrintPreview(true);
+  };
+
+  const generateRequestData = () => ({
+    id: `SO-${Date.now()}`,
+    requestDate: new Date().toLocaleDateString("en-GB"),
+    patientInfo: {
+      Name: user?.firstName || 'N/A',
+      Age: selectedRecord.age,
+      Sex: selectedRecord.sex,
+      patientId: selectedRecord.id,
+      HospitalName: selectedRecord.hospitalName,
+      Diagnosis: selectedRecord.diagnosis,
+      VisitDate: selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation,
+    },
+  });
+
   const generateMessageContent = () => {
     const requestData = generateRequestData();
-    return { subject: `Second Opinion Request - ${requestData.patientInfo.name} (${requestData.id})`, body: `SECOND OPINION REQUEST\n\nRequest Details:\n• Request ID: ${requestData.id}\n• Date: ${requestData.requestDate}\n• Status: Pending Review\n\nPatient Information:\n• Name: ${requestData.patientInfo.name}\n• Age: ${requestData.patientInfo.age}\n• Gender: ${requestData.patientInfo.sex}\n• Hospital: ${requestData.patientInfo.hospitalName}\n• Diagnosis: ${requestData.patientInfo.diagnosis}\n• Visit Date: ${requestData.patientInfo.visitDate}\n• K/C/O: ${selectedRecord["K/C/O"] ?? "--"}\n\nConsultation Request Details:\n• Selected Doctor: ${formData.selectedDoctor || "Not specified"}\n• Urgency Level: ${formData.urgencyLevel || "Not specified"}\n• Preferred Mode: ${formData.preferredMode || "Not specified"}\n• Additional Notes: ${formData.additionalNotes || "Not specified"}\n\nMedical Records: Complete patient medical history, vitals, prescriptions, and lab reports are included with this request.\n\nGenerated on: ${new Date().toLocaleString()}\nFor queries, please contact the medical records department.` };
+    return {
+      subject: `Second Opinion Request - ${requestData.patientInfo.Name} (${requestData.id})`,
+      body: `SECOND OPINION REQUEST\n\nRequest Details:\n• Request ID: ${requestData.id}\n• Date: ${requestData.requestDate}\n• Status: Pending Review\n\nPatient Information:\n• Name: ${requestData.patientInfo.Name}\n• Age: ${requestData.patientInfo.Age}\n• Gender: ${requestData.patientInfo.Sex}\n• Hospital: ${requestData.patientInfo.HospitalName}\n• Diagnosis: ${requestData.patientInfo.Diagnosis}\n• Visit Date: ${requestData.patientInfo.VisitDate}\n• K/C/O: ${selectedRecord["K/C/O"] ?? "--"}\n\nConsultation Request Details:\n• Selected Doctor: ${formData.selectedDoctor || "Not specified"}\n• Urgency Level: ${formData.urgencyLevel || "Not specified"}\n• Preferred Mode: ${formData.preferredMode || "Not specified"}\n• Additional Notes: ${formData.additionalNotes || "Not specified"}\n\nMedical Records: Complete patient medical history, vitals, prescriptions, and lab reports are included with this request.\n\nGenerated on: ${new Date().toLocaleString()}\nFor queries, please contact the medical records department.`
+    };
   };
+
   const generateMedicalRecordsPreviewHTML = () => {
     return `
       <div style="margin-top:40px; font-family: Arial, sans-serif; max-width: 900px; margin-left:auto; margin-right:auto;">
@@ -413,17 +453,18 @@ const SecondOpinion = () => {
       </div>
     `;
   };
+
   const generatePrintTemplate = () => {
     const requestData = generateRequestData();
     const patientInfoGrid = `
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 30px; row-gap: 10px;">
-        <div><strong>Name:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.name}</span></div>
-        <div><strong>Age:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.age}</span></div>
-        <div><strong>Gender:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.sex}</span></div>
+        <div><strong>Name:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.Name}</span></div>
+        <div><strong>Age:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.Age}</span></div>
+        <div><strong>Gender:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.Sex}</span></div>
         <div><strong>Patient ID:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.patientId}</span></div>
-        <div><strong>Hospital:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.hospitalName}</span></div>
-        <div><strong>Diagnosis:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.diagnosis}</span></div>
-        <div><strong>Visit Date:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.visitDate}</span></div>
+        <div><strong>Hospital:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.HospitalName}</span></div>
+        <div><strong>Diagnosis:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.Diagnosis}</span></div>
+        <div><strong>Visit Date:</strong> <span style='color:#0E1630;'>${requestData.patientInfo.VisitDate}</span></div>
         <div><strong>K/C/O:</strong> <span style='color:#0E1630;'>${selectedRecord["K/C/O"] ?? "--"}</span></div>
       </div>
     `;
@@ -467,6 +508,7 @@ const SecondOpinion = () => {
       </div>
     `;
   };
+
   const generatePDF = async () => {
     const element = document.createElement("div");
     element.innerHTML = generatePrintTemplate();
@@ -485,6 +527,7 @@ const SecondOpinion = () => {
       throw error;
     }
   };
+
   const blobToBase64 = (blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -496,6 +539,7 @@ const SecondOpinion = () => {
       reader.readAsDataURL(blob);
     });
   };
+
   const sendWhatsAppMessage = async () => {
     if (!formData.contactPhone) {
       toast.error("Please enter a WhatsApp number");
@@ -545,6 +589,7 @@ const SecondOpinion = () => {
       setIsSending((prev) => ({ ...prev, whatsapp: false }));
     }
   };
+
   const sendEmail = async () => {
     if (!formData.contactEmail.trim()) {
       toast.error("Please enter an email address");
@@ -597,6 +642,7 @@ const SecondOpinion = () => {
       setIsSending((prev) => ({ ...prev, email: false }));
     }
   };
+
   const handlePrintOnly = () => {
     const printContent = generatePrintTemplate();
     const printWindow = window.open('', '_blank');
@@ -621,15 +667,17 @@ const SecondOpinion = () => {
     printWindow.print();
     printWindow.close();
   };
+
   if (showMedicalRecords) {
     return (
       <MedicalRecordsDetailsPreview
         selectedRecord={selectedRecord}
         onClose={() => setShowMedicalRecords(false)}
-         user={user}
+        user={user}
       />
     );
   }
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <button onClick={handleBack} className="flex items-center gap-2 hover:text-blue-600 transition-colors text-gray-600">
@@ -692,8 +740,12 @@ const SecondOpinion = () => {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Urgency Level</label>
-            <select value={formData.urgencyLevel} onChange={(e) => handleInputChange("urgencyLevel", e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Urgency Level <span className="text-red-500">*</span></label>
+            <select
+              value={formData.urgencyLevel}
+              onChange={(e) => handleInputChange("urgencyLevel", e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg"
+            >
               <option value="">Select urgency level</option>
               {urgencyLevels.map((level) => (
                 <option key={level.value} value={level.value}>{level.label}</option>
@@ -703,8 +755,12 @@ const SecondOpinion = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Preferred Consultation Mode</label>
-            <select value={formData.preferredMode} onChange={(e) => handleInputChange("preferredMode", e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Preferred Consultation Mode <span className="text-red-500">*</span></label>
+            <select
+              value={formData.preferredMode}
+              onChange={(e) => handleInputChange("preferredMode", e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg"
+            >
               <option value="">Select consultation mode</option>
               {consultationModes.map((mode) => (
                 <option key={mode.value} value={mode.value}>{mode.label}</option>
@@ -726,7 +782,13 @@ const SecondOpinion = () => {
       </div>
       <div className="flex justify-center items-center pt-6">
         <div className="flex gap-3">
-          <button onClick={() => setShowPrintPreview(true)} className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+          <button
+            onClick={handlePreview}
+            disabled={!isFormValid()}
+            className={`flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 text-white rounded-lg transition-colors ${
+              isFormValid() ? "bg-gray-600 hover:bg-gray-700" : "bg-gray-300 cursor-not-allowed"
+            }`}
+          >
             <Printer size={18} />
             Print Preview & Send
           </button>
@@ -742,7 +804,7 @@ const SecondOpinion = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 sm:p-6">
               <div>
                 <div className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden text-sm" style={{ fontFamily: "Times, serif" }}>
-                  <PrintContent requestData={generateRequestData()} selectedRecord={selectedRecord} formData={formData}  user={user} />
+                  <PrintContent requestData={generateRequestData()} selectedRecord={selectedRecord} formData={formData} user={user} />
                 </div>
               </div>
               <div className="space-y-6">
