@@ -22,7 +22,8 @@ import LabBooking from "./LabBooking";
 import MultiStepForm from "../../../../components/BookApp";
 import PaymentLab from "./PaymentLab";
 import TrackAppointment from "./TrackApp";
-import Emergency from "./Emergency";
+import Emergency from "./EmergencyForm";
+import EmergencySearch from './EmergencySearch';
  import BookLab from './BookLab';
  import DoctorList from '../../../../components/DoctorList';
  import ProductCard from "./ProductCard";
@@ -53,6 +54,8 @@ const PdashboardRoutes = () => {
       <Route path="notifications" element={<PatientNotifications/>} />
       <Route path="/payment" element={<PaymentForm />} />
       <Route path="emergency" element={<h1>Emergency Info</h1>} />
+                <Route path="/ambulancesearch" element={<EmergencySearch />} />
+
       <Route path="lab-tests" element={<LabHome />} />
       <Route path="lab-tests/test/:id" element={<TestDetail />} />
       <Route path="package-details/:id" element={<TestDetail />} />
