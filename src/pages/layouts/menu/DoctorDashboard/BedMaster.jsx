@@ -47,8 +47,6 @@ const BedMaster = () => {
     beds: [],
     selectedDepartment: null,
     selectedWard: null,
-    roomAmenities: [],
-    bedAmenities: [],
   });
   const [specializations, setSpecializations] = useState([]);
   const [selectedSpecialization, setSelectedSpecialization] = useState("");
@@ -57,6 +55,8 @@ const BedMaster = () => {
   const [newRoomName, setNewRoomName] = useState("");
   const [selectedWardForRoom, setSelectedWardForRoom] = useState(null);
   const [bedCount, setBedCount] = useState(1);
+  const [roomSpecificAmenities, setRoomSpecificAmenities] = useState({});
+  const [bedSpecificAmenities, setBedSpecificAmenities] = useState({});
 
   const steps = [
     { id: 0, title: "Department Setup", icon: Building, description: "Create and manage hospital departments", color: "text-[var(--primary-color)]" },
@@ -204,7 +204,7 @@ const BedMaster = () => {
     toast.success("Ward added successfully");
   };
 
-  const addRoom = (name, wardId) => {
+  const addRoom = (name, wardId, amenities = []) => {
     if (!name.trim()) return;
     const existingRoom = bedMasterData.rooms.find(r => r.wardId === wardId && r.name.toLowerCase() === name.trim().toLowerCase());
     if (existingRoom) {
@@ -215,14 +215,14 @@ const BedMaster = () => {
       id: Date.now(),
       name: name.trim(),
       wardId,
-      amenities: [...bedMasterData.roomAmenities],
+      amenities,
       createdAt: new Date().toISOString(),
     };
     setBedMasterData((prev) => ({ ...prev, rooms: [...prev.rooms, newRoom] }));
     toast.success("Room added successfully");
   };
 
-  const addBed = (roomId, count = 1) => {
+  const addBed = (roomId, count = 1, amenities = []) => {
     const roomBeds = bedMasterData.beds.filter((b) => b.roomId === roomId);
     const newBeds = [];
     for (let i = 0; i < count; i++) {
@@ -231,7 +231,7 @@ const BedMaster = () => {
         name: `Bed ${roomBeds.length + i + 1}`,
         roomId,
         status: "available",
-        amenities: [...bedMasterData.bedAmenities],
+        amenities,
         createdAt: new Date().toISOString(),
       };
       newBeds.push(newBed);
@@ -264,11 +264,21 @@ const BedMaster = () => {
       rooms: prev.rooms.filter((r) => r.id !== id),
       beds: prev.beds.filter((b) => b.roomId !== id),
     }));
+    setRoomSpecificAmenities((prev) => {
+      const newAmenities = { ...prev };
+      delete newAmenities[id];
+      return newAmenities;
+    });
     toast.success("Room deleted successfully");
   };
 
   const deleteBed = (id) => {
     setBedMasterData((prev) => ({ ...prev, beds: prev.beds.filter((b) => b.id !== id) }));
+    setBedSpecificAmenities((prev) => {
+      const newAmenities = { ...prev };
+      delete newAmenities[id];
+      return newAmenities;
+    });
     toast.success("Bed deleted successfully");
   };
 
@@ -344,6 +354,45 @@ const BedMaster = () => {
           })}
         </div>
       </div>
+    </div>
+  );
+
+  const renderNavigationButtons = () => (
+    <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
+      <button
+        onClick={handleBack}
+        disabled={currentStep === 0}
+        className={`flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+          currentStep === 0
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+            : "bg-gray-100 hover:bg-gray-200 text-gray-800 hover:text-gray-900 hover:shadow-md"
+        }`}
+      >
+        <ArrowLeft size={16} />
+        <span className="hidden sm:inline">Back</span>
+      </button>
+      
+      {currentStep < steps.length - 1 ? (
+        <button
+          onClick={handleNext}
+          className={`flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+            canGoNext()
+              ? "bg-[var(--accent-color)] hover:bg-opacity-90 text-white shadow-md hover:shadow-lg"
+              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+          }`}
+          disabled={!canGoNext()}
+        >
+          <span className="hidden sm:inline">Next</span>
+          <ArrowRight size={16} />
+        </button>
+      ) : (
+        <button
+          onClick={handleSave}
+          className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-color)] hover:bg-opacity-90 text-white rounded-lg transition-all duration-200 font-medium shadow-lg text-sm"
+        >
+          <Save size={16} /> {editData ? "Update" : "Save"} & Finish
+        </button>
+      )}
     </div>
   );
 
@@ -427,6 +476,7 @@ const BedMaster = () => {
           ))}
         </AnimatePresence>
       </div>
+      {renderNavigationButtons()}
     </motion.div>
   );
 
@@ -434,7 +484,7 @@ const BedMaster = () => {
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4 sm:space-y-6">
       <div className="flex items-center gap-2 mb-4 sm:mb-6">
         <Building2 className="text-purple-600" size={20} />
-        <h2 className="h4-heading">Ward Creation</h2>
+        <h2 className="text-xl font-bold text-gray-900">Ward Creation</h2>
       </div>
       {bedMasterData.departments.length === 0 ? (
         <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-lg">
@@ -517,6 +567,7 @@ const BedMaster = () => {
           </div>
         ))
       )}
+      {renderNavigationButtons()}
     </motion.div>
   );
 
@@ -525,39 +576,6 @@ const BedMaster = () => {
       <div className="flex items-center gap-2 mb-4 sm:mb-6">
         <Door className="text-[var(--accent-color)]" size={20} />
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Room & Amenities Setup</h2>
-      </div>
-      <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
-        <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center gap-2">
-          <Settings size={16} /> Room Amenities
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 sm:gap-3">
-          {roomAmenityOptions.map((amenity) => {
-            const IconComponent = amenity.icon;
-            const isSelected = bedMasterData.roomAmenities.includes(amenity.id);
-            return (
-              <button
-                key={amenity.id}
-                onClick={() =>
-                  setBedMasterData((prev) => ({
-                    ...prev,
-                    roomAmenities: isSelected
-                      ? prev.roomAmenities.filter((id) => id !== amenity.id)
-                      : [...prev.roomAmenities, amenity.id],
-                  }))
-                }
-                className={`flex flex-col items-center justify-center p-2 sm:p-3 rounded-lg border-2 transition-all duration-200 ${
-                  isSelected
-                    ? "border-[var(--accent-color)] bg-[var(--accent-color)] shadow-md"
-                    : "border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-[var(--accent-color)]"
-                }`}
-              >
-                <IconComponent className={amenity.color} size={16} />
-                <span className="text-xs font-medium mt-1 text-center leading-tight">{amenity.name}</span>
-                <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full mt-1 ${isSelected ? "bg-[var(--accent-color)]" : "bg-gray-300"}`} />
-              </button>
-            );
-          })}
-        </div>
       </div>
       {bedMasterData.wards.length === 0 ? (
         <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-lg">
@@ -572,6 +590,43 @@ const BedMaster = () => {
               <Building2 className="text-purple-600" size={16} />
               <span className="break-words">Room Setup ({ward.name})</span>
             </h3>
+
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <h4 className="text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                <Settings size={14} /> Room Amenities for {ward.name}
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {roomAmenityOptions.map((amenity) => {
+                  const IconComponent = amenity.icon;
+                  const currentRoomAmenities = roomSpecificAmenities[ward.id] || [];
+                  const isSelected = currentRoomAmenities.includes(amenity.id);
+                  return (
+                    <button
+                      key={amenity.id}
+                      onClick={() =>
+                        setRoomSpecificAmenities((prev) => {
+                          const currentAmenities = prev[ward.id] || [];
+                          return {
+                            ...prev,
+                            [ward.id]: isSelected
+                              ? currentAmenities.filter((id) => id !== amenity.id)
+                              : [...currentAmenities, amenity.id]
+                          };
+                        })
+                      }
+                      className={`flex items-center justify-center p-2 rounded-lg border transition-all duration-200 ${
+                        isSelected
+                          ? "border-[var(--accent-color)] bg-[var(--accent-color)] text-white shadow-sm"
+                          : "border-gray-200 bg-white hover:bg-gray-50 hover:border-[var(--accent-color)]"
+                      }`}
+                    >
+                      <IconComponent className={isSelected ? "text-white" : amenity.color} size={12} />
+                      <span className="text-xs font-medium ml-1">{amenity.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <input
                 type="text"
@@ -584,7 +639,8 @@ const BedMaster = () => {
                 className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-sm"
                 onKeyPress={(e) => {
                   if (e.key === "Enter" && newRoomName.trim()) {
-                    addRoom(newRoomName, ward.id);
+                    const wardAmenities = roomSpecificAmenities[ward.id] || [];
+                    addRoom(newRoomName, ward.id, wardAmenities);
                     setNewRoomName("");
                     setSelectedWardForRoom(null);
                   }
@@ -593,12 +649,13 @@ const BedMaster = () => {
               <button
                 onClick={() => {
                   if (newRoomName.trim()) {
-                    addRoom(newRoomName, ward.id);
+                    const wardAmenities = roomSpecificAmenities[ward.id] || [];
+                    addRoom(newRoomName, ward.id, wardAmenities);
                     setNewRoomName("");
                     setSelectedWardForRoom(null);
                   }
                 }}
-                className="btn view-btn flex-shrink-0 text-sm"
+                className="px-4 py-2 bg-[var(--accent-color)] text-white rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2 text-sm flex-shrink-0"
               >
                 <Plus size={14} /> Add Room
               </button>
@@ -650,6 +707,7 @@ const BedMaster = () => {
           </div>
         ))
       )}
+      {renderNavigationButtons()}
     </motion.div>
   );
 
@@ -658,49 +716,6 @@ const BedMaster = () => {
       <div className="flex items-center gap-2 mb-4 sm:mb-6">
         <Bed className="text-orange-600" size={20} />
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Bed Configuration</h2>
-      </div>
-      <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
-        <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center gap-2">
-          <Settings size={16} /> Bed Amenities
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-          {bedAmenityOptions.map((amenity) => {
-            const IconComponent = amenity.icon;
-            const isSelected = bedMasterData.bedAmenities.includes(amenity.id);
-            return (
-              <button
-                key={amenity.id}
-                onClick={() =>
-                  setBedMasterData((prev) => ({
-                    ...prev,
-                    bedAmenities: isSelected
-                      ? prev.bedAmenities.filter((id) => id !== amenity.id)
-                      : [...prev.bedAmenities, amenity.id],
-                  }))
-                }
-                className={`flex items-center justify-between p-3 sm:p-4 rounded-lg border-2 transition-all duration-200 ${
-                  isSelected
-                    ? "border-orange-500 bg-orange-50 shadow-md"
-                    : "border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-orange-300"
-                }`}
-              >
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                  <div className="p-1 sm:p-2 rounded-full bg-gray-100 flex-shrink-0">
-                    <IconComponent className={amenity.color} size={16} />
-                  </div>
-                  <span className="text-xs sm:text-sm font-medium truncate">{amenity.name}</span>
-                </div>
-                <div
-                  className={`w-5 h-3 sm:w-6 sm:h-4 flex items-center rounded-full p-0.5 transition-all duration-200 flex-shrink-0 ${
-                    isSelected ? "bg-orange-500 justify-end" : "bg-gray-300 justify-start"
-                  }`}
-                >
-                  <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-white shadow-sm" />
-                </div>
-              </button>
-            );
-          })}
-        </div>
       </div>
       {bedMasterData.rooms.length === 0 ? (
         <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-lg">
@@ -716,20 +731,71 @@ const BedMaster = () => {
                 <Door className="text-[var(--accent-color)]" size={16} />
                 <span className="break-words">{room.name}</span>
               </h3>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <input
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={bedCount}
-                  onChange={(e) => setBedCount(parseInt(e.target.value) || 1)}
-                  placeholder="Beds"
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm w-full sm:w-20"
-                />
-                <button onClick={() => addBed(room.id, bedCount)} className="btn view-btn text-sm flex-shrink-0">
-                  <Plus size={14} /> Add Beds
-                </button>
+            </div>
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <h4 className="text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                <Settings size={14} /> Bed Amenities for {room.name}
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {bedAmenityOptions.map((amenity) => {
+                  const IconComponent = amenity.icon;
+                  const currentBedAmenities = bedSpecificAmenities[room.id] || [];
+                  const isSelected = currentBedAmenities.includes(amenity.id);
+                  return (
+                    <button
+                      key={amenity.id}
+                      onClick={() =>
+                        setBedSpecificAmenities((prev) => {
+                          const currentAmenities = prev[room.id] || [];
+                          return {
+                            ...prev,
+                            [room.id]: isSelected
+                              ? currentAmenities.filter((id) => id !== amenity.id)
+                              : [...currentAmenities, amenity.id]
+                          };
+                        })
+                      }
+                      className={`flex items-center justify-between p-2 rounded-lg border transition-all duration-200 ${
+                        isSelected
+                          ? "border-orange-500 bg-orange-50 shadow-sm"
+                          : "border-gray-200 bg-white hover:bg-gray-50 hover:border-orange-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <IconComponent className={amenity.color} size={12} />
+                        <span className="text-xs font-medium truncate">{amenity.name}</span>
+                      </div>
+                      <div
+                        className={`w-4 h-2 flex items-center rounded-full p-0.5 transition-all duration-200 flex-shrink-0 ${
+                          isSelected ? "bg-orange-500 justify-end" : "bg-gray-300 justify-start"
+                        }`}
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4">
+              <input
+                type="number"
+                min="1"
+                max="20"
+                value={bedCount}
+                onChange={(e) => setBedCount(parseInt(e.target.value) || 1)}
+                placeholder="Beds"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm w-full sm:w-20"
+              />
+              <button
+                onClick={() => {
+                  const roomAmenities = bedSpecificAmenities[room.id] || [];
+                  addBed(room.id, bedCount, roomAmenities);
+                }}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 text-sm flex-shrink-0"
+              >
+                <Plus size={14} /> Add Beds
+              </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               <AnimatePresence>
@@ -778,6 +844,22 @@ const BedMaster = () => {
                           <option value="reserved">Reserved</option>
                         </select>
                         <div className={`h-2 rounded-full ${statusColors[bed.status || "available"]}`} />
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {bed.amenities && bed.amenities.map((amenityId) => {
+                            const amenity = bedAmenityOptions.find((a) => a.id === amenityId);
+                            if (!amenity) return null;
+                            const IconComponent = amenity.icon;
+                            return (
+                              <span
+                                key={amenityId}
+                                className="inline-flex items-center gap-1 px-1 py-0.5 bg-gray-100 rounded-full text-xs"
+                                title={amenity.name}
+                              >
+                                <IconComponent className={amenity.color} size={8} />
+                              </span>
+                            );
+                          })}
+                        </div>
                       </motion.div>
                     );
                   })}
@@ -786,6 +868,7 @@ const BedMaster = () => {
           </div>
         ))
       )}
+      {renderNavigationButtons()}
     </motion.div>
   );
 
@@ -844,14 +927,7 @@ const BedMaster = () => {
             </div>
           </div>
         )}
-        <div className="flex justify-center">
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-color)] hover:bg-opacity-90 text-white rounded-lg transition-all duration-200 font-medium shadow-lg text-sm"
-          >
-            <Save size={16} /> {editData ? "Update" : "Save"} & Finish
-          </button>
-        </div>
+        {renderNavigationButtons()}
       </motion.div>
     );
   };
@@ -874,52 +950,29 @@ const BedMaster = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white p-2 sm:p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-4 sm:mb-6 md:mb-8">
-          <motion.div className="mb-3 sm:mb-4 md:mb-6" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-2 mb-2 sm:mb-3 md:mb-4">
-              <button
-                onClick={() => navigate("/doctordashboard/bedroommanagement")}
-                className="flex items-center text-xs sm:text-sm text-[var(--primary-color)] hover:underline"
-              >
-                ← Back to List
-              </button>
-            </div>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-              {editData ? "Edit" : "Create"} Bed Management Master
-            </h1>
-          </motion.div>
-          {renderStepIndicator()}
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-2 sm:p-4 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          <div className="p-2 sm:p-4 md:p-6 lg:p-8">
-            {renderStepContent()}
-            <div className="flex justify-between items-center mt-4 sm:mt-6 md:mt-8">
-              <button
-                onClick={handleBack}
-                disabled={currentStep === 0}
-                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
-                  currentStep === 0
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-800 hover:text-gray-900"
-                }`}
-              >
-                <ArrowLeft size={14} /> Back
-              </button>
-              {currentStep < steps.length - 1 ? (
+          <div className="mb-4 sm:mb-6 md:mb-8">
+            <motion.div className="mb-3 sm:mb-4 md:mb-6" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="flex items-center gap-2 mb-2 sm:mb-3 md:mb-4">
                 <button
-                  onClick={handleNext}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
-                    canGoNext()
-                      ? "bg-[var(--accent-color)] hover:bg-opacity-90 text-white"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
-                  disabled={!canGoNext()}
+                  onClick={() => navigate("/doctordashboard/bedroommanagement")}
+                  className="flex items-center text-xs sm:text-sm text-[var(--primary-color)] hover:underline"
                 >
-                  Next <ArrowRight size={14} />
+                  ← Back to List
                 </button>
-              ) : null}
+              </div>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                {editData ? "Edit" : "Create"} Bed Management Master
+              </h1>
+            </motion.div>
+            {renderStepIndicator()}
+          </div>
+          
+          <div className="max-w-7xl mx-auto">
+            <div className="p-2 sm:p-4 md:p-6 lg:p-8">
+              {renderStepContent()}
             </div>
           </div>
         </div>
