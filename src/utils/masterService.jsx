@@ -18,10 +18,10 @@ export const getSpecializationsByPracticeType = (practiceTypeId) =>
     params: { practiceTypeId },
   });;
 
-  
+
   export const getAllSpecializations = () =>
   axiosInstance.get('/master/specializations');
-  
+
 export const getAvailableTests = () => axiosInstance.get('/master/available-tests');
 export const getCenterTypes = () => axiosInstance.get('/master/center-type');
 export const getHospitalTypes = () => axiosInstance.get('/master/hospitalType');

@@ -13,32 +13,36 @@ import {
   CreditCard,
   Share2,
   Download,
-  Eye
+  Eye,
+  ArrowLeft,
+  Send,
+  MessageCircle,
+  AtSign,
 } from "lucide-react";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 
 const Payments = () => {
-  // Dummy data for doctor
   const user = useSelector((state) => state.auth?.user);
-  const [currentDoctorName, setCurrentDoctorName] = useState('Dr. Kavya Patil');
-
-  // Dummy data for payments, confirmed patients, and appointments
+  const [currentDoctorName, setCurrentDoctorName] = useState("Dr. Kavya Patil");
   const [payments, setPayments] = useState([]);
   const [confirmedPatients, setConfirmedPatients] = useState([]);
   const [allAppointments, setAllAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
-
-  // Pagination
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharePayment, setSharePayment] = useState(null);
+  const [contactForm, setContactForm] = useState({
+    email: "",
+    phone: "",
+  });
+  const [isSending, setIsSending] = useState({ whatsapp: false, email: false });
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
-  // Generate dummy data
   useEffect(() => {
     setIsLoading(true);
     try {
-      // Dummy Confirmed Patients
       const dummyConfirmedPatients = [
         {
           id: 1,
@@ -63,8 +67,6 @@ const Payments = () => {
           createdAt: "2025-09-12T11:00:00",
         },
       ];
-
-      // Dummy Appointments
       const dummyAppointments = [
         {
           id: 1,
@@ -91,8 +93,6 @@ const Payments = () => {
           symptoms: "Back Pain",
         },
       ];
-
-      // Dummy Payments
       const dummyPayments = [
         {
           id: 1,
@@ -135,12 +135,8 @@ const Payments = () => {
           serviceType: "OPD Consultation",
         },
       ];
-
-      // Set dummy data
       setConfirmedPatients(dummyConfirmedPatients);
       setAllAppointments(dummyAppointments);
-
-      // Enhance payments with dummy data
       const enhancedPayments = dummyPayments.map((payment) => {
         const relatedPatient = dummyConfirmedPatients.find(
           (p) => p.name.toLowerCase() === payment.patientName.toLowerCase()
@@ -148,7 +144,6 @@ const Payments = () => {
         const relatedAppointment = dummyAppointments.find(
           (a) => a.patientName.toLowerCase() === payment.patientName.toLowerCase()
         );
-
         return {
           ...payment,
           doctorName: currentDoctorName,
@@ -163,7 +158,6 @@ const Payments = () => {
           dataSource: relatedPatient ? "confirmed" : relatedAppointment ? "appointment" : "payment_only",
         };
       });
-
       setPayments(enhancedPayments);
     } catch (err) {
       setError("Failed to load dummy data");
@@ -172,7 +166,10 @@ const Payments = () => {
     }
   }, [currentDoctorName]);
 
-  // Helper functions (unchanged)
+  const handleBackNavigation = useCallback(() => {
+    window.history.back();
+  }, []);
+
   const getServiceType = (dataSource) => {
     if (dataSource.type === "OPD") return "OPD Consultation";
     if (dataSource.type === "Virtual") return "Virtual Consultation";
@@ -199,7 +196,6 @@ const Payments = () => {
     }
   };
 
-  // Rest of the component (unchanged)
   const getStatusBadgeClass = useCallback(
     (status) => (status === "paid" || status === "completed" ? "status-completed" : "status-pending"),
     []
@@ -279,7 +275,6 @@ const Payments = () => {
       tax: 0,
       total: record.amount,
     };
-
     setSelectedPayment(invoiceData);
     setTimeout(() => {
       const printContent = document.getElementById("invoice-print-template").innerHTML;
@@ -298,21 +293,99 @@ const Payments = () => {
   }, []);
 
   const handleShare = useCallback((record) => {
-    const shareData = {
-      title: `Payment Receipt ${record.invoiceNo}`,
-      text: `Medical Payment Receipt from ${record.doctorName} - Amount: ₹${record.amount}`,
-      url: window.location.href,
+    const invoiceData = {
+      id: record.id,
+      invoiceNo: record.invoiceNo,
+      date: record.date,
+      doctorName: record.doctorName,
+      serviceType: record.serviceType,
+      billedAmount: record.amount,
+      paidAmount: record.amount,
+      balance: 0,
+      status: "paid",
+      method: record.method,
+      patientName: record.patientName,
+      patientEmail: record.patientEmail,
+      patientPhone: record.patientPhone,
+      patientAddress: "Address not available",
+      appointmentDate: record.appointmentDate,
+      appointmentTime: record.appointmentTime,
+      symptoms: record.symptoms,
+      consultationType: record.consultationType,
+      items: [
+        {
+          description: record.serviceType,
+          quantity: 1,
+          cost: record.amount,
+          amount: record.amount,
+        },
+      ],
+      subtotal: record.amount,
+      discount: 0,
+      tax: 0,
+      total: record.amount,
     };
-    if (navigator.canShare && navigator.canShare(shareData))
-      navigator.share(shareData).catch(console.error);
-    else
-      navigator.clipboard
-        .writeText(`Payment Receipt ${record.invoiceNo} - Amount: ₹${record.amount} - ${window.location.href}`)
-        .then(() => {
-          alert("Receipt details copied to clipboard!");
-        })
-        .catch(console.error);
+    setSharePayment(invoiceData);
+    setShowShareModal(true);
   }, []);
+
+  const generateMessageContent = () => {
+    if (!sharePayment) return { subject: "", body: "" };
+    return {
+      subject: `Payment Receipt ${sharePayment.invoiceNo} - ${sharePayment.doctorName}`,
+      body: `PAYMENT RECEIPT\n\nPayment Details:\n• Receipt ID: ${sharePayment.invoiceNo}\n• Date: ${sharePayment.date}\n• Doctor: ${sharePayment.doctorName}\n• Service: ${sharePayment.serviceType}\n• Amount Paid: ₹${sharePayment.amount}\n• Payment Method: ${sharePayment.method}\n• Status: Paid\n\nPatient: ${sharePayment.patientName}\nAppointment: ${sharePayment.appointmentDate} at ${sharePayment.appointmentTime}\n\nGenerated on: ${new Date().toLocaleString()}\n\nFor any queries, please contact us at billing@digihealth.com`
+    };
+  };
+
+  const sendWhatsAppMessage = async () => {
+    if (!contactForm.phone) {
+      alert("Please enter a WhatsApp number");
+      return;
+    }
+    setIsSending(prev => ({ ...prev, whatsapp: true }));
+    try {
+      const messageContent = generateMessageContent();
+      const whatsappMessage = `${messageContent.subject}\n\n${messageContent.body}`;
+      
+      // Simulate WhatsApp API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      alert(`WhatsApp message sent successfully to +91${contactForm.phone}!`);
+      setContactForm({ email: "", phone: "" });
+      setShowShareModal(false);
+    } catch (error) {
+      alert("Failed to send WhatsApp message. Please try again.");
+    } finally {
+      setIsSending(prev => ({ ...prev, whatsapp: false }));
+    }
+  };
+
+  const sendEmail = async () => {
+    if (!contactForm.email.trim()) {
+      alert("Please enter an email address");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(contactForm.email)) {
+      alert("Please enter a valid email address");
+      return;
+    }
+    setIsSending(prev => ({ ...prev, email: true }));
+    try {
+      const messageContent = generateMessageContent();
+      
+      // Simulate email API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      alert(`Email sent successfully to ${contactForm.email}!`);
+      setContactForm({ email: "", phone: "" });
+      setShowShareModal(false);
+    } catch (error) {
+      alert("Failed to send email. Please try again.");
+    } finally {
+      setIsSending(prev => ({ ...prev, email: false }));
+    }
+  };
 
   const getInvoiceCSS = useCallback(() => `
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -351,7 +424,6 @@ const Payments = () => {
     @media print { body { margin: 0; padding: 0; } .invoice-container { margin: 0; padding: 15px; box-shadow: none; border: none; } .no-print { display: none !important; } }
   `, []);
 
-  // Columns and filters (unchanged)
   const columns = [
     {
       header: "Patient Name",
@@ -383,9 +455,6 @@ const Payments = () => {
       cell: (row) => (
         <div className="flex flex-col">
           <span className="text-sm font-medium">{row.serviceType}</span>
-          {row.appointmentTime && row.appointmentTime !== "N/A" && (
-            <span className="text-xs text-gray-500">Time: {row.appointmentTime}</span>
-          )}
         </div>
       ),
     },
@@ -463,12 +532,11 @@ const Payments = () => {
     },
   ];
 
-  // Pagination Logic
   const startIndex = (page - 1) * rowsPerPage;
   const paginatedData = payments.slice(startIndex, startIndex + rowsPerPage);
   const totalPages = Math.ceil(payments.length / rowsPerPage);
+  const totalEarnings = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
 
-  // Render
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-40">
@@ -519,24 +587,37 @@ const Payments = () => {
     );
   }
 
-  const totalEarnings = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-
   return (
     <div className="p-4 sm:p-6">
+      {/* Back Button */}
+      <div className="mb-2">
+        <button
+          onClick={handleBackNavigation}
+          className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-[var(--accent-color)] rounded-lg transition-all duration-200 group"
+          title="Go back to previous page"
+        >
+          <ArrowLeft
+            size={18}
+            className="transition-transform duration-200 group-hover:-translate-x-1"
+          />
+          <span className="font-medium text-sm">Back</span>
+        </button>
+      </div>
+
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
           <div>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
               Payment Records - {currentDoctorName}
             </h2>
-            <p className="text-sm text-gray-500 mt-1">All payment records related to your practice</p>
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-green-600">₹{totalEarnings.toLocaleString()}</div>
             <div className="text-sm text-gray-500">Total from {payments.length} payments</div>
           </div>
         </div>
-        <div>
+
+        <div className="mt-2">
           <DynamicTable
             columns={columns}
             data={paginatedData}
@@ -548,28 +629,139 @@ const Payments = () => {
             searchPlaceholder="Search by patient name, invoice, or service..."
           />
         </div>
+
         {totalPages > 1 && (
-          <div className="w-full flex justify-end mt-4">
+          <div className="w-full flex justify-end mt-3">
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
         )}
-        {selectedPayment && (
+
+        {/* Share Modal with Scrolling */}
+        {showShareModal && sharePayment && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+                <h2 className="text-xl font-semibold text-gray-800">Share Payment Receipt</h2>
+                <button
+                  onClick={() => {
+                    setShowShareModal(false);
+                    setSharePayment(null);
+                    setContactForm({ email: "", phone: "" });
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
+                  title="Close"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="overflow-y-auto max-h-[calc(90vh-80px)] custom-scrollbar">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+                  <div>
+                    <div className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden text-sm">
+                      <InvoiceTemplate invoice={sharePayment} showActions={false} />
+                    </div>
+                  </div>
+                  <div className="space-y-6">
+                    <h4 className="text-lg font-semibold text-gray-800">Send Receipt Options</h4>
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Contact Information</h3>
+                      <div className="grid grid-cols-1 gap-6">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <Phone size={16} className="inline mr-2" />
+                            WhatsApp Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={contactForm.phone}
+                            onChange={(e) => setContactForm(prev => ({ ...prev, phone: e.target.value }))}
+                            className="w-full p-3 border border-gray-300 rounded-lg"
+                            placeholder="9876543210"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <AtSign size={16} className="inline mr-2" />
+                            Email Address
+                          </label>
+                          <input
+                            type="email"
+                            value={contactForm.email}
+                            onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
+                            className="w-full p-3 border border-gray-300 rounded-lg"
+                            placeholder="patient@example.com"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={sendWhatsAppMessage}
+                        disabled={!contactForm.phone || isSending.whatsapp}
+                        className={`flex flex-col items-center p-4 rounded-lg border transition-all ${
+                          contactForm.phone && !isSending.whatsapp
+                            ? "border-green-300 hover:bg-green-50 hover:scale-105"
+                            : "border-gray-300 opacity-50 cursor-not-allowed"
+                        }`}
+                      >
+                        {isSending.whatsapp ? (
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                        ) : (
+                          <MessageCircle className="w-8 h-8 mb-2 text-green-600" />
+                        )}
+                        <span className="text-xs font-medium text-center">
+                          {isSending.whatsapp ? "Sending..." : "WhatsApp"}
+                        </span>
+                      </button>
+                      <button
+                        onClick={sendEmail}
+                        disabled={!contactForm.email || isSending.email}
+                        className={`flex flex-col items-center p-4 rounded-lg border transition-all ${
+                          contactForm.email && !isSending.email
+                            ? "border-red-300 hover:bg-red-50 hover:scale-105"
+                            : "border-gray-300 opacity-50 cursor-not-allowed"
+                        }`}
+                      >
+                        {isSending.email ? (
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                        ) : (
+                          <Mail className="w-8 h-8 mb-2 text-red-600" />
+                        )}
+                        <span className="text-xs font-medium text-center">
+                          {isSending.email ? "Sending..." : "Email"}
+                        </span>
+                      </button>
+                    </div>
+                    {!contactForm.phone && !contactForm.email && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p className="text-yellow-800 text-sm">
+                          <strong>Note:</strong> Please provide WhatsApp number or email address to send the receipt.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Detail Modal with Scrolling */}
+        {selectedPayment && !showShareModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden">
-              <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
-                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
-                  <h2 className="text-xl font-semibold text-gray-800">Payment Receipt</h2>
-                  <button
-                    onClick={() => setSelectedPayment(null)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
-                    title="Close"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-                <div className="overflow-y-auto max-h-[calc(90vh-80px)] custom-scrollbar">
-                  <InvoiceTemplate invoice={selectedPayment} showActions={true} />
-                </div>
+            <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+                <h2 className="text-xl font-semibold text-gray-800">Payment Receipt</h2>
+                <button
+                  onClick={() => setSelectedPayment(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
+                  title="Close"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="overflow-y-auto max-h-[calc(90vh-80px)] custom-scrollbar">
+                <InvoiceTemplate invoice={selectedPayment} showActions={true} />
               </div>
             </div>
           </div>
@@ -581,9 +773,11 @@ const Payments = () => {
 
 const InvoiceTemplate = React.memo(({ invoice, showActions }) => {
   if (!invoice) return null;
+
   const handlePrint = () => {
     window.print();
   };
+
   return (
     <>
       <div id="invoice-print-template" className="bg-white rounded-lg">

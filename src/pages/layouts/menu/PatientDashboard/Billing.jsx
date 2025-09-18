@@ -16,6 +16,10 @@ import {
   Phone,
   Mail,
   MapPin,
+  ArrowLeft,
+  Send,
+  MessageCircle,
+  AtSign,
 } from "lucide-react";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import PaymentGateway from "../../../../components/microcomponents/PaymentGatway";
@@ -24,6 +28,13 @@ const Billing = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showPaymentGateway, setShowPaymentGateway] = useState(false);
   const [paymentInvoice, setPaymentInvoice] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareInvoice, setShareInvoice] = useState(null);
+  const [contactForm, setContactForm] = useState({
+    email: "",
+    phone: "",
+  });
+  const [isSending, setIsSending] = useState({ whatsapp: false, email: false });
   const user = useSelector((state) => state.auth.user);
 
   const records = [
@@ -129,6 +140,10 @@ const Billing = () => {
     },
   ];
 
+  const handleBackNavigation = useCallback(() => {
+    window.history.back();
+  }, []);
+
   const getStatusBadgeClass = useCallback(
     (status) => (status === "paid" ? "status-completed" : "status-pending"),
     []
@@ -223,18 +238,16 @@ const Billing = () => {
   );
 
   const handleShare = useCallback((record) => {
-    const shareData = {
-      title: `Invoice ${record.invoiceNo}`,
-      text: `Medical Invoice from DigiHealth - Amount: ₹${record.billedAmount}`,
-      url: window.location.href,
+    const invoice = {
+      ...record,
+      patientName: `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "---",
+      patientEmail: user?.email || "---",
+      patientPhone: user?.phone || "---",
+      patientAddress: user?.address || "---",
     };
-    if (navigator.canShare && navigator.canShare(shareData))
-      navigator.share(shareData).catch(console.error);
-    else
-      navigator.clipboard
-        .writeText(`Invoice ${record.invoiceNo} - Amount: ₹${record.billedAmount} - ${window.location.href}`)
-        .catch(console.error);
-  }, []);
+    setShareInvoice(invoice);
+    setShowShareModal(true);
+  }, [user]);
 
   const handlePaymentSuccess = useCallback(() => {
     setShowPaymentGateway(false);
@@ -245,6 +258,64 @@ const Billing = () => {
     setShowPaymentGateway(false);
     setPaymentInvoice(null);
   }, []);
+
+  const generateMessageContent = () => {
+    if (!shareInvoice) return { subject: "", body: "" };
+    return {
+      subject: `Invoice ${shareInvoice.invoiceNo} - ${shareInvoice.doctorName}`,
+      body: `MEDICAL INVOICE\n\nInvoice Details:\n• Invoice ID: ${shareInvoice.invoiceNo}\n• Date: ${shareInvoice.date}\n• Doctor: ${shareInvoice.doctorName}\n• Service: ${shareInvoice.serviceType}\n• Total Amount: ₹${shareInvoice.billedAmount}\n• Paid Amount: ₹${shareInvoice.paidAmount}\n• Balance: ₹${shareInvoice.balance}\n• Status: ${shareInvoice.status === 'paid' ? 'Paid' : 'Pending'}\n\nPatient: ${shareInvoice.patientName}\nGenerated on: ${new Date().toLocaleString()}\n\nFor any queries, please contact us at billing@digihealth.com`
+    };
+  };
+
+  const sendWhatsAppMessage = async () => {
+    if (!contactForm.phone) {
+      alert("Please enter a WhatsApp number");
+      return;
+    }
+    setIsSending(prev => ({ ...prev, whatsapp: true }));
+    try {
+      const messageContent = generateMessageContent();
+      const whatsappMessage = `${messageContent.subject}\n\n${messageContent.body}`;
+      
+      // Simulate WhatsApp API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      alert(`WhatsApp message sent successfully to +91${contactForm.phone}!`);
+      setContactForm({ email: "", phone: "" });
+      setShowShareModal(false);
+    } catch (error) {
+      alert("Failed to send WhatsApp message. Please try again.");
+    } finally {
+      setIsSending(prev => ({ ...prev, whatsapp: false }));
+    }
+  };
+
+  const sendEmail = async () => {
+    if (!contactForm.email.trim()) {
+      alert("Please enter an email address");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(contactForm.email)) {
+      alert("Please enter a valid email address");
+      return;
+    }
+    setIsSending(prev => ({ ...prev, email: true }));
+    try {
+      const messageContent = generateMessageContent();
+      
+      // Simulate email API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      alert(`Email sent successfully to ${contactForm.email}!`);
+      setContactForm({ email: "", phone: "" });
+      setShowShareModal(false);
+    } catch (error) {
+      alert("Failed to send email. Please try again.");
+    } finally {
+      setIsSending(prev => ({ ...prev, email: false }));
+    }
+  };
 
   const getInvoiceCSS = useCallback(() => `
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -355,24 +426,42 @@ const Billing = () => {
         { value: "pending", label: "Pending" },
       ],
     },
-    
   ];
 
   return (
     <div className="p-4 sm:p-6">
-      <DynamicTable
-        columns={tableColumns}
-        data={records}
-        onCellClick={(row, column) => {
-          if (column.accessor === "invoiceNo") {
-            handleView(row);
-          }
-        }}
-        filters={filters}
-        showSearchBar={true}
-        showPagination={true}
-      />
+      {/* Back Button */}
+      <div className="mb-2">
+        <button
+          onClick={handleBackNavigation}
+          className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-[var(--accent-color)] rounded-lg transition-all duration-200 group"
+          title="Go back to previous page"
+        >
+          <ArrowLeft
+            size={18}
+            className="transition-transform duration-200 group-hover:-translate-x-1"
+          />
+          <span className="font-medium text-sm">Back</span>
+        </button>
+      </div>
 
+      {/* Billing Table */}
+      <div>
+        <DynamicTable
+          columns={tableColumns}
+          data={records}
+          onCellClick={(row, column) => {
+            if (column.accessor === "invoiceNo") {
+              handleView(row);
+            }
+          }}
+          filters={filters}
+          showSearchBar={true}
+          showPagination={true}
+        />
+      </div>
+
+      {/* Payment Gateway Modal */}
       {showPaymentGateway && paymentInvoice && (
         <PaymentGateway
           isOpen={showPaymentGateway}
@@ -411,23 +500,140 @@ const Billing = () => {
         />
       )}
 
-      {selectedInvoice && !showPaymentGateway && (
+      {/* Share Modal with Scrolling */}
+      {showShareModal && shareInvoice && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+              <h2 className="text-xl font-semibold text-gray-800">Share Invoice</h2>
+              <button
+                onClick={() => {
+                  setShowShareModal(false);
+                  setShareInvoice(null);
+                  setContactForm({ email: "", phone: "" });
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
+                title="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto max-h-[calc(90vh-80px)] custom-scrollbar">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+                <div>
+                  <div className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden text-sm">
+                    <InvoiceTemplate invoice={shareInvoice} showActions={false} />
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <h4 className="text-lg font-semibold text-gray-800">Send Invoice Options</h4>
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Contact Information</h3>
+                    <div className="grid grid-cols-1 gap-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <Phone size={16} className="inline mr-2" />
+                          WhatsApp Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={contactForm.phone}
+                          onChange={(e) => setContactForm(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full p-3 border border-gray-300 rounded-lg"
+                          placeholder="9876543210"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <AtSign size={16} className="inline mr-2" />
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
+                          className="w-full p-3 border border-gray-300 rounded-lg"
+                          placeholder="patient@example.com"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={sendWhatsAppMessage}
+                      disabled={!contactForm.phone || isSending.whatsapp}
+                      className={`flex flex-col items-center p-4 rounded-lg border transition-all ${
+                        contactForm.phone && !isSending.whatsapp
+                          ? "border-green-300 hover:bg-green-50 hover:scale-105"
+                          : "border-gray-300 opacity-50 cursor-not-allowed"
+                      }`}
+                    >
+                      {isSending.whatsapp ? (
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                      ) : (
+                        <MessageCircle className="w-8 h-8 mb-2 text-green-600" />
+                      )}
+                      <span className="text-xs font-medium text-center">
+                        {isSending.whatsapp ? "Sending..." : "WhatsApp"}
+                      </span>
+                    </button>
+                    <button
+                      onClick={sendEmail}
+                      disabled={!contactForm.email || isSending.email}
+                      className={`flex flex-col items-center p-4 rounded-lg border transition-all ${
+                        contactForm.email && !isSending.email
+                          ? "border-red-300 hover:bg-red-50 hover:scale-105"
+                          : "border-gray-300 opacity-50 cursor-not-allowed"
+                      }`}
+                    >
+                      {isSending.email ? (
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                      ) : (
+                        <Mail className="w-8 h-8 mb-2 text-red-600" />
+                      )}
+                      <span className="text-xs font-medium text-center">
+                        {isSending.email ? "Sending..." : "Email"}
+                      </span>
+                    </button>
+                  </div>
+                  {!contactForm.phone && !contactForm.email && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <p className="text-yellow-800 text-sm">
+                        <strong>Note:</strong> Please provide WhatsApp number or email address to send the invoice.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice Detail Modal with Scrolling */}
+      {selectedInvoice && !showPaymentGateway && !showShareModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-fadeIn">
-          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
-                <h2 className="text-xl font-semibold text-gray-800">Invoice Details</h2>
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+              <div className="flex items-center gap-4">
                 <button
                   onClick={() => setSelectedInvoice(null)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
-                  title="Close"
+                  className="flex items-center gap-1.5 md:gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600 text-xs md:text-sm"
                 >
-                  <X size={20} />
+                  <ArrowLeft size={16} className="md:size-[20px]" />
+                  <span className="font-medium">Back to Invoices</span>
                 </button>
               </div>
-              <div className="overflow-y-auto max-h-[calc(90vh-80px)] custom-scrollbar">
-                <InvoiceTemplate invoice={selectedInvoice} showActions={true} />
-              </div>
+              <button
+                onClick={() => setSelectedInvoice(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
+                title="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto max-h-[calc(90vh-80px)] custom-scrollbar">
+              <InvoiceTemplate invoice={selectedInvoice} showActions={true} />
             </div>
           </div>
         </div>
@@ -439,7 +645,6 @@ const Billing = () => {
 const InvoiceTemplate = React.memo(({ invoice, showActions, onPrint, onPay }) => {
   if (!invoice) return null;
 
-  // fallback handlers
   const handlePrint = () => {
     if (onPrint) {
       onPrint(invoice);
@@ -458,178 +663,176 @@ const InvoiceTemplate = React.memo(({ invoice, showActions, onPrint, onPay }) =>
 
   return (
     <>
-      <div className="bg-white rounded-lg">
-        <div className="p-6">
-          {/* Header Section */}
-          <div className="flex justify-between items-start mb-6 pb-4 border-b-2 border-[var(--accent-color)]">
-            <div>
-              <h1 className="h2-heading">INVOICE</h1>
-              <p className="text-sm text-gray-600 font-medium">#{invoice.invoiceNo}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-12 h-12 bg-[var(--accent-color)] rounded-lg flex items-center justify-center">
-                <Stethoscope className="text-white" size={20} />
-              </div>
-              <div>
-                <div className="text-lg font-semibold text-[var(--accent-color)]">DigiHealth</div>
-                <div className="text-xs text-gray-500">Healthcare Solutions</div>
-              </div>
-            </div>
+      <div id="invoice-print-template" className="bg-white rounded-lg p-6">
+        {/* Header Section */}
+        <div className="flex justify-between items-start mb-6 pb-4 border-b-2 border-[var(--accent-color)]">
+          <div>
+            <h1 className="h2-heading">INVOICE</h1>
+            <p className="text-sm text-gray-600 font-medium">#{invoice.invoiceNo}</p>
           </div>
-
-          {/* Invoice and Patient Details */}
-          <div className="grid grid-cols-2 gap-8 mb-6">
-            <div>
-              <h3 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide border-b border-gray-200 pb-1">
-                Invoice Details
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center text-sm">
-                  <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>Date: {invoice.date}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>
-                    Due:{" "}
-                    {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <Stethoscope className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>Doctor: {invoice.doctorName}</span>
-                </div>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="w-12 h-12 bg-[var(--accent-color)] rounded-lg flex items-center justify-center">
+              <Stethoscope className="text-white" size={20} />
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide border-b border-gray-200 pb-1">
-                Patient Information
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center text-sm">
-                  <User className="w-4 h-4 mr-2 text-gray-500" />
-                  <span className="font-medium">{invoice.patientName}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <Mail className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>{invoice.patientEmail}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>{invoice.patientPhone}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <MapPin className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>{invoice.patientAddress}</span>
-                </div>
-              </div>
+              <div className="text-lg font-semibold text-[var(--accent-color)]">DigiHealth</div>
+              <div className="text-xs text-gray-500">Healthcare Solutions</div>
             </div>
           </div>
-
-          {/* Invoice Items Table */}
-          <div className="mb-6">
-            <table className="w-full border-collapse border border-gray-200 text-sm">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
-                    Description
-                  </th>
-                  <th className="border border-gray-200 px-4 py-3 text-right font-semibold">
-                    Unit Cost
-                  </th>
-                  <th className="border border-gray-200 px-4 py-3 text-right font-semibold">
-                    Qty
-                  </th>
-                  <th className="border border-gray-200 px-4 py-3 text-right font-semibold">
-                    Amount
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.items.map((item, index) => (
-                  <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <td className="border border-gray-200 px-4 py-3">{item.description}</td>
-                    <td className="border border-gray-200 px-4 py-3 text-right font-medium">
-                      ₹{item.cost}
-                    </td>
-                    <td className="border border-gray-200 px-4 py-3 text-right font-medium">
-                      {item.quantity}
-                    </td>
-                    <td className="border border-gray-200 px-4 py-3 text-right font-medium">
-                      ₹{item.amount}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Invoice Totals */}
-          <div className="flex justify-end mb-6">
-            <div className="w-72">
-              <div className="space-y-2">
-                <div className="flex justify-between py-1 text-sm border-b border-gray-100">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">
-                    ₹{invoice.subtotal || invoice.billedAmount}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 text-sm border-b border-gray-100">
-                  <span className="text-gray-600">Discount</span>
-                  <span className="font-medium">₹{invoice.discount}</span>
-                </div>
-                <div className="flex justify-between py-1 text-sm border-b border-gray-100">
-                  <span className="text-gray-600">Tax</span>
-                  <span className="font-medium">₹{invoice.tax}</span>
-                </div>
-                <div className="bg-[var(--accent-color)] text-white py-3 px-4 mt-3 rounded-md font-semibold text-lg flex justify-between">
-                  <span>Total Amount</span>
-                  <span>₹{invoice.total || invoice.billedAmount}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="pt-4 border-t border-gray-200">
-            <div className="mb-4">
-              <h4 className="text-xs font-semibold text-gray-700 mb-2">Terms & Conditions</h4>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Payment is due within 30 days of invoice date. Late payments may incur additional
-                charges. For any queries regarding this invoice, please contact us at
-                billing@digihealth.com
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-medium text-[var(--accent-color)] mb-1">
-                Thank you for choosing DigiHealth for your healthcare needs
-              </p>
-              <p className="text-xs text-gray-500">
-                contact@digihealth.com | +91 98765 43210
-              </p>
-            </div>
-          </div>
-
-          {/* Actions */}
-          {showActions && (
-            <div className="no-print mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-3 justify-center">
-              <button
-                onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700 border text-sm"
-              >
-                <Printer className="w-4 h-4" /> Print
-              </button>
-              {invoice.balance > 0 && (
-                <button
-                  onClick={handlePay}
-                  className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 text-white rounded-lg transition-colors text-sm"
-                >
-                  <CreditCard className="w-4 h-4" /> Pay ₹{invoice.balance}
-                </button>
-              )}
-            </div>
-          )}
         </div>
+
+        {/* Invoice and Patient Details */}
+        <div className="grid grid-cols-2 gap-8 mb-6">
+          <div>
+            <h3 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide border-b border-gray-200 pb-1">
+              Invoice Details
+            </h3>
+            <div className="space-y-2">
+              <div className="flex items-center text-sm">
+                <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+                <span>Date: {invoice.date}</span>
+              </div>
+              <div className="flex items-center text-sm">
+                <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+                <span>
+                  Due:{" "}
+                  {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex items-center text-sm">
+                <Stethoscope className="w-4 h-4 mr-2 text-gray-500" />
+                <span>Doctor: {invoice.doctorName}</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h3 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide border-b border-gray-200 pb-1">
+              Patient Information
+            </h3>
+            <div className="space-y-2">
+              <div className="flex items-center text-sm">
+                <User className="w-4 h-4 mr-2 text-gray-500" />
+                <span className="font-medium">{invoice.patientName}</span>
+              </div>
+              <div className="flex items-center text-sm">
+                <Mail className="w-4 h-4 mr-2 text-gray-500" />
+                <span>{invoice.patientEmail}</span>
+              </div>
+              <div className="flex items-center text-sm">
+                <Phone className="w-4 h-4 mr-2 text-gray-500" />
+                <span>{invoice.patientPhone}</span>
+              </div>
+              <div className="flex items-center text-sm">
+                <MapPin className="w-4 h-4 mr-2 text-gray-500" />
+                <span>{invoice.patientAddress}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Invoice Items Table */}
+        <div className="mb-6">
+          <table className="w-full border-collapse border border-gray-200 text-sm">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="border border-gray-200 px-4 py-3 text-left font-semibold">
+                  Description
+                </th>
+                <th className="border border-gray-200 px-4 py-3 text-right font-semibold">
+                  Unit Cost
+                </th>
+                <th className="border border-gray-200 px-4 py-3 text-right font-semibold">
+                  Qty
+                </th>
+                <th className="border border-gray-200 px-4 py-3 text-right font-semibold">
+                  Amount
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoice.items.map((item, index) => (
+                <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                  <td className="border border-gray-200 px-4 py-3">{item.description}</td>
+                  <td className="border border-gray-200 px-4 py-3 text-right font-medium">
+                    ₹{item.cost}
+                  </td>
+                  <td className="border border-gray-200 px-4 py-3 text-right font-medium">
+                    {item.quantity}
+                  </td>
+                  <td className="border border-gray-200 px-4 py-3 text-right font-medium">
+                    ₹{item.amount}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Invoice Totals */}
+        <div className="flex justify-end mb-6">
+          <div className="w-72">
+            <div className="space-y-2">
+              <div className="flex justify-between py-1 text-sm border-b border-gray-100">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="font-medium">
+                  ₹{invoice.subtotal || invoice.billedAmount}
+                </span>
+              </div>
+              <div className="flex justify-between py-1 text-sm border-b border-gray-100">
+                <span className="text-gray-600">Discount</span>
+                <span className="font-medium">₹{invoice.discount}</span>
+              </div>
+              <div className="flex justify-between py-1 text-sm border-b border-gray-100">
+                <span className="text-gray-600">Tax</span>
+                <span className="font-medium">₹{invoice.tax}</span>
+              </div>
+              <div className="bg-[var(--accent-color)] text-white py-3 px-4 mt-3 rounded-md font-semibold text-lg flex justify-between">
+                <span>Total Amount</span>
+                <span>₹{invoice.total || invoice.billedAmount}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="pt-4 border-t border-gray-200">
+          <div className="mb-4">
+            <h4 className="text-xs font-semibold text-gray-700 mb-2">Terms & Conditions</h4>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Payment is due within 30 days of invoice date. Late payments may incur additional
+              charges. For any queries regarding this invoice, please contact us at
+              billing@digihealth.com
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-[var(--accent-color)] mb-1">
+              Thank you for choosing DigiHealth for your healthcare needs
+            </p>
+            <p className="text-xs text-gray-500">
+              contact@digihealth.com | +91 98765 43210
+            </p>
+          </div>
+        </div>
+
+        {/* Actions */}
+        {showActions && (
+          <div className="no-print mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-3 justify-center">
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700 border text-sm"
+            >
+              <Printer className="w-4 h-4" /> Print
+            </button>
+            {invoice.balance > 0 && (
+              <button
+                onClick={handlePay}
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 text-white rounded-lg transition-colors text-sm"
+              >
+                <CreditCard className="w-4 h-4" /> Pay ₹{invoice.balance}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </>
   );

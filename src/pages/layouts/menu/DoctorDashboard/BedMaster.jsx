@@ -58,20 +58,6 @@ const BedMaster = () => {
   const [selectedWardForRoom, setSelectedWardForRoom] = useState(null);
   const [bedCount, setBedCount] = useState(1);
 
-  const fallbackDepartments = [
-    { id: "fallback-1", name: "Cardiology", specializationId: "fallback-1" },
-    { id: "fallback-2", name: "Neurology", specializationId: "fallback-2" },
-    { id: "fallback-3", name: "Orthopedics", specializationId: "fallback-3" },
-    { id: "fallback-4", name: "Pediatrics", specializationId: "fallback-4" },
-    { id: "fallback-5", name: "Oncology", specializationId: "fallback-5" },
-    { id: "fallback-6", name: "Gastroenterology", specializationId: "fallback-6" },
-    { id: "fallback-7", name: "Dermatology", specializationId: "fallback-7" },
-    { id: "fallback-8", name: "Psychiatry", specializationId: "fallback-8" },
-    { id: "fallback-9", name: "Urology", specializationId: "fallback-9" },
-    { id: "fallback-10", name: "Endocrinology", specializationId: "fallback-10" },
-    { id: "fallback-11", name: "Ophthalmology", specializationId: "fallback-11" },
-  ];
-
   const steps = [
     { id: 0, title: "Department Setup", icon: Building, description: "Create and manage hospital departments", color: "text-[var(--primary-color)]" },
     { id: 1, title: "Ward Creation", icon: Building2, description: "Set up wards within departments", color: "text-purple-600" },
@@ -118,11 +104,13 @@ const BedMaster = () => {
     try {
       const response = await getAllSpecializations();
       const data = response.data?.data || response.data || [];
-      setSpecializations(Array.isArray(data) ? data : fallbackDepartments);
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid data format");
+      }
+      setSpecializations(data);
     } catch (error) {
-      setSpecializationError("Failed to load specializations");
-      toast.error("Failed to load specializations, using fallback options.");
-      setSpecializations(fallbackDepartments);
+      setSpecializationError("Failed to load specializations. Please check your connection or try again later.");
+      toast.error("Failed to load specializations. Please check your connection or try again later.");
     } finally {
       setLoadingSpecializations(false);
     }
@@ -818,7 +806,6 @@ const BedMaster = () => {
         status: "Active",
       };
     });
-
     const columns = [
       { header: "Department", accessor: "department" },
       { header: "Ward", accessor: "ward" },
@@ -827,8 +814,7 @@ const BedMaster = () => {
       { header: "Occupied", accessor: "occupied" },
       { header: "Available", accessor: "available" },
     ];
-
-      return (
+    return (
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -840,27 +826,24 @@ const BedMaster = () => {
             Review & Save
           </h2>
         </div>
-
         {summaryData.length > 0 && (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-  <h3 className="text-base sm:text-lg font-semibold pt-4 sm:pt-6 px-4 sm:px-6 pb-2">
-    Data Summary
-  </h3>
-  <div className="px-4 sm:px-6 pb-4">
-    <DynamicTable
-      columns={columns}
-      data={summaryData}
-      showSearchBar={false}
-      showFilters={false}
-      showTabs={false}
-      showPagination={false}
-      title=""
-    />
-  </div>
-</div>
-
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <h3 className="text-base sm:text-lg font-semibold pt-4 sm:pt-6 px-4 sm:px-6 pb-2">
+              Data Summary
+            </h3>
+            <div className="px-4 sm:px-6 pb-4">
+              <DynamicTable
+                columns={columns}
+                data={summaryData}
+                showSearchBar={false}
+                showFilters={false}
+                showTabs={false}
+                showPagination={false}
+                title=""
+              />
+            </div>
+          </div>
         )}
-
         <div className="flex justify-center">
           <button
             onClick={handleSave}
@@ -871,7 +854,6 @@ const BedMaster = () => {
         </div>
       </motion.div>
     );
-  
   };
 
   const renderStepContent = () => {

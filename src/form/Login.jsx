@@ -1,283 +1,199 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { setUser, loginUser, sendLoginOTP, verifyOTP } from "../context-api/authSlice";
-import toast from 'react-hot-toast';
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { loginUser, sendLoginOTP, verifyOTP, clearError } from "../context-api/authSlice";
 
 const Login = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const dispatch = useDispatch();
-  const { loading, error, isOTPSent } = useSelector(state => state.auth || {});
+  const { loading, error, isOTPSent, isAuthenticated, user } = useSelector((state) => state.auth || {});
+
   const [loginMode, setLoginMode] = useState("password");
-  const [phoneOrEmail, setPhoneOrEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [localError, setLocalError] = useState("");
-  const [localLoading, setLocalLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const predefinedUsers = [
-    { phone: "9067800201", email: "doctor@mail.com", password: "Doctor@123", userType: "doctor" },
-    { phone: "9370672873", email: "lab@mail.com", password: "Lab@123", userType: "lab" },
-    { phone: "9876543210", email: "hospital@mail.com", password: "Hospital@123", userType: "hospital" },
-    { phone: "9999999999", email: "superadmin@mail.com", password: "SuperAdmin@123", userType: "superadmin" },
-  ];
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
 
   useEffect(() => {
-    localStorage.removeItem("user");
-    
-    // Load remembered email on component mount
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (rememberedEmail) {
-      setPhoneOrEmail(rememberedEmail);
-      setRememberMe(true);
+    if (isAuthenticated && user) {
+      routeToDashboard(user.userType);
     }
-
-    // Show success message if coming from password reset
-    if (location.state?.message) {
-      toast.success(location.state.message, { duration: 5000 });
-      if (location.state.email) {
-        setPhoneOrEmail(location.state.email);
-      }
-    }
-  }, [location]);
-
-  // Handle remember me functionality
-  const handleRememberMeChange = (checked) => {
-    setRememberMe(checked);
-    if (checked && phoneOrEmail) {
-      localStorage.setItem('rememberedEmail', phoneOrEmail);
-    } else {
-      localStorage.removeItem('rememberedEmail');
-    }
-  };
-
-  // Update remembered email when email changes
-  useEffect(() => {
-    if (rememberMe && phoneOrEmail) {
-      localStorage.setItem('rememberedEmail', phoneOrEmail);
-    }
-  }, [phoneOrEmail, rememberMe]);
+  }, [isAuthenticated, user, navigate]);
 
   const routeToDashboard = (userType) => {
-    if (userType === "superadmin") navigate("/superadmindashboard");
-    else if (userType === "doctor") navigate("/doctordashboard");
-    else if (userType === "lab") navigate("/labdashboard");
-    else if (userType === "hospital") navigate("/hospitaldashboard");
-    else if (userType === "patient") navigate("/patientdashboard");
-    else navigate("/");
+    const dashboardRoutes = {
+      superadmin: "/superadmindashboard",
+      doctor: "/doctordashboard",
+      freelancer: "/doctordashboard",
+      lab: "/labdashboard",
+      hospital: "/hospitaldashboard",
+      patient: "/patientdashboard",
+    };
+    const route = dashboardRoutes[userType?.toLowerCase()] || "/patientdashboard";
+    navigate(route, { replace: true });
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLocalError("");
-    setLocalLoading(true);
+    dispatch(clearError());
+
     try {
       if (loginMode === "password") {
-        const resultAction = await dispatch(loginUser({
-          email: phoneOrEmail,
-          password
-        }));
+        const resultAction = await dispatch(
+          loginUser({
+            identifier,
+            password,
+          })
+        );
 
         if (loginUser.fulfilled.match(resultAction)) {
           const userType = resultAction.payload.userType;
-          routeToDashboard(userType);
-        } else {
-          const user = predefinedUsers.find(u =>
-            (u.phone === phoneOrEmail || u.email === phoneOrEmail) && u.password === password
-          );
-
-          if (user) {
-            localStorage.setItem("user", JSON.stringify(user));
-            localStorage.setItem("token", "dummyToken");
-            dispatch(setUser(user));
-            toast.success('Login successful!');
-            routeToDashboard(user.userType);
-          } else {
-            setLocalError("Invalid credentials");
-          }
+          setTimeout(() => {
+            routeToDashboard(userType);
+          }, 100);
         }
       } else {
-        if (otp === "123456" || otp === "654321") {
-          try {
-            const resultAction = await dispatch(verifyOTP({
-              phone: phoneOrEmail,
-              otp,
-              type: "login"
-            }));
+        const resultAction = await dispatch(
+          verifyOTP({
+            identifier,
+            otp,
+            type: "login",
+          })
+        );
 
-            if (verifyOTP.fulfilled.match(resultAction)) {
-              const userType = resultAction.payload.userType;
-              routeToDashboard(userType);
-            } else {
-              const userByPhone = predefinedUsers.find(u => u.phone === phoneOrEmail);
-              if (userByPhone) {
-                localStorage.setItem("user", JSON.stringify(userByPhone));
-                localStorage.setItem("token", "dummyToken");
-                dispatch(setUser(userByPhone));
-                toast.success('Login successful!');
-                routeToDashboard(userByPhone.userType);
-              } else {
-                setLocalError("User not found");
-              }
-            }
-          } catch (err) {
-            const userByPhone = predefinedUsers.find(u => u.phone === phoneOrEmail);
-            if (userByPhone) {
-              localStorage.setItem("user", JSON.stringify(userByPhone));
-              localStorage.setItem("token", "dummyToken");
-              dispatch(setUser(userByPhone));
-              toast.success('Login successful!');
-              routeToDashboard(userByPhone.userType);
-            } else {
-              setLocalError("User not found");
-            }
-          }
-        } else {
-          setLocalError("Invalid OTP");
+        if (verifyOTP.fulfilled.match(resultAction)) {
+          const userType = resultAction.payload.userType;
+          setTimeout(() => {
+            routeToDashboard(userType);
+          }, 100);
         }
       }
     } catch (err) {
-      setLocalError(err.message || "Login failed. Please check your credentials.");
-    } finally {
-      setLocalLoading(false);
+      console.error("Login error:", err);
     }
   };
 
   const handleSendOtp = async () => {
-    setLocalError("");
-    setLocalLoading(true);
+    if (!identifier.trim()) return;
+    dispatch(clearError());
 
     try {
-      const resultAction = await dispatch(sendLoginOTP(phoneOrEmail));
-
+      const resultAction = await dispatch(sendLoginOTP(identifier));
       if (sendLoginOTP.fulfilled.match(resultAction)) {
         setOtpSent(true);
-        toast.success('OTP sent successfully!');
-      } else {
-        const userByPhone = predefinedUsers.find(u => u.phone === phoneOrEmail);
-        if (userByPhone) {
-          setOtpSent(true);
-          toast.success('OTP sent successfully!');
-        } else {
-          setLocalError("User not found");
-        }
       }
-    } catch {
-      const userByPhone = predefinedUsers.find(u => u.phone === phoneOrEmail);
-      if (userByPhone) {
-        setOtpSent(true);
-        toast.success('OTP sent successfully!');
-      } else {
-        setLocalError("Failed to send OTP.");
-      }
-    } finally {
-      setLocalLoading(false);
+    } catch (err) {
+      console.error("Send OTP error:", err);
     }
   };
 
+  const handleModeChange = (mode) => {
+    setLoginMode(mode);
+    setOtpSent(false);
+    setOtp("");
+    dispatch(clearError());
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#f5f9fc] p-4">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
       <div className="flex flex-col md:flex-row items-center w-full max-w-4xl bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
         {/* Form Section */}
         <div className="w-full md:w-1/2 mb-6 md:mb-0 md:pr-4">
-          <h2 className="h2-heading text-center mb-6">Login to Your Account</h2>
+          <h2 className="h2-heading text-center mb-6">
+            Login to Your Account
+          </h2>
 
           {/* Login Mode Toggle */}
-          <div className="flex justify-center mb-6">
-            <button
-              type="button"
-              className={`px-4 py-2 md:px-6 font-semibold focus:outline-none ${
-                loginMode === "password"
-                  ? "border-b-2 border-[var(--accent-color)] text-[var(--accent-color)]"
-                  : "text-gray-500"
-              }`}
-              onClick={() => {
-                setLoginMode("password");
-                setOtpSent(false);
-                setOtp("");
-                setLocalError("");
-              }}
-            >
-              Password
-            </button>
-            <button
-              type="button"
-              className={`px-4 py-2 md:px-6 font-semibold focus:outline-none ${
-                loginMode === "otp"
-                  ? "border-b-2 border-[var(--accent-color)] text-[var(--accent-color)]"
-                  : "text-gray-500"
-              }`}
-              onClick={() => {
-                setLoginMode("otp");
-                setOtpSent(false);
-                setOtp("");
-                setLocalError("");
-              }}
-            >
-              OTP
-            </button>
-          </div>
+<div className="flex justify-center mb-6 p-1">
+  <button
+    type="button"
+    className={`px-4 py-2 md:px-6 font-semibold transition-all border-b-2 ${
+      loginMode === "password"
+        ? "border-[#01D48C] text-[#01D48C]"
+        : "border-transparent text-gray-600 hover:bg-gray-100"
+    }`}
+    onClick={() => handleModeChange("password")}
+  >
+    Password
+  </button>
+  <button
+    type="button"
+    className={`px-4 py-2 md:px-6 font-semibold transition-all border-b-2 ${
+      loginMode === "otp"
+        ? "border-[#01D48C] text-[#01D48C]"
+        : "border-transparent text-gray-600 hover:bg-gray-100"
+    }`}
+    onClick={() => handleModeChange("otp")}
+  >
+    OTP
+  </button>
+</div>
+
 
           {/* Password Login */}
           {loginMode === "password" && (
             <form onSubmit={handleLogin}>
-              <div className="floating-input relative w-full mb-6" data-placeholder="Phone or Email">
+              <div className="relative w-full mb-6">
                 <input
                   type="text"
-                  value={phoneOrEmail}
-                  onChange={(e) => setPhoneOrEmail(e.target.value)}
-                  className="input-field peer"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="input-field"
+                  placeholder="Email or Phone"
+                  required
                 />
               </div>
-              <div className="floating-input relative w-full mb-6" data-placeholder="Password">
+
+              <div className="relative w-full mb-6">
                 <input
                   type={showPassword ? "text" : "password"}
-                  id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-field peer pr-10"
+                  className="input-field pr-12"
+                  placeholder="Password"
+                  required
                 />
                 <button
                   type="button"
-                  tabIndex={-1}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xl text-gray-400 hover:text-[var(--primary-color)] focus:outline-none"
-                  onClick={() => setShowPassword(prev => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xl text-gray-400 hover:text-[#0E1630] focus:outline-none"
+                  onClick={() => setShowPassword((prev) => !prev)}
                 >
                   {showPassword ? <FiEye /> : <FiEyeOff />}
                 </button>
               </div>
 
-              {(error || localError) && <p className="error-text mb-4">{error || localError}</p>}
+              {error && (
+                <p className="error-text">{error}</p>
+              )}
 
               <div className="flex items-center justify-between mb-6">
                 <label className="flex items-center space-x-2 text-sm text-gray-700">
                   <input
                     type="checkbox"
                     checked={rememberMe}
-                    onChange={(e) => handleRememberMeChange(e.target.checked)}
-                    className="accent-[var(--accent-color)]"
+                    onChange={() => setRememberMe(!rememberMe)}
+                  
                   />
                   <span>Remember me</span>
                 </label>
-                <span 
-                  className="text-sm text-[var(--accent-color)] hover:underline cursor-pointer"
-                  onClick={() => navigate('/forgot-password')}
-                >
+                <span className="text-[var(--accent-color)] hover:underline cursor-pointer">
                   Forgot Password?
                 </span>
               </div>
 
               <button
                 type="submit"
-                className={`btn btn-primary w-full${(loading || localLoading) ? " btn-disabled" : ""}`}
-                disabled={loading || localLoading}
+                className={`btn btn-primary w-full ${loading ? "btn-disabled" : ""}`}
+                disabled={loading}
               >
-                {(loading || localLoading) ? "Logging in..." : "Login"}
+                {loading ? "Logging in..." : "Login"}
               </button>
             </form>
           )}
@@ -285,64 +201,72 @@ const Login = () => {
           {/* OTP Login */}
           {loginMode === "otp" && (
             <>
-              <div className="floating-input relative w-full mb-6" data-placeholder="Phone Number">
+              <div className="relative w-full mb-6">
                 <input
-                  type="tel"
-                  value={phoneOrEmail}
-                  onChange={(e) => setPhoneOrEmail(e.target.value)}
-                  className="input-field peer"
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="input-field"
+                  placeholder="Phone Number or Email"
+                  required
                 />
               </div>
 
               {!otpSent && (
                 <button
                   type="button"
-                  className="btn btn-primary w-full mb-6"
+                  className={`btn btn-primary w-full mb-6 ${loading || !identifier ? "btn-disabled" : ""}`}
                   onClick={handleSendOtp}
-                  disabled={localLoading || !phoneOrEmail}
+                  disabled={loading || !identifier}
                 >
-                  {localLoading ? "Sending OTP..." : "Send OTP"}
+                  {loading ? "Sending OTP..." : "Send OTP"}
                 </button>
               )}
 
               {otpSent && (
                 <form onSubmit={handleLogin}>
-                  <div className="floating-input relative w-full mb-6" data-placeholder="Enter OTP">
+                  <div className="relative w-full mb-6">
                     <input
                       type="text"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
-                      className="input-field peer"
+                      className="input-field"
                       maxLength={6}
+                      placeholder="Enter OTP"
+                      required
                     />
                   </div>
 
-                  {(error || localError) && <p className="error-text mb-4">{error || localError}</p>}
+                  {error && (
+                    <p className="error-text">{error}</p>
+                  )}
 
                   <div className="flex items-center justify-between mb-6">
                     <label className="flex items-center space-x-2 text-sm text-gray-700">
                       <input
                         type="checkbox"
                         checked={rememberMe}
-                        onChange={(e) => handleRememberMeChange(e.target.checked)}
-                        className="accent-[var(--accent-color)]"
+                        onChange={() => setRememberMe(!rememberMe)}
+                        className="accent-[#0E1630]"
                       />
                       <span>Remember me</span>
                     </label>
-                    <span 
-                      className="text-sm text-[var(--accent-color)] hover:underline cursor-pointer"
-                      onClick={() => navigate('/forgot-password')}
+                    <button
+                      type="button"
+                      className="text-sm text-[#0E1630] hover:underline"
+                      onClick={handleSendOtp}
+                      disabled={loading}
                     >
-                      Forgot Password?
-                    </span>
+                      Resend OTP
+                    </button>
                   </div>
 
                   <button
                     type="submit"
-                    className={`btn btn-primary w-full${(loading || localLoading) ? " btn-disabled" : ""}`}
-                    disabled={(loading || localLoading) || !otp}
+                    className={`btn btn-primary w-full ${loading || !otp ? "btn-disabled" : ""}`}
+                    disabled={loading || !otp}
                   >
-                    {(loading || localLoading) ? "Verifying..." : "Verify OTP & Login"}
+                    {loading ? "Verifying..." : "Verify OTP & Login"}
                   </button>
                 </form>
               )}
@@ -352,7 +276,7 @@ const Login = () => {
           <p className="text-sm text-gray-600 text-center mt-6">
             Don't have an account?{" "}
             <span
-              className="text-[var(--accent-color)] hover:underline cursor-pointer"
+              className="text-[var(--accent-color)] hover:underline cursor-pointer font-semibold"
               onClick={() => navigate("/register")}
             >
               Register
@@ -360,12 +284,12 @@ const Login = () => {
           </p>
         </div>
 
-        {/* Image Section (hidden on mobile) */}
+        {/* Image Section */}
         <div className="w-full md:w-1/2 md:pl-4 hidden md:block">
           <img
             src="https://img.freepik.com/premium-vector/doctor-examines-report-disease-medical-checkup-annual-doctor-health-test-appointment-tiny-person-concept-preventive-examination-patient-consults-hospital-specialist-vector-illustration_419010-581.jpg"
             alt="Login illustration"
-            className="w-full h-auto rounded-xl animate-slideIn"
+            className="w-full h-auto rounded-xl"
           />
         </div>
       </div>

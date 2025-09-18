@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
@@ -7,16 +8,13 @@ import {
   Outlet,
 } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { setUser } from "./context-api/authSlice";
+import { initializeAuth } from "./context-api/authSlice";
 
 // Public Pages
 import Login from "./form/Login";
 import RegisterSelect from "./form/RegisterSelect";
 import Registration from "./form/Registration";
 import Verification from "./form/Verification";
-import ForgotPassword from "./form/ForgotPassword";
-import VerifyOtp from "./form/VerifyOtp";
-import ResetPassword from "./form/ResetPassword";
 import Healthcard from "./components/Healthcard";
 import BookApp from "./components/BookApp";
 import Home from "./pages/Home";
@@ -34,7 +32,7 @@ import LabRoutes from "./pages/layouts/menu/LabDashboard/Ldroutes";
 import LabDashboard from "./pages/layouts/menu/LabDashboard/LabDashboard";
 import HospitalRoutes from "./pages/layouts/menu/HospitalDashboard/Hdroutes";
 import HospitalDashboard from "./pages/layouts/menu/HospitalDashboard/Dashboard";
-
+import Dashboard from "./pages/layouts/menu/PatientDashboard/Dashboard";
 // Shared Components
 import StaffManagement from "./components/AdminModule";
 import PharmacyManagement from "./components/PharmacyModule";
@@ -46,91 +44,118 @@ import TokenDisplay from "./components/Token-Display";
 import BedRoomList from "./pages/layouts/menu/DoctorDashboard/BedRoomList"
 import ImageAnnotationCanvas from "./components/microcomponents/ImageAnnotationCanvas";
 import BedMaster from "./pages/layouts/menu/DoctorDashboard/BedMaster";
-
 // Toast
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import InitialAssessmentForm from "./components/InitialAssesment";
-// import PaymentGatewayPage from "./components/microcomponents/PaymentGatway";
 
 // ---------------------- Helpers ----------------------
 
-// ✅ Parse user from localStorage
-const getUser = () => {
-  const user = localStorage.getItem("user");
-  return user ? JSON.parse(user) : null;
-};
-
 // ✅ PrivateRoute with allowed userType
-const PrivateRoute = ({ allowedType }) => {
-  const user = getUser();
-  if (!user) return <Navigate to="/login" />;
-  if (allowedType && user.userType !== allowedType) return <Navigate to="/redirect" />;
+const PrivateRoute = ({ allowedTypes }) => {
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  
+  console.log('PrivateRoute - Auth state:', { isAuthenticated, user, allowedTypes });
+  
+  if (!isAuthenticated || !user) {
+    console.log('PrivateRoute - Not authenticated, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+  
+  const userType = user.userType?.toLowerCase();
+  console.log('PrivateRoute - User type:', userType);
+  
+  if (allowedTypes && !allowedTypes.includes(userType)) {
+    console.log('PrivateRoute - User type not allowed, redirecting to appropriate dashboard');
+    // Redirect to appropriate dashboard based on user type
+    const redirectRoutes = {
+      patient: '/patientdashboard',
+      doctor: '/doctordashboard',
+      freelancer: '/doctordashboard',
+      hospital: '/hospitaldashboard',
+      lab: '/labdashboard',
+      superadmin: '/superadmindashboard'
+    };
+    return <Navigate to={redirectRoutes[userType] || '/login'} replace />;
+  }
+  
   return <Outlet />;
 };
 
 // ✅ Redirect to correct dashboard based on role
 const RoleRedirect = () => {
-  const user = getUser();
-  if (!user) return <Navigate to="/login" />;
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  
+  console.log('RoleRedirect - Auth state:', { isAuthenticated, user });
+  
+  if (!isAuthenticated || !user) {
+    console.log('RoleRedirect - Not authenticated, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
 
-  switch (user.userType) {
+  const userType = user.userType?.toLowerCase();
+  console.log('RoleRedirect - Redirecting based on user type:', userType);
+
+  switch (userType) {
     case "doctor":
-      return <Navigate to="/doctordashboard" />;
+      return <Navigate to="/doctordashboard" replace />;
     case "lab":
-      return <Navigate to="/labdashboard" />;
+      return <Navigate to="/labdashboard" replace />;
     case "hospital":
-      return <Navigate to="/hospitaldashboard" />;
+      return <Navigate to="/hospitaldashboard" replace />;
     case "freelancer":
-      return <Navigate to="/freelancerdashboard" />;
+      return <Navigate to="/doctordashboard" replace />;
     case "superadmin":
-      return <Navigate to="/superadmindashboard" />;
+      return <Navigate to="/superadmindashboard" replace />;
     case "patient":
-      return <Navigate to="/patientdashboard" />;
+      return <Navigate to="/patientdashboard" replace />;
     default:
-      return <Navigate to="/" />;
+      console.log('RoleRedirect - Unknown user type, redirecting to login');
+      return <Navigate to="/login" replace />;
   }
 };
 
 const App = () => {
   const [tokens, setTokens] = useState([]);
-
   const handleTokenGenerated = (newToken) =>
     setTokens((prev) => [...prev, newToken]);
   const handleTokenUpdate = (updatedTokens) => setTokens(updatedTokens);
   const getNextTokenNumber = () => tokens.length + 1;
-
   const dispatch = useDispatch();
-
+  
   // ✅ Redux state
-  const { isAuthenticated, user } = useSelector((s) => s.auth);
-  const [loading, setLoading] = useState(true);
+  const { isAuthenticated, user, loading } = useSelector((state) => state.auth);
+  const [appLoading, setAppLoading] = useState(true);
 
   useEffect(() => {
-    // ✅ On app load, restore user from localStorage (for all roles)
-    const storedUser = localStorage.getItem("user");
-    const storedToken = localStorage.getItem("token");
-
-    if (storedUser && storedToken) {
-      dispatch(setUser(JSON.parse(storedUser))); // ✅ rehydrate Redux for patient
-    }
-    setLoading(false);
+    console.log('App - Initializing auth');
+    // ✅ On app load, restore user from localStorage
+    dispatch(initializeAuth());
+    setAppLoading(false);
   }, [dispatch]);
 
-  // ✅ Common wrapper for requiring authentication
-  const RequireAuth = ({ children }) =>
-    !getUser() ? <Navigate to="/login" replace /> : children;
+  useEffect(() => {
+    console.log('App - Auth state changed:', { isAuthenticated, user });
+  }, [isAuthenticated, user]);
 
-  if (loading)
-    return <div className="text-center mt-20 text-lg">Loading...</div>;
+  if (appLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-lg mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ✅ Shared module routes for all dashboards
   const sharedRoutes = (
     <>
-   <Route
-      path="specialization"
-      element={<InitialAssessmentForm />}
-    />
+      <Route
+        path="specialization"
+        element={<InitialAssessmentForm />}
+      />
       <Route path="dr-admin" element={<StaffManagement />} />
       <Route path="pharmacymodule" element={<PharmacyManagement />} />
       <Route path="labmodule" element={<LabManagement />} />
@@ -157,7 +182,7 @@ const App = () => {
         path="tokendisplay"
         element={<TokenDisplay tokens={tokens} />}
       />
-        <Route path="bedroommanagement" element={<BedRoomList/>}/>
+      <Route path="bedroommanagement" element={<BedRoomList/>}/>
     </>
   );
 
@@ -170,75 +195,63 @@ const App = () => {
         <Route path="/registration" element={<Registration />} />
         <Route path="/verification" element={<Verification />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/verify-otp" element={<VerifyOtp />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/healthcard" element={<Healthcard />} />
         <Route path="/bookconsultation" element={<BookApp />} />
-         {/* <Route path="/paymentgateway" element={<PaymentGatewayPage />} /> */}
         <Route path="/medical-records" element={<MedicalRecords />} />
         <Route path="/medical-record-details" element={<MedicalRecordDetails />} />
-
-
+        
         {/* ✅ Redirect Based on Role */}
         <Route path="/redirect" element={<RoleRedirect />} />
-
-        {/* ✅ Patient Dashboard (any authenticated patient) */}
-        <Route
-          path="/patientdashboard/*"
-          element={
-            <RequireAuth>
-              <DashboardLayout />
-            </RequireAuth>
-          }
-        >
-          <Route path="*" element={<PdashboardRoutes />} />
+        
+        {/* ✅ Patient Dashboard */}
+        <Route element={<PrivateRoute allowedTypes={["patient"]} />}>
+          <Route path="/patientdashboard" element={<DashboardLayout />}>
+     <Route index element={<Dashboard />} />
+            <Route path="*" element={<PdashboardRoutes />} />
+          </Route>
         </Route>
-
+        
         {/* ✅ Doctor Dashboard */}
-        <Route element={<PrivateRoute allowedType="doctor" />}>
+        <Route element={<PrivateRoute allowedTypes={["doctor", "freelancer"]} />}>
           <Route path="/doctordashboard" element={<DashboardLayout />}>
             <Route index element={<Overview />} />
             {sharedRoutes}
             <Route path="template" element={<ImageAnnotationCanvas />} />
-            <Route path="*" element={<DrRoutes />} />
-                       <Route path="bedroommanagement/bedmaster" element={<BedMaster />} />
+            <Route path="bedroommanagement/bedmaster" element={<BedMaster />} />
 
+            <Route path="*" element={<DrRoutes />} />
           </Route>
         </Route>
-
+        
         {/* ✅ Hospital Dashboard */}
-        <Route element={<PrivateRoute allowedType="hospital" />}>
+        <Route element={<PrivateRoute allowedTypes={["hospital"]} />}>
           <Route path="/hospitaldashboard" element={<DashboardLayout />}>
             <Route index element={<HospitalDashboard />} />
             {sharedRoutes}
             <Route path="*" element={<HospitalRoutes />} />
           </Route>
         </Route>
-
+        
         {/* ✅ Lab Dashboard */}
-        <Route element={<PrivateRoute allowedType="lab" />}>
+        <Route element={<PrivateRoute allowedTypes={["lab"]} />}>
           <Route path="/labdashboard" element={<DashboardLayout />}>
             <Route index element={<LabDashboard />} />
             <Route path="*" element={<LabRoutes />} />
           </Route>
         </Route>
-
+        
         {/* ✅ Super Admin Dashboard */}
-        <Route element={<PrivateRoute allowedType="superadmin" />}>
-          <Route
-            path="/superadmindashboard"
-            element={<DashboardLayout />}
-          >
+        <Route element={<PrivateRoute allowedTypes={["superadmin"]} />}>
+          <Route path="/superadmindashboard" element={<DashboardLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="*" element={<AdminRoutes />} />
           </Route>
         </Route>
-
+        
         {/* ✅ Fallback Route */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-
+      
       <ToastContainer position="top-right" autoClose={3000} />
     </Router>
   );

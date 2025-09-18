@@ -1,136 +1,181 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosInstance';
 
-const BASE_URL = 'https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users';
+const BASE_URL = 'http://localhost:8080/api/auth';
+const MOCK_OTP = "123456";
 
-// Register User
+// Helper function to simulate API delay
+const mockApiDelay = () => new Promise(resolve => setTimeout(resolve, 1000));
+
+// Register User (unchanged)
 export const registerUser = createAsyncThunk(
   'auth/registerUser',
-  async (userData, { rejectWithValue }) => {
+  async (formData, { rejectWithValue }) => {
     try {
-      const userWithOtp = {
-        ...userData,
-        registerOTP: '123456',
-        loginOTP: null,
-        isVerified: false
+      const userType = formData.get('userType');
+      if (!userType) {
+        return rejectWithValue('User type is required');
+      }
+      const endpoint = `${BASE_URL}/${userType}/register`;
+      const response = await axiosInstance.post(endpoint, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return {
+        ...response.data,
+        userType,
+        phone: formData.get('phone'),
+        email: formData.get('email')
       };
-      const response = await axios.post(BASE_URL, userWithOtp);
-      return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+      return rejectWithValue(
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Registration failed. Please try again.'
+      );
     }
   }
 );
-// Login with Email & Password
+
+// Login with Identifier & Password (unchanged)
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
-  async ({ email, password }, { rejectWithValue }) => {
+  async ({ identifier, password }, { rejectWithValue }) => {
     try {
-      const response = await axios.get(BASE_URL);
-      const user = response.data.find(
-        (u) => (u.email === email || u.phone === email) && u.password === password
-      );
+      const response = await axiosInstance.post(`${BASE_URL}/login`, {
+        identifier,
+        password
+      });
 
-      if (!user) {
-        return rejectWithValue('Invalid credentials');
-      }
-
-      const userWithToken = { ...user, token: 'mock-jwt-token-login' };
-      localStorage.setItem('user', JSON.stringify(userWithToken));
-      localStorage.setItem('token', userWithToken.token);
-      localStorage.setItem('email', user.email);
-      localStorage.setItem('userId', user.id);
-
-      return userWithToken;
-    } catch (error) {
-      return rejectWithValue('Login failed');
-    }
-  }
-);
-
-// Send Registration OTP
-export const sendOTP = createAsyncThunk(
-  'auth/sendOTP',
-  async (phone, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(BASE_URL);
-      const user = response.data.find((u) => u.phone === phone);
-      
-      if (!user) {
-        return rejectWithValue('User not found');
-      }
-
-      const updatedUser = { ...user, registerOTP: '123456' };
-      await axios.put(`${BASE_URL}/${user.id}`, updatedUser);
-
-      return { message: 'Registration OTP sent', otp: '123456' };
-    } catch (error) {
-      return rejectWithValue('Failed to send OTP');
-    }
-  }
-);
-
-// Send Login OTP
-export const sendLoginOTP = createAsyncThunk(
-  'auth/sendLoginOTP',
-  async (phone, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(BASE_URL);
-      const user = response.data.find((u) => u.phone === phone);
-      
-      if (!user) {
-        return rejectWithValue('User not found');
-      }
-
-      const updatedUser = { ...user, loginOTP: '654321' };
-      await axios.put(`${BASE_URL}/${user.id}`, updatedUser);
-
-      return { message: 'Login OTP sent', otp: '654321' };
-    } catch (error) {
-      return rejectWithValue('Failed to send OTP');
-    }
-  }
-);
-
-// Verify OTP
-export const verifyOTP = createAsyncThunk(
-  'auth/verifyOTP',
-  async ({ phone, otp, type }, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(BASE_URL);
-      const user = response.data.find((u) => u.phone === phone);
-      
-      if (!user) {
-        return rejectWithValue('User not found');
-      }
-
-      const isValid = (
-        (type === 'register' && user.registerOTP === otp) ||
-        (type === 'login' && user.loginOTP === otp)
-      );
-
-      if (!isValid) {
-        return rejectWithValue('Invalid OTP');
-      }
-
-      // Mark user as verified if registration OTP
-      if (type === 'register') {
-        const updatedUser = { ...user, isVerified: true };
-        await axios.put(`${BASE_URL}/${user.id}`, updatedUser);
-      }
+      const userData = response.data;
+      const normalizedUserType = userData.role ? userData.role.toLowerCase() : null;
 
       const userWithToken = {
-        ...user,
-        token: `mock-jwt-token-${type}-${Date.now()}`,
-        isVerified: true
+        ...userData,
+        userType: normalizedUserType,
+        role: userData.role,
+        identifier: userData.identifier || identifier,
+        isAuthenticated: true
       };
 
       localStorage.setItem('user', JSON.stringify(userWithToken));
       localStorage.setItem('token', userWithToken.token);
+      localStorage.setItem('identifier', identifier);
 
       return userWithToken;
     } catch (error) {
-      return rejectWithValue('OTP verification failed');
+      return rejectWithValue(
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Login failed. Please check your credentials.'
+      );
+    }
+  }
+);
+
+// Mock Send Registration OTP
+export const sendOTP = createAsyncThunk(
+  'auth/sendOTP',
+  async (identifier, { rejectWithValue }) => {
+    try {
+      await mockApiDelay();
+      console.log(`[MOCK] OTP sent to ${identifier}. Use "${MOCK_OTP}" for verification.`);
+
+      return {
+        success: true,
+        message: "OTP sent successfully",
+        data: {
+          sent: true,
+          identifier: identifier,
+          otpSentAt: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      return rejectWithValue('Failed to send OTP');
+    }
+  }
+);
+
+// Mock Send Login OTP
+export const sendLoginOTP = createAsyncThunk(
+  'auth/sendLoginOTP',
+  async (identifier, { rejectWithValue }) => {
+    try {
+      await mockApiDelay();
+      console.log(`[MOCK] Login OTP sent to ${identifier}. Use "${MOCK_OTP}" for verification.`);
+
+      return {
+        success: true,
+        message: "Login OTP sent successfully",
+        data: {
+          sent: true,
+          identifier: identifier,
+          otpSentAt: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      return rejectWithValue('Failed to send login OTP');
+    }
+  }
+);
+
+// Mock Verify OTP
+export const verifyOTP = createAsyncThunk(
+  'auth/verifyOTP',
+  async ({ identifier, otp, type, registrationData }, { rejectWithValue }) => {
+    try {
+      await mockApiDelay();
+
+      if (otp !== MOCK_OTP) {
+        return rejectWithValue(`Invalid OTP. Please use "${MOCK_OTP}" for testing.`);
+      }
+
+      // Create mock user data based on registration data
+      const isEmail = identifier.includes('@');
+      const mockUser = {
+        id: `mock-${Math.random().toString(36).substring(2, 9)}`,
+        name: registrationData?.get('name') || "Test User",
+        email: isEmail ? identifier : registrationData?.get('email'),
+        phone: !isEmail ? identifier : registrationData?.get('phone'),
+        role: registrationData?.get('userType')?.toUpperCase() || "USER",
+        userType: registrationData?.get('userType')?.toLowerCase() || "user",
+        token: `mock-token-${Math.random().toString(36).substring(2, 15)}`,
+        isVerified: true,
+        isAuthenticated: true,
+        identifier: identifier
+      };
+
+      // Store in localStorage
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      localStorage.setItem('token', mockUser.token);
+      localStorage.setItem('identifier', identifier);
+
+      console.log('[MOCK] OTP verification successful. User data:', mockUser);
+      return mockUser;
+    } catch (error) {
+      return rejectWithValue(
+        error.message || 'OTP verification failed'
+      );
+    }
+  }
+);
+
+// Get user profile (unchanged)
+export const getUserProfile = createAsyncThunk(
+  'auth/getUserProfile',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get(`${BASE_URL}/profile`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        'Failed to fetch user profile'
+      );
     }
   }
 );
@@ -138,13 +183,16 @@ export const verifyOTP = createAsyncThunk(
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: null,
+    user: JSON.parse(localStorage.getItem('user')) || null,
     loading: false,
     error: null,
     isOTPSent: false,
     isVerified: false,
-    isAuthenticated: false,
-    userType: null,
+    isAuthenticated: !!localStorage.getItem('token'),
+    userType: JSON.parse(localStorage.getItem('user'))?.userType || null,
+    registrationData: null,
+    token: localStorage.getItem('token') || null,
+    mockOTP: MOCK_OTP // Store mock OTP in state for reference
   },
   reducers: {
     resetAuthState: (state) => {
@@ -154,11 +202,15 @@ const authSlice = createSlice({
       state.isVerified = false;
       state.isAuthenticated = false;
       state.user = null;
+      state.registrationData = null;
+      state.token = null;
+      state.userType = null;
     },
     setUser: (state, action) => {
       state.user = action.payload;
       state.isAuthenticated = true;
       state.userType = action.payload.userType;
+      state.token = action.payload.token;
     },
     setUserType: (state, action) => {
       state.userType = action.payload;
@@ -167,31 +219,48 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.userType = null;
+      state.registrationData = null;
+      state.token = null;
+      state.isVerified = false;
+      state.isOTPSent = false;
       localStorage.removeItem('user');
       localStorage.removeItem('token');
-      localStorage.removeItem('email');
-      localStorage.removeItem('userId');
+      localStorage.removeItem('identifier');
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
+    initializeAuth: (state) => {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = localStorage.getItem('token');
+      if (user && token) {
+        const normalizedUserType = user.role ? user.role.toLowerCase() : user.userType;
+        state.user = { ...user, userType: normalizedUserType };
+        state.token = token;
+        state.userType = normalizedUserType;
+        state.isAuthenticated = true;
+        state.isVerified = true;
+      }
     },
   },
   extraReducers: (builder) => {
     builder
-      // Register
+      // Register cases
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        state.registrationData = action.payload;
         state.userType = action.payload.userType;
-        state.isOTPSent = true;
+        state.isOTPSent = false;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-
-      // Login
+      // Login cases
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -202,13 +271,13 @@ const authSlice = createSlice({
         state.userType = action.payload.userType;
         state.isVerified = true;
         state.isAuthenticated = true;
+        state.token = action.payload.token;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-
-      // Send OTP
+      // Send OTP cases
       .addCase(sendOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -216,13 +285,14 @@ const authSlice = createSlice({
       .addCase(sendOTP.fulfilled, (state) => {
         state.loading = false;
         state.isOTPSent = true;
+        state.error = null;
       })
       .addCase(sendOTP.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.isOTPSent = false;
       })
-
-      // Send Login OTP
+      // Send Login OTP cases
       .addCase(sendLoginOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -230,13 +300,14 @@ const authSlice = createSlice({
       .addCase(sendLoginOTP.fulfilled, (state) => {
         state.loading = false;
         state.isOTPSent = true;
+        state.error = null;
       })
       .addCase(sendLoginOTP.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.isOTPSent = false;
       })
-
-      // Verify OTP
+      // Verify OTP cases
       .addCase(verifyOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -247,13 +318,38 @@ const authSlice = createSlice({
         state.userType = action.payload.userType;
         state.isVerified = true;
         state.isAuthenticated = true;
+        state.registrationData = null;
+        state.token = action.payload.token;
+        state.error = null;
       })
       .addCase(verifyOTP.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.isVerified = false;
+      })
+      // Get User Profile cases
+      .addCase(getUserProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = { ...state.user, ...action.payload };
+      })
+      .addCase(getUserProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
   },
 });
 
-export const { resetAuthState, setUser, setUserType, logout } = authSlice.actions;
+export const {
+  resetAuthState,
+  setUser,
+  setUserType,
+  logout,
+  clearError,
+  initializeAuth
+} = authSlice.actions;
+
 export default authSlice.reducer;
