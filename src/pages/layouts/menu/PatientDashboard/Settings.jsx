@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Camera, Eye, EyeOff, Edit2, Check, Save, X, User, Lock } from "lucide-react";
+import { Camera, Eye, EyeOff, Edit2, Check, Save, X, User, Lock, ShieldCheck, MailCheck, PhoneCall } from "lucide-react";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const formFields = {
   personal: [
@@ -11,9 +12,10 @@ const formFields = {
     { id: "aadhaar", label: "Aadhaar Number", type: "text", readOnly: true },
     { id: "dob", label: "Date of Birth", type: "date" },
     { id: "gender", label: "Gender", type: "text", readOnly: true },
-    { id: "email", label: "Email", type: "email" },
-    { id: "phone", label: "Phone Number", type: "tel" },
+    { id: "email", label: "Email", type: "email", verify: true },
+    { id: "phone", label: "Phone Number", type: "tel", verified: true },
     { id: "alternatePhone", label: "Alternate Phone Number", type: "tel" },
+    { id: "occupation", label: "Occupation", type: "text", readOnly: true },
     { id: "permanentAddress", label: "Permanent Address", type: "textarea", readOnly: true },
     { id: "temporaryAddress", label: "Temporary Address", type: "textarea" },
   ],
@@ -27,31 +29,525 @@ const formFields = {
 const Settings = () => {
   const user = useSelector((state) => state.auth.user);
   const fileInputRef = useRef(null);
-  const [isEditMode, setIsEditMode] = useState(false), [formData, setFormData] = useState({}), [profileImage, setProfileImage] = useState(""), [passwordVisibility, setPasswordVisibility] = useState({}), [hasUnsavedChanges, setHasUnsavedChanges] = useState(false), [isSaving, setIsSaving] = useState(false), [saveSuccess, setSaveSuccess] = useState(false), [isLoading, setIsLoading] = useState(true), [error, setError] = useState(null), [activeTab, setActiveTab] = useState("personal");
+  const navigate = useNavigate();
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [profileImage, setProfileImage] = useState("");
+  const [passwordVisibility, setPasswordVisibility] = useState({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("personal");
+  const [isVerified, setIsVerified] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
-  useEffect(() => { const loadUserData = async () => { try { setIsLoading(true); const latestUser = await fetchUpdatedUserData(user.email); if (latestUser) { const { pincode, city, district, state, ...rest } = latestUser; const permanentAddress = `${pincode || ''}, ${city || ''}, ${district || ''}, ${state || ''}`.replace(/,\s*,/g, ',').replace(/^,|,$/g, ''); setFormData({ ...rest, permanentAddress, currentPassword: "", newPassword: "", confirmPassword: "" }); setProfileImage(latestUser.photo || ""); } } catch (err) { setError("Failed to fetch profile data."); } finally { setIsLoading(false); } }; if (user?.email) loadUserData(); }, [user?.email]);
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        setIsLoading(true);
+        const latestUser = await fetchUpdatedUserData(user.email);
+        if (latestUser) {
+          const { pincode, city, district, state, ...rest } = latestUser;
+          const permanentAddress = `${pincode || ''}, ${city || ''}, ${district || ''}, ${state || ''}`.replace(/,\s*,/g, ',').replace(/^,|,$/g, '');
+          setFormData({
+            ...rest,
+            permanentAddress,
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+          });
+          setProfileImage(latestUser.photo || "");
+          setIsVerified(latestUser.isVerified || false);
+          setIsPhoneVerified(latestUser.isPhoneVerified || true);
+        }
+      } catch (err) {
+        setError("Failed to fetch profile data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (user?.email) loadUserData();
+  }, [user?.email]);
 
-  const handleInputChange = (e) => { const { name, value } = e.target; setFormData((prev) => ({ ...prev, [name]: value })); setHasUnsavedChanges(true); if (saveSuccess) setSaveSuccess(false); };
-  const handleFileUpload = (e) => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => { const base64String = reader.result; setProfileImage(base64String); setHasUnsavedChanges(true); if (saveSuccess) setSaveSuccess(false); }; reader.readAsDataURL(file); } };
-  const saveProfileData = async (userId, updatedData) => { try { const response = await axios.put(`https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users/${userId}`, updatedData); return response.data; } catch (error) { console.error("Error saving profile data:", error.response ? error.response.data : error.message); throw error; } };
-  const fetchUpdatedUserData = async (email) => { try { const response = await axios.get('https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users', { params: { email } }); return response.data[0] || null; } catch (error) { console.error('Error fetching updated user data:', error.response?.data || error.message); throw error; } };
-  const handleSaveChanges = async (e) => { e.preventDefault(); setIsSaving(true); try { const updatedData = { ...formData, photo: profileImage }; if (!formData.newPassword || !formData.confirmPassword) { delete updatedData.currentPassword; delete updatedData.newPassword; delete updatedData.confirmPassword; } await saveProfileData(user.id, updatedData); await new Promise((resolve) => setTimeout(resolve, 1500)); const updatedUserData = await fetchUpdatedUserData(user.email); setFormData({ ...updatedUserData, currentPassword: "", newPassword: "", confirmPassword: "" }); setProfileImage(updatedUserData.photo || ""); setSaveSuccess(true); setIsEditMode(false); setHasUnsavedChanges(false); setTimeout(() => setSaveSuccess(false), 3000); } catch (error) { setError("Failed to save changes. Please try again."); } finally { setIsSaving(false); } };
-  const handleCancelEdit = () => { if (!user) return; setFormData({ ...user, currentPassword: "", newPassword: "", confirmPassword: "" }); setProfileImage(user.photo || ""); setIsEditMode(false); setHasUnsavedChanges(false); };
-  const renderField = ({ id, label, type, readOnly, options, toggleVisibility }) => { const value = formData[id] || ""; let field; if (type === "textarea") { field = <div className="floating-input relative w-full mb-4" data-placeholder={label}><textarea name={id} value={value} onChange={handleInputChange} className={`input-field peer ${readOnly ? "btn-disabled" : ""} w-full`} rows={3} readOnly={readOnly || !isEditMode} placeholder=" " /></div>; } else if (type === "select") { field = <div className="floating-input relative w-full mb-4" data-placeholder={label}><select name={id} value={value} onChange={handleInputChange} className={`input-field peer ${readOnly ? "btn-disabled" : ""} w-full`} disabled={readOnly || !isEditMode} placeholder=" "><option value="">Select {label}</option>{(options || []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}</select></div>; } else if (type === "password") { field = isEditMode ? <div className="floating-input relative w-full mb-4" data-placeholder={label}><input type={passwordVisibility[id] ? "text" : "password"} name={id} value={value} onChange={handleInputChange} className={`input-field peer pr-12 w-full`} autoComplete="new-password" placeholder=" " />{toggleVisibility && <button type="button" tabIndex={-1} onClick={() => setPasswordVisibility((prev) => ({ ...prev, [id]: !prev[id] }))} className={`absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none ${passwordVisibility[id] ? "text-green-500 hover:text-green-700" : "text-gray-400 hover:text-green-500"}`} style={{ zIndex: 2 }}>{passwordVisibility[id] ? <EyeOff size={20} /> : <Eye size={20} />}</button>}</div> : null; } else { field = <div className="floating-input relative w-full mb-4" data-placeholder={label}><input type={type} name={id} value={value} onChange={handleInputChange} className={`input-field peer ${readOnly ? "btn-disabled" : ""} w-full`} readOnly={readOnly || !isEditMode} placeholder=" " /></div>; } if (type === "password" && !isEditMode) return null; return <div key={id} className="md:col-span-1 w-full">{isEditMode ? field : <div className="floating-input relative w-full mb-4" data-placeholder={label}><div className="input-field peer" placeholder=" ">{value || <span className="paragraph italic">Not provided</span>}</div></div>}</div>; };
-  const getTabIcon = (tab) => { switch (tab) { case "personal": return <User size={16} />; case "password": return <Lock size={16} />; default: return null; } };
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setHasUnsavedChanges(true);
+    if (saveSuccess) setSaveSuccess(false);
+  };
 
-  if (isLoading) return <div className="w-full min-h-screen flex items-center justify-center"><div className="animate-pulse flex flex-col items-center"><div className="w-32 h-32 bg-[var(--primary-color)] rounded-full mb-4"></div><div className="h3-heading"></div><div className="btn btn-primary"></div></div></div>;
-  if (error) return <div className="w-full min-h-screen flex items-center justify-center"><div className="bg-white p-8 rounded-lg shadow"><div className="h2-heading mb-4">Error</div><p className="paragraph">{error}</p><button onClick={() => window.location.reload()} className="btn btn-primary mt-4">Reload Page</button></div></div>;
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setProfileImage(base64String);
+        setHasUnsavedChanges(true);
+        if (saveSuccess) setSaveSuccess(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const saveProfileData = async (userId, updatedData) => {
+    try {
+      const response = await axios.put(`https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users/${userId}`, updatedData);
+      return response.data;
+    } catch (error) {
+      console.error("Error saving profile data:", error.response ? error.response.data : error.message);
+      throw error;
+    }
+  };
+
+  const fetchUpdatedUserData = async (email) => {
+    try {
+      const response = await axios.get('https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users', { params: { email } });
+      return response.data[0] || null;
+    } catch (error) {
+      console.error('Error fetching updated user data:', error.response?.data || error.message);
+      throw error;
+    }
+  };
+
+  const handleSaveChanges = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const updatedData = { ...formData, photo: profileImage };
+      if (!formData.newPassword || !formData.confirmPassword) {
+        delete updatedData.currentPassword;
+        delete updatedData.newPassword;
+        delete updatedData.confirmPassword;
+      }
+      await saveProfileData(user.id, updatedData);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const updatedUserData = await fetchUpdatedUserData(user.email);
+      setFormData({
+        ...updatedUserData,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setProfileImage(updatedUserData.photo || "");
+      setSaveSuccess(true);
+      setIsEditMode(false);
+      setHasUnsavedChanges(false);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      setError("Failed to save changes. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (!user) return;
+    setFormData({ ...user, currentPassword: "", newPassword: "", confirmPassword: "" });
+    setProfileImage(user.photo || "");
+    setIsEditMode(false);
+    setHasUnsavedChanges(false);
+  };
+
+  const handleVerifyEmail = () => {
+    navigate("/verify-otp");
+  };
+
+  const renderField = ({ id, label, type, readOnly, options, toggleVisibility, verify, verified }) => {
+    const value = formData[id] || "";
+    let field;
+
+    const baseInputClasses = `
+      w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl
+      text-gray-900 text-sm font-medium placeholder-gray-500
+      transition-all duration-200 ease-in-out
+      focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50
+      disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60
+      ${readOnly || !isEditMode ? 'bg-gray-50 cursor-not-allowed' : 'hover:border-gray-300'}
+    `;
+
+    if (type === "textarea") {
+      field = (
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700">{label}</label>
+          <textarea
+            name={id}
+            value={value}
+            onChange={handleInputChange}
+            className={`${baseInputClasses} min-h-[100px] resize-none`}
+            rows={4}
+            readOnly={readOnly || !isEditMode}
+            placeholder={isEditMode ? `Enter your ${label.toLowerCase()}` : ''}
+          />
+        </div>
+      );
+    } else if (type === "select") {
+      field = (
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700">{label}</label>
+          <select
+            name={id}
+            value={value}
+            onChange={handleInputChange}
+            className={baseInputClasses}
+            disabled={readOnly || !isEditMode}
+          >
+            <option value="">Select {label}</option>
+            {(options || []).map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      );
+    } else if (type === "password") {
+      field = isEditMode ? (
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700">{label}</label>
+          <div className="relative">
+            <input
+              type={passwordVisibility[id] ? "text" : "password"}
+              name={id}
+              value={value}
+              onChange={handleInputChange}
+              className={`${baseInputClasses} pr-12`}
+              autoComplete="new-password"
+              placeholder={`Enter your ${label.toLowerCase()}`}
+            />
+            {toggleVisibility && (
+              <button
+                type="button"
+                onClick={() => setPasswordVisibility((prev) => ({ ...prev, [id]: !prev[id] }))}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[var(--accent-color)] transition-colors duration-200 focus:outline-none focus:text-[var(--accent-color)]"
+              >
+                {passwordVisibility[id] ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            )}
+          </div>
+        </div>
+      ) : null;
+    } else {
+      field = (
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-gray-700">{label}</label>
+          <div className="relative">
+            <input
+              type={type}
+              name={id}
+              value={value}
+              onChange={handleInputChange}
+              className={baseInputClasses}
+              readOnly={readOnly || !isEditMode}
+              placeholder={isEditMode ? `Enter your ${label.toLowerCase()}` : ''}
+            />
+            {verify && isEditMode && (
+              <button
+                type="button"
+                onClick={handleVerifyEmail}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--accent-color)] hover:text-[var(--accent-color)] transition-colors duration-200 focus:outline-none"
+                title="Verify email"
+              >
+                <MailCheck size={18} />
+              </button>
+            )}
+            {id === "email" && isVerified && (
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--accent-color)]">
+                <ShieldCheck size={18} />
+              </div>
+            )}
+            {id === "phone" && isPhoneVerified && (
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--accent-color)]">
+                <ShieldCheck size={18} />
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (type === "password" && !isEditMode) return null;
+
+    return (
+      <div key={id} className="w-full">
+        {isEditMode ? (
+          field
+        ) : (
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700">{label}</label>
+            <div className={`${baseInputClasses} flex items-center justify-between`}>
+              <span className={`${value ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+                {value || 'Not provided'}
+              </span>
+              <div className="flex items-center gap-2">
+                {id === "email" && isVerified && (
+                  <ShieldCheck size={16} className="text-[var(--accent-color)]" />
+                )}
+                {id === "phone" && isPhoneVerified && (
+                  <ShieldCheck size={16} className="text-[var(--accent-color)]" />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const getTabIcon = (tab) => {
+    switch (tab) {
+      case "personal":
+        return <User size={20} />;
+      case "password":
+        return <Lock size={20} />;
+      default:
+        return null;
+    }
+  };
+
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full mx-4">
+        <div className="animate-pulse">
+          <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-6"></div>
+          <div className="h-6 bg-gray-200 rounded mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded mb-6"></div>
+          <div className="space-y-4">
+            <div className="h-12 bg-gray-200 rounded-lg"></div>
+            <div className="h-12 bg-gray-200 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full text-center">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <X size={32} className="text-red-600" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Oops! Something went wrong</h3>
+        <p className="text-gray-600 mb-6">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="w-full bg-[var(--accent-color)] hover:bg-[var(--accent-color)] text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200"
+        >
+          Reload Page
+        </button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="mx-auto relative pb-20 md:pb-0">
-      <div className="relative"><div className="h-28 bg-[var(--primary-color)] rounded-b-3xl shadow-md overflow-hidden w-full"></div><div className="absolute top-6 left-0 right-0 px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center"><h2 className="text-xl sm:text-2xl text-white mb-2 sm:mb-0">Profile Settings</h2>{!isEditMode ? <button onClick={() => setIsEditMode(true)} className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 border-2 border-white text-white rounded-full transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 hover:bg-white hover:text-[var(--primary-color)] hover:shadow-lg text-sm sm:text-base"><Edit2 size={16} className="transition-transform duration-300 group-hover:rotate-12" /><span>Edit Profile</span></button> : <div className="group flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border-2 border-[var(--accent-color)] bg-white text-gray-700 transition-all duration-300 ease-in-out hover:bg-[var(--accent-color)] hover:text-white text-sm sm:text-base"><span className="transition-colors duration-300 group-hover:text-white">Editing mode</span><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500 animate-ping transition-colors duration-300 group-hover:bg-green-700"></div></div>}</div></div>
-      <div className="relative -mt-12 sm:-mt-16 z-10 flex justify-center px-4 sm:px-0"><div className="relative group"><div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full overflow-hidden ring-4 ring-white shadow-lg">{profileImage ? <img src={profileImage} alt="Profile" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Camera size={20} className="text-gray-400" /></div>}</div>{isEditMode && <div className="absolute bottom-0 right-0 w-7 h-7 sm:w-8 sm:h-8 bg-[var(--accent-color)] rounded-full flex items-center justify-center cursor-pointer" onClick={() => fileInputRef.current?.click()}><Camera size={16} className="text-white" /><input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" /></div>}</div></div>
-      <div className="text-center px-4 sm:px-0"><div className="paragraph text-sm sm:text-base">{formData.occupation || "User"}</div><h3 className="paragraph text-lg sm:text-xl font-medium">{formData.firstName} {formData.lastName}</h3><p className="paragraph text-sm sm:text-base">{formData.email}</p></div>
-      <div className="rounded-lg p-2 flex flex-wrap gap-2 justify-center mt-4 px-4 sm:px-0">{["personal", ...(isEditMode ? ["password"] : [])].map((tab) => { const isActive = activeTab === tab; return <button key={tab} onClick={() => setActiveTab(tab)} type="button" className={`group relative overflow-hidden rounded-full px-4 py-1.5 sm:px-6 sm:py-2 flex items-center gap-2 font-medium sm:font-semibold border-2 transition-all duration-300 focus:outline-none text-sm sm:text-base ${isActive ? "bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-md shadow-[var(--primary-color)]" : "bg-white text-[var(--accent-color)] border-[var(--accent-color)] hover:text-white"}`} style={{ '--primary-color': '#0E1630', '--accent-color': '#01D48C' }}><span className="relative z-10 flex items-center gap-2 capitalize">{getTabIcon(tab)}{tab}</span>{!isActive && <span className="absolute inset-0 z-0 bg-[var(--accent-color)] translate-x-full group-hover:translate-x-0 transition-transform duration-500 ease-in-out" />}</button>; })}</div>
-      <form onSubmit={handleSaveChanges} className="px-4 sm:px-6">{["personal", ...(isEditMode ? ["password"] : [])].map((tab) => <div key={tab} className={`transition-all duration-500 ${activeTab === tab ? "opacity-100" : "hidden opacity-0"}`}><div className="bg-white rounded-lg p-4 sm:p-6 mb-6"><h4 className="h4-heading mb-4 sm:mb-6 pb-2 border-b border-gray-200 flex items-center text-lg sm:text-xl"><span className="paragraph mr-2">{tab.charAt(0).toUpperCase() + tab.slice(1)} Information</span>{isEditMode && <span className="btn btn-secondary text-xs sm:text-sm">Editing</span>}</h4><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">{formFields[tab].map(renderField)}</div></div></div>)}</form>
-      {isEditMode && <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-2 flex justify-end gap-2 z-10 sm:static sm:shadow-none sm:border-none sm:p-0"><button type="button" onClick={handleCancelEdit} className="group relative border-2 border-[var(--primary-color)] text-[var(--primary-color)] flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all duration-300 ease-in-out overflow-hidden hover:bg-[var(--primary-color)] hover:text-white hover:scale-105 active:scale-95 text-sm sm:text-base" style={{ '--primary-color': '#0E1630' }}><X className="z-10 relative text-[var(--primary-color)] group-hover:text-white transition-colors duration-300" size={16} /><span className="font-medium z-10 relative group-hover:text-white transition-colors duration-300">Cancel</span></button><button type="submit" disabled={!hasUnsavedChanges || isSaving} className="relative flex items-center gap-2 px-4 py-1.5 sm:px-5 sm:py-2 rounded-full text-white bg-[var(--accent-color)] active:bg-emerald-700 transition duration-300 ease-in-out disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-70 before:absolute before:inset-0 before:rounded-full before:border-2 before:border-transparent before:pointer-events-none text-sm sm:text-base" style={{ '--accent-color': '#01D48C' }}>{isSaving ? <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={16} />}<span className="font-medium sm:font-semibold">{isSaving ? "Saving..." : "Save Changes"}</span></button></div>}
-      {saveSuccess && <div className="fixed top-4 right-4 bg-[var(--accent-color)] text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in-up z-20 text-sm sm:text-base"><div className="bg-white/20 p-1 rounded-full"><Check size={16} /></div><span className="paragraph">Changes saved successfully!</span></div>}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto">
+        {/* Header Section */}
+        <div className="relative bg-gradient-to-br from-[var(--primary-color)] to-[var(--accent-color)] border-b rounded-xl text-white">
+          <div className="px-4 sm:px-6 lg:px-8 pt-8 pb-8 ">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="w-full sm:w-auto text-center sm:text-left">
+                <h1 className="text-xl sm:text-3xl font-bold">Profile Settings</h1>
+                <p className="text-slate-300 mt-1">Manage your account information and preferences</p>
+              </div>
+              {!isEditMode ? (
+                <button
+                  onClick={() => setIsEditMode(true)}
+                  className="inline-flex items-center gap-2 bg-[var(--primary-color)] text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 w-full sm:w-auto justify-center"
+                >
+                  <Edit2 size={18} />
+                  <span>Edit Profile</span>
+                </button>
+              ) : (
+                <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-xl w-full sm:w-auto justify-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium">Edit Mode</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Profile Image Section */}
+        <div className="relative -mt-16 px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="w-32 h-32 rounded-2xl overflow-hidden bg-white shadow-xl ring-4 ring-white">
+                {profileImage ? (
+                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                    <User size={32} className="text-gray-400" />
+                  </div>
+                )}
+              </div>
+
+              {isEditMode && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute -bottom-2 -right-2 w-10 h-10 bg-[var(--accent-color)] hover:bg-[var(--accent-color)] text-white rounded-xl shadow-lg transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 flex items-center justify-center"
+                >
+                  <Camera size={18} />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* User Info */}
+          <div className="text-center ">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {formData.firstName} {formData.lastName}
+            </h2>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <p className="text-gray-600">{formData.email}</p>
+              {isVerified && <ShieldCheck size={16} className="text-[var(--accent-color)]" />}
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="px-4 sm:px-6 lg:px-8 ">
+          <div className="flex justify-center">
+            <div className="inline-flex bg-white rounded-2xl p-1 shadow-lg">
+              {["personal", ...(isEditMode ? ["password"] : [])].map((tab) => {
+                const isActive = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`inline-flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${isActive
+                        ? "bg-[var(--primary-color)] text-white shadow-lg"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      }`}
+                  >
+                    {getTabIcon(tab)}
+                    <span className="capitalize">{tab}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Form Content */}
+        <div className="px-4 sm:px-6 lg:px-8 pb-8">
+          <form onSubmit={handleSaveChanges}>
+            {["personal", ...(isEditMode ? ["password"] : [])].map((tab) => (
+              <div
+                key={tab}
+                className={`transition-all duration-300 ${activeTab === tab ? "opacity-100 block" : "opacity-0 hidden"
+                  }`}
+              >
+                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                  <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-3">
+                      {getTabIcon(tab)}
+                      <span>{tab.charAt(0).toUpperCase() + tab.slice(1)} Information</span>
+                      {isEditMode && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                          Editing
+                        </span>
+                      )}
+                    </h3>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {formFields[tab].map(renderField)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </form>
+        </div>
+
+        {/* Action Buttons - Fixed for mobile, inline for desktop */}
+        {isEditMode && (
+          <>
+            {/* Mobile Fixed Bottom Bar */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl lg:hidden">
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200"
+                >
+                  <X size={18} />
+                  <span>Cancel</span>
+                </button>
+
+                <button
+                  type="submit"
+                  onClick={handleSaveChanges}
+                  disabled={!hasUnsavedChanges || isSaving}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[var(--accent-color)] hover:bg-[var(--accent-color)] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors duration-200"
+                >
+                  {isSaving ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Save size={18} />
+                  )}
+                  <span>{isSaving ? "Saving..." : "Save Changes"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Desktop Inline Buttons */}
+            <div className="hidden lg:block px-4 sm:px-6 lg:px-8 pb-8">
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="flex items-center gap-2 px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200"
+                >
+                  <X size={18} />
+                  <span>Cancel</span>
+                </button>
+
+                <button
+                  type="submit"
+                  onClick={handleSaveChanges}
+                  disabled={!hasUnsavedChanges || isSaving}
+                  className="flex items-center gap-2 px-8 py-3 bg-[var(--accent-color)] hover:bg-[var(--accent-color)] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors duration-200"
+                >
+                  {isSaving ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Save size={18} />
+                  )}
+                  <span>{isSaving ? "Saving..." : "Save Changes"}</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Success Toast */}
+        {saveSuccess && (
+          <div className="fixed top-6 right-6 bg-[var(--accent-color)] text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-fade-in z-50 max-w-sm">
+            <div className="flex-shrink-0 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+              <Check size={16} />
+            </div>
+            <div>
+              <p className="font-semibold">Success!</p>
+              <p className="text-sm text-emerald-100">Your changes have been saved</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile spacing for fixed buttons */}
+      {isEditMode && <div className="h-20 lg:hidden"></div>}
     </div>
   );
 };
