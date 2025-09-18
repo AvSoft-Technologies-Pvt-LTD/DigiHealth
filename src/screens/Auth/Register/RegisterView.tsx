@@ -20,7 +20,7 @@ import {
 import { COLORS } from '../../../constants/colors';
 import { PAGES } from '../../../constants/pages';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../../navigation/AppNavigation';
+import { RootStackParamList } from '../../../types/navigation';
 
 const { width } = Dimensions.get('window');
 

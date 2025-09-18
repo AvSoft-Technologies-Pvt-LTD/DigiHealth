@@ -9,6 +9,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import AvText from '../elements/AvText';
 import { COLORS } from '../constants/colors';
+import { useDrawer } from '../navigation/DrawerContext';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 interface HeaderProps {
     title?: string;
@@ -25,6 +27,8 @@ const Header: React.FC<HeaderProps> = ({
     backgroundColor = COLORS.WHITE,
     titleColor = COLORS.BLACK,
 }) => {
+    const { openDrawer, closeDrawer, isOpen } = useDrawer();
+
     const navigation = useNavigation();
 
     const handleBackPress = () => {
@@ -43,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({
             />
             <View style={[styles.container, { backgroundColor }]}>
                 <View style={styles.leftSection}>
-                    {showBackButton && (
+                    {showBackButton ? (
                         <TouchableOpacity
                             style={styles.backButton}
                             onPress={handleBackPress}
@@ -52,6 +56,14 @@ const Header: React.FC<HeaderProps> = ({
                             <AvText type="title_2" style={[styles.backButtonText, { color: titleColor }]}>
                                 ←
                             </AvText>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity
+                            style={styles.menuButton}
+                            onPress={openDrawer}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <MaterialIcons name="menu" size={24} color={titleColor} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -105,9 +117,14 @@ const styles = StyleSheet.create({
         padding: 8,
         borderRadius: 20,
     },
+    menuButton: {
+        padding: 8,
+        marginLeft: 8,
+    },
     backButtonText: {
         fontSize: 24,
         fontWeight: 'bold',
+        lineHeight: 24,
     },
     title: {
         fontWeight: '600',

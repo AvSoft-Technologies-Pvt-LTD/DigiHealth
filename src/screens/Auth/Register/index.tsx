@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { setSelectedRole, UserRole } from '../../../store/slices/userSlice';
-import { RootStackParamList } from '../../../navigation/AppNavigation';
+import { RootStackParamList } from '../../../types/navigation';
 import RegisterView from './RegisterView';
 import { PAGES } from '../../../constants/pages';
 

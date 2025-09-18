@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginView from './LoginView';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../../navigation/AppNavigation';
+import { RootStackParamList } from '../../../types/navigation';
 import { post } from '../../../services/apiServices';
 import { API } from '../../../config/api';
 import { PAGES } from '../../../constants/pages';
@@ -88,10 +88,10 @@ const Login: React.FC<LoginProps> = () => {
             setSnackbarMessage(responseData.message || 'Login successful!');
             setSnackbarVisible(true);
             
-            // Navigate to home screen after a short delay
+            // Navigate to drawer navigator after a short delay
             setTimeout(() => {
                 navigation.replace(PAGES.HOME);
-            }, 1000);
+            }, 0);
         } catch (error: unknown) {
             console.error('Login error:', error);
             const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';

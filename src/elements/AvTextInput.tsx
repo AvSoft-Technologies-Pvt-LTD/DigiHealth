@@ -7,6 +7,7 @@ import { normalize } from "../constants/platform"
 interface AvTextInputProps extends Omit<TextInputProps, 'style'> {
   type?: "textarea" | "default"
   style?: TextStyle | TextStyle[]
+  right?: React.ReactNode
 }
 
 export default function AvTextInput(props: AvTextInputProps): React.JSX.Element {
@@ -16,15 +17,21 @@ export default function AvTextInput(props: AvTextInputProps): React.JSX.Element 
     setDynamicHeight(event.nativeEvent.contentSize.height)
   }
 
+  const { right, ...restProps } = props;
+  
   return props.type === "textarea" ? (
     <TextInput
       multiline
       onContentSizeChange={handleContentSizeChange}
-      {...props}
+      {...restProps}
       style={[props.style, { backgroundColor: COLORS.TRANSPARENT, height: dynamicHeight }]}
     />
   ) : (
-    <TextInput {...props} style={[styles.textInput, props.style]} />
+    <TextInput 
+      {...restProps} 
+      style={[styles.textInput, props.style]} 
+      right={right}
+    />
   )
 }
 const styles = StyleSheet.create({

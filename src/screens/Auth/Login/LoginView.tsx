@@ -19,7 +19,7 @@ import {
 import AvText from '../../../elements/AvText';
 import { COLORS } from '../../../constants/colors';
 import { PAGES } from '../../../constants/pages';
-import { RootStackParamList } from '../../../navigation/AppNavigation';
+import { RootStackParamList } from '../../../types/navigation';
 import AvButton from '../../../elements/AvButton';
 import AvTextInput from '../../../elements/AvTextInput';
 import { normalize } from '../../../constants/platform';

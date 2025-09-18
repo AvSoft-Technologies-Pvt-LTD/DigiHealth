@@ -1,24 +1,29 @@
+// App.tsx
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'react-native';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { Provider } from 'react-redux';
-// import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { store } from './src/store';
 import AppNavigator from './src/navigation/AppNavigation';
 import { COLORS } from './src/constants/colors';
 import { getStatusBarStyle } from './src/utils/statusBar';
+import { DrawerProvider } from './src/navigation/DrawerContext';
 
-// // This is needed for react-native-gesture-handler to work in the whole app
-// const GestureHandlerWrapper: React.FC<{children: React.ReactNode}> = ({ children }) => (
-//   <GestureHandlerRootView style={{ flex: 1 }}>
-//     {children}
-//   </GestureHandlerRootView>
-// );
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+
+// This is needed for react-native-gesture-handler to work in the whole app
+const GestureHandlerWrapper: React.FC<{children: React.ReactNode}> = ({ children }) => (
+  <GestureHandlerRootView style={{ flex: 1 }}>
+    {children}
+  </GestureHandlerRootView>
+);
 
 const App: React.FC = () => {
   // Set global status bar configuration
-  const defaultBackgroundColor = COLORS.WHITE; // Change this to your app's primary background
+  const defaultBackgroundColor = COLORS.WHITE;
   const statusBarStyle = getStatusBarStyle(defaultBackgroundColor);
 
   // Custom theme for React Native Paper
@@ -34,28 +39,32 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    Icon.loadFont();
+  }, []);
+
+  useEffect(() => {
     // Set initial status bar configuration
     StatusBar.setBarStyle(statusBarStyle, true);
     StatusBar.setBackgroundColor(defaultBackgroundColor, true);
   }, []);
 
   return (
-    // <GestureHandlerWrapper>
+    <GestureHandlerWrapper>
       <Provider store={store}>
-        <PaperProvider 
-          theme={theme}
-        >
+        <PaperProvider theme={theme}>
           <NavigationContainer>
             <StatusBar 
               barStyle={statusBarStyle}
               backgroundColor={defaultBackgroundColor}
-            translucent={false}
+              translucent={false}
             />
-            <AppNavigator />
+            <DrawerProvider>
+              <AppNavigator />
+            </DrawerProvider>
           </NavigationContainer>
         </PaperProvider>
       </Provider>
-    // </GestureHandlerWrapper>
+    </GestureHandlerWrapper>
   );
 };
 

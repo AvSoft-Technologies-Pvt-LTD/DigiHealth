@@ -15,6 +15,9 @@ import { COLORS } from '../../../constants/colors';
 import AvText from '../../../elements/AvText';
 import Header from '../../../components/Header';
 import AvTextInput from '../../../elements/AvTextInput';
+import { AvSelect } from '../../../elements/AvSelect';
+import { TextInput } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export interface PatientFormData {
     firstName: string;
@@ -38,7 +41,7 @@ export interface PatientFormData {
 
 type FormErrors = Partial<Record<keyof PatientFormData, string>>;
 
-type PatientRegisterViewProps = {
+interface PatientRegisterViewProps {
     onSubmit: (formData: PatientFormData) => void;
     onLoginPress: () => void;
     loading?: boolean;
@@ -50,22 +53,22 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
     loading = false,
 }) => {
     const [formData, setFormData] = useState<PatientFormData>({
-        firstName: '',
-        middleName: '',
-        lastName: '',
-        phone: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        aadhaar: '',
-        genderId: 0,
-        dob: '',
-        occupation: '',
-        pinCode: '',
-        city: '',
-        district: '',
-        state: '',
-        agreeDeclaration: false,
+        firstName: 'Haris',
+        middleName: 'Ali',
+        lastName: 'Patel',
+        phone: '1234567863',
+        email: 'haris@gmail.com',
+        password: 'Test@123$$',
+        confirmPassword: 'Test@123$$',
+        aadhaar: '123456789012',
+        genderId: 1,
+        dob: '1990-09-26',
+        occupation: 'Student',
+        pinCode: '123456',
+        city: 'Dharwad',
+        district: 'Dharwad',
+        state: 'Karnataka',
+        agreeDeclaration: true,
         photo: null,
     });
 
@@ -79,6 +82,25 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         }
     };
 
+    // Format Aadhaar with hyphens after every 4 digits
+    const formatAadhaar = (input: string): string => {
+        // Remove all non-digit characters
+        const digits = input.replace(/\D/g, '');
+        // Add hyphen after every 4 digits
+        return digits.replace(/(\d{4})(?=\d)/g, '$1-');
+    };
+
+    const handleAadhaarChange = (text: string) => {
+        // Remove all non-digit characters and limit to 12 digits
+        const digits = text.replace(/\D/g, '').substring(0, 12);
+        // Format with hyphens
+        const formatted = formatAadhaar(digits);
+        // Update form data with raw digits (without hyphens) for validation
+        updateFormData('aadhaar', digits);
+        // Return formatted value for display
+        return formatted;
+    };
+
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {};
 
@@ -88,36 +110,44 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         if (!formData.email.trim()) newErrors.email = 'Email is required';
         if (!formData.password.trim()) newErrors.password = 'Password is required';
         if (!formData.confirmPassword.trim()) newErrors.confirmPassword = 'Confirm password is required';
-        if (!formData.genderId || formData.genderId === 0) newErrors.genderId = 'Gender is required';
-        if (!formData.dob.trim()) newErrors.dob = 'Date of birth is required';
-        if (!formData.occupation.trim()) newErrors.occupation = 'Occupation is required';
-        if (!formData.pinCode.trim()) newErrors.pinCode = 'Pin code is required';
-        if (!formData.city.trim()) newErrors.city = 'City is required';
-        if (!formData.district.trim()) newErrors.district = 'District is required';
-        if (!formData.state.trim()) newErrors.state = 'State is required';
 
+        // Email validation
         if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = 'Please enter a valid email address';
         }
 
+        // Phone validation
         if (formData.phone && !/^[0-9]{10}$/.test(formData.phone)) {
             newErrors.phone = 'Please enter a valid 10-digit phone number';
         }
 
+        // Aadhaar validation
         if (formData.aadhaar && !/^[0-9]{12}$/.test(formData.aadhaar)) {
             newErrors.aadhaar = 'Please enter a valid 12-digit Aadhaar number';
         }
 
+        // Pin code validation
         if (formData.pinCode && !/^[0-9]{6}$/.test(formData.pinCode)) {
             newErrors.pinCode = 'Please enter a valid 6-digit pin code';
         }
 
+        // Password validation
         if (formData.password && formData.password.length < 6) {
             newErrors.password = 'Password must be at least 6 characters long';
         }
 
+        // Confirm password
         if (formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = 'Passwords do not match';
+        }
+
+        // Date of Birth validation
+        if (formData.dob) {
+            const dob = new Date(formData.dob);
+            const today = new Date();
+            if (dob > today) {
+                newErrors.dob = 'Date of birth cannot be in the future';
+            }
         }
 
         setErrors(newErrors);
@@ -184,21 +214,23 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
     };
 
     const handleDateChange = (event: any, selectedDate?: Date) => {
-        console.log('Event:', event);
-        console.log('Selected date:', selectedDate);
-        console.log('Selected date type:', typeof selectedDate);
-        
         setShowDatePicker(false);
         
         // Handle different platforms and event types
         if (event?.type === 'dismissed') {
-            console.log('Date picker was dismissed');
-            return;
+            return; // User dismissed the picker without selecting
         }
         
         if (selectedDate && selectedDate instanceof Date && !isNaN(selectedDate.getTime())) {
-            console.log('Valid date selected:', selectedDate.toISOString());
-            const formattedDate = selectedDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+            // Clear any previous date errors when a new date is selected
+            setErrors(prev => ({
+                ...prev,
+                dob: undefined
+            }));
+            
+            // Format date to YYYY-MM-DD for consistent storage
+            const formattedDate = selectedDate.toISOString().split('T')[0];
+            console.log('Valid date selected:', formattedDate);
             updateFormData('dob', formattedDate);
         } else if (event?.nativeEvent?.timestamp) {
             // Fallback for some Android versions
@@ -217,6 +249,9 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         }
     };
 
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     const renderInput = (
         label: string,
         value: string,
@@ -228,21 +263,50 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         fieldKey?: keyof PatientFormData
     ) => {
         const errorText = fieldKey ? errors[fieldKey] : '';
+        const hasError = Boolean(errorText);
+        
+        // Check if this is a password field
+        const isPasswordField = fieldKey === 'password' || fieldKey === 'confirmPassword';
+        const isPasswordVisible = fieldKey === 'password' ? showPassword : showConfirmPassword;
+        const setPasswordVisibility = fieldKey === 'password' 
+            ? () => setShowPassword(!isPasswordVisible)
+            : () => setShowConfirmPassword(!isPasswordVisible);
+
+        // Only show eye icon for password fields with content
+        const rightIcon = isPasswordField && value.length > 0 ? (
+            <TextInput.Icon
+                icon={isPasswordVisible ? "eye-off" : "eye"}
+                onPress={setPasswordVisibility}
+                color={COLORS.GREY}
+                size={20}
+            />
+        ) : undefined;
+
         return (
             <View style={styles.inputContainer}>
                 <AvText type="Subtitle_1" style={styles.label}>
                     {label} {mandatory && <AvText type="caption" style={styles.mandatory}>*</AvText>}
                 </AvText>
-                <AvTextInput
-                    style={[styles.input, errorText ? styles.inputError : {}]}
-                    value={value}
-                    onChangeText={onChangeText}
-                    placeholder={placeholder}
-                    keyboardType={keyboardType}
-                    secureTextEntry={secureTextEntry}
-                    placeholderTextColor={COLORS.GREY}
-                />
-                {errorText && <AvText type="caption" style={styles.errorText}>{errorText}</AvText>}
+                <View style={styles.inputContainer}>
+                    <AvTextInput
+                        style={[
+                            styles.input, 
+                            hasError ? styles.inputError : {}
+                        ]}
+                        value={value}
+                        onChangeText={onChangeText}
+                        placeholder={placeholder}
+                        keyboardType={keyboardType}
+                        secureTextEntry={isPasswordField ? !isPasswordVisible : secureTextEntry}
+                        placeholderTextColor={COLORS.GREY}
+                        right={rightIcon}
+                    />
+                    {errorText && (
+                        <AvText type="caption" style={styles.errorText}>
+                            {errorText}
+                        </AvText>
+                    )}
+                </View>
             </View>
         );
     };
@@ -276,33 +340,24 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                         {renderInput('Last Name', formData.lastName, text => updateFormData('lastName', text), 'Enter your last name', 'default', false, true, 'lastName')}
                         {renderInput('Phone Number', formData.phone, text => updateFormData('phone', text), 'Enter your phone number', 'phone-pad', false, true, 'phone')}
                         {renderInput('Email', formData.email, text => updateFormData('email', text), 'Enter your email address', 'email-address', false, true, 'email')}
-                        {renderInput('Aadhaar Number', formData.aadhaar, text => updateFormData('aadhaar', text), 'Enter your 12-digit Aadhaar number', 'numeric')}
+                        {renderInput('Aadhaar Number', formatAadhaar(formData.aadhaar), handleAadhaarChange, 'Enter your 12-digit Aadhaar number', 'default')}
 
                         {/* Gender */}
                         <View style={styles.inputContainer}>
-                            <AvText type="Subtitle_1" style={styles.label}>
-                                Gender <AvText type="caption" style={styles.mandatory}>*</AvText>
-                            </AvText>
-                            <TouchableOpacity
-                                style={[styles.pickerButton, errors.genderId ? styles.inputError : {}]}
-                                onPress={() => {
-                                    Alert.alert(
-                                        'Select Gender',
-                                        '',
-                                        [
-                                            { text: 'Male', onPress: () => updateFormData('genderId', 1) },
-                                            { text: 'Female', onPress: () => updateFormData('genderId', 2) },
-                                            { text: 'Other', onPress: () => updateFormData('genderId', 3) },
-                                            { text: 'Cancel', style: 'cancel' }
-                                        ]
-                                    );
-                                }}
-                            >
-                                <AvText type="body" style={[styles.pickerText, !formData.genderId ? styles.placeholderText : {}]}>
-                                    {formData.genderId === 1 ? 'Male' : formData.genderId === 2 ? 'Female' : formData.genderId === 3 ? 'Other' : 'Select Gender'}
-                                </AvText>
-                            </TouchableOpacity>
-                            {errors.genderId && <AvText type="caption" style={styles.errorText}>{errors.genderId}</AvText>}
+                            <AvSelect
+                                label="Gender"
+                                required
+                                items={[
+                                    { label: 'Male', value: 1 },
+                                    { label: 'Female', value: 2 },
+                                    { label: 'Other', value: 3 },
+                                ]}
+                                selectedValue={formData.genderId}
+                                onValueChange={(value) => updateFormData('genderId', value)}
+                                placeholder="Select Gender"
+                                error={!!errors.genderId}
+                                errorText={errors.genderId}
+                            />
                         </View>
 
                         {/* Date of Birth */}
@@ -359,7 +414,7 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
 
                         {/* Security */}
                         <AvText type="title_2" style={styles.sectionTitle}>Security</AvText>
-                        {renderInput('Create Password', formData.password, text => updateFormData('password', text), 'Enter your password', 'default', true, true, 'password')}
+                        {renderInput('Password', formData.password, text => updateFormData('password', text), 'Enter your password', 'default', true, true, 'password')}
                         {renderInput('Confirm Password', formData.confirmPassword, text => updateFormData('confirmPassword', text), 'Confirm your password', 'default', true, true, 'confirmPassword')}
 
                         {/* Terms and Conditions */}
@@ -464,13 +519,14 @@ const styles = StyleSheet.create({
         color: COLORS.ERROR || '#FF0000',
     },
     input: {
-        borderWidth: 1,
-        borderColor: COLORS.LIGHT_GREY,
-        borderRadius: 8,
-        paddingHorizontal: 15,
-        fontSize: 16,
+        height: 50,
         backgroundColor: COLORS.WHITE,
-
+        borderWidth: 1,
+        borderColor: COLORS.GREY,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        fontSize: 14,
+        color: COLORS.BLACK,
     },
     inputError: {
         borderColor: COLORS.ERROR || '#FF0000',

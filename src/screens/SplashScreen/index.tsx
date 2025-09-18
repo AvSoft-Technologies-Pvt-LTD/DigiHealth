@@ -9,13 +9,19 @@ import StorageService from '../../services/storageService';
 
 // Define the type for the navigation stack parameters
 type RootStackParamList = {
+  [PAGES.HOME]: undefined;
   [PAGES.SPLASH]: undefined;
   [PAGES.LOGIN]: undefined;
-  [PAGES.HOME]: undefined;
+  [PAGES.DRAWER]: undefined;
+  [PAGES.REGISTER]: undefined;
+  [PAGES.PATIENT_REGISTER]: undefined;
+  [PAGES.HOSPITAL_REGISTER]: undefined;
+  [PAGES.DOCTOR_REGISTER]: undefined;
+  [PAGES.LABS_SCAN_REGISTER]: undefined;
 };
 
 // Define the type for the navigation prop
-type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
+type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, typeof PAGES.SPLASH>;
 
 // Define the props for the SplashScreen component
 interface SplashScreenProps {
@@ -27,10 +33,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
     const checkToken = async () => {
       try {
         const token = await StorageService.get("userToken");
-        console.log("Token here",token)
+        console.log("Token here", token)
         if (token) {
-          // If token exists, navigate to Home
-          navigation.replace(PAGES.HOME);
+          navigation.replace(PAGES.HOME as any);  // Using type assertion as a workaround
         } else {
           // If no token, navigate to Login
           navigation.replace(PAGES.LOGIN);
