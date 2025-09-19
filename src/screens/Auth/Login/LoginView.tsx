@@ -257,12 +257,8 @@ const LoginView: React.FC<LoginViewProps> = ({
                 }
               }}
             />
-
             {/* Tab Content */}
             {activeTab === 'password' ? renderPasswordTab() : renderOTPTab()}
-
-
-
             {/* Sign Up Link */}
             <View style={styles.signupContainer}>
               <AvText type="body" style={styles.signupText}>Don't have an account? </AvText>

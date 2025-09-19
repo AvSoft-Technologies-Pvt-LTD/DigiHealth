@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../../../../src/constants/colors';
+import { normalize } from '../../../constants/platform';
 
 const LabsScanRegister: React.FC = () => {
   return (
@@ -17,16 +18,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.WHITE,
-    padding: 20,
+    padding: normalize(20),
   },
   title: {
-    fontSize: 24,
+    fontSize: normalize(24),
     fontWeight: 'bold',
     color: COLORS.PRIMARY,
-    marginBottom: 10,
+    marginBottom: normalize(10),
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: normalize(16),
     color: COLORS.GREY,
   },
 });

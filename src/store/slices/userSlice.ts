@@ -10,6 +10,7 @@ interface UserState {
     name: string | null;
     email: string | null;
     phone: string | null;
+    role?: UserRole | null;
   };
 }
 
@@ -21,6 +22,7 @@ const initialState: UserState = {
     name: null,
     email: null,
     phone: null,
+    role: null,
   },
 };
 

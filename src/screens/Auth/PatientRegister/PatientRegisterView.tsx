@@ -18,6 +18,7 @@ import AvTextInput from '../../../elements/AvTextInput';
 import { AvSelect } from '../../../elements/AvSelect';
 import { TextInput } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { normalize } from '../../../constants/platform';
 
 export interface PatientFormData {
     firstName: string;
@@ -470,17 +471,17 @@ const styles = StyleSheet.create({
     },
     scrollContentContainer: {
         flexGrow: 1,
-        paddingBottom: 20,
+        paddingBottom: normalize(20),
     },
     content: {
-        padding: 20,
+        padding: normalize(20),
         flex: 1,
         width: '100%',
     },
     header: {
-        paddingHorizontal: 20,
-        paddingTop: 40,
-        paddingBottom: 20,
+        paddingHorizontal: normalize(20),
+        paddingTop: normalize(40),
+        paddingBottom: normalize(20),
     },
     title: {
 
@@ -488,44 +489,44 @@ const styles = StyleSheet.create({
 
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: normalize(16),
         // color: COLORS.WHITE,
         textAlign: 'center',
-        marginTop: 8,
+        marginTop: normalize(8),
         opacity: 0.9,
     },
     form: {
-        padding: 20,
+        padding: normalize(20),
     },
     sectionTitle: {
-        fontSize: 20,
+        fontSize: normalize(20),
         fontWeight: 'bold',
         color: COLORS.PRIMARY,
-        marginTop: 20,
-        marginBottom: 15,
+        marginTop: normalize(20),
+        marginBottom: normalize(15),
 
     },
     inputContainer: {
-        marginBottom: 20,
+        marginBottom: normalize(20),
     },
     label: {
-        fontSize: 16,
+        fontSize: normalize(16),
         fontWeight: '600',
         color: COLORS.BLACK,
-        marginBottom: 8,
+        marginBottom: normalize(8),
 
     },
     mandatory: {
-        color: COLORS.ERROR || '#FF0000',
+        color: COLORS.ERROR,
     },
     input: {
-        height: 50,
+        height: normalize(50),
         backgroundColor: COLORS.WHITE,
         borderWidth: 1,
         borderColor: COLORS.GREY,
         borderRadius: 8,
-        paddingHorizontal: 12,
-        fontSize: 14,
+        paddingHorizontal: normalize(12),
+        fontSize: normalize(14),
         color: COLORS.BLACK,
     },
     inputError: {
@@ -533,20 +534,20 @@ const styles = StyleSheet.create({
     },
     errorText: {
         color: COLORS.ERROR || '#FF0000',
-        fontSize: 14,
-        marginTop: 5,
+        fontSize: normalize(14),
+        marginTop: normalize(5),
 
     },
     pickerButton: {
         borderWidth: 1,
         borderColor: COLORS.LIGHT_GREY,
         borderRadius: 8,
-        paddingHorizontal: 15,
-        paddingVertical: 12,
+        paddingHorizontal: normalize(15),
+        paddingVertical: normalize(12),
         backgroundColor: COLORS.WHITE,
     },
     pickerText: {
-        fontSize: 16,
+        fontSize: normalize(16),
         color: COLORS.BLACK,
 
     },
@@ -554,12 +555,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: COLORS.LIGHT_GREY,
         borderRadius: 8,
-        paddingHorizontal: 15,
-        paddingVertical: 12,
+        paddingHorizontal: normalize(15),
+        paddingVertical: normalize(12),
         backgroundColor: COLORS.WHITE,
     },
     dateText: {
-        fontSize: 16,
+        fontSize: normalize(16),
         color: COLORS.BLACK,
 
     },
@@ -570,36 +571,36 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: COLORS.LIGHT_GREY,
         borderRadius: 8,
-        paddingVertical: 20,
+        paddingVertical: normalize(20),
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: COLORS.WHITE,
-        minHeight: 120,
+        minHeight: normalize(120),
     },
     photoButtonText: {
-        fontSize: 16,
+        fontSize: normalize(16),
         color: COLORS.GREY,
 
     },
     photoPreview: {
-        width: 100,
-        height: 100,
+        width: normalize(100),
+        height: normalize(100),
         borderRadius: 8,
     },
     checkboxContainer: {
-        marginBottom: 20,
+        marginBottom: normalize(20),
     },
     checkbox: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     checkboxInner: {
-        width: 20,
-        height: 20,
+        width: normalize(20),
+        height: normalize(20),
         borderWidth: 2,
         borderColor: COLORS.PRIMARY,
         borderRadius: 4,
-        marginRight: 10,
+        marginRight: normalize(10),
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -608,28 +609,28 @@ const styles = StyleSheet.create({
     },
     checkmark: {
         color: COLORS.WHITE,
-        fontSize: 14,
+        fontSize: normalize(14),
         fontWeight: 'bold',
     },
     checkboxText: {
-        fontSize: 16,
+        fontSize: normalize(16),
         color: COLORS.BLACK,
         flex: 1,
 
     },
     submitButton: {
         backgroundColor: COLORS.PRIMARY,
-        paddingVertical: 15,
+        paddingVertical: normalize(15),
         borderRadius: 8,
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: normalize(20),
     },
     submitButtonDisabled: {
         opacity: 0.6,
     },
     submitButtonText: {
         color: COLORS.WHITE,
-        fontSize: 18,
+        fontSize: normalize(18),
         fontWeight: 'bold',
 
     },
@@ -637,15 +638,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: normalize(10),
     },
     loginLinkText: {
-        fontSize: 16,
+        fontSize: normalize(16),
         color: COLORS.GREY,
 
     },
     loginLink: {
-        fontSize: 16,
+        fontSize: normalize(16),
         color: COLORS.PRIMARY,
         fontWeight: 'bold',
 

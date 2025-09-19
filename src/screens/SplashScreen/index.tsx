@@ -1,24 +1,16 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Image, ViewStyle, ImageStyle } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useDispatch } from 'react-redux';
 import { IMAGES } from '../../assets';
 import { PAGES } from '../../constants/pages';
 import { COLORS } from '../../constants/colors';
 import StorageService from '../../services/storageService';
+import { normalize } from '../../constants/platform';
+import { RootStackParamList } from '../../types/navigation';
+import { setAuthenticated, setUserProfile } from '../../store/slices/userSlice';
 
 // Define the type for the navigation stack parameters
-type RootStackParamList = {
-  [PAGES.HOME]: undefined;
-  [PAGES.SPLASH]: undefined;
-  [PAGES.LOGIN]: undefined;
-  [PAGES.DRAWER]: undefined;
-  [PAGES.REGISTER]: undefined;
-  [PAGES.PATIENT_REGISTER]: undefined;
-  [PAGES.HOSPITAL_REGISTER]: undefined;
-  [PAGES.DOCTOR_REGISTER]: undefined;
-  [PAGES.LABS_SCAN_REGISTER]: undefined;
-};
 
 // Define the type for the navigation prop
 type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, typeof PAGES.SPLASH>;
@@ -29,20 +21,38 @@ interface SplashScreenProps {
 }
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
+  const dispatch = useDispatch();
+
   useEffect(() => {
     const checkToken = async () => {
       try {
-        const token = await StorageService.get("userToken");
-        console.log("Token here", token)
+        const [token, userRole] = await Promise.all([
+          StorageService.get<string>("userToken"),
+          StorageService.get<string>("userRole"),
+        ]);
+        
+        console.log("Token and role from storage:", { token, userRole });
+        
         if (token) {
-          navigation.replace(PAGES.HOME as any);  // Using type assertion as a workaround
+          // Update Redux store with authentication state
+          dispatch(setAuthenticated(true));
+          
+          // If user role is available, update it in the store
+          if (userRole) {
+            dispatch(setUserProfile({ role: userRole as any }));
+          }
+          
+          navigation.replace(PAGES.HOME);
         } else {
-          // If no token, navigate to Login
-          navigation.replace(PAGES.LOGIN);
+          // If no token, ensure Redux state is cleared
+          dispatch(setAuthenticated(false));
+          navigation.replace(PAGES.HOME);
         }
       } catch (error) {
-        console.error('Error reading token from storage', error);
-        navigation.replace(PAGES.LOGIN); // fallback in case of error
+        console.error('Error during authentication check:', error);
+        // Ensure Redux state is cleared on error
+        dispatch(setAuthenticated(false));
+        navigation.replace(PAGES.HOME);
       }
     };
 
@@ -66,16 +76,16 @@ interface Styles {
   logo: ImageStyle;
 }
 
-const styles = StyleSheet.create<Styles>({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.WHITE, // Optional: Add a background color
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    backgroundColor: COLORS.WHITE,
   },
   logo: {
-    width: 150,
-    height: 150,
+    width: normalize(150),
+    height: normalize(150),
   },
 });
 

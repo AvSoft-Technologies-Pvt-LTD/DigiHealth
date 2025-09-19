@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback, Platform } from 'react-native';
 import AvText from './AvText';
 import { COLORS } from '../constants/colors';
+import { normalize } from '../constants/platform';
 
 interface SelectItem {
   label: string;
@@ -143,10 +144,10 @@ export const AvSelect: React.FC<AvSelectProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: normalize(16),
   },
   labelContainer: {
-    marginBottom: 4,
+    marginBottom: normalize(4),
   },
   label: {
     color: COLORS.PRIMARY_TXT,
@@ -160,9 +161,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: COLORS.GREY,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    borderRadius: normalize(8),
+    paddingVertical: normalize(12),
+    paddingHorizontal: normalize(16),
     backgroundColor: COLORS.WHITE,
   },
   buttonText: {
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
     color: COLORS.GREY,
   },
   arrow: {
-    marginLeft: 8,
+    marginLeft: normalize(8),
     color: COLORS.PRIMARY_TXT,
   },
   inputError: {
@@ -181,8 +182,8 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: COLORS.ERROR,
-    marginTop: 4,
-    fontSize: 12,
+    marginTop: normalize(4),
+    fontSize: normalize(12),
   },
   modalOverlay: {
     flex: 1,
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
   },
   dropdown: {
     backgroundColor: COLORS.WHITE,
-    borderRadius: 8,
+    borderRadius: normalize(8),
     borderWidth: 1,
     borderColor: COLORS.GREY,
     shadowColor: '#000',
@@ -200,8 +201,8 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: normalize(12),
+    paddingHorizontal: normalize(16),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.GREY,
   },

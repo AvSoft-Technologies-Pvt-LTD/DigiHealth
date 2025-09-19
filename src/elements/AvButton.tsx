@@ -31,7 +31,7 @@ export default function AvButton(props: AvButtonProps) {
               },
               style,
             ]}
-            buttonColor={COLORS.SECONDARY}
+            buttonColor={props.buttonColor}
           >
             {children}
           </Button>

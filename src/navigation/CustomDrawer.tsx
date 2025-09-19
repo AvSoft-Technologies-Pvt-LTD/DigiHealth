@@ -6,10 +6,13 @@ import { PAGES } from '../constants/pages';
 import { COLORS } from '../constants/colors';
 import { RootStackParamList } from '../types/navigation';
 import StorageService from '../services/storageService';
-import { useNavigation } from '@react-navigation/native';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AvText from '../elements/AvText';
 import { width } from '../constants/common';
+import { normalize } from '../constants/platform';
+import { useDispatch } from 'react-redux';
+import { setAuthenticated, setUserProfile } from '../store/slices/userSlice';
 
 
 const DRAWER_WIDTH = width * 0.75;
@@ -18,20 +21,34 @@ const CustomDrawer: React.FC = () => {
   const { isOpen, closeDrawer } = useDrawer();
   const navigation = useNavigation<any>();
   const animation = useRef(new Animated.Value(0)).current;
+  const dispatch = useDispatch();
 
   const handleLogout = async () => {
     try {
       // Clear user token and role
       await StorageService.remove('userToken');
       await StorageService.remove('userRole');
-      
+      dispatch(setAuthenticated(false));
+      dispatch(setUserProfile({ role: null }));
+      // Reload app
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [
+            {
+              name: PAGES.SPLASH,
+            },
+          ],
+        })
+      );
+            
       // Close drawer
       closeDrawer();
       
       // Navigate to login screen
       navigation.reset({
         index: 0,
-        routes: [{ name: PAGES.LOGIN }],
+        routes: [{ name: PAGES.HOME }],
       });
     } catch (error) {
       console.error('Error during logout:', error);
@@ -105,9 +122,9 @@ const CustomDrawer: React.FC = () => {
                 styles.menuItem,
                 {
                   backgroundColor: pressed ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                  borderRadius: 24,
-                  marginVertical: 4,
-                  padding: 12,
+                  borderRadius: normalize(24),
+                  marginVertical: normalize(4),
+                  padding: normalize(12),
                   flexDirection: 'row',
                   alignItems: 'center',
                 },
@@ -124,11 +141,11 @@ const CustomDrawer: React.FC = () => {
               <View style={styles.iconContainer}>
                 <MaterialCommunityIcons
                   name={item.icon}
-                  size={24}
+                  size={normalize(24)}
                   color={COLORS.WHITE}
                 />
               </View>
-              <AvText style={[styles.menuItemText, { marginLeft: 16 }]}>{item.title}</AvText>
+              <AvText style={[styles.menuItemText, { marginLeft: normalize(16) }]}>{item.title}</AvText>
             </Pressable>
           ))}
         </View>
@@ -149,56 +166,56 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: DRAWER_WIDTH,
     backgroundColor: COLORS.PRIMARY,
-    elevation: 5,
-    paddingTop: 50,
+    elevation: normalize(5),
+    paddingTop: normalize(50),
     shadowColor: '#000',
     shadowOffset: { width: 2, height: 0 },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowRadius: normalize(5),
   },
   header: {
-    padding: 20,
-    paddingTop: 50,
+    padding: normalize(20),
+    paddingTop: normalize(50),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.LIGHT_GREY,
     backgroundColor: COLORS.PRIMARY_BG,
   },
   title: {
-    fontSize: 22,
+    fontSize: normalize(22),
     fontWeight: 'bold',
     color: COLORS.WHITE,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: normalize(14),
     color: COLORS.GREY,
-    marginTop: 4,
+    marginTop: normalize(4),
   },
   menuContainer: {
-    paddingVertical: 10,
+    paddingVertical: normalize(10),
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 12,
-    borderRadius: 24,
-    marginVertical: 4,
+    paddingVertical: normalize(12),
+    paddingHorizontal: normalize(16),
+    marginHorizontal: normalize(12),
+    borderRadius: normalize(24),
+    marginVertical: normalize(4),
   },
   iconContainer: {
-    width: 24,
+    width: normalize(24),
     alignItems: 'center',
   },
   menuItemText: {
-    fontSize: 16,
+    fontSize: normalize(16),
     color: COLORS.WHITE,
-    marginLeft: 16,
+    marginLeft: normalize(16),
   },
   destructiveItem: {
-    marginTop: 8,
+    marginTop: normalize(8),
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    paddingTop: 12,
+    paddingTop: normalize(12),
   },
   destructiveText: {
     color: COLORS.ERROR,

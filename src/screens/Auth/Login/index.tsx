@@ -9,6 +9,8 @@ import { post } from '../../../services/apiServices';
 import { API } from '../../../config/api';
 import { PAGES } from '../../../constants/pages';
 import StorageService from '../../../services/storageService';
+import { useDispatch } from 'react-redux';
+import { setAuthenticated, setUserProfile, UserRole } from '../../../store/slices/userSlice';
 
 // Validation utility functions
 const validateEmail = (email: string): string | null => {
@@ -46,7 +48,7 @@ type LoginProps = {};
 
 interface LoginResponse {
     token: string;
-    role: string;
+    role: UserRole;
     message?: string;
 }
 
@@ -56,6 +58,7 @@ const Login: React.FC<LoginProps> = () => {
     const [otpSent, setOtpSent] = useState(false);
     const [snackbarVisible, setSnackbarVisible] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+    const dispatch = useDispatch();
 
     const handlePasswordLogin = async (email: string, password: string) => {
         // Validate email
@@ -83,6 +86,8 @@ const Login: React.FC<LoginProps> = () => {
             // Save token and role to AsyncStorage
             await StorageService.save("userToken", responseData.token);
             await StorageService.save("userRole", responseData.role);
+            dispatch(setAuthenticated(true));
+            dispatch(setUserProfile({ role: responseData.role }));
             
             // Show success message
             setSnackbarMessage(responseData.message || 'Login successful!');

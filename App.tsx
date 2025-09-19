@@ -5,11 +5,12 @@ import { StatusBar } from 'react-native';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { Provider } from 'react-redux';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { store } from './src/store';
+import { store } from './src/store/index';
 import AppNavigator from './src/navigation/AppNavigation';
 import { COLORS } from './src/constants/colors';
 import { getStatusBarStyle } from './src/utils/statusBar';
 import { DrawerProvider } from './src/navigation/DrawerContext';
+// import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -23,7 +24,7 @@ const GestureHandlerWrapper: React.FC<{children: React.ReactNode}> = ({ children
 
 const App: React.FC = () => {
   // Set global status bar configuration
-  const defaultBackgroundColor = COLORS.WHITE;
+  const defaultBackgroundColor = COLORS.BLACK;
   const statusBarStyle = getStatusBarStyle(defaultBackgroundColor);
 
   // Custom theme for React Native Paper
@@ -59,7 +60,9 @@ const App: React.FC = () => {
               translucent={false}
             />
             <DrawerProvider>
+              {/* <SafeAreaProvider> */}
               <AppNavigator />
+              {/* </SafeAreaProvider> */}
             </DrawerProvider>
           </NavigationContainer>
         </PaperProvider>
