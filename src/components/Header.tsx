@@ -124,7 +124,8 @@ const Header: React.FC<HeaderProps> = ({
                                 name="log-in-outline" 
                                 size={24} 
                                 color={COLORS.ERROR}
-                            />
+                            /> 
+                            <AvText type="overline" style={[{ color: titleColor }]}>  Login</AvText>
                         </Pressable>
                     </View>
                 </View>
@@ -231,9 +232,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     iconButton: {
-        padding: normalize(6),
-        marginLeft: normalize(8),
-        borderRadius: 20,
+        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
     },
