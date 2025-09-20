@@ -60,7 +60,6 @@ const Header: React.FC<HeaderProps> = ({
             navigation.goBack();
         }
     };
-    console.log("Is Authenticated check", isAuthenticated)
     const renderAuthenticatedUI = React.useCallback(() => {
         console.log('Rendering authenticated UI');
         return (

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, RefreshControl, StyleSheet, Image, Platform } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +17,8 @@ import WhyChooseUsSection from './HomeComponents/WhyChooseUsSection';
 
 // data
 import { StatItem, Feature, Benefit } from '../../../constants/data';
+import AvModal from '../../../elements/AvModal';
+import BookAppointmentComponent from './HomeComponents/BookAppointmentComponent';
 
 // Define the props type for the HomeView component (if needed in the future)
 type HomeViewProps = {
@@ -25,15 +27,19 @@ type HomeViewProps = {
   benefits: Benefit[];
   refreshing: boolean;
   onRefresh: () => void;
+  isConsultationModalVisible: boolean;
+  setConsultationModalVisible: (visible: boolean) => void;
 };
 
 // Define the HomeView component with React.FC and props type
-const HomeView: React.FC<HomeViewProps> = ({ 
-  stats, 
-  features, 
+const HomeView: React.FC<HomeViewProps> = ({
+  stats,
+  features,
   benefits,
   refreshing,
-  onRefresh 
+  onRefresh,
+  isConsultationModalVisible,
+  setConsultationModalVisible,
 }) => {
   const theme = useTheme();
   const navigation = useNavigation();
@@ -92,7 +98,7 @@ const HomeView: React.FC<HomeViewProps> = ({
         <View style={styles.buttonRow}>
           <AvButton
             mode="contained"
-            onPress={() => console.log("Book Consultation")}
+            onPress={() => setConsultationModalVisible(true)}
             labelStyle={styles.btnText}
             buttonColor={COLORS.PRIMARY}
             icon="calendar"
@@ -111,7 +117,15 @@ const HomeView: React.FC<HomeViewProps> = ({
             Explore Services
           </AvButton>
         </View>
-
+        <AvModal
+          isModalVisible={isConsultationModalVisible}
+          setModalVisible={setConsultationModalVisible}
+          animationType="fade"
+          title="Booking Consultation"
+          containerStyle={{ padding: normalize(6) }}
+        >
+          <BookAppointmentComponent />
+        </AvModal>
         {/* Stats Section */}
         <OurImpactSection stats={stats} />
 
@@ -119,7 +133,7 @@ const HomeView: React.FC<HomeViewProps> = ({
         <QuickAccessSection features={features} />
 
         {/* Why Choose Us Section */}
-        <WhyChooseUsSection benefits={benefits}/>
+        <WhyChooseUsSection benefits={benefits} />
 
         {/* Bottom Spacer */}
         <View style={{ height: 24 }} />
@@ -153,7 +167,7 @@ const styles = StyleSheet.create({
         shadowColor: COLORS.BLACK,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 12,
+        shadowRadius: normalize(12),
       },
       android: {
         elevation: 8,
@@ -193,7 +207,7 @@ const styles = StyleSheet.create({
     marginBottom: normalize(8),
   },
   subtitle: {
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: COLORS.WHITE,
     textAlign: 'center',
     marginBottom: normalize(24),
   },

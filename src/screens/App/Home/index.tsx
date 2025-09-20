@@ -15,6 +15,8 @@ const Home: React.FC<HomeProps> = () => {
   const [stats, setStats] = useState(initialStats);
   const [features, setFeatures] = useState(initialFeatures);
   const [benefits, setBenefits] = useState(initialBenefits);
+  const [isConsultationModalVisible, setConsultationModalVisible] = useState(false);
+
 
   // Simulate data refresh
   const onRefresh = useCallback(() => {
@@ -38,6 +40,8 @@ const Home: React.FC<HomeProps> = () => {
       benefits={benefits}
       refreshing={refreshing}
       onRefresh={onRefresh}
+      isConsultationModalVisible={isConsultationModalVisible}
+      setConsultationModalVisible={setConsultationModalVisible}
     />
   );
 };
