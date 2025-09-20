@@ -9,4 +9,8 @@ export const PAGES = {
     DOCTOR_REGISTER: "DoctorRegister",
     LABS_SCAN_REGISTER: "LabsScanRegister",
     DASHBOARD: "Dashboard",
+    PATIENT_DASHBOARD:"PatientDashboard",
+    PATIENT_SETTINGS:"PatientSettings",
+    PATIENT_HEALTHCARD:"Health Card",
+    PATIENT_APPOINTMENTS:"Appointments",
 } as const;

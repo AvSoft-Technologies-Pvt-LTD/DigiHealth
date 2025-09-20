@@ -71,9 +71,8 @@ const Header: React.FC<HeaderProps> = ({
                         onPress={handleBackPress}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
-                        <AvText type="title_2" style={[styles.backButtonText, { color: titleColor }]}>
-                            ←
-                        </AvText>
+<MaterialIcons name="arrow-back" size={24} color={titleColor} />                            ← 
+                        
                     </Pressable>
                 ) : (
 

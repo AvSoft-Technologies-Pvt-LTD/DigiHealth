@@ -4,7 +4,7 @@ const getBaseUrl = () => {
   if (__DEV__) {
     // Uncomment the appropriate line based on your setup
     // return 'http://10.0.2.2:8080/api/'; // For Android emulator
-    return 'http://192.168.0.121:8080/api/'; // For physical device (replace YOUR_LOCAL_IP with your computer's local IP)
+    return 'http://192.168.0.169:8080/api/'; // For physical device (replace YOUR_LOCAL_IP with your computer's local IP)
   }
   return 'http://your-production-url.com/api/'; // For production
 };

@@ -290,6 +290,7 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                 </AvText>
                 <View style={styles.inputContainer}>
                     <AvTextInput
+                     label={"Enter First Name"}
                         style={[
                             styles.input, 
                             hasError ? styles.inputError : {}

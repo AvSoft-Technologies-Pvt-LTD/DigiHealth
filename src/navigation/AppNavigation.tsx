@@ -1,20 +1,18 @@
 // src/navigation/AppNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import SplashScreen from '../screens/SplashScreen';
-import Home from '../screens/App/Home';
-import Login from '../screens/Auth/Login';
-import Register from '../screens/Auth/Register';
-import PatientRegister from '../screens/Auth/PatientRegister';
-import DoctorRegister from '../screens/Auth/DoctorRegister';
-import HospitalRegister from '../screens/Auth/HospitalRegister';
-import LabsScanRegister from '../screens/Auth/LabsScanRegister';
+
 import { PAGES } from '../constants/pages';
 import CustomDrawer from './CustomDrawer';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
 import { useDrawer } from './DrawerContext';
+import { DoctorRegister, Home, Login, PatientDashboard, PatientRegister, Register, SplashScreen } from '../screens';
+import PatientDashboardView from '../screens/AllDashboards/PtDashboard/Overview/PtDashboard';
+import PatientSettingsView from '../screens/AllDashboards/PtDashboard/PtSetting';
+import HealthCard from '../screens/AllDashboards/PtDashboard/HealthCard/HealthCard';
+import Appointments from '../screens/AllDashboards/PtDashboard/Appointments';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -32,8 +30,13 @@ const AppNavigator: React.FC = () => {
       <Stack.Screen name={PAGES.REGISTER} component={Register} />
       <Stack.Screen name={PAGES.PATIENT_REGISTER} component={PatientRegister} />
       <Stack.Screen name={PAGES.DOCTOR_REGISTER} component={DoctorRegister} />
-      <Stack.Screen name={PAGES.HOSPITAL_REGISTER} component={HospitalRegister} />
-      <Stack.Screen name={PAGES.LABS_SCAN_REGISTER} component={LabsScanRegister} />
+      {/* <Stack.Screen name={PAGES.HOSPITAL_REGISTER} component={HospitalRegister} />
+      <Stack.Screen name={PAGES.LABS_SCAN_REGISTER} component={LabsScanRegister} /> */}
+      {/* app screens */}
+      <Stack.Screen name={PAGES.PATIENT_DASHBOARD} component={PatientDashboardView} />
+      <Stack.Screen name={PAGES.PATIENT_SETTINGS} component={PatientSettingsView} />
+      <Stack.Screen name={PAGES.PATIENT_HEALTHCARD} component={HealthCard} />
+       <Stack.Screen name={PAGES.PATIENT_APPOINTMENTS} component={Appointments} />
     </Stack.Navigator>
     <CustomDrawer />
   </> //Drawer outside navigator but inside container
