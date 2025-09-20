@@ -47,9 +47,9 @@ const Header: React.FC<HeaderProps> = ({
     const { openDrawer } = useDrawer();
 
     // Log authentication state changes for debugging
-    React.useEffect(() => {
-        console.log('Header - Authentication state changed:', isAuthenticated);
-    }, [isAuthenticated]);
+    // React.useEffect(() => {
+    //     console.log('Header - Authentication state changed:', isAuthenticated);
+    // }, [isAuthenticated]);
 
     const navigation = useNavigation<HeaderNavigationProp>();
 
@@ -104,7 +104,6 @@ const Header: React.FC<HeaderProps> = ({
     }, [title, titleColor, backgroundColor, openDrawer]);
 
     const renderUnauthenticatedUI = React.useCallback(() => {
-        console.log('Rendering unauthenticated UI');
         return (
             <View style={[styles.container, { backgroundColor }]}>
                 {/* Left Section - Empty */}

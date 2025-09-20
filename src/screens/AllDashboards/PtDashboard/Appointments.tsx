@@ -15,6 +15,8 @@ import {
   FilterOptions,
   AppointmentTabs,
 } from '../../../constants/data';
+import Header from '../../../components/Header';
+import { PAGES } from '../../../constants/pages';
 
 const Appointments = () => {
   const [activeTab, setActiveTab] = useState('doctor');
@@ -93,6 +95,12 @@ const Appointments = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <Header
+        title={"Appointments"}
+        showBackButton={false}
+        backgroundColor={COLORS.WHITE}
+        titleColor={COLORS.BLACK}
+      />
       <View style={styles.container}>
         <Tabs tabs={AppointmentTabs} activeTab={activeTab} onTabChange={setActiveTab} />
         <SearchFilterBar

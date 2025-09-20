@@ -1,15 +1,17 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Card } from 'react-native-paper';
+import { useSelector } from 'react-redux';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AvText from '../../../../elements/AvText';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import FadeInView from './FadeInView';
-import { Benefit } from '../../../../constants/data';
+import { selectBenefits } from '../../../../store/slices/homeSlice';
 
 
-const WhyChooseUsSection = ({benefits}: {benefits: Benefit[]}) => {
+const WhyChooseUsSection = () => {
+  const benefits = useSelector(selectBenefits);
   return (
     <View style={styles.section}>
       <AvText type="heading_3" style={styles.sectionTitle}>

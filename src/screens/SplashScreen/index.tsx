@@ -3,13 +3,17 @@ import { View, StyleSheet, Image, ViewStyle, ImageStyle } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDispatch } from 'react-redux';
 import { IMAGES } from '../../assets';
+// constants
 import { PAGES } from '../../constants/pages';
 import { COLORS } from '../../constants/colors';
-import StorageService from '../../services/storageService';
 import { normalize } from '../../constants/platform';
+import { benefits, features, stats } from '../../constants/data';
+
+import StorageService from '../../services/storageService';
 import { RootStackParamList } from '../../types/navigation';
 import { setAuthenticated, setUserProfile } from '../../store/slices/userSlice';
 
+import { setHomeData } from '../../store/slices/homeSlice';
 // Define the type for the navigation stack parameters
 
 // Define the type for the navigation prop
@@ -22,6 +26,17 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch();
+
+
+  useEffect(() => {
+  homeData();
+  dispatch(setHomeData(homeData()));
+  }, [dispatch]);
+  const homeData = () => ({
+    stats: stats,
+    features: features,
+    benefits: benefits,
+  });
 
   useEffect(() => {
     const checkToken = async () => {

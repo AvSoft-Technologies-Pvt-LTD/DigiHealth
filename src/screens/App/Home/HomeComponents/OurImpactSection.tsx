@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Animated, Easing, Text } from 'react-native';
 import { Card } from 'react-native-paper';
+import { useSelector } from 'react-redux';
 import AvText from '../../../../elements/AvText';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
-import { StatItem } from '../../../../constants/data';
+import { selectStats } from '../../../../store/slices/homeSlice';
 
 
 
@@ -42,7 +43,8 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({ value, style }) => {
   );
 };
 
-const OurImpactSection = ({ stats }: { stats: StatItem[] }) => {
+const OurImpactSection = () => {
+  const stats = useSelector(selectStats);  
   return (
     <View style={styles.section}>
       <AvText type="heading_3" style={styles.sectionTitle}>

@@ -2,14 +2,24 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../../../constants/colors';
 import AvText from '../../../elements/AvText';
+import Header from '../../../components/Header';
+import { PAGES } from '../../../constants/pages';
 
 type DoctorRegisterViewProps = {};
 
 const DoctorRegisterView: React.FC<DoctorRegisterViewProps> = () => {
   return (
+    <>
+    <Header
+        title={PAGES.DOCTOR_REGISTER}
+        showBackButton={false}
+        backgroundColor={COLORS.WHITE}
+        titleColor={COLORS.BLACK}
+      />
     <View style={styles.container}>
       <AvText type="heading_1" style={styles.text}>Doctor Register Page</AvText>
     </View>
+    </>
   );
 };
 

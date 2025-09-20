@@ -13,6 +13,8 @@ import PatientDashboardView from '../screens/AllDashboards/PtDashboard/Overview/
 import PatientSettingsView from '../screens/AllDashboards/PtDashboard/PtSetting';
 import HealthCard from '../screens/AllDashboards/PtDashboard/HealthCard/HealthCard';
 import Appointments from '../screens/AllDashboards/PtDashboard/Appointments';
+import HospitalRegister from '../screens/Auth/HospitalRegister';
+import LabsScanRegister from '../screens/Auth/LabsScanRegister';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,8 +32,8 @@ const AppNavigator: React.FC = () => {
       <Stack.Screen name={PAGES.REGISTER} component={Register} />
       <Stack.Screen name={PAGES.PATIENT_REGISTER} component={PatientRegister} />
       <Stack.Screen name={PAGES.DOCTOR_REGISTER} component={DoctorRegister} />
-      {/* <Stack.Screen name={PAGES.HOSPITAL_REGISTER} component={HospitalRegister} />
-      <Stack.Screen name={PAGES.LABS_SCAN_REGISTER} component={LabsScanRegister} /> */}
+      <Stack.Screen name={PAGES.HOSPITAL_REGISTER} component={HospitalRegister} />
+      <Stack.Screen name={PAGES.LABS_SCAN_REGISTER} component={LabsScanRegister} />
       {/* app screens */}
       <Stack.Screen name={PAGES.PATIENT_DASHBOARD} component={PatientDashboardView} />
       <Stack.Screen name={PAGES.PATIENT_SETTINGS} component={PatientSettingsView} />

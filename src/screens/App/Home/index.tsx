@@ -1,50 +1,79 @@
 import React, { useState, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { View, Text, Button, StyleSheet } from 'react-native';
 import HomeView from './HomeView';
-import { Benefit, benefits as initialBenefits,Feature, features as initialFeatures, StatItem, stats as initialStats } from '../../../constants/data';
 
-// Define the props type for the Home component (if needed in the future)
+import { COLORS } from '../../../constants/colors';
+import { setHomeData,selectHomeError } from '../../../store/slices/homeSlice';
+import { benefits, features, stats } from '../../../constants/data';
+
 type HomeProps = {
-  stats?: StatItem[];
-  features?: Feature[];
-  benefits?: Benefit[];
+  // Props can be added here if needed
 };
 
-// Define the Home component with React.FC and props type
 const Home: React.FC<HomeProps> = () => {
+  const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState(initialStats);
-  const [features, setFeatures] = useState(initialFeatures);
-  const [benefits, setBenefits] = useState(initialBenefits);
   const [isConsultationModalVisible, setConsultationModalVisible] = useState(false);
+  
+  // Prepare home data
+  const homeData = {
+    stats: [...stats],
+    features: [...features],
+    benefits: [...benefits],
+  };
 
+  // Load initial data
+  // useEffect(() => {
+  //   dispatch(setHomeData(homeData));
+  // }, [dispatch]);
 
-  // Simulate data refresh
-  const onRefresh = useCallback(() => {
+  // Handle pull-to-refresh
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      // In a real app, you would fetch new data here
-      // For now, we'll just reset to the initial data
-      setStats(initialStats);
-      setFeatures(initialFeatures);
-      setBenefits(initialBenefits);
+    try {
+      // In a real app, you would fetch fresh data here
+      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
+      dispatch(setHomeData(homeData));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      console.error('Error refreshing data:', errorMessage);
+    } finally {
       setRefreshing(false);
-    }, 1500);
-  }, []);
+    }
+  }, [dispatch, homeData]);
+
+  // Show error state if there was an error loading data
+  const error = useSelector(selectHomeError);
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        <Text style={{ color: COLORS.ERROR, marginBottom: 16, textAlign: 'center' }}>
+          {error}
+        </Text>
+        <Button onPress={onRefresh} title="Retry" />
+      </View>
+    );
+  }
+
+  console.log("Stats Passing", stats);
 
   return (
-    <HomeView 
-      stats={stats} 
-      features={features} 
-      benefits={benefits}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      isConsultationModalVisible={isConsultationModalVisible}
-      setConsultationModalVisible={setConsultationModalVisible}
-    />
+    <View style={styles.container}>
+      <HomeView
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        isConsultationModalVisible={isConsultationModalVisible}
+        setConsultationModalVisible={setConsultationModalVisible}
+      />
+    </View>
   );
 };
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
 
 export default Home;

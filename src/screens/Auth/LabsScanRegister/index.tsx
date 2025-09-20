@@ -2,13 +2,23 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../../../../src/constants/colors';
 import { normalize } from '../../../constants/platform';
+import Header from '../../../components/Header';
+import { PAGES } from '../../../constants/pages';
 
 const LabsScanRegister: React.FC = () => {
   return (
+    <>
+    <Header
+        title={PAGES.LABS_SCAN_REGISTER}
+        showBackButton={false}
+        backgroundColor={COLORS.WHITE}
+        titleColor={COLORS.BLACK}
+      />
     <View style={styles.container}>
       <Text style={styles.title}>Labs & Scan Registration</Text>
       <Text style={styles.subtitle}>Coming Soon</Text>
     </View>
+    </>
   );
 };
 

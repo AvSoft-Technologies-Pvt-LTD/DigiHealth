@@ -16,15 +16,11 @@ import OurImpactSection from './HomeComponents/OurImpactSection';
 import WhyChooseUsSection from './HomeComponents/WhyChooseUsSection';
 
 // data
-import { StatItem, Feature, Benefit } from '../../../constants/data';
 import AvModal from '../../../elements/AvModal';
 import BookAppointmentComponent from './HomeComponents/BookAppointmentComponent';
 
 // Define the props type for the HomeView component (if needed in the future)
 type HomeViewProps = {
-  stats: StatItem[];
-  features: Feature[];
-  benefits: Benefit[];
   refreshing: boolean;
   onRefresh: () => void;
   isConsultationModalVisible: boolean;
@@ -33,9 +29,6 @@ type HomeViewProps = {
 
 // Define the HomeView component with React.FC and props type
 const HomeView: React.FC<HomeViewProps> = ({
-  stats,
-  features,
-  benefits,
   refreshing,
   onRefresh,
   isConsultationModalVisible,
@@ -127,13 +120,13 @@ const HomeView: React.FC<HomeViewProps> = ({
           <BookAppointmentComponent />
         </AvModal>
         {/* Stats Section */}
-        <OurImpactSection stats={stats} />
+        <OurImpactSection />
 
         {/* Quick Access Section */}
-        <QuickAccessSection features={features} />
+        <QuickAccessSection />
 
         {/* Why Choose Us Section */}
-        <WhyChooseUsSection benefits={benefits} />
+        <WhyChooseUsSection />
 
         {/* Bottom Spacer */}
         <View style={{ height: 24 }} />

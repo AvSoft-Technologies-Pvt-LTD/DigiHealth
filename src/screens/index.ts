@@ -5,7 +5,7 @@ import PatientRegister from './Auth/PatientRegister';
 import DoctorRegister from './Auth/DoctorRegister';
 
 // Main Screens
-import Home from './App/Home/HomeView';
+import Home from './App/Home';
 import SplashScreen from './SplashScreen';
 import PatientDashboard from './AllDashboards/PtDashboard/Overview/PtDashboard';
 import PatientSetting from './AllDashboards/PtDashboard/PtSetting';
