@@ -15,7 +15,7 @@ import { getHealthConditions, getCoverageTypes, getRelations, getBloodGroups } f
 
 const initialUserData = {
   name: '', email: '', gender: '', phone: '', dob: '', bloodGroup: '', height: '', weight: '',
-  isAlcoholicUser: false, isSmokerUser: false, isTobaccoUser: false, smokingDuration: '', alcoholDuration: '', tobaccoDuration: '', allergies: '', surgeries: '',
+  isAlcoholicUser: false, isSmokerUser: false, isTobaccoUser: false, smokingDuration: '', alcoholDuration: '', tobaccoDuration: '', allergies: '',allergyDuration: '', surgeries: '',surgeryDuration: '',
   familyHistory: { diabetes: false, cancer: false, heartDisease: false, mentalHealth: false, disability: false },
   familyMembers: [], additionalDetails: { provider: '', policyNumber: '', coverageType: '', startDate: '', endDate: '', coverageAmount: '', primaryHolder: false }
 };
@@ -56,20 +56,48 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [masterData, setMasterData] = useState({ coverageTypes: [], healthConditions: [], familyRelations: [], bloodGroups: [] });
   const [hasPersonalHealthData, setHasPersonalHealthData] = useState(false);
+// Hardcoded options for surgeries and allergies (only these two are hardcoded)
+const surgeryOptionsHardcoded = [
+  { value: '', label: 'Select Surgeries' },
+  { value: 'appendectomy', label: 'Appendectomy' },
+  { value: 'hernia_repair', label: 'Hernia Repair' },
+];
+
+const allergyOptionsHardcoded = [
+  { value: '', label: 'Select Allergies' },
+  { value: 'pollen', label: 'Pollen' },
+  { value: 'penicillin', label: 'Penicillin' },
+];
 
   const getModalFields = (section) => {
     const { bloodGroups, familyRelations, healthConditions, coverageTypes } = masterData;
     const fieldConfigs = {
       personal: [
-        { name: 'height', label: 'Height (cm)', type: 'number', colSpan: 1 },
-        { name: 'weight', label: 'Weight (kg)', type: 'number', colSpan: 1 },
-        { name: 'bloodGroup', label: 'Blood Group', type: 'select', colSpan: 1, options: bloodGroups },
-        { name: 'surgeries', label: 'Surgeries', type: 'textarea', colSpan: 1 },
-        { name: 'allergies', label: 'Allergies', type: 'textarea', colSpan: 2 },
-        { name: 'isAlcoholicUser', label: 'Drink alcohol?', type: 'checkboxWithInput', colSpan: 1, inputName: 'alcoholDuration', inputLabel: 'Since (yrs)', inputType: 'number' },
-        { name: 'isSmokerUser', label: 'Do you smoke?', type: 'checkboxWithInput', colSpan: 1, inputName: 'smokingDuration', inputLabel: 'Since (yrs)', inputType: 'number' },
-        { name: 'isTobaccoUser', label: 'Tobacco Use?', type: 'checkboxWithInput', colSpan: 1, inputName: 'tobaccoDuration', inputLabel: 'Since (yrs)', inputType: 'number' }
-      ],
+  { name: 'height', label: 'Height (cm)', type: 'number', colSpan: 1 },
+  { name: 'weight', label: 'Weight (kg)', type: 'number', colSpan: 1 },
+  { name: 'bloodGroup', label: 'Blood Group', type: 'select', colSpan: 1, options: bloodGroups },
+
+  // note: I keep the extra keys inputLabel/inputType so rendering knows to show an input
+ { 
+  name: 'surgeries', label: 'Surgeries', type: 'select', colSpan: 1,
+  options: surgeryOptionsHardcoded, inputLabel: 'Since (yrs)', inputType: 'number',
+  durationField: 'surgeryDuration',
+  durationFor: ['appendectomy']   // 👈 only show input if this option is selected
+},
+
+{ 
+  name: 'allergies', label: 'Allergies', type: 'select', colSpan: 2,
+  options: allergyOptionsHardcoded, inputLabel: 'Since (yrs)', inputType: 'number',
+  durationField: 'allergyDuration',
+  durationFor: true   // 👈 show input for any non-empty allergy
+},
+
+
+  { name: 'isAlcoholicUser', label: 'Drink alcohol?', type: 'checkboxWithInput', colSpan: 1, inputName: 'alcoholDuration', inputLabel: 'Since (yrs)', inputType: 'number' },
+  { name: 'isSmokerUser', label: 'Do you smoke?', type: 'checkboxWithInput', colSpan: 1, inputName: 'smokingDuration', inputLabel: 'Since (yrs)', inputType: 'number' },
+  { name: 'isTobaccoUser', label: 'Tobacco Use?', type: 'checkboxWithInput', colSpan: 1, inputName: 'tobaccoDuration', inputLabel: 'Since (yrs)', inputType: 'number' }
+],
+
       family: [
         { name: 'relation', label: 'Relation', type: 'select', colSpan: 1, options: familyRelations },
         { name: 'name', label: 'Name', type: 'text', colSpan: 2 },
@@ -213,13 +241,22 @@ function Dashboard() {
     let title = '';
     if (section === 'personal') {
       title = 'Personal Health Details';
-      modalData = {
-        height: userData.height || '', weight: userData.weight || '', bloodGroup: userData.bloodGroupId || '',
-        surgeries: userData.surgeries || '', allergies: userData.allergies || '',
-        isAlcoholicUser: userData.isAlcoholicUser || false, alcoholDuration: userData.alcoholDuration || '',
-        isSmokerUser: userData.isSmokerUser || false, smokingDuration: userData.smokingDuration || '',
-        isTobaccoUser: userData.isTobaccoUser || false, tobaccoDuration: userData.tobaccoDuration || '',
-      };
+     modalData = {
+  height: userData.height || '',
+  weight: userData.weight || '',
+  bloodGroup: userData.bloodGroupId || '',
+  surgeries: userData.surgeries || '',
+  surgeryDuration: userData.surgeryDuration || '',     // << added
+  allergies: userData.allergies || '',
+  allergyDuration: userData.allergyDuration || '',     // << added
+  isAlcoholicUser: userData.isAlcoholicUser || false,
+  alcoholDuration: userData.alcoholDuration || '',
+  isSmokerUser: userData.isSmokerUser || false,
+  smokingDuration: userData.smokingDuration || '',
+  isTobaccoUser: userData.isTobaccoUser || false,
+  tobaccoDuration: userData.tobaccoDuration || '',
+};
+
     } else if (section === 'family') {
       title = data ? 'Edit Family Member' : 'Add Family Member';
       if (data) {

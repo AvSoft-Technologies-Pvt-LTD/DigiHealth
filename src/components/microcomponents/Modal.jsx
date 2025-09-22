@@ -252,91 +252,122 @@ const ReusableModal = ({
                             </div>
                           ) : (
                             <div className="floating-input relative" data-placeholder={field.label}>
-                              {field.type === "select" || field.type === "multiselect" ? (
-                                <div className="relative">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setFormValues((p) => ({
-                                        ...p,
-                                        [`${field.name}Open`]: !p[`${field.name}Open`],
-                                        [`${field.name}Search`]: "",
-                                      }))
-                                    }
-                                    className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md text-left bg-white focus:outline-none focus:ring-2 flex justify-between items-center"
-                                  >
-                                    <span className="truncate text-xs sm:text-sm">
-                                      {field.type === "multiselect"
-                                        ? Array.isArray(formValues[field.name]) && formValues[field.name].length
-                                          ? `${formValues[field.name].length} selected`
-                                          : `Select ${field.label}`
-                                        : formValues[field.name] || `Select ${field.label}`}
-                                    </span>
-                                    <ChevronDown size={14} className="sm:size-4" />
-                                  </button>
-                                  {formValues[`${field.name}Open`] && (
-                                    <div className="fixed z-[1000] mt-1  max-h-40 sm:max-h-60  min-w-auto overflow-auto rounded bg-white shadow">
-                                      <input
-                                        type="text"
-                                        placeholder="Search..."
-                                        value={formValues[`${field.name}Search`] || ""}
-                                        onChange={(e) =>
-                                          setFormValues((p) => ({
-                                            ...p,
-                                            [`${field.name}Search`]: e.target.value,
-                                          }))
-                                        }
-                                        className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border-b border-gray-100 outline-none"
-                                      />
-                                      {field.options
-                                        ?.filter((opt) =>
-                                          opt.label.toLowerCase().includes((formValues[`${field.name}Search`] || "").toLowerCase())
-                                        )
-                                        .map((opt) =>
-                                          field.type === "select" ? (
-                                            <div
-                                              key={opt.value}
-                                              onClick={() => {
-                                                handleChange(field.name, opt.value);
-                                                setFormValues((p) => ({
-                                                  ...p,
-                                                  [`${field.name}Open`]: false,
-                                                }));
-                                              }}
-                                              className="px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-100 cursor-pointer text-xs sm:text-sm"
-                                            >
-                                              {opt.label}
-                                            </div>
-                                          ) : (
-                                            <label
-                                              key={opt.value}
-                                              className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-100 cursor-pointer text-xs sm:text-sm"
-                                            >
-                                              <input
-                                                type="checkbox"
-                                                className="mr-1.5 sm:mr-2"
-                                                checked={
-                                                  Array.isArray(formValues[field.name]) &&
-                                                  formValues[field.name].includes(opt.value)
-                                                }
-                                                onChange={(e) => {
-                                                  const prev = Array.isArray(formValues[field.name])
-                                                    ? formValues[field.name]
-                                                    : [];
-                                                  const next = e.target.checked
-                                                    ? [...prev, opt.value]
-                                                    : prev.filter((v) => v !== opt.value);
-                                                  handleChange(field.name, next);
-                                                }}
-                                              />
-                                              {opt.label}
-                                            </label>
-                                          )
-                                        )}
-                                    </div>
-                                  )}
-                                </div>
-                              ) :field.type === "password" ? (
+                           {field.type === "select" || field.type === "multiselect" ? (
+  <div className="relative">
+    <button
+      type="button"
+      onClick={() =>
+        setFormValues((p) => ({
+          ...p,
+          [`${field.name}Open`]: !p[`${field.name}Open`],
+          [`${field.name}Search`]: "",
+        }))
+      }
+      className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md text-left bg-white focus:outline-none focus:ring-2 flex justify-between items-center"
+    >
+      <span className="truncate text-xs sm:text-sm">
+        {field.type === "multiselect"
+          ? Array.isArray(formValues[field.name]) && formValues[field.name].length
+            ? `${formValues[field.name].length} selected`
+            : `Select ${field.label}`
+          : formValues[field.name] || `Select ${field.label}`}
+      </span>
+      <ChevronDown size={14} className="sm:size-4" />
+    </button>
+
+    {formValues[`${field.name}Open`] && (
+      <div className="fixed z-[1000] mt-1 max-h-40 sm:max-h-60 min-w-auto overflow-auto rounded bg-white shadow">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={formValues[`${field.name}Search`] || ""}
+          onChange={(e) =>
+            setFormValues((p) => ({
+              ...p,
+              [`${field.name}Search`]: e.target.value,
+            }))
+          }
+          className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border-b border-gray-100 outline-none"
+        />
+        {field.options
+          ?.filter((opt) =>
+            opt.label
+              .toLowerCase()
+              .includes((formValues[`${field.name}Search`] || "").toLowerCase())
+          )
+          .map((opt) =>
+            field.type === "select" ? (
+              <div
+                key={opt.value}
+                onClick={() => {
+                  handleChange(field.name, opt.value);
+                  setFormValues((p) => ({
+                    ...p,
+                    [`${field.name}Open`]: false,
+                  }));
+                }}
+                className="px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-100 cursor-pointer text-xs sm:text-sm"
+              >
+                {opt.label}
+              </div>
+            ) : (
+              <label
+                key={opt.value}
+                className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-100 cursor-pointer text-xs sm:text-sm"
+              >
+                <input
+                  type="checkbox"
+                  className="mr-1.5 sm:mr-2"
+                  checked={
+                    Array.isArray(formValues[field.name]) &&
+                    formValues[field.name].includes(opt.value)
+                  }
+                  onChange={(e) => {
+                    const prev = Array.isArray(formValues[field.name])
+                      ? formValues[field.name]
+                      : [];
+                    const next = e.target.checked
+                      ? [...prev, opt.value]
+                      : prev.filter((v) => v !== opt.value);
+                    handleChange(field.name, next);
+                  }}
+                />
+                {opt.label}
+              </label>
+            )
+          )}
+      </div>
+    )}
+
+   
+{field.durationField && (() => {
+  const selected = formValues[field.name];
+  const df = field.durationFor;
+  const showInput =
+    df === true
+      ? !!selected && selected !== ""
+      : Array.isArray(df)
+      ? df.includes(selected)
+      : false;
+  return showInput ? (
+    <div className="mt-2">
+      <input
+        type={field.inputType || "number"}
+        min="0"
+        value={formValues[field.durationField] ?? ""}
+        onChange={(e) =>
+          handleChange(field.durationField, e.target.value)
+        }
+        className="text-xs sm:text-sm border p-2 sm:p-2.5 border-gray-300 rounded-md w-full sm:w-36 placeholder:text-[10px] sm:placeholder:text-xs"
+        placeholder={field.inputLabel || "Since (yrs)"}
+      />
+    </div>
+  ) : null;
+})()}
+
+  </div>
+) : field.type === "password" ? (
+
   <div className="relative">
     <input
       type={formValues[`${field.name}Visible`] ? "text" : "password"}
