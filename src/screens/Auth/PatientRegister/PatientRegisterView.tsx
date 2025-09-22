@@ -1,3 +1,56 @@
+// import React from 'react';
+// import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+// import PaymentComponent from '../../../elements/AvPayment'; // Adjust the import path
+// import AvText from '../../../elements/AvText'; // Adjust the import path
+
+// const PaymentScreen = () => {
+//   const handlePaymentSuccess = (data: any) => {
+//     console.log('Payment Success:', data);
+//     // Navigate to a success screen or update state
+//   };
+
+//   const handlePaymentError = (error: string) => {
+//     console.log('Payment Error:', error);
+//     // Show an error message or update state
+//   };
+
+//   return (
+
+//       <ScrollView contentContainerStyle={styles.container}>
+       
+
+//         <PaymentComponent
+//           onSuccess={handlePaymentSuccess}
+//           onError={handlePaymentError}
+//           amount={999.99}
+//           currency="₹"
+//           merchantName="Awesome Shop"
+//         />
+//       </ScrollView>
+   
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   safeArea: {
+//     flex: 1,
+//     backgroundColor: '#f5f5f5',
+//   },
+//   container: {
+//     padding: 16,
+//   },
+//   header: {
+//     marginBottom: 24,
+//     alignItems: 'center',
+//   },
+//   headerText: {
+//     fontWeight: 'bold',
+//   },
+// });
+
+// export default PaymentScreen;
+
+
 import React, { useState } from 'react';
 import {
     View,
@@ -13,12 +66,13 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { launchImageLibrary, MediaType, ImagePickerResponse, Asset } from 'react-native-image-picker';
 import { COLORS } from '../../../constants/colors';
 import AvText from '../../../elements/AvText';
-import Header from '../../../components/Header';
+// import Header from '../../../components/Header';
 import AvTextInput from '../../../elements/AvTextInput';
 import { AvSelect } from '../../../elements/AvSelect';
 import { TextInput } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { normalize } from '../../../constants/platform';
+import { isIos, normalize } from '../../../constants/platform';
+import Header from '../../../components/Header';
 
 export interface PatientFormData {
     firstName: string;
@@ -83,28 +137,20 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         }
     };
 
-    // Format Aadhaar with hyphens after every 4 digits
     const formatAadhaar = (input: string): string => {
-        // Remove all non-digit characters
         const digits = input.replace(/\D/g, '');
-        // Add hyphen after every 4 digits
         return digits.replace(/(\d{4})(?=\d)/g, '$1-');
     };
 
     const handleAadhaarChange = (text: string) => {
-        // Remove all non-digit characters and limit to 12 digits
         const digits = text.replace(/\D/g, '').substring(0, 12);
-        // Format with hyphens
         const formatted = formatAadhaar(digits);
-        // Update form data with raw digits (without hyphens) for validation
         updateFormData('aadhaar', digits);
-        // Return formatted value for display
         return formatted;
     };
 
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {};
-
         if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
         if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
         if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
@@ -112,37 +158,30 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         if (!formData.password.trim()) newErrors.password = 'Password is required';
         if (!formData.confirmPassword.trim()) newErrors.confirmPassword = 'Confirm password is required';
 
-        // Email validation
         if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = 'Please enter a valid email address';
         }
 
-        // Phone validation
         if (formData.phone && !/^[0-9]{10}$/.test(formData.phone)) {
             newErrors.phone = 'Please enter a valid 10-digit phone number';
         }
 
-        // Aadhaar validation
         if (formData.aadhaar && !/^[0-9]{12}$/.test(formData.aadhaar)) {
             newErrors.aadhaar = 'Please enter a valid 12-digit Aadhaar number';
         }
 
-        // Pin code validation
         if (formData.pinCode && !/^[0-9]{6}$/.test(formData.pinCode)) {
             newErrors.pinCode = 'Please enter a valid 6-digit pin code';
         }
 
-        // Password validation
         if (formData.password && formData.password.length < 6) {
             newErrors.password = 'Password must be at least 6 characters long';
         }
 
-        // Confirm password
         if (formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = 'Passwords do not match';
         }
 
-        // Date of Birth validation
         if (formData.dob) {
             const dob = new Date(formData.dob);
             const today = new Date();
@@ -156,8 +195,6 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
     };
 
     const handleImagePicker = () => {
-        console.log('handleImagePicker called');
-        
         Alert.alert(
             'Select Image',
             'Choose an option to select your photo',
@@ -176,7 +213,6 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
             maxHeight: 2000,
             maxWidth: 2000,
         };
-
         launchImageLibrary(options, handleImageResponse);
     };
 
@@ -187,27 +223,19 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
             maxHeight: 2000,
             maxWidth: 2000,
         };
-
         launchImageLibrary(options, handleImageResponse);
     };
 
     const handleImageResponse = (response: ImagePickerResponse) => {
-        console.log('Image picker response:', response);
-        
         if (response.didCancel) {
-            console.log('User cancelled image picker');
             return;
         }
-
         if (response.errorMessage) {
-            console.log('ImagePicker Error: ', response.errorMessage);
             Alert.alert('Error', 'Failed to select image. Please try again.');
             return;
         }
-
         if (response.assets && response.assets.length > 0) {
             const selectedImage = response.assets[0];
-            console.log('Selected image:', selectedImage);
             updateFormData('photo', selectedImage);
         } else {
             Alert.alert('Error', 'No image was selected. Please try again.');
@@ -216,31 +244,23 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
 
     const handleDateChange = (event: any, selectedDate?: Date) => {
         setShowDatePicker(false);
-        
-        // Handle different platforms and event types
+
         if (event?.type === 'dismissed') {
-            return; // User dismissed the picker without selecting
+            return;
         }
-        
+
         if (selectedDate && selectedDate instanceof Date && !isNaN(selectedDate.getTime())) {
-            // Clear any previous date errors when a new date is selected
             setErrors(prev => ({
                 ...prev,
                 dob: undefined
             }));
-            
-            // Format date to YYYY-MM-DD for consistent storage
+
             const formattedDate = selectedDate.toISOString().split('T')[0];
-            console.log('Valid date selected:', formattedDate);
             updateFormData('dob', formattedDate);
         } else if (event?.nativeEvent?.timestamp) {
-            // Fallback for some Android versions
             const dateFromTimestamp = new Date(event.nativeEvent.timestamp);
-            console.log('Date from timestamp:', dateFromTimestamp.toISOString());
             const formattedDate = dateFromTimestamp.toISOString().split('T')[0];
             updateFormData('dob', formattedDate);
-        } else {
-            console.log('No valid date selected');
         }
     };
 
@@ -265,15 +285,13 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
     ) => {
         const errorText = fieldKey ? errors[fieldKey] : '';
         const hasError = Boolean(errorText);
-        
-        // Check if this is a password field
+
         const isPasswordField = fieldKey === 'password' || fieldKey === 'confirmPassword';
         const isPasswordVisible = fieldKey === 'password' ? showPassword : showConfirmPassword;
-        const setPasswordVisibility = fieldKey === 'password' 
+        const setPasswordVisibility = fieldKey === 'password'
             ? () => setShowPassword(!isPasswordVisible)
             : () => setShowConfirmPassword(!isPasswordVisible);
 
-        // Only show eye icon for password fields with content
         const rightIcon = isPasswordField && value.length > 0 ? (
             <TextInput.Icon
                 icon={isPasswordVisible ? "eye-off" : "eye"}
@@ -285,30 +303,32 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
 
         return (
             <View style={styles.inputContainer}>
-                <AvText type="Subtitle_1" style={styles.label}>
-                    {label} {mandatory && <AvText type="caption" style={styles.mandatory}>*</AvText>}
-                </AvText>
-                <View style={styles.inputContainer}>
-                    <AvTextInput
-                     label={"Enter First Name"}
-                        style={[
-                            styles.input, 
-                            hasError ? styles.inputError : {}
-                        ]}
-                        value={value}
-                        onChangeText={onChangeText}
-                        placeholder={placeholder}
-                        keyboardType={keyboardType}
-                        secureTextEntry={isPasswordField ? !isPasswordVisible : secureTextEntry}
-                        placeholderTextColor={COLORS.GREY}
-                        right={rightIcon}
-                    />
-                    {errorText && (
-                        <AvText type="caption" style={styles.errorText}>
-                            {errorText}
-                        </AvText>
-                    )}
-                </View>
+                <AvTextInput
+                    label={label + (mandatory ? ' *' : '')}
+                    style={[
+                        styles.input,
+                        hasError ? styles.inputError : {}
+                    ]}
+                    value={value}
+                    onChangeText={onChangeText}
+                    placeholder={placeholder}
+                    keyboardType={keyboardType}
+                    secureTextEntry={isPasswordField ? !isPasswordVisible : secureTextEntry}
+                    placeholderTextColor={COLORS.GREY}
+                    right={rightIcon}
+                    mode="outlined"
+                    theme={{
+                        colors: {
+                            primary: COLORS.SECONDARY,
+                            outline: hasError ? COLORS.ERROR : COLORS.LIGHT_GREY,
+                        }
+                    }}
+                />
+                {errorText && (
+                    <AvText type="caption" style={styles.errorText}>
+                        {errorText}
+                    </AvText>
+                )}
             </View>
         );
     };
@@ -316,8 +336,8 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+            behavior={isIos() ? 'padding' : 'height'}
+            keyboardVerticalOffset={isIos() ? 90 : 0}
         >
             <Header
                 title="Patient Registration"
@@ -325,8 +345,8 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                 backgroundColor={COLORS.WHITE}
                 titleColor={COLORS.BLACK}
             />
-            <ScrollView 
-                style={styles.scrollContainer} 
+            <ScrollView
+                style={styles.scrollContainer}
                 contentContainerStyle={styles.scrollContentContainer}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
@@ -334,7 +354,6 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                 <View style={styles.content}>
                     <AvText type="body" style={styles.subtitle}>Please fill in all the required information</AvText>
                     <View style={styles.form}>
-
                         {/* Personal Information */}
                         <AvText type="title_2" style={styles.sectionTitle}>Personal Information</AvText>
                         {renderInput('First Name', formData.firstName, text => updateFormData('firstName', text), 'Enter your first name', 'default', false, true, 'firstName')}
@@ -342,12 +361,12 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                         {renderInput('Last Name', formData.lastName, text => updateFormData('lastName', text), 'Enter your last name', 'default', false, true, 'lastName')}
                         {renderInput('Phone Number', formData.phone, text => updateFormData('phone', text), 'Enter your phone number', 'phone-pad', false, true, 'phone')}
                         {renderInput('Email', formData.email, text => updateFormData('email', text), 'Enter your email address', 'email-address', false, true, 'email')}
-                        {renderInput('Aadhaar Number', formatAadhaar(formData.aadhaar), handleAadhaarChange, 'Enter your 12-digit Aadhaar number', 'default')}
+                        {renderInput('Aadhaar Number', formatAadhaar(formData.aadhaar), handleAadhaarChange, 'Enter your 12-digit Aadhaar number', 'default', false, false, 'aadhaar')}
 
                         {/* Gender */}
                         <View style={styles.inputContainer}>
                             <AvSelect
-                                label="Gender"
+                                label="Gender *"
                                 required
                                 items={[
                                     { label: 'Male', value: 1 },
@@ -359,13 +378,20 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                                 placeholder="Select Gender"
                                 error={!!errors.genderId}
                                 errorText={errors.genderId}
+                                mode="outlined"
+                                theme={{
+                                    colors: {
+                                        primary: COLORS.SECONDARY,
+                                        outline: errors.genderId ? COLORS.ERROR : COLORS.LIGHT_GREY,
+                                    }
+                                }}
                             />
                         </View>
 
                         {/* Date of Birth */}
                         <View style={styles.inputContainer}>
                             <AvText type="Subtitle_1" style={styles.label}>
-                                Date of Birth <AvText type="caption" style={styles.mandatory}>*</AvText>
+                                Date of Birth *
                             </AvText>
                             <TouchableOpacity
                                 style={[styles.dateButton, errors.dob ? styles.inputError : {}]}
@@ -377,6 +403,7 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                             </TouchableOpacity>
                             {errors.dob && <AvText type="caption" style={styles.errorText}>{errors.dob}</AvText>}
                         </View>
+
                         {showDatePicker && (
                             <DateTimePicker
                                 value={formData.dob ? new Date(formData.dob) : new Date()}
@@ -392,7 +419,7 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                         {/* Photo Upload */}
                         <View style={styles.inputContainer}>
                             <AvText type="Subtitle_1" style={styles.label}>
-                                Upload Photo <AvText type="caption" style={styles.mandatory}>*</AvText>
+                                Upload Photo *
                             </AvText>
                             <TouchableOpacity
                                 style={[styles.photoButton, errors.photo ? styles.inputError : {}]}
@@ -401,7 +428,10 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                                 {formData.photo ? (
                                     <Image source={{ uri: formData.photo.uri }} style={styles.photoPreview} />
                                 ) : (
-                                    <AvText type="body" style={styles.photoButtonText}>Choose Photo</AvText>
+                                    <View style={styles.photoPlaceholder}>
+                                        <Icon name="add-a-photo" size={30} color={COLORS.GREY} />
+                                        <AvText type="body" style={styles.photoButtonText}>Upload Photo</AvText>
+                                    </View>
                                 )}
                             </TouchableOpacity>
                             {errors.photo && <AvText type="caption" style={styles.errorText}>{errors.photo}</AvText>}
@@ -429,7 +459,7 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                                     {formData.agreeDeclaration && <AvText type="caption" style={styles.checkmark}>✓</AvText>}
                                 </View>
                                 <AvText type="body" style={styles.checkboxText}>
-                                    I agree to the declaration
+                                    I agree to the declaration *
                                 </AvText>
                             </TouchableOpacity>
                             {errors.agreeDeclaration && <AvText type="caption" style={styles.errorText}>{errors.agreeDeclaration}</AvText>}
@@ -453,7 +483,6 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                                 <AvText type="Link" style={styles.loginLink}>Login Here</AvText>
                             </TouchableOpacity>
                         </View>
-
                     </View>
                 </View>
             </ScrollView>
@@ -485,13 +514,10 @@ const styles = StyleSheet.create({
         paddingBottom: normalize(20),
     },
     title: {
-
         textAlign: 'center',
-
     },
     subtitle: {
         fontSize: normalize(16),
-        // color: COLORS.WHITE,
         textAlign: 'center',
         marginTop: normalize(8),
         opacity: 0.9,
@@ -505,65 +531,48 @@ const styles = StyleSheet.create({
         color: COLORS.PRIMARY,
         marginTop: normalize(20),
         marginBottom: normalize(15),
-
     },
     inputContainer: {
-        marginBottom: normalize(20),
+        marginBottom: normalize(16),
     },
     label: {
-        fontSize: normalize(16),
-        fontWeight: '600',
+        fontSize: normalize(14),
+        fontWeight: '500',
         color: COLORS.BLACK,
-        marginBottom: normalize(8),
-
-    },
-    mandatory: {
-        color: COLORS.ERROR,
+        marginBottom: normalize(4),
+        backgroundColor: COLORS.WHITE,
+        paddingHorizontal: normalize(4),
+        marginLeft: normalize(8),
+        alignSelf: 'flex-start',
+        zIndex: 1,
     },
     input: {
-        height: normalize(50),
+        height: normalize(56),
         backgroundColor: COLORS.WHITE,
-        borderWidth: 1,
-        borderColor: COLORS.GREY,
         borderRadius: 8,
-        paddingHorizontal: normalize(12),
-        fontSize: normalize(14),
+        fontSize: normalize(16),
         color: COLORS.BLACK,
     },
     inputError: {
-        borderColor: COLORS.ERROR || '#FF0000',
+        borderColor: COLORS.ERROR,
     },
     errorText: {
-        color: COLORS.ERROR || '#FF0000',
-        fontSize: normalize(14),
-        marginTop: normalize(5),
-
-    },
-    pickerButton: {
-        borderWidth: 1,
-        borderColor: COLORS.LIGHT_GREY,
-        borderRadius: 8,
-        paddingHorizontal: normalize(15),
-        paddingVertical: normalize(12),
-        backgroundColor: COLORS.WHITE,
-    },
-    pickerText: {
-        fontSize: normalize(16),
-        color: COLORS.BLACK,
-
+        color: COLORS.ERROR,
+        fontSize: normalize(12),
+        marginTop: normalize(4),
+        marginLeft: normalize(12),
     },
     dateButton: {
         borderWidth: 1,
         borderColor: COLORS.LIGHT_GREY,
         borderRadius: 8,
         paddingHorizontal: normalize(15),
-        paddingVertical: normalize(12),
+        paddingVertical: normalize(14),
         backgroundColor: COLORS.WHITE,
     },
     dateText: {
         fontSize: normalize(16),
         color: COLORS.BLACK,
-
     },
     placeholderText: {
         color: COLORS.GREY,
@@ -572,16 +581,20 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: COLORS.LIGHT_GREY,
         borderRadius: 8,
-        paddingVertical: normalize(20),
+        padding: normalize(20),
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: COLORS.WHITE,
         minHeight: normalize(120),
     },
+    photoPlaceholder: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     photoButtonText: {
         fontSize: normalize(16),
         color: COLORS.GREY,
-
+        marginTop: normalize(8),
     },
     photoPreview: {
         width: normalize(100),
@@ -617,13 +630,13 @@ const styles = StyleSheet.create({
         fontSize: normalize(16),
         color: COLORS.BLACK,
         flex: 1,
-
     },
     submitButton: {
         backgroundColor: COLORS.PRIMARY,
         paddingVertical: normalize(15),
         borderRadius: 8,
         alignItems: 'center',
+        marginTop: normalize(10),
         marginBottom: normalize(20),
     },
     submitButtonDisabled: {
@@ -633,7 +646,6 @@ const styles = StyleSheet.create({
         color: COLORS.WHITE,
         fontSize: normalize(18),
         fontWeight: 'bold',
-
     },
     loginLinkContainer: {
         flexDirection: 'row',
@@ -644,13 +656,11 @@ const styles = StyleSheet.create({
     loginLinkText: {
         fontSize: normalize(16),
         color: COLORS.GREY,
-
     },
     loginLink: {
         fontSize: normalize(16),
         color: COLORS.PRIMARY,
         fontWeight: 'bold',
-
     },
 });
 

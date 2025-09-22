@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView,  ScrollView } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Tabs } from '../../../components/CommonComponents/Tabs';
 import { SearchFilterBar } from '../../../components/CommonComponents/SearchFilter';
 import { TableCard } from '../../../components/CommonComponents/TableCard';
 import AvButton from '../../../elements/AvButton';
 import AvText from '../../../elements/AvText';
 import { COLORS } from '../../../constants/colors';
-
+import Header from '../../../components/Header';
 import {
   DoctorAppointment,
   LabAppointment,
@@ -15,14 +17,19 @@ import {
   FilterOptions,
   AppointmentTabs,
 } from '../../../constants/data';
-import Header from '../../../components/Header';
-import { PAGES } from '../../../constants/pages';
+import {PAGES} from '../../../constants/pages'
+// Define the root stack param list for the root navigator
+type RootStackParamList = {
+  Appointments: undefined;
+  LabBooking: undefined;
+};
 
 const Appointments = () => {
   const [activeTab, setActiveTab] = useState('doctor');
   const [searchValue, setSearchValue] = useState('');
   const [doctorAppointments, setDoctorAppointments] = useState<DoctorAppointment[]>(DoctorAppointmentsData);
   const [labAppointments, setLabAppointments] = useState<LabAppointment[]>(LabAppointmentsData);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleToggleHide = (recordId: string, isHidden: boolean) => {
     if (activeTab === 'doctor') {
@@ -63,11 +70,9 @@ const Appointments = () => {
     console.log('Card pressed:', record);
   };
 
-  // Define header fields for doctor and lab appointments
   const doctorHeaderFields = ['doctorName'];
-  const labHeaderFields = [ 'labName'];
+  const labHeaderFields = ['labName'];
 
-  // Define actions for doctor and lab appointments
   const doctorActions = [
     {
       key: 'pay',
@@ -90,10 +95,16 @@ const Appointments = () => {
         </View>
       ),
     },
-   
   ];
 
   return (
+    <>
+    <Header
+                title={PAGES.PATIENT_APPOINTMENTS}
+                showBackButton={false}
+                backgroundColor={COLORS.WHITE}
+                titleColor={COLORS.BLACK}
+            />
     <SafeAreaView style={styles.safeArea}>
       <Header
         title={"Appointments"}
@@ -109,29 +120,39 @@ const Appointments = () => {
           filterOptions={FilterOptions}
           onFiltersApplied={handleFiltersApplied}
         />
-         <ScrollView
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={true}
         >
-        <TableCard
-          data={activeTab === 'doctor' ? doctorAppointments : labAppointments}
-          headerFields={activeTab === 'doctor' ? doctorHeaderFields : labHeaderFields}
-          actions={activeTab === 'doctor' ? doctorActions : labActions}
-          onCardPress={handleCardPress}
-        />
+          <TableCard
+            data={activeTab === 'doctor' ? doctorAppointments : labAppointments}
+            headerFields={activeTab === 'doctor' ? doctorHeaderFields : labHeaderFields}
+            actions={activeTab === 'doctor' ? doctorActions : labActions}
+            onCardPress={handleCardPress}
+          />
         </ScrollView>
       </View>
-   <View style={styles.bottomButtonContainer}>
+      <View style={styles.bottomButtonContainer}>
   <AvButton
     mode="contained"
-    onPress={() => console.log('Book Appointment Pressed')}
-    style={styles.buttonStyle} // Apply additional button styles
-    labelStyle={{ fontSize: 16, fontWeight: 'bold' }} // Style the button text
+    onPress={() => {
+      if (activeTab === 'doctor') {
+        // Doctor appointment booking navigation
+        navigation.navigate(PAGES.BOOKING_APPOITMENT, { screen: 'DoctorHome' });
+      } else {
+        // Lab appointment booking navigation
+        navigation.navigate(PAGES.LAB_BOOKING, { screen: 'LabHome' });
+      }
+    }}
+    style={styles.buttonStyle}
+    labelStyle={{ fontSize: 16, fontWeight: 'bold' }}
   >
-    Book Appointment
+    {activeTab === 'doctor' ? 'Book Doctor Appointment' : 'Book Lab Appointment'}
   </AvButton>
 </View>
+
     </SafeAreaView>
+    </>
   );
 };
 
@@ -150,11 +171,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.LIGHT_GREY,
   },
-    buttonStyle: {
+  buttonStyle: {
     width: '100%',
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor:COLORS.PRIMARY,
+    backgroundColor: COLORS.PRIMARY,
   },
 });
 

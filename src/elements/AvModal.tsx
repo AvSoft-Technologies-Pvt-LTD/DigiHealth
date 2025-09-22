@@ -188,12 +188,14 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    width: "90%",
-    backgroundColor: COLORS.LIGHT_GREY,
+    width: "80%",
+    backgroundColor: COLORS.GREY,
     opacity: 0.3,
   },
   title: {
     flex: 1,
+    fontSize:20,
+    fontWeight:900,
   },
   closeButton: {
     paddingHorizontal: 10,

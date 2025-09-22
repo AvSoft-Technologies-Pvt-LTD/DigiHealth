@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     StyleSheet,
@@ -18,6 +18,9 @@ import { RootState } from '../store';
 import { isIos, normalize } from '../constants/platform';
 import { RootStackParamList } from '../types/navigation';
 import AvButton from '../elements/AvButton';
+import { PAGES } from '../constants/pages';
+import { width } from '../constants/common';
+import { ScrollView } from 'react-native-gesture-handler';
 
 interface HeaderProps {
     title?: string;
@@ -40,18 +43,37 @@ const Header: React.FC<HeaderProps> = ({
     onRegisterPress = () => { },
     backgroundColor = COLORS.WHITE,
     titleColor = COLORS.BLACK,
+    onNotificationPress,
+    notificationCount
 }) => {
 
     // Use a more specific selector to get the authentication state
     const isAuthenticated = useSelector((state: RootState) => state.user.isAuthenticated);
+    const [modalVisible, setModalVisible] = useState<boolean>(false);
     const { openDrawer } = useDrawer();
-
-    // Log authentication state changes for debugging
-    // React.useEffect(() => {
-    //     console.log('Header - Authentication state changed:', isAuthenticated);
-    // }, [isAuthenticated]);
-
     const navigation = useNavigation<HeaderNavigationProp>();
+    const handleMorePress = () => {
+        setModalVisible(true);
+    };
+
+    const handlePharmacyPress = () => {
+        setModalVisible(false);
+        navigation.navigate(PAGES.PHARMACY_FINDER_VIEW);
+    };
+
+    const handleAmbulancePress = () => {
+        setModalVisible(false);
+        navigation.navigate(PAGES.AMBULANCE_BOOKING_VIEW);
+    };
+
+    const handleNotificationsPress = () => {
+        setModalVisible(false);
+        if (onNotificationPress) {
+            onNotificationPress();
+        }
+    }; // Add this closing brace
+
+
 
     const handleBackPress = () => {
         if (onBackPress) {
@@ -71,8 +93,8 @@ const Header: React.FC<HeaderProps> = ({
                         onPress={handleBackPress}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
-<MaterialIcons name="arrow-back" size={24} color={titleColor} />                            ← 
-                        
+                        <MaterialIcons name="arrow-back" size={24} color={titleColor} />                            ←
+
                     </Pressable>
                 ) : (
 
@@ -110,18 +132,52 @@ const Header: React.FC<HeaderProps> = ({
                 {/* <View style={styles.leftSection} /> */}
 
                 {/* Right Section - Auth Buttons */}
+                {/* Quick Actions */}
+                <View style={styles.quickActionsSection}>
+                    <Text style={styles.quickActionsTitle}>QUICK ACTIONS</Text>
+
+                    <TouchableOpacity
+                        style={[styles.actionItem, { backgroundColor: '#d9ecf8ff' }]}
+                        onPress={handlePharmacyPress}
+                    >
+                        <View style={[styles.actionIconContainer, { backgroundColor: '#14161aff' }]}>
+                            <MaterialIcons name="local-pharmacy" size={24} color="#f1f7f7ff" />
+                        </View>
+                        <Text style={styles.actionText}>Pharmacy</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.actionItem, { backgroundColor: '#fce8e8ff' }]}
+                        onPress={handleAmbulancePress}
+                    >
+                        <View style={[styles.actionIconContainer, { backgroundColor: '#ca3535ff' }]}>
+                            <MaterialIcons name="local-hospital" size={24} color="#ffffffff" />
+                        </View>
+                        <Text style={styles.actionText}>Ambulance</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.actionItem, { backgroundColor: '#e9d5ff' }]}
+                        onPress={handleNotificationsPress}
+                    >
+                        <View style={[styles.actionIconContainer, { backgroundColor: '#d1b2f7' }]}>
+                            <MaterialIcons name="notifications" size={24} color="#ffffffff" />
+                        </View>
+                        <Text style={styles.actionText}>Notifications</Text>
+                    </TouchableOpacity>
+                </View>
                 <View style={styles.rightSection}>
                     <View style={styles.buttonRow}>
-                        <Pressable 
+                        <Pressable
                             onPress={onLoginPress}
                             style={styles.iconButton}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <Ionicons 
-                                name="log-in-outline" 
-                                size={24} 
+                            <Ionicons
+                                name="log-in-outline"
+                                size={24}
                                 color={COLORS.ERROR}
-                            /> 
+                            />
                             <AvText type="overline" style={[{ color: titleColor }]}>  Login</AvText>
                         </Pressable>
                     </View>
@@ -132,7 +188,15 @@ const Header: React.FC<HeaderProps> = ({
 
 
     return (
-        <View style={styles.wrapper}>
+        <>
+        {/* // <ScrollView style={styles.wrapper}> */}
+            {notificationCount > 0 && (
+                <View style={styles.notificationBadge}>
+                    <AvText type="caption" style={styles.notificationText}>
+                        {notificationCount}
+                    </AvText>
+                </View>
+            )}
             <StatusBar
                 backgroundColor={backgroundColor}
                 barStyle={backgroundColor === COLORS.WHITE ? 'dark-content' : 'light-content'}
@@ -143,11 +207,116 @@ const Header: React.FC<HeaderProps> = ({
                     Auth: {isAuthenticated ? 'Logged In' : 'Logged Out'}
                 </AvText>
             )} */}
-        </View>
+        {/* // </ScrollView> */}
+        </>
     );
 };
 
 const styles = StyleSheet.create({
+    safeArea: {
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+    },
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: 60,
+        paddingHorizontal: 15,
+    },
+    
+    logoContainer: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    logo: {
+        width: 180,
+        height: 70,
+    },
+    rightIconsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        flexDirection: 'row-reverse',
+    },
+    modalContent: {
+        width: width * 0.7,
+        backgroundColor: '#fff',
+        height: '100%',
+    },
+    profileSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: '#0c223c',
+    },
+    profileIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#4ade80',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    profileIconText: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    profileTextContainer: {
+        flex: 1,
+        marginLeft: 10,
+    },
+    profileName: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    profileRole: {
+        color: '#ccc',
+        fontSize: 14,
+    },
+    closeButton: {
+        padding: 5,
+    },
+    quickActionsSection: {
+        padding: 20,
+    },
+    quickActionsTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#555',
+        marginBottom: 15,
+    },
+    actionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 12,
+        padding: 15,
+        marginBottom: 15,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    actionIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15,
+    },
+    actionText: {
+        fontSize: 16,
+        fontWeight: '400',
+        color: '#333',
+    },
     wrapper: {
         position: 'relative' as const,
     },
@@ -234,5 +403,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 });
+
 
 export default Header;

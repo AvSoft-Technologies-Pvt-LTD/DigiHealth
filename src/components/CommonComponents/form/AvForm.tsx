@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform, Alert, TextInput } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { COLORS } from '../../../constants/colors';
@@ -25,26 +25,31 @@ interface FormField {
 interface DynamicFormProps {
   fields: FormField[];
   onSubmit: (formData: Record<string, any>) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
   headerTitle?: string;
+  formData: Record<string, any>;
+  onChange: (name: string, value: any) => void;
+  buttonTitle?: string;
+  singleButton?: boolean;
 }
 
-const DynamicForm: React.FC<DynamicFormProps> = ({ fields, onSubmit, onCancel, headerTitle }) => {
-  const [formData, setFormData] = useState<Record<string, any>>({});
+const DynamicForm: React.FC<DynamicFormProps> = ({
+  fields,
+  onSubmit,
+  onCancel,
+  headerTitle,
+  formData,
+  onChange,
+  buttonTitle = 'Save',
+  singleButton = false,
+}) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showDatePicker, setShowDatePicker] = useState<{ [key: string]: boolean }>({});
-  const [currentField, setCurrentField] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<{ [key: string]: boolean }>({});
   const [expandedSelect, setExpandedSelect] = useState<{ [key: string]: boolean }>({});
+  const [showDatePicker, setShowDatePicker] = useState<{ [key: string]: boolean }>({});
+  const [currentField, setCurrentField] = useState<string | null>(null);
 
-  const handleChange = (name: string, value: any) => {
-    setFormData({ ...formData, [name]: value });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
-  };
-
-  const validateField = (name: string, value: any, field: FormField) => {
+  const validateField = (name: string, value: any, field: FormField): string => {
     if (field.required && (!value || (Array.isArray(value) && value.length === 0))) {
       return 'This field is required';
     }
@@ -80,31 +85,65 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ fields, onSubmit, onCancel, h
     }
   };
 
-  const handleFileUpload = async (name: string, multiple: boolean = false) => {
-    try {
-      const options: any = {
+  const toggleShowPassword = (name: string) => {
+    setShowPassword({ ...showPassword, [name]: !showPassword[name] });
+  };
+
+  const handleFileUpload = (name: string, multiple?: boolean) => {
+    launchImageLibrary(
+      {
         mediaType: 'photo',
-        includeBase64: false,
         selectionLimit: multiple ? 0 : 1,
-      };
-      launchImageLibrary(options, (response) => {
+      },
+      (response) => {
         if (response.didCancel) {
           console.log('User cancelled image picker');
         } else if (response.errorCode) {
           console.log('ImagePicker Error: ', response.errorMessage);
-          Alert.alert('Error', 'Failed to pick image');
         } else if (response.assets) {
-          const files = response.assets.map((asset) => asset.uri!);
-          handleChange(name, multiple ? files : files[0]);
+          const uris = response.assets.map((asset) => asset.uri);
+          onChange(name, multiple ? uris : uris[0]);
         }
-      });
-    } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
-    }
+      },
+    );
   };
 
-  const toggleShowPassword = (name: string) => {
-    setShowPassword({ ...showPassword, [name]: !showPassword[name] });
+  const renderField = (field: FormField) => {
+    if (field.type === 'textarea') {
+      return (
+        <View key={field.name} style={styles.textAreaContainer}>
+          <Text style={styles.label}>{field.label}</Text>
+          <TextInput
+            style={styles.textArea}
+            multiline
+            numberOfLines={4}
+            placeholder={field.placeholder}
+            value={formData[field.name] || ''}
+            onChangeText={(value) => onChange(field.name, value)}
+          />
+          {errors[field.name] && <Text style={styles.errorText}>{errors[field.name]}</Text>}
+        </View>
+      );
+    } else {
+      return (
+        <FormField
+          key={field.name}
+          field={field}
+          value={formData[field.name]}
+          error={errors[field.name]}
+          onChange={onChange}
+          showPassword={showPassword[field.name] || false}
+          toggleShowPassword={toggleShowPassword}
+          showDatePicker={showDatePicker[field.name] || false}
+          setShowDatePicker={(fieldName, show) => setShowDatePicker({ ...showDatePicker, [fieldName]: show })}
+          currentField={currentField}
+          setCurrentField={setCurrentField}
+          expandedSelect={expandedSelect[field.name] || false}
+          setExpandedSelect={(fieldName, expanded) => setExpandedSelect({ ...expandedSelect, [fieldName]: expanded })}
+          handleFileUpload={handleFileUpload}
+        />
+      );
+    }
   };
 
   return (
@@ -113,33 +152,18 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ fields, onSubmit, onCancel, h
         <Text style={styles.headerText}>{headerTitle || 'Form'}</Text>
       </View>
       <ScrollView style={styles.formContainer} contentContainerStyle={styles.scrollContent}>
-        {fields.map((field) => (
-          <FormField
-            key={field.name}
-            field={field}
-            value={formData[field.name]}
-            error={errors[field.name]}
-            onChange={handleChange}
-            showPassword={showPassword[field.name] || false}
-            toggleShowPassword={toggleShowPassword}
-            showDatePicker={showDatePicker[field.name] || false}
-            setShowDatePicker={(fieldName, show) => setShowDatePicker({ ...showDatePicker, [fieldName]: show })}
-            currentField={currentField}
-            setCurrentField={setCurrentField}
-            expandedSelect={expandedSelect[field.name] || false}
-            setExpandedSelect={(fieldName, expanded) => setExpandedSelect({ ...expandedSelect, [fieldName]: expanded })}
-            handleFileUpload={handleFileUpload}
-          />
-        ))}
+        {fields.map(renderField)}
       </ScrollView>
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-          <Icon name="close" size={20} color="#DC2626" />
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
+      <View style={[styles.footer, { justifyContent: singleButton ? 'center' : 'space-between' }]}>
+        {!singleButton && (
+          <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+            <Icon name="close" size={20} color="#DC2626" />
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Icon name="check" size={20} color="#FFFFFF" />
-          <Text style={styles.submitButtonText}>Save</Text>
+          <Text style={styles.submitButtonText}>{buttonTitle}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -174,11 +198,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 10,
   },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     padding: 16,
     paddingBottom: Platform.OS === 'ios' ? 32 : 16,
     backgroundColor: COLORS.WHITE,
@@ -222,6 +245,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.WHITE,
+  },
+  textAreaContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: COLORS.PRIMARY,
+  },
+  textArea: {
+    borderWidth: 1,
+    borderColor: COLORS.LIGHT_GREY,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: COLORS.WHITE,
+    textAlignVertical: 'top',
+  },
+  errorText: {
+    color: COLORS.ERROR,
+    fontSize: 12,
+    marginTop: 4,
   },
 });
 

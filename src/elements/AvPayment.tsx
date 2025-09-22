@@ -1,411 +1,338 @@
-import React, { useState } from "react";
-import { View, StyleSheet, TextInput as RNTextInput } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, Alert, TouchableOpacity, Animated, Linking } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import AvButton from "./AvButton";
 import AvText from "./AvText";
 import AvTextInput from "./AvTextInput";
+import AvCard from "./AvCards";
+import AvModal from "./AvModal";
 import { COLORS } from "../constants/colors";
-import { normalize } from "../constants/platform";
+
+type PaymentMethod = "card" | "upi" | "wallet" | "cash" | "bankTransfer";
+type CardType = "visa" | "mastercard" | "amex" | "rupay" | null;
+type WalletProvider = "gpay" | "phonepe" | "paytm" | "amazonpay";
 
 interface PaymentFormData {
-  cardNumber: string;
-  expiryDate: string;
-  cvv: string;
-  cardHolderName: string;
+  cardNumber?: string;
+  expiryDate?: string;
+  cvv?: string;
+  upiId?: string;
+  walletProvider?: WalletProvider;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  transactionId?: string;
+  paymentTime?: string;
 }
 
 interface PaymentComponentProps {
-  onSuccess: (data: PaymentFormData) => void;
-  onError: (error: string) => void;
+  onSuccess?: (data: PaymentFormData) => void;
+  onError?: (error: string) => void;
   loading?: boolean;
+  amount: number;
+  currency?: string;
+  merchantName?: string;
+  buttonText?: string;
+  style?: any;
+  navigation?: any;
 }
 
 const PaymentComponent: React.FC<PaymentComponentProps> = ({
-  onSuccess,
-  onError,
+  onSuccess = () => {},
+  onError = () => {},
   loading = false,
+  amount,
+  currency = "₹",
+  merchantName = "Merchant",
+  buttonText = `Pay ${currency}${amount}`,
+  style = {},
+  navigation,
 }) => {
-  const [formData, setFormData] = useState<PaymentFormData>({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardHolderName: "",
-  });
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("upi");
+  const [formData, setFormData] = useState<PaymentFormData>({});
   const [errors, setErrors] = useState<Partial<PaymentFormData>>({});
-  const [cardType, setCardType] = useState<string | null>(null); // "visa", "mastercard", etc.
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [checkmarkScale] = useState(new Animated.Value(0));
+  const [savedCards] = useState<{ last4: string; brand: CardType }[]>([
+    { last4: "4242", brand: "visa" },
+    { last4: "7890", brand: "mastercard" },
+  ]);
 
-  // Detect card type from number (simplified)
-  const detectCardType = (number: string) => {
-    const cleaned = number.replace(/\s+/g, "");
-    if (cleaned.startsWith("4")) return "visa";
-    if (cleaned.startsWith("5")) return "mastercard";
-    if (cleaned.startsWith("34") || cleaned.startsWith("37")) return "amex";
-    if (cleaned.startsWith("6")) return "discover";
-    return null;
-  };
-
-  // Validation functions (same as before)
-  const validateCardNumber = (number: string): boolean => {
-    const cleaned = number.replace(/\s+/g, "");
-    return cleaned.length >= 12 && cleaned.length <= 19;
-  };
-
-  const validateExpiryDate = (date: string): boolean => {
-    if (!/^\d{2}\/\d{2}$/.test(date)) return false;
-    const [month, year] = date.split("/").map(Number);
-    const currentYear = new Date().getFullYear() % 100;
-    const currentMonth = new Date().getMonth() + 1;
-    return (
-      month >= 1 &&
-      month <= 12 &&
-      year >= currentYear &&
-      (year > currentYear || month >= currentMonth)
-    );
-  };
-
-  const validateCVV = (cvv: string): boolean => {
-    return /^\d{3,4}$/.test(cvv);
-  };
-
-  const handleSubmit = () => {
+  const validateForm = (): boolean => {
     const newErrors: Partial<PaymentFormData> = {};
-
-    if (!validateCardNumber(formData.cardNumber)) {
-      newErrors.cardNumber = "Invalid card number";
+    if (paymentMethod === "card") {
+      if (!formData.cardNumber?.replace(/\s+/g, "").match(/^\d{12,19}$/)) newErrors.cardNumber = "Invalid card number";
+      if (!formData.expiryDate?.match(/^\d{2}\/\d{2}$/)) newErrors.expiryDate = "Invalid expiry (MM/YY)";
+      if (!formData.cvv?.match(/^\d{3,4}$/)) newErrors.cvv = "Invalid CVV";
+    } else if (paymentMethod === "upi") {
+      if (!formData.upiId?.match(/^[a-zA-Z0-9.-]{3,}@[a-zA-Z]{2,}$/)) newErrors.upiId = "Invalid UPI ID";
+    } else if (paymentMethod === "bankTransfer") {
+      if (!formData.bankName) newErrors.bankName = "Bank name is required";
+      if (!formData.accountNumber?.match(/^\d{9,18}$/)) newErrors.accountNumber = "Invalid account number";
+      if (!formData.ifscCode?.match(/^[A-Z]{4}0[A-Z0-9]{6}$/)) newErrors.ifscCode = "Invalid IFSC code";
     }
-    if (!validateExpiryDate(formData.expiryDate)) {
-      newErrors.expiryDate = "Invalid expiry date (MM/YY)";
-    }
-    if (!validateCVV(formData.cvv)) {
-      newErrors.cvv = "CVV must be 3-4 digits";
-    }
-    if (!formData.cardHolderName.trim()) {
-      newErrors.cardHolderName = "Name is required";
-    }
-
     setErrors(newErrors);
-    if (Object.keys(newErrors).length === 0) {
-      onSuccess(formData);
-    } else {
-      onError("Please fix the errors in the form");
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (paymentMethod === "cash") {
+      const transactionData = { ...formData, transactionId: `TXN${Math.floor(Math.random() * 1000000)}`, paymentTime: new Date().toLocaleString() };
+      setFormData(transactionData);
+      setIsModalVisible(true);
+      Animated.spring(checkmarkScale, { toValue: 1, friction: 3, useNativeDriver: true }).start();
+      onSuccess(transactionData);
+      return;
+    }
+    if (!validateForm()) {
+      onError("Please fix the errors to proceed");
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+      const transactionData = { ...formData, transactionId: `TXN${Math.floor(Math.random() * 1000000)}`, paymentTime: new Date().toLocaleString() };
+      setFormData(transactionData);
+      setIsModalVisible(true);
+      Animated.spring(checkmarkScale, { toValue: 1, friction: 3, useNativeDriver: true }).start();
+      if (paymentMethod === "upi" && formData.upiId) {
+        const upiUrl = `upi://pay?pa=${formData.upiId}&pn=${merchantName}&am=${amount}&cu=INR`;
+        if (await Linking.canOpenURL(upiUrl)) Linking.openURL(upiUrl);
+      }
+      onSuccess(transactionData);
+    } catch (error) {
+      onError("Payment failed. Please try again.");
+      Alert.alert("Error", "Payment failed. Please retry.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  // Formatters (same as before)
-  const formatCardNumber = (text: string) => {
-    const cleaned = text.replace(/\s+/g, "");
-    const formatted = cleaned.replace(/(\d{4})/g, "$1 ").trim();
-    setCardType(detectCardType(cleaned));
-    return formatted;
-  };
-
-  const formatExpiryDate = (text: string) => {
-    if (text.length === 2 && !text.includes("/")) {
-      return text + "/";
+  useEffect(() => {
+    if (isModalVisible) {
+      const timer = setTimeout(() => {
+        setIsModalVisible(false);
+        navigation?.navigate("NextScreen");
+      }, 3000);
+      return () => clearTimeout(timer);
     }
-    return text;
-  };
+  }, [isModalVisible, navigation]);
 
-  // Render card icon based on detected type
-  const renderCardIcon = () => {
-    if (!cardType) return null;
-    const iconProps = {
-      size: normalize(24),
-      color: COLORS.PRIMARY,
-      style: styles.cardIcon,
-    };
-    switch (cardType) {
-      case "visa":
-        return <Icon name="credit-card" {...iconProps} />;
-      case "mastercard":
-        return <Icon name="credit-card-outline" {...iconProps} />;
-      case "amex":
-        return <Icon name="credit-card-plus" {...iconProps} />;
-      case "discover":
-        return <Icon name="credit-card-scan" {...iconProps} />;
-      default:
-        return <Icon name="credit-card" {...iconProps} />;
-    }
-  };
+  const popularBanks = ["State Bank of India", "HDFC Bank", "ICICI Bank", "Punjab National Bank", "Bank of Baroda", "Canara Bank", "Union Bank of India", "Axis Bank", "Kotak Mahindra Bank", "IndusInd Bank"];
 
-  return (
-    <View style={styles.container}>
-      <AvText type="title_2" style={styles.title}>
-        Payment Details
-      </AvText>
+  const renderPaymentMethods = () => (
+    <View style={styles.methodsContainer}>
+      {(["upi", "card", "wallet", "cash", "bankTransfer"] as PaymentMethod[]).map((method) => (
+        <AvCard
+          key={method}
+          title={method === "upi" ? "UPI" : method === "card" ? "Credit/Debit Card" : method === "wallet" ? "Wallet" : method === "cash" ? "Cash" : "Bank Transfer"}
+          icon={<Icon name={method === "upi" ? "cellphone-wireless" : method === "card" ? "credit-card" : method === "wallet" ? "wallet" : method === "cash" ? "cash" : "bank-transfer"} size={22} color={paymentMethod === method ? COLORS.WHITE : COLORS.PRIMARY} />}
+          cardStyle={[styles.methodCard, paymentMethod === method && styles.activeMethodCard]}
+          titleStyle={[paymentMethod === method ? styles.activeMethodText : styles.methodText]}
+          onPress={() => setPaymentMethod(method)}
+        >
+          {paymentMethod === method && <Icon name="check-circle" size={18} color={COLORS.WHITE} style={styles.checkIcon} />}
+        </AvCard>
+      ))}
+    </View>
+  );
 
-      {/* Card Number with Icon */}
-      <View style={styles.inputRow}>
-        <View style={styles.inputWithIcon}>
-          <AvText type="body" style={styles.label}>
-            Card Number
-          </AvText>
-          <View style={styles.inputContainer}>
-            <AvTextInput
-              type="default"
-              placeholder="1234 5678 9012 3456"
-              keyboardType="numeric"
-              value={formData.cardNumber}
-              onChangeText={(text) => {
-                setFormData({ ...formData, cardNumber: formatCardNumber(text) });
-              }}
-              style={[
-                styles.input,
-                errors.cardNumber && styles.inputError,
-                { flex: 1 },
-              ]}
-            />
-            {renderCardIcon()}
-          </View>
-          {errors.cardNumber && (
-            <View style={styles.errorContainer}>
-              <Icon
-                name="alert-circle-outline"
-                size={normalize(16)}
-                color={COLORS.ERROR}
-                style={styles.errorIcon}
-              />
-              <AvText type="caption" style={styles.errorText}>
-                {errors.cardNumber}
-              </AvText>
-            </View>
-          )}
-        </View>
+  const renderCardForm = () => (
+    <>
+      <View style={styles.savedCardsContainer}>
+        {savedCards.map((card, index) => (
+          <AvCard
+            key={index}
+            title={`**** ${card.last4}`}
+            icon={<Icon name={card.brand === "visa" ? "credit-card" : "credit-card-outline"} size={18} color={COLORS.PRIMARY} />}
+            cardStyle={styles.savedCard}
+            onPress={() => setFormData({ ...formData, cardNumber: `**** **** **** ${card.last4}`, expiryDate: "12/25", cvv: "123" })}
+          />
+        ))}
       </View>
-
-      {/* Expiry Date & CVV */}
+      <AvText style={styles.label}>Card Number</AvText>
+      <AvTextInput
+        placeholder="1234 5678 9012 3456"
+        keyboardType="numeric"
+        value={formData.cardNumber}
+        onChangeText={(text) => setFormData({ ...formData, cardNumber: text.replace(/\s+/g, "").replace(/(\d{4})/g, "$1 ").trim() })}
+ style={[
+          styles.input,
+          ...(errors.cardNumber ? [styles.errorInput] : []),
+        ]}      />
       <View style={styles.row}>
         <View style={styles.halfInput}>
-          <AvText type="body" style={styles.label}>
-            Expiry Date
-          </AvText>
+          <AvText style={styles.label}>Expiry Date</AvText>
           <AvTextInput
-            type="default"
             placeholder="MM/YY"
-            keyboardType="numeric"
             value={formData.expiryDate}
-            onChangeText={(text) => {
-              setFormData({ ...formData, expiryDate: formatExpiryDate(text) });
-            }}
-            style={[
-              styles.input,
-              errors.expiryDate && styles.inputError,
-            ]}
-          />
-          {errors.expiryDate && (
-            <View style={styles.errorContainer}>
-              <Icon
-                name="alert-circle-outline"
-                size={normalize(16)}
-                color={COLORS.ERROR}
-                style={styles.errorIcon}
-              />
-              <AvText type="caption" style={styles.errorText}>
-                {errors.expiryDate}
-              </AvText>
-            </View>
-          )}
+            onChangeText={(text) => setFormData({ ...formData, expiryDate: text.length === 2 && !text.includes("/") ? text + "/" : text })}
+ style={[
+          styles.input,
+          ...(errors.expiryDate ? [styles.errorInput] : []),
+        ]}          />
         </View>
-
         <View style={styles.halfInput}>
-          <AvText type="body" style={styles.label}>
-            CVV
-          </AvText>
-          <View style={styles.inputContainer}>
-            <AvTextInput
-              type="default"
-              placeholder="123"
-              keyboardType="numeric"
-              secureTextEntry
-              value={formData.cvv}
-              onChangeText={(text) => {
-                setFormData({ ...formData, cvv: text });
-              }}
-              style={[
-                styles.input,
-                errors.cvv && styles.inputError,
-                { flex: 1 },
-              ]}
-            />
-            <Icon
-              name="lock-outline"
-              size={normalize(20)}
-              color={COLORS.GREY}
-              style={styles.cvvIcon}
-            />
-          </View>
-          {errors.cvv && (
-            <View style={styles.errorContainer}>
-              <Icon
-                name="alert-circle-outline"
-                size={normalize(16)}
-                color={COLORS.ERROR}
-                style={styles.errorIcon}
-              />
-              <AvText type="caption" style={styles.errorText}>
-                {errors.cvv}
-              </AvText>
-            </View>
-          )}
+          <AvText style={styles.label}>CVV</AvText>
+          <AvTextInput
+            placeholder="123"
+            keyboardType="numeric"
+            secureTextEntry
+            value={formData.cvv}
+            onChangeText={(text) => setFormData({ ...formData, cvv: text })}
+           style={[
+          styles.input,
+          ...(errors.cvv ? [styles.errorInput] : []),
+        ]}
+          />
         </View>
       </View>
+    </>
+  );
 
-      {/* Card Holder Name */}
-      <AvText type="body" style={styles.label}>
-        Card Holder Name
-      </AvText>
+  const renderUPIForm = () => (
+    <>
+      <AvText style={styles.label}>UPI ID</AvText>
       <AvTextInput
-        type="default"
-        placeholder="John Doe"
-        value={formData.cardHolderName}
-        onChangeText={(text) => {
-          setFormData({ ...formData, cardHolderName: text });
-        }}
+        placeholder="yourname@bank"
+        value={formData.upiId}
+        onChangeText={(text) => setFormData({ ...formData, upiId: text })}
         style={[
           styles.input,
-          errors.cardHolderName && styles.inputError,
+          ...(errors.upiId ? [styles.errorInput] : []),
         ]}
       />
-      {errors.cardHolderName && (
-        <View style={styles.errorContainer}>
-          <Icon
-            name="alert-circle-outline"
-            size={normalize(16)}
-            color={COLORS.ERROR}
-            style={styles.errorIcon}
-          />
-          <AvText type="caption" style={styles.errorText}>
-            {errors.cardHolderName}
-          </AvText>
-        </View>
-      )}
+      <TouchableOpacity onPress={() => setFormData({ ...formData, upiId: "test@upi" })}>
+        <AvText style={styles.suggestionText}>Use test@upi for testing</AvText>
+      </TouchableOpacity>
+      {formData.upiId && <AvCard title="This UPI ID will be used for payment" icon={<Icon name="upi" size={40} color={COLORS.PRIMARY} />} cardStyle={styles.upiIconContainer} />}
+    </>
+  );
 
-      {/* Secure Payment Indicator */}
-      <View style={styles.secureContainer}>
-        <Icon
-          name="shield-check-outline"
-          size={normalize(18)}
-          color={COLORS.SUCCESS}
-        />
-        <AvText type="smallText" style={styles.secureText}>
-          Secure payment powered by Stripe
-        </AvText>
+  const renderWalletForm = () => (
+    <>
+      {(["gpay", "phonepe", "paytm", "amazonpay"] as WalletProvider[]).map((wallet) => (
+        <AvCard
+          key={wallet}
+          title={wallet === "gpay" ? "Google Pay" : wallet === "phonepe" ? "PhonePe" : wallet === "paytm" ? "Paytm" : "Amazon Pay"}
+          icon={<Icon name={wallet === "gpay" ? "google" : wallet === "phonepe" ? "cellphone" : wallet === "paytm" ? "wallet" : "credit-card-outline"} size={24} color={formData.walletProvider === wallet ? COLORS.WHITE : wallet === "gpay" ? "#4285F4" : wallet === "phonepe" ? "#5B2886" : wallet === "paytm" ? "#00BAFF" : "#FF9900"} />}
+          cardStyle={[styles.walletOption, formData.walletProvider === wallet && { backgroundColor: COLORS.SECONDARY, borderColor: COLORS.BG_OFF_WHITE }]}
+          titleStyle={[formData.walletProvider === wallet ? styles.selectedWalletText : styles.walletText, { color: formData.walletProvider === wallet ? COLORS.WHITE : wallet === "gpay" ? "#4285F4" : wallet === "phonepe" ? "#5B2886" : wallet === "paytm" ? "#00BAFF" : "#FF9900" }]}
+          onPress={() => setFormData({ ...formData, walletProvider: wallet })}
+        >
+          {formData.walletProvider === wallet && <Icon name="check-circle" size={18} color={COLORS.WHITE} style={styles.checkIcon} />}
+        </AvCard>
+      ))}
+    </>
+  );
+
+  const renderBankTransferForm = () => (
+    <>
+      <AvText style={styles.label}>Bank Name</AvText>
+      <TouchableOpacity style={[styles.input, styles.dropdownInput]} onPress={() => Alert.alert("Select Bank", "", [...popularBanks.map(bank => ({ text: bank, onPress: () => setFormData({ ...formData, bankName: bank }) })), { text: "Cancel", style: "cancel" }])}>
+        <AvText style={formData.bankName ? styles.dropdownText : styles.placeholderText}>{formData.bankName || "Select your bank"}</AvText>
+        <Icon name="chevron-down" size={22} color={COLORS.PRIMARY} />
+      </TouchableOpacity>
+      <AvText style={styles.label}>Account Number</AvText>
+      <AvTextInput
+        placeholder="Your account number"
+        keyboardType="numeric"
+        value={formData.accountNumber}
+        onChangeText={(text) => setFormData({ ...formData, accountNumber: text })}
+         style={[
+          styles.input,
+          ...(errors.accountNumber ? [styles.errorInput] : []),
+        ]}
+      />
+      <AvText style={styles.label}>IFSC Code</AvText>
+      <AvTextInput
+        placeholder="e.g., SBIN0001234"
+        value={formData.ifscCode}
+        onChangeText={(text) => setFormData({ ...formData, ifscCode: text.toUpperCase() })}
+       style={[
+          styles.input,
+          ...(errors.ifscCode ? [styles.errorInput] : []),
+        ]}
+      />
+    </>
+  );
+
+  const renderCashForm = () => (
+    <AvCard title={`Please pay ${currency}${amount} in cash`} icon={<Icon name="cash" size={40} color={COLORS.PRIMARY} />} cardStyle={styles.cashContainer}>
+      <AvText style={styles.cashNote}>Your order will be confirmed after payment</AvText>
+    </AvCard>
+  );
+
+  return (
+    <View style={[styles.container, style]}>
+      <View style={styles.amountContainer}>
+        <AvText style={styles.amountText}>{currency}{amount}</AvText>
+        <AvText style={styles.merchantText}>Paying to {merchantName}</AvText>
       </View>
-
-      {/* Submit Button */}
-      <AvButton
-        mode="contained"
-        onPress={handleSubmit}
-        loading={loading}
-        style={styles.submitButton}
-        disabled={loading}
-      >
-        <View style={styles.buttonContent}>
-          <Icon
-            name="credit-card-check-outline"
-            size={normalize(18)}
-            color={COLORS.WHITE}
-            style={styles.buttonIcon}
-          />
-          <AvText type="buttonText" style={styles.buttonText}>
-            Pay Now
-          </AvText>
+      <AvText style={styles.sectionTitle}>Payment Method</AvText>
+      {renderPaymentMethods()}
+      <View style={styles.formContainer}>
+        {paymentMethod === "card" && renderCardForm()}
+        {paymentMethod === "upi" && renderUPIForm()}
+        {paymentMethod === "wallet" && renderWalletForm()}
+        {paymentMethod === "cash" && renderCashForm()}
+        {paymentMethod === "bankTransfer" && renderBankTransferForm()}
+      </View>
+      <AvButton mode="contained" onPress={handleSubmit} loading={isProcessing} disabled={isProcessing} style={styles.submitButton}>{buttonText}</AvButton>
+      <AvModal isModalVisible={isModalVisible} setModalVisible={setIsModalVisible} title="Payment Receipt">
+        <View style={styles.successContainer}>
+          <Animated.View style={{ transform: [{ scale: checkmarkScale }] }}><Icon name="check-circle" size={60} color={COLORS.SUCCESS} /></Animated.View>
+          <AvText style={styles.successText}>Payment Successful!</AvText>
+          <AvCard title="Receipt" cardStyle={styles.receiptContainer}>
+            <View style={styles.receiptRow}><AvText style={styles.receiptLabel}>Amount:</AvText><AvText style={styles.receiptValue}>{currency}{amount}</AvText></View>
+            <View style={styles.receiptRow}><AvText style={styles.receiptLabel}>Transaction ID:</AvText><AvText style={styles.receiptValue}>{formData.transactionId}</AvText></View>
+            <View style={styles.receiptRow}><AvText style={styles.receiptLabel}>Time:</AvText><AvText style={styles.receiptValue}>{formData.paymentTime}</AvText></View>
+            <View style={styles.receiptRow}><AvText style={styles.receiptLabel}>Method:</AvText><AvText style={styles.receiptValue}>{paymentMethod === "upi" ? "UPI" : paymentMethod === "card" ? "Card" : paymentMethod === "wallet" ? formData.walletProvider : paymentMethod === "bankTransfer" ? "Bank Transfer" : "Cash"}</AvText></View>
+          </AvCard>
         </View>
-      </AvButton>
+      </AvModal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: normalize(16),
-    backgroundColor: COLORS.WHITE,
-    borderRadius: normalize(8),
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  title: {
-    marginBottom: normalize(16),
-    color: COLORS.PRIMARY,
-  },
-  label: {
-    marginBottom: normalize(4),
-    color: COLORS.PRIMARY_TXT,
-  },
-  input: {
-    marginBottom: normalize(8),
-    backgroundColor: COLORS.OFFWHITE,
-    paddingHorizontal: normalize(12),
-  },
-  inputError: {
-    borderColor: COLORS.ERROR,
-    borderWidth: 1,
-  },
-  inputRow: {
-    marginBottom: normalize(12),
-  },
-  inputWithIcon: {
-    flex: 1,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.OFFWHITE,
-    borderRadius: normalize(4),
-    paddingHorizontal: normalize(12),
-  },
-  cardIcon: {
-    marginLeft: normalize(8),
-  },
-  cvvIcon: {
-    marginLeft: normalize(8),
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: normalize(12),
-  },
-  halfInput: {
-    width: "48%",
-  },
-  errorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: normalize(8),
-  },
-  errorIcon: {
-    marginRight: normalize(4),
-  },
-  errorText: {
-    color: COLORS.ERROR,
-  },
-  secureContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: normalize(12),
-  },
-  secureText: {
-    marginLeft: normalize(6),
-    color: COLORS.SUCCESS,
-  },
-  submitButton: {
-    marginTop: normalize(16),
-    paddingVertical: normalize(8),
-  },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonIcon: {
-    marginRight: normalize(8),
-  },
-  buttonText: {
-    color: COLORS.WHITE,
-  },
+  container: { padding: 16, backgroundColor: COLORS.WHITE, borderRadius: 12 },
+  amountContainer: { alignItems: "center", marginBottom: 20 },
+  amountText: { fontSize: 24, fontWeight: "bold", color: COLORS.PRIMARY },
+  merchantText: { color: COLORS.GREY, marginTop: 4 },
+  sectionTitle: { fontWeight: "600", marginBottom: 12, color: COLORS.PRIMARY_TXT },
+  methodsContainer: { marginBottom: 20 },
+  methodCard: { flexDirection: "row", alignItems: "center", padding: 14, marginBottom: 10, borderRadius: 8, backgroundColor: COLORS.OFFWHITE, borderWidth: 1, borderColor: COLORS.LIGHT_GREY },
+  activeMethodCard: { backgroundColor: COLORS.PRIMARY, borderColor: COLORS.PRIMARY },
+  methodText: { marginLeft: 8, color: COLORS.PRIMARY_TXT, flex: 1 },
+  activeMethodText: { marginLeft: 8, color: COLORS.WHITE, fontWeight: "500", flex: 1 },
+  checkIcon: { marginLeft: "auto" },
+  formContainer: { marginBottom: 20 },
+  label: { marginBottom: 6, color: COLORS.PRIMARY_TXT, fontWeight: "500" },
+  input: { backgroundColor: COLORS.OFFWHITE, borderRadius: 8, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: COLORS.LIGHT_GREY },
+  dropdownInput: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  placeholderText: { color: COLORS.GREY },
+  dropdownText: { color: COLORS.PRIMARY_TXT },
+  errorInput: { borderColor: COLORS.ERROR },
+  row: { flexDirection: "row", justifyContent: "space-between" },
+  halfInput: { width: "48%" },
+  savedCardsContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 15 },
+  savedCard: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.OFFWHITE, borderRadius: 6, borderWidth: 1, borderColor: COLORS.LIGHT_GREY, marginRight: 8, minWidth: "48%" },
+  suggestionText: { color: COLORS.PRIMARY, fontSize: 12, alignSelf: "flex-end", marginBottom: 15 },
+  upiIconContainer: { alignItems: "center", marginTop: 15, padding: 15, backgroundColor: COLORS.OFFWHITE, borderRadius: 8, borderWidth: 1, borderColor: COLORS.LIGHT_GREY },
+  walletOption: { flexDirection: "row", alignItems: "center", padding: 12, marginBottom: 8, borderRadius: 8, backgroundColor: COLORS.OFFWHITE, borderWidth: 1, borderColor: COLORS.LIGHT_GREY },
+  walletText: { marginLeft: 10, color: COLORS.PRIMARY_TXT, flex: 1 },
+  selectedWalletText: { marginLeft: 10, color: COLORS.WHITE, fontWeight: "500", flex: 1 },
+  successContainer: { alignItems: "center" },
+  successText: { fontSize: 20, fontWeight: "bold", color: COLORS.SUCCESS, marginVertical: 20 },
+  receiptContainer: { width: "100%", backgroundColor: COLORS.OFFWHITE, borderRadius: 8, padding: 15, marginBottom: 20 },
+  receiptRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
+  receiptLabel: { color: COLORS.PRIMARY_TXT },
+  receiptValue: { fontWeight: "600", color: COLORS.PRIMARY },
+  submitButton: { marginTop: 10 },
+  cashContainer: { alignItems: "center", padding: 20, backgroundColor: COLORS.OFFWHITE, borderRadius: 8, borderWidth: 1, borderColor: COLORS.LIGHT_GREY },
+  cashNote: { textAlign: "center", color: COLORS.GREY, fontSize: 12, marginTop: 8 },
 });
 
 export default PaymentComponent;

@@ -92,13 +92,18 @@ const CustomDrawer: React.FC = () => {
  
   const menuItems = [
     { title: 'Home', icon: 'home', screen: PAGES.HOME },
-    { title: 'Patient Dashboard', icon: 'home', screen: PAGES.PATIENT_DASHBOARD },
-    { title: 'Patient Register', icon: 'account-plus', screen: PAGES.PATIENT_REGISTER },
-    { title: 'Doctor Register', icon: 'stethoscope', screen: PAGES.DOCTOR_REGISTER },
-    { title: 'Hospital Register', icon: 'hospital-building', screen: PAGES.HOSPITAL_REGISTER },
-    { title: 'Labs & Scan', icon: 'microscope', screen: PAGES.LABS_SCAN_REGISTER },
+    // { title: 'Patient Dashboard', icon: 'home', screen: PAGES.PATIENT_DASHBOARD },
+    // { title: 'Home', icon: 'home', screen: PAGES.HOME },
+    { title: 'Patient Dashboard', icon: 'home', screen: PAGES.PATIENT_OVERVIEW },
+    // { title: 'Patient Register', icon: 'account-plus', screen: PAGES.PATIENT_REGISTER },
+    // { title: 'Doctor Register', icon: 'stethoscope', screen: PAGES.DOCTOR_REGISTER },
+    // { title: 'Hospital Register', icon: 'hospital-building', screen: PAGES.HOSPITAL_REGISTER },
+    // { title: 'Labs & Scan', icon: 'microscope', screen: PAGES.LABS_SCAN_REGISTER },
+     { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
+         { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
     { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
-    { title: 'Appointments', icon: 'microscope', screen: PAGES.PATIENT_APPOINTMENTS },
+    // { title: 'Settings', icon: 'setting', screen: PAGES.PATIENT_SETTINGS },
+   
     { title: 'Logout', icon: 'logout', action: handleLogout, isDestructive: true },
   ];
 

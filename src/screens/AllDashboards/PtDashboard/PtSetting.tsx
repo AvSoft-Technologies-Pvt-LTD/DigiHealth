@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Image, TouchableOpacity, Animated } from "react-native";
+import { View, ScrollView, StyleSheet, Image, TouchableOpacity, Animated,KeyboardAvoidingView } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import AvText from "../../../elements/AvText";
 import AvTextInput from "../../../elements/AvTextInput";
@@ -7,6 +7,7 @@ import AvButton from "../../../elements/AvButton";
 import { COLORS } from "../../../constants/colors";
 import Header from "../../../components/Header";
 import { PAGES } from "../../../constants/pages";
+import { isIos } from "../../../constants/platform";
 
 const PatientSettingsView = () => {
   const [patient, setPatient] = useState({
@@ -78,6 +79,11 @@ const PatientSettingsView = () => {
 
   return (
     <>
+     <KeyboardAvoidingView
+                style={styles.container}
+                behavior={isIos() ? 'padding' : 'height'}
+                keyboardVerticalOffset={isIos() ? 90 : 0}
+            >
       <Header
         title={PAGES.PATIENT_SETTINGS}
         showBackButton={false}
@@ -247,11 +253,16 @@ const PatientSettingsView = () => {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+        flex: 1,
+        backgroundColor: COLORS.WHITE,
+    },
   scrollContainer: {
     padding: 16,
     paddingBottom: 24,

@@ -102,7 +102,7 @@ const HealthCard: React.FC = () => {
 
   const renderPlansView = () => {
     return (
-      <View style={styles.plansContainer}>
+      <View>
         <AvText type="heading_2" style={styles.plansHeader}>
           Choose Your Health Plan
         </AvText>
