@@ -5,6 +5,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import AvText from '../../../../elements/AvText';
 import { COLORS } from '../../../../constants/colors';
 import DynamicForm from '../../../../components/CommonComponents/form/AvForm';
+import { normalize } from '../../../../constants/platform';
+import AvIcons from '../../../../elements/AvIcons';
 
 type RootStackParamList = {
   BookAppointment: {
@@ -150,7 +152,12 @@ const BookAppointment = () => {
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={20} color={COLORS.PRIMARY} />
+          <AvIcons
+            type={"MaterialIcons"}
+            name={"arrow-back"}
+            size={normalize(20)}
+            color={COLORS.PRIMARY}
+          />
           <AvText style={styles.backText}>Back to Lab Details</AvText>
         </TouchableOpacity>
 

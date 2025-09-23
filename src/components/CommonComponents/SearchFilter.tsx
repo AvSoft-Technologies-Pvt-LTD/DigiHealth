@@ -10,10 +10,11 @@ import {
   Dimensions,
   Easing,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import AvButton from '../../elements/AvButton';
 import AvText from '../../elements/AvText';
 import { COLORS } from '../../constants/colors';
+import { normalize } from '../../constants/platform';
+import AvIcons from '../../elements/AvIcons';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -86,7 +87,12 @@ export function SearchFilterBar<T extends FilterOption>({
   return (
     <View style={styles.container}>
       <View style={styles.searchInputContainer}>
-        <Icon name="search" size={20} color={COLORS.GREY} style={styles.searchIcon} />
+        <AvIcons
+          type={"Ionicons"}
+          name={"search-outline"}
+          size={normalize(18)}
+          color={COLORS.GREY}
+        />
         <TextInput
           style={styles.searchInput}
           value={searchValue}
@@ -96,12 +102,14 @@ export function SearchFilterBar<T extends FilterOption>({
           returnKeyType="search"
         />
       </View>
-      <TouchableOpacity
-        style={styles.filterButton}
+      <AvIcons
         onPress={toggleFilterModal}
-      >
-        <Icon name="tune" size={20} color={COLORS.PRIMARY} />
-      </TouchableOpacity>
+        type={"MaterialIcons"}
+        name={"tune"}
+        size={normalize(20)}
+        style={styles.filterButton}
+        color={COLORS.PRIMARY}
+      />
 
       {/* Filter Modal */}
       <Modal visible={isFilterModalVisible} transparent={true} animationType="none">
@@ -118,12 +126,15 @@ export function SearchFilterBar<T extends FilterOption>({
           >
             <View style={styles.modalHeader}>
               <AvText type="title_6" style={styles.modalTitle}>{filterModalTitle}</AvText>
-              <TouchableOpacity
-                onPress={toggleFilterModal}
-                style={styles.closeButton}
-              >
-                <Icon name="close" size={24} color={COLORS.GREY} />
-              </TouchableOpacity>
+              
+                <AvIcons
+                  onPress={toggleFilterModal}
+                  type={"Ionicons"}
+                  name={"close-outline"}
+                  size={normalize(24)}
+                  color={COLORS.GREY}
+                />
+              
             </View>
             <View style={styles.filterOptionsContainer}>
               {filterOptions.map((option) => (
@@ -140,7 +151,12 @@ export function SearchFilterBar<T extends FilterOption>({
                       ]}
                     >
                       {selectedFilters[option.id] && (
-                        <Icon name="check" size={16} color={COLORS.WHITE} />
+                        <AvIcons
+                          type={"MaterialIcons"}
+                          name={"check"}
+                          size={normalize(16)}
+                          color={COLORS.WHITE}
+                        />
                       )}
                     </View>
                     <AvText type="body" style={styles.filterOptionText}>{option.displayName}</AvText>
@@ -236,11 +252,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.LIGHT_GREY,
-  
+
   },
   modalTitle: {
     color: COLORS.PRIMARY,
-   marginBottom: 20,
+    marginBottom: 20,
   },
   closeButton: {
     padding: 4,
@@ -281,7 +297,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     marginRight: 8,
-    backgroundColor:COLORS.LIGHT_GREY,
+    backgroundColor: COLORS.LIGHT_GREY,
   },
   resetButtonText: {
     color: COLORS.GREY,

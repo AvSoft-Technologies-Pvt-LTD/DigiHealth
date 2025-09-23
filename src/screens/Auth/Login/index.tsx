@@ -83,6 +83,10 @@ const Login: React.FC<LoginProps> = () => {
             const responseData = await post<LoginResponse>(API.LOGIN_API, { identifier: email, password });
             console.log("Login response:", responseData);
             
+            if (!responseData.token) {
+                throw new Error(responseData.message || 'Login failed. Please try again.');
+            }
+
             // Save token and role to AsyncStorage
             await StorageService.save("userToken", responseData.token);
             await StorageService.save("userRole", responseData.role);
@@ -97,10 +101,16 @@ const Login: React.FC<LoginProps> = () => {
             setTimeout(() => {
                 navigation.replace(PAGES.HOME);
             }, 0);
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error('Login error:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
-            setSnackbarMessage(errorMessage);
+            // Check if error has a response with data
+            if (error?.response?.data?.message) {
+                setSnackbarMessage(error.response.data.message);
+            } else if (error?.message) {
+                setSnackbarMessage(error.message);
+            } else {
+                setSnackbarMessage('Login failed. Please try again.');
+            }
             setSnackbarVisible(true);
         } finally {
             setLoading(false);

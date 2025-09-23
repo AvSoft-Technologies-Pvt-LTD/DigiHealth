@@ -21,6 +21,7 @@ import AvButton from '../elements/AvButton';
 import { PAGES } from '../constants/pages';
 import { width } from '../constants/common';
 import { ScrollView } from 'react-native-gesture-handler';
+import AvIcons from '../elements/AvIcons';
 
 interface HeaderProps {
     title?: string;
@@ -88,14 +89,13 @@ const Header: React.FC<HeaderProps> = ({
             <View style={[styles.container, { backgroundColor }]}>
                 {/* Left Section - Menu Button */}
                 {showBackButton ? (
-                    <Pressable
-                        style={styles.backButton}
+                    <AvIcons
                         onPress={handleBackPress}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                        <MaterialIcons name="arrow-back" size={24} color={titleColor} />                            ←
-
-                    </Pressable>
+                        type="MaterialIcons"
+                        name="arrow-back"
+                        size={24}
+                        color={titleColor}
+                    />
                 ) : (
 
                     <View style={styles.leftSection}>
@@ -189,7 +189,7 @@ const Header: React.FC<HeaderProps> = ({
 
     return (
         <>
-        {/* // <ScrollView style={styles.wrapper}> */}
+            {/* // <ScrollView style={styles.wrapper}> */}
             {notificationCount > 0 && (
                 <View style={styles.notificationBadge}>
                     <AvText type="caption" style={styles.notificationText}>
@@ -207,7 +207,7 @@ const Header: React.FC<HeaderProps> = ({
                     Auth: {isAuthenticated ? 'Logged In' : 'Logged Out'}
                 </AvText>
             )} */}
-        {/* // </ScrollView> */}
+            {/* // </ScrollView> */}
         </>
     );
 };
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
         height: 60,
         paddingHorizontal: 15,
     },
-    
+
     logoContainer: {
         flex: 1,
         alignItems: 'center',

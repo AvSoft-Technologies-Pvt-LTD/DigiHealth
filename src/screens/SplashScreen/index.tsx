@@ -81,7 +81,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <AvImage source={IMAGES.SPLASH} style={styles.logo} />
+      <AvImage source={IMAGES.LOGO} style={styles.logo} />
     </View>
   );
 };
@@ -100,8 +100,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.WHITE,
   },
   logo: {
-    width: normalize(150),
-    height: normalize(150),
+    width: '100%',
+    height: '36%',
+    aspectRatio: 3,
   },
 });
 

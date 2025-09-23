@@ -77,7 +77,7 @@ const HomeView: React.FC<HomeViewProps> = ({
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <AvImage
-                source={IMAGES.LOGO}
+                source={IMAGES.LOGO_CROPPED}
                 style={styles.logoImage}
               />
             </View>
