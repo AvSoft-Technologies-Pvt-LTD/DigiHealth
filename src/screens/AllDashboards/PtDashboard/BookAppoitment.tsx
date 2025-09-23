@@ -28,6 +28,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { setFilteredDoctors, setLoading, setError } from "../../../store/slices/doctorSlice";
+import AvImage from "../../../elements/AvImage";
 
 interface Doctor {
   id: string;
@@ -376,9 +377,9 @@ const BookAppointmentComponent: React.FC = () => {
       contentContainerStyle={styles.scrollContainer}
       showsVerticalScrollIndicator={true}
     >
-        <AvText type="title_1" style={styles.pageTitle}>
-          Book an Appointment
-        </AvText>
+      <AvText type="title_1" style={styles.pageTitle}>
+        Book an Appointment
+      </AvText>
 
       <View style={styles.container}>
         <AvTextInput
@@ -546,8 +547,8 @@ const BookAppointmentComponent: React.FC = () => {
             theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
           />
         </View>
-     <View style={styles.viewButtonContainer}>
-  {/* <AvButton
+        <View style={styles.viewButtonContainer}>
+          {/* <AvButton
     mode="outlined"
     onPress={() => navigation.navigate('DoctorList')} // Replace 'DoctorList' with your target screen
     labelStyle={{ color: COLORS.SECONDARY }}
@@ -555,7 +556,7 @@ const BookAppointmentComponent: React.FC = () => {
   >
     View
   </AvButton> */}
-</View>
+        </View>
 
         {!selectedSpecialty && <AvText style={{ color: "red", marginTop: normalize(8) }}>Please select a specialty to find doctors.</AvText>}
         {loading ? (
@@ -573,7 +574,7 @@ const BookAppointmentComponent: React.FC = () => {
                   onPress={() => handleBookDoctor(doctor)}
                 >
                   <View style={styles.doctorHeader}>
-                    <Image
+                    <AvImage
                       source={{ uri: doctor.image }}
                       style={styles.doctorProfileImage}
                       resizeMode="cover"
@@ -614,109 +615,109 @@ const BookAppointmentComponent: React.FC = () => {
         )}
       </View>
       {/* Booking Modal */}
-     <AvModal
-  isModalVisible={isBookingModalVisible}
-  setModalVisible={setIsBookingModalVisible}
-  title="Book Appointment"
->
-  {selectedDoctor && (
-    <View style={styles.modalContent}>
-      {/* Doctor Details Section */}
-      <View style={styles.doctorDetailsContainer}>
-        <Image
-          source={{ uri: selectedDoctor.image }}
-          style={styles.modalDoctorImage}
-          resizeMode="cover"
-        />
-        <View style={styles.doctorDetailsText}>
-          <AvText style={styles.modalDoctorName}>{selectedDoctor.name}</AvText>
-          <AvText style={styles.modalDoctorSpecialty}>{selectedDoctor.specialty}</AvText>
-          <AvText style={styles.modalDoctorHospital}>{selectedDoctor.hospital}</AvText>
-          <AvText style={styles.modalDoctorFees}>₹{selectedDoctor.fees}</AvText>
-        </View>
-      </View>
-
-      {/* Date Selection Section */}
-      <AvText type="title_3" style={styles.sectionTitle}>
-        Select Date
-      </AvText>
-      <TouchableOpacity
-        onPress={() => setShowDatePicker(true)}
-        style={styles.datePickerButton}
+      <AvModal
+        isModalVisible={isBookingModalVisible}
+        setModalVisible={setIsBookingModalVisible}
+        title="Book Appointment"
       >
-        <AvText style={styles.datePickerText}>
-          {selectedDate ? selectedDate.toLocaleDateString() : "Select Date"}
-        </AvText>
-      </TouchableOpacity>
-
-      {showDatePicker && (
-        <DateTimePicker
-          testID="dateTimePicker"
-          value={selectedDate || new Date()}
-          mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          minimumDate={new Date()}
-          onChange={handleDateSelect}
-        />
-      )}
-
-      {/* Time Slots Section */}
-      {selectedDate && (
-        <>
-          <AvText type="title_3" style={styles.sectionTitle}>
-            Available Time Slots
-          </AvText>
-          {getTimesForDate(selectedDate).length > 0 ? (
-            <View style={styles.timeSlotsContainer}>
-              {getTimesForDate(selectedDate).map((slot, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.timeSlot,
-                    selectedTime === slot.time ? styles.selectedTimeSlot : null,
-                    slot.isBooked ? styles.bookedTimeSlot : null,
-                  ]}
-                  onPress={() => !slot.isBooked && handleTimeSelect(slot.time)}
-                  disabled={slot.isBooked}
-                >
-                  <AvText style={[
-                    styles.timeSlotText,
-                    selectedTime === slot.time ? { color: COLORS.WHITE } : { color: COLORS.BLACK },
-                    slot.isBooked ? { color: COLORS.LIGHT_GREY } : null,
-                  ]}>
-                    {slot.time}
-                  </AvText>
-                </TouchableOpacity>
-              ))}
+        {selectedDoctor && (
+          <View style={styles.modalContent}>
+            {/* Doctor Details Section */}
+            <View style={styles.doctorDetailsContainer}>
+              <AvImage
+                source={{ uri: selectedDoctor?.image as string }}  // selectedDoctor.image could be undefined
+                style={styles.modalDoctorImage}
+                resizeMode="cover"
+              />
+              <View style={styles.doctorDetailsText}>
+                <AvText style={styles.modalDoctorName}>{selectedDoctor.name}</AvText>
+                <AvText style={styles.modalDoctorSpecialty}>{selectedDoctor.specialty}</AvText>
+                <AvText style={styles.modalDoctorHospital}>{selectedDoctor.hospital}</AvText>
+                <AvText style={styles.modalDoctorFees}>₹{selectedDoctor.fees}</AvText>
+              </View>
             </View>
-          ) : (
-            <View style={styles.noSlotsContainer}>
-              <AvText style={styles.noSlotsText}>
-                No slots available for this date. Please select a different date.
+
+            {/* Date Selection Section */}
+            <AvText type="title_3" style={styles.sectionTitle}>
+              Select Date
+            </AvText>
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              style={styles.datePickerButton}
+            >
+              <AvText style={styles.datePickerText}>
+                {selectedDate ? selectedDate.toLocaleDateString() : "Select Date"}
               </AvText>
-            </View>
-          )}
-        </>
-      )}
+            </TouchableOpacity>
 
-      {/* Confirm Button Section */}
-      <AvButton
-        mode="contained"
-        onPress={handleConfirmBooking}
-        labelStyle={styles.confirmButtonText}
-        buttonColor={COLORS.SECONDARY}
-        style={styles.confirmButton}
-        disabled={!selectedDate || !selectedTime || getTimesForDate(selectedDate).length === 0}
-      >
-        {getTimesForDate(selectedDate).length === 0
-          ? "No Slots Available"
-          : !selectedTime
-          ? "Select Time Slot"
-          : "Confirm Booking"}
-      </AvButton>
-    </View>
-  )}
-</AvModal>
+            {showDatePicker && (
+              <DateTimePicker
+                testID="dateTimePicker"
+                value={selectedDate || new Date()}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                minimumDate={new Date()}
+                onChange={handleDateSelect}
+              />
+            )}
+
+            {/* Time Slots Section */}
+            {selectedDate && (
+              <>
+                <AvText type="title_3" style={styles.sectionTitle}>
+                  Available Time Slots
+                </AvText>
+                {getTimesForDate(selectedDate).length > 0 ? (
+                  <View style={styles.timeSlotsContainer}>
+                    {getTimesForDate(selectedDate).map((slot, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.timeSlot,
+                          selectedTime === slot.time ? styles.selectedTimeSlot : null,
+                          slot.isBooked ? styles.bookedTimeSlot : null,
+                        ]}
+                        onPress={() => !slot.isBooked && handleTimeSelect(slot.time)}
+                        disabled={slot.isBooked}
+                      >
+                        <AvText style={[
+                          styles.timeSlotText,
+                          selectedTime === slot.time ? { color: COLORS.WHITE } : { color: COLORS.BLACK },
+                          slot.isBooked ? { color: COLORS.LIGHT_GREY } : null,
+                        ]}>
+                          {slot.time}
+                        </AvText>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.noSlotsContainer}>
+                    <AvText style={styles.noSlotsText}>
+                      No slots available for this date. Please select a different date.
+                    </AvText>
+                  </View>
+                )}
+              </>
+            )}
+
+            {/* Confirm Button Section */}
+            <AvButton
+              mode="contained"
+              onPress={handleConfirmBooking}
+              labelStyle={styles.confirmButtonText}
+              buttonColor={COLORS.SECONDARY}
+              style={styles.confirmButton}
+              disabled={!selectedDate || !selectedTime || getTimesForDate(selectedDate).length === 0}
+            >
+              {getTimesForDate(selectedDate).length === 0
+                ? "No Slots Available"
+                : !selectedTime
+                  ? "Select Time Slot"
+                  : "Confirm Booking"}
+            </AvButton>
+          </View>
+        )}
+      </AvModal>
 
       {/* Modals */}
       <Modal visible={showAllSpecialties} animationType="slide" transparent>
@@ -809,14 +810,14 @@ const styles = StyleSheet.create({
     paddingBottom: normalize(16),
   },
   viewButtonContainer: {
-  alignItems: 'flex-end', // Aligns the button to the right
-  marginVertical: normalize(12),
-},
-viewButton: {
-  borderColor: COLORS.SECONDARY,
-  paddingHorizontal: normalize(12), // Adjust for button width
-  minWidth: normalize(80), // Set a fixed small width
-},
+    alignItems: 'flex-end', // Aligns the button to the right
+    marginVertical: normalize(12),
+  },
+  viewButton: {
+    borderColor: COLORS.SECONDARY,
+    paddingHorizontal: normalize(12), // Adjust for button width
+    minWidth: normalize(80), // Set a fixed small width
+  },
 
   dateInput: {
     borderWidth: 1,
@@ -828,120 +829,120 @@ viewButton: {
     justifyContent: 'center',
   },
   modalContent: {
-  padding: normalize(20),
-  backgroundColor: COLORS.WHITE,
-  borderTopLeftRadius: normalize(16),
-  borderTopRightRadius: normalize(16),
-},
-doctorDetailsContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginBottom: normalize(20),
-  padding: normalize(12),
-  backgroundColor: COLORS.LIGHT_GREY,
-  borderRadius: normalize(12),
-},
-modalDoctorImage: {
-  width: normalize(70),
-  height: normalize(70),
-  borderRadius: normalize(35),
-  marginRight: normalize(15),
-},
-doctorDetailsText: {
-  flex: 1,
-},
-modalDoctorName: {
-  fontSize: normalize(16),
-  fontWeight: 'bold',
-  color: COLORS.BLACK,
-  marginBottom: normalize(4),
-},
-modalDoctorSpecialty: {
-  fontSize: normalize(14),
-  color: COLORS.GREY,
-  marginBottom: normalize(4),
-},
-modalDoctorHospital: {
-  fontSize: normalize(12),
-  color: COLORS.SECONDARY,
-  marginBottom: normalize(4),
-},
-modalDoctorFees: {
-  fontSize: normalize(14),
-  color: COLORS.SECONDARY,
-  fontWeight: 'bold',
-},
-sectionTitle: {
-  marginTop: normalize(16),
-  marginBottom: normalize(12),
-  color: COLORS.BLACK,
-  fontWeight: '600',
-},
-datePickerButton: {
-  borderWidth: 1,
-  borderColor: COLORS.LIGHT_GREY,
-  borderRadius: normalize(8),
-  padding: normalize(12),
-  marginBottom: normalize(16),
-},
-datePickerText: {
-  color: COLORS.BLACK,
-  fontSize: normalize(14),
-},
-timeSlotsContainer: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  marginBottom: normalize(16),
-  gap: normalize(8),
-},
-timeSlot: {
-  paddingHorizontal: normalize(12),
-  paddingVertical: normalize(8),
-  borderRadius: normalize(8),
-  borderWidth: 1,
-  borderColor: COLORS.SECONDARY,
-  backgroundColor: COLORS.WHITE,
-},
-pageTitle: {
-  textAlign: "center",
-  marginVertical: normalize(16),
-  color: COLORS.PRIMARY, // Change to your preferred color (e.g., COLORS.PRIMARY, COLORS.BLACK, etc.)
-  fontWeight: "bold",
-  fontSize: normalize(20), // Increase font size
-},
+    padding: normalize(20),
+    backgroundColor: COLORS.WHITE,
+    borderTopLeftRadius: normalize(16),
+    borderTopRightRadius: normalize(16),
+  },
+  doctorDetailsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: normalize(20),
+    padding: normalize(12),
+    backgroundColor: COLORS.LIGHT_GREY,
+    borderRadius: normalize(12),
+  },
+  modalDoctorImage: {
+    width: normalize(70),
+    height: normalize(70),
+    borderRadius: normalize(35),
+    marginRight: normalize(15),
+  },
+  doctorDetailsText: {
+    flex: 1,
+  },
+  modalDoctorName: {
+    fontSize: normalize(16),
+    fontWeight: 'bold',
+    color: COLORS.BLACK,
+    marginBottom: normalize(4),
+  },
+  modalDoctorSpecialty: {
+    fontSize: normalize(14),
+    color: COLORS.GREY,
+    marginBottom: normalize(4),
+  },
+  modalDoctorHospital: {
+    fontSize: normalize(12),
+    color: COLORS.SECONDARY,
+    marginBottom: normalize(4),
+  },
+  modalDoctorFees: {
+    fontSize: normalize(14),
+    color: COLORS.SECONDARY,
+    fontWeight: 'bold',
+  },
+  sectionTitle: {
+    marginTop: normalize(16),
+    marginBottom: normalize(12),
+    color: COLORS.BLACK,
+    fontWeight: '600',
+  },
+  datePickerButton: {
+    borderWidth: 1,
+    borderColor: COLORS.LIGHT_GREY,
+    borderRadius: normalize(8),
+    padding: normalize(12),
+    marginBottom: normalize(16),
+  },
+  datePickerText: {
+    color: COLORS.BLACK,
+    fontSize: normalize(14),
+  },
+  timeSlotsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: normalize(16),
+    gap: normalize(8),
+  },
+  timeSlot: {
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(8),
+    borderRadius: normalize(8),
+    borderWidth: 1,
+    borderColor: COLORS.SECONDARY,
+    backgroundColor: COLORS.WHITE,
+  },
+  pageTitle: {
+    textAlign: "center",
+    marginVertical: normalize(16),
+    color: COLORS.PRIMARY, // Change to your preferred color (e.g., COLORS.PRIMARY, COLORS.BLACK, etc.)
+    fontWeight: "bold",
+    fontSize: normalize(20), // Increase font size
+  },
 
-selectedTimeSlot: {
-  backgroundColor: COLORS.SECONDARY,
-},
-bookedTimeSlot: {
-  backgroundColor: COLORS.LIGHT_GREY,
-  borderColor: COLORS.LIGHT_GREY,
-},
-timeSlotText: {
-  fontSize: normalize(12),
-  textAlign: 'center',
-},
-noSlotsContainer: {
-  padding: normalize(16),
-  backgroundColor: COLORS.LIGHT_GREY,
-  borderRadius: normalize(8),
-  marginBottom: normalize(16),
-  alignItems: 'center',
-},
-noSlotsText: {
-  color: COLORS.GREY,
-  fontSize: normalize(12),
-},
-confirmButton: {
-  marginTop: normalize(16),
-  paddingVertical: normalize(12),
-  borderRadius: normalize(8),
-},
-confirmButtonText: {
-  color: COLORS.WHITE,
-  fontSize: normalize(14),
-  fontWeight: 'bold',
-},
+  selectedTimeSlot: {
+    backgroundColor: COLORS.SECONDARY,
+  },
+  bookedTimeSlot: {
+    backgroundColor: COLORS.LIGHT_GREY,
+    borderColor: COLORS.LIGHT_GREY,
+  },
+  timeSlotText: {
+    fontSize: normalize(12),
+    textAlign: 'center',
+  },
+  noSlotsContainer: {
+    padding: normalize(16),
+    backgroundColor: COLORS.LIGHT_GREY,
+    borderRadius: normalize(8),
+    marginBottom: normalize(16),
+    alignItems: 'center',
+  },
+  noSlotsText: {
+    color: COLORS.GREY,
+    fontSize: normalize(12),
+  },
+  confirmButton: {
+    marginTop: normalize(16),
+    paddingVertical: normalize(12),
+    borderRadius: normalize(8),
+  },
+  confirmButtonText: {
+    color: COLORS.WHITE,
+    fontSize: normalize(14),
+    fontWeight: 'bold',
+  },
 
   specialtySliderChip: {
     paddingHorizontal: normalize(12),

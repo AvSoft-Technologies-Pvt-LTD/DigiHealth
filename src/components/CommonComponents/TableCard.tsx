@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import AvText from '../../elements/AvText';
 import { COLORS } from '../../constants/colors';
+import { normalize } from '../../constants/platform';
 
 export interface DataRecord {
   recordId: string;
@@ -187,8 +188,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 12,
+    marginBottom: normalize(12),
+    paddingBottom: normalize(12),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.LIGHT_GREY,
   },
@@ -198,14 +199,14 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   idBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(8),
+    borderRadius: normalize(16),
     borderWidth: 1,
     borderColor: COLORS.SECONDARY,
   },
   recordIdLabel: {
-    fontSize: 16,
+    fontSize: normalize(16),
     fontWeight: '200',
     color: COLORS.SECONDARY,
     letterSpacing: -0.2,

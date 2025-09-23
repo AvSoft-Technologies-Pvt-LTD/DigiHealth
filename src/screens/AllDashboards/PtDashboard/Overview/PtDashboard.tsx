@@ -13,6 +13,8 @@ import { COLORS } from "../../../../constants/colors";
 import { PAGES } from "../../../../constants/pages";
 import { useNavigation } from "@react-navigation/native";
 import PatientModals from "./index";
+import AvImage from "../../../../elements/AvImage";
+import { IMAGES } from "../../../../assets";
 
 const PatientOverview = () => {
   const navigation = useNavigation();
@@ -91,7 +93,7 @@ const PatientOverview = () => {
         </AvText>
         <View style={styles.headerButtons}>
           <AvButton
-            onPress={() => navigation.navigate(PAGES.PATIENT_HEALTHCARD)}
+            onPress={() => navigation.navigate(PAGES.PATIENT_HEALTHCARD as never)}
             mode="contained"
             contentStyle={styles.viewHealthCardButtonContent}
             buttonColor={COLORS.PRIMARY}
@@ -108,8 +110,8 @@ const PatientOverview = () => {
 
       {/* Profile Section */}
       <View style={styles.profileSection}>
-        <Image
-          source={{ uri: "https://randomuser.me/api/portraits/women/44.jpg" }}
+        <AvImage
+          source={{ uri:IMAGES.PROFILE }}
           style={styles.profileImage}
         />
         <AvText type="title_6" style={{ color: COLORS.PRIMARY }}>

@@ -8,6 +8,8 @@ import { COLORS } from "../../../constants/colors";
 import Header from "../../../components/Header";
 import { PAGES } from "../../../constants/pages";
 import { isIos } from "../../../constants/platform";
+import AvImage from "../../../elements/AvImage";
+import { IMAGES } from "../../../assets";
 
 const PatientSettingsView = () => {
   const [patient, setPatient] = useState({
@@ -106,9 +108,15 @@ const PatientSettingsView = () => {
 
         {/* Profile Card */}
         <View style={styles.profileCard}>
-          <Image
-            source={{ uri: "https://randomuser.me/api/portraits/women/44.jpg" }}
-            style={styles.profileImage}
+          <AvImage
+            source={{ uri: IMAGES.PROFILE }}
+            fallbackSource={{ uri: IMAGES.PROFILE }}
+            style={{ width: 200, height: 200 }}
+            resizeMode="cover"
+            showLoadingIndicator={true}
+            loadingIndicatorColor="#0000ff"
+            fadeDuration={300}
+            progressiveRenderingEnabled={true}
           />
           <AvText type="title_7" style={styles.profileName}>
             {patient.firstName} {patient.lastName}
@@ -186,10 +194,10 @@ const PatientSettingsView = () => {
                     field.includes("Phone") || field.includes("Number") || field === "aadhaarNumber"
                       ? "phone-pad"
                       : field.includes("Email")
-                      ? "email-address"
-                      : field === "dateOfBirth"
-                      ? "numbers-and-punctuation"
-                      : "default"
+                        ? "email-address"
+                        : field === "dateOfBirth"
+                          ? "numbers-and-punctuation"
+                          : "default"
                   }
                   theme={inputTheme}
                 />

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback, Platform } from 'react-native';
 import AvText from './AvText';
 import { COLORS } from '../constants/colors';
-import { normalize } from '../constants/platform';
+import { isIos, normalize } from '../constants/platform';
 
 interface SelectItem {
   label: string;
@@ -41,7 +41,7 @@ export const AvSelect: React.FC<AvSelectProps> = ({
       buttonRef.current.measureInWindow((x, y, width) => {
         setDropdownPosition({
           left: x,
-          top: y + (Platform.OS === 'ios' ? 40 : 45), // Adjust based on your button height
+          top: y + (isIos() ? 40 : 45), // Adjust based on your button height
           width,
         });
         setModalVisible(true);

@@ -134,7 +134,7 @@ const Header: React.FC<HeaderProps> = ({
                 {/* Right Section - Auth Buttons */}
                 {/* Quick Actions */}
                 <View style={styles.quickActionsSection}>
-                    <Text style={styles.quickActionsTitle}>QUICK ACTIONS</Text>
+                    <AvText style={styles.quickActionsTitle}>QUICK ACTIONS</AvText>
 
                     <TouchableOpacity
                         style={[styles.actionItem, { backgroundColor: '#d9ecf8ff' }]}
@@ -143,7 +143,7 @@ const Header: React.FC<HeaderProps> = ({
                         <View style={[styles.actionIconContainer, { backgroundColor: '#14161aff' }]}>
                             <MaterialIcons name="local-pharmacy" size={24} color="#f1f7f7ff" />
                         </View>
-                        <Text style={styles.actionText}>Pharmacy</Text>
+                        <AvText style={styles.actionText}>Pharmacy</AvText>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -153,7 +153,7 @@ const Header: React.FC<HeaderProps> = ({
                         <View style={[styles.actionIconContainer, { backgroundColor: '#ca3535ff' }]}>
                             <MaterialIcons name="local-hospital" size={24} color="#ffffffff" />
                         </View>
-                        <Text style={styles.actionText}>Ambulance</Text>
+                        <AvText style={styles.actionText}>Ambulance</AvText>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -163,7 +163,7 @@ const Header: React.FC<HeaderProps> = ({
                         <View style={[styles.actionIconContainer, { backgroundColor: '#d1b2f7' }]}>
                             <MaterialIcons name="notifications" size={24} color="#ffffffff" />
                         </View>
-                        <Text style={styles.actionText}>Notifications</Text>
+                        <AvText style={styles.actionText}>Notifications</AvText>
                     </TouchableOpacity>
                 </View>
                 <View style={styles.rightSection}>

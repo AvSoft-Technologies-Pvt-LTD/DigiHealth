@@ -4,6 +4,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { COLORS } from '../../../constants/colors';
 import FormField, { FieldType } from '../form/FormField';
+import { isIos, normalize } from '../../../constants/platform';
 
 interface FormField {
   name: string;
@@ -162,8 +163,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           </TouchableOpacity>
         )}
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Icon name="check" size={20} color="#FFFFFF" />
-          <Text style={styles.submitButtonText}>{buttonTitle}</Text>
+          <Icon name="check" size={20} color={COLORS.WHITE} />
+          <Text style={styles.submitButtonText}>Save</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -176,10 +177,10 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.GRADIENT_START,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    paddingVertical: normalize(20),
+    paddingHorizontal: normalize(16),
+    borderBottomLeftRadius: normalize(20),
+    borderBottomRightRadius: normalize(20),
     shadowColor: COLORS.BLACK,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -188,7 +189,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: COLORS.WHITE,
-    fontSize: 24,
+    fontSize: normalize(24),
     fontWeight: '700',
     textAlign: 'center',
     letterSpacing: 0.5,
@@ -197,17 +198,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 10,
+    padding: normalize(16),
+    paddingBottom: normalize(100),
   },
   footer: {
     flexDirection: 'row',
-    padding: 16,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 16,
+    justifyContent: 'space-between',
+    padding: normalize(16),
+    paddingBottom: isIos() ? normalize(32) : normalize(16),
     backgroundColor: COLORS.WHITE,
     borderTopWidth: 1,
     borderTopColor: COLORS.NAVBAR_DIVIDER,
-    gap: 12,
+    gap: normalize(12),
   },
   cancelButton: {
     flex: 1,
@@ -218,11 +220,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.ERROR,
     borderRadius: 12,
-    paddingVertical: 16,
-    gap: 8,
+    paddingVertical: normalize(16),
+    gap: normalize(8),
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: normalize(16),
     fontWeight: '600',
     color: COLORS.ERROR,
   },
@@ -242,7 +244,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   submitButtonText: {
-    fontSize: 16,
+    fontSize: normalize(16),
     fontWeight: '600',
     color: COLORS.WHITE,
   },

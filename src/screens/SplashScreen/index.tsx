@@ -14,6 +14,7 @@ import { RootStackParamList } from '../../types/navigation';
 import { setAuthenticated, setUserProfile } from '../../store/slices/userSlice';
 
 import { setHomeData } from '../../store/slices/homeSlice';
+import AvImage from '../../elements/AvImage';
 // Define the type for the navigation stack parameters
 
 // Define the type for the navigation prop
@@ -80,7 +81,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Image source={IMAGES.SPLASH} style={styles.logo} />
+      <AvImage source={IMAGES.SPLASH} style={styles.logo} />
     </View>
   );
 };

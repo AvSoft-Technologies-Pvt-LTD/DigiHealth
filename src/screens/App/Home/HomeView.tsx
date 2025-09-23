@@ -18,6 +18,9 @@ import WhyChooseUsSection from './HomeComponents/WhyChooseUsSection';
 // data
 import AvModal from '../../../elements/AvModal';
 import BookAppointmentComponent from './HomeComponents/BookAppointmentComponent';
+import AvImage from '../../../elements/AvImage';
+import { IMAGES } from '../../../assets';
+import { PAGES } from '../../../constants/pages';
 
 // Define the props type for the HomeView component (if needed in the future)
 type HomeViewProps = {
@@ -73,8 +76,8 @@ const HomeView: React.FC<HomeViewProps> = ({
         <View style={styles.heroContainer}>
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Image
-                source={require('../../../assets/images/launch_screen.png')}
+              <AvImage
+                source={IMAGES.LOGO}
                 style={styles.logoImage}
               />
             </View>

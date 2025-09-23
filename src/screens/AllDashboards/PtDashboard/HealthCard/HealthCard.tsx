@@ -15,6 +15,8 @@ import {
   handleActivatePlan,
   handleChangePlan,
 } from "./index";
+import AvImage from "../../../../elements/AvImage";
+import { IMAGES } from "../../../../assets";
 
 const HealthCard: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(subscriptionPlans[2]);
@@ -152,14 +154,14 @@ const HealthCard: React.FC = () => {
         <View style={[styles.healthCard, { backgroundColor: selectedPlan.color }]}>
           <View style={styles.cardContent}>
             <View style={styles.logoContainer}>
-              <Image
-                source={require('../../../../assets/images/logo.png')}
+              <AvImage
+                source={IMAGES.LOGO}
                 style={[styles.logoImage, { width: 120, height: 72 }]} // Increased size
                 resizeMode="contain"
               />
             </View>
             <View style={styles.userSection}>
-              <Image source={{ uri: userData.photo }} style={styles.userPhoto} />
+              <AvImage source={{ uri: userData.photo }} style={styles.userPhoto} />
               <View style={styles.userInfo}>
                 <AvText type="title_3" style={styles.userName}>
                   {userData.firstName} {userData.lastName}

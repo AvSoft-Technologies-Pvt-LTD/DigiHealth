@@ -1,56 +1,3 @@
-// import React from 'react';
-// import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
-// import PaymentComponent from '../../../elements/AvPayment'; // Adjust the import path
-// import AvText from '../../../elements/AvText'; // Adjust the import path
-
-// const PaymentScreen = () => {
-//   const handlePaymentSuccess = (data: any) => {
-//     console.log('Payment Success:', data);
-//     // Navigate to a success screen or update state
-//   };
-
-//   const handlePaymentError = (error: string) => {
-//     console.log('Payment Error:', error);
-//     // Show an error message or update state
-//   };
-
-//   return (
-
-//       <ScrollView contentContainerStyle={styles.container}>
-       
-
-//         <PaymentComponent
-//           onSuccess={handlePaymentSuccess}
-//           onError={handlePaymentError}
-//           amount={999.99}
-//           currency="₹"
-//           merchantName="Awesome Shop"
-//         />
-//       </ScrollView>
-   
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   safeArea: {
-//     flex: 1,
-//     backgroundColor: '#f5f5f5',
-//   },
-//   container: {
-//     padding: 16,
-//   },
-//   header: {
-//     marginBottom: 24,
-//     alignItems: 'center',
-//   },
-//   headerText: {
-//     fontWeight: 'bold',
-//   },
-// });
-
-// export default PaymentScreen;
-
-
 import React, { useState } from 'react';
 import {
     View,
@@ -73,6 +20,7 @@ import { TextInput } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { isIos, normalize } from '../../../constants/platform';
 import Header from '../../../components/Header';
+import AvImage from '../../../elements/AvImage';
 
 export interface PatientFormData {
     firstName: string;
@@ -425,8 +373,8 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                                 style={[styles.photoButton, errors.photo ? styles.inputError : {}]}
                                 onPress={handleImagePicker}
                             >
-                                {formData.photo ? (
-                                    <Image source={{ uri: formData.photo.uri }} style={styles.photoPreview} />
+                                {formData.photo?.uri ? (
+                                    <AvImage source={{ uri: formData.photo.uri }} style={styles.photoPreview} />
                                 ) : (
                                     <View style={styles.photoPlaceholder}>
                                         <Icon name="add-a-photo" size={30} color={COLORS.GREY} />
