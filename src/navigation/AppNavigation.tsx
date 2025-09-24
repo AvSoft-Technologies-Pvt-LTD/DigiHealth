@@ -17,6 +17,7 @@ import HospitalRegister from '../screens/Auth/HospitalRegister';
 import LabsScanRegister from '../screens/Auth/LabsScanRegister';
 
 import LabBookingView from '../screens/AllDashboards/PtDashboard/LabBooking/LabBookingView';
+import PaymentGateway from '../elements/AvPayment';
 import Billing from '../screens/AllDashboards/PtDashboard/Billing';
 import NotificationsScreen from '../components/CommonComponents/Notification';
 const Stack = createNativeStackNavigator<RootStackParamList>();

@@ -16,6 +16,7 @@ import AmbulanceBookingView from './AllDashboards/PtDashboard/AmbulanceBookingVi
 import PharmacyFinderView from "./AllDashboards/PtDashboard/PharmacyFinderView";
 import BookAppointment from './AllDashboards/PtDashboard/BookAppoitment';
 import Billing from './AllDashboards/PtDashboard/Billing';
+import PaymentGateway from '../elements/AvPayment';
 export {
   // Auth
   Login,
@@ -34,6 +35,6 @@ export {
  AmbulanceBookingView,
  PharmacyFinderView,
  BookAppointment,
- 
+  PaymentGateway,
  Billing
 };

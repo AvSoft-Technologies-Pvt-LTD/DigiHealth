@@ -18,6 +18,7 @@ export type RootStackParamList = {
   [PAGES.NOTIFICATION_SCREEN]:undefined;
   [PAGES.BILLING]:undefined;
   [PAGES.PHARMACY_FINDER_VIEW]:undefined;
+  [PAGES.PAYMENT_GATEWAY_PAGE]: undefined;
 
 };
 
