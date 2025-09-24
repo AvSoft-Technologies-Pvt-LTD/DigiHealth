@@ -1,21 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, FlatList, TouchableOpacity, TextInput, ActivityIndicator, ListRenderItem,} from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+} from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AvText from '../../../../elements/AvText';
 import { COLORS } from '../../../../constants/colors';
 import { Tabs } from '../../../../components/CommonComponents/Tabs';
 import AvCard from '../../../../elements/AvCards';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { PAGES } from '../../../../constants/pages';
+import { normalize } from '../../../../constants/platform';
 
-// ---------------- TYPES ----------------
+// Types
 type Test = {
   id: string;
   title: string;
   code: string;
   description: string;
   price: number;
+  originalPrice?: number;
+  type: 'test';
 };
 
 type Scan = {
@@ -24,6 +35,8 @@ type Scan = {
   code: string;
   description: string;
   price: number;
+  originalPrice?: number;
+  type: 'scan';
 };
 
 type Package = {
@@ -32,25 +45,21 @@ type Package = {
   testsCount: number;
   price: number;
   originalPrice: number;
-  tests: string[];
+  tests: Array<{ title: string; code?: string; price?: number }>;
+  type: 'package';
+  includedTests?: Array<{ id: string; title: string; type: 'test'; price: number }>;
 };
 
 type RootStackParamList = {
-  LabHome: undefined;
-  DetailsPage: { id: string };
-  LabCart: { cart: (Test | Scan | Package)[] };
-  AvailableLabs: { cart: (Test | Scan | Package)[] };
+  [PAGES.LAB_HOME]: undefined;
+  [PAGES.LAB_DETAILS_PAGE]: { id: string; cart: any[]; setCart: (cart: any[]) => void };
+  [PAGES.LAB_CART]: { cart: any[]; setCart: (cart: any[]) => void };
+  [PAGES.AVAILABLE_LABS]: { cart: any[]; testDetails: any[] };
 };
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+const API_URL = 'https://mocki.io/v1/64038255-16d2-4d67-a269-a35cbeca1c62';
 
-// ---------------- CONSTANTS ----------------
-const API_URL =
-  'https://mocki.io/v1/eef2e0ad-4941-4900-94c5-bc63e7c661f8';
-
-// ---------------- COMPONENTS ----------------
-
-// SearchBar
+// Components
 const SearchBar = ({
   onSearch,
   cartItemCount,
@@ -61,16 +70,10 @@ const SearchBar = ({
   onCartPress: () => void;
 }) => {
   const [searchText, setSearchText] = useState('');
-
   return (
     <View style={styles.searchBarContainer}>
       <View style={styles.searchInputContainer}>
-        <Icon
-          name="search"
-          size={20}
-          color={COLORS.GREY}
-          style={styles.searchIcon}
-        />
+        <Icon name="search" size={normalize(20)} color={COLORS.GREY} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search for tests, scans..."
@@ -82,11 +85,8 @@ const SearchBar = ({
           }}
         />
       </View>
-      <TouchableOpacity
-        style={styles.cartIconContainer}
-        onPress={onCartPress}
-      >
-        <Icon name="shopping-cart" size={24} color={COLORS.PRIMARY} />
+      <TouchableOpacity style={styles.cartIconContainer} onPress={onCartPress}>
+        <Icon name="shopping-cart" size={normalize(24)} color={COLORS.PRIMARY} />
         {cartItemCount > 0 && (
           <View style={styles.cartBadge}>
             <AvText type="body" style={styles.cartBadgeText}>
@@ -99,11 +99,10 @@ const SearchBar = ({
   );
 };
 
-// PrescriptionUploadCard
 const PrescriptionUploadCard = () => (
   <View style={styles.prescriptionCard}>
     <View style={styles.prescriptionRow}>
-      <Icon name="upload-file" size={32} color={COLORS.WHITE} />
+      <Icon name="upload-file" size={normalize(32)} color={COLORS.WHITE} />
       <View style={styles.prescriptionText}>
         <AvText type="title_6" style={styles.prescriptionTitle}>
           Have a prescription? Upload it!
@@ -121,16 +120,17 @@ const PrescriptionUploadCard = () => (
   </View>
 );
 
-// Card Props
-interface CardProps<T> {
-  item: T;
+const TestCard = ({
+  item,
+  onPress,
+  onAdd,
+  onBookNow,
+}: {
+  item: Test;
   onPress: () => void;
   onAdd: () => void;
   onBookNow: () => void;
-}
-
-// TestCard
-const TestCard = ({ item, onPress, onAdd, onBookNow }: CardProps<Test>) => (
+}) => (
   <AvCard cardStyle={styles.testCard}>
     <TouchableOpacity onPress={onPress}>
       <View style={styles.testCardContent}>
@@ -151,7 +151,7 @@ const TestCard = ({ item, onPress, onAdd, onBookNow }: CardProps<Test>) => (
           </AvText>
           <View style={styles.testButtons}>
             <TouchableOpacity style={styles.addButton} onPress={onAdd}>
-              <Icon name="add-circle" size={30} color={COLORS.PRIMARY} />
+              <Icon name="add-circle" size={normalize(30)} color={COLORS.PRIMARY} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.bookButton} onPress={onBookNow}>
               <AvText type="buttonText" style={styles.bookButtonText}>
@@ -165,8 +165,17 @@ const TestCard = ({ item, onPress, onAdd, onBookNow }: CardProps<Test>) => (
   </AvCard>
 );
 
-// ScanCard
-const ScanCard = ({ item, onPress, onAdd, onBookNow }: CardProps<Scan>) => (
+const ScanCard = ({
+  item,
+  onPress,
+  onAdd,
+  onBookNow,
+}: {
+  item: Scan;
+  onPress: () => void;
+  onAdd: () => void;
+  onBookNow: () => void;
+}) => (
   <AvCard cardStyle={styles.scanCard}>
     <TouchableOpacity onPress={onPress}>
       <View style={styles.scanCardContent}>
@@ -187,7 +196,7 @@ const ScanCard = ({ item, onPress, onAdd, onBookNow }: CardProps<Scan>) => (
           </AvText>
           <View style={styles.scanButtons}>
             <TouchableOpacity style={styles.addButton} onPress={onAdd}>
-              <Icon name="add-circle" size={30} color={COLORS.PRIMARY} />
+              <Icon name="add-circle" size={normalize(30)} color={COLORS.PRIMARY} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.bookButton} onPress={onBookNow}>
               <AvText type="buttonText" style={styles.bookButtonText}>
@@ -201,13 +210,17 @@ const ScanCard = ({ item, onPress, onAdd, onBookNow }: CardProps<Scan>) => (
   </AvCard>
 );
 
-// PackageCard
 const PackageCard = ({
   item,
   onPress,
   onAdd,
   onBookNow,
-}: CardProps<Package>) => (
+}: {
+  item: Package;
+  onPress: () => void;
+  onAdd: () => void;
+  onBookNow: () => void;
+}) => (
   <AvCard cardStyle={styles.packageCard}>
     <TouchableOpacity onPress={onPress}>
       <View style={styles.packageCardContent}>
@@ -215,13 +228,13 @@ const PackageCard = ({
           <AvText type="title_6" style={styles.packageName}>
             {item.title}
           </AvText>
-          <View style={styles.testsCountBadge}>
+          <TouchableOpacity onPress={onPress} style={styles.testsCountBadge}>
             <AvText type="body" style={styles.testsCountText}>
               {item.testsCount} Tests
             </AvText>
-          </View>
+          </TouchableOpacity>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: normalize(8) }}>
           <AvText type="description" style={styles.packagePrice}>
             ₹{item.price}
           </AvText>
@@ -230,15 +243,20 @@ const PackageCard = ({
           </AvText>
         </View>
         <View style={styles.packageIncludes}>
-          {item.tests.map((test, index) => (
+          {item.tests.slice(0, 3).map((test, index) => (
             <AvText key={index} type="body" style={styles.packageInclude}>
-              • {test}
+              • {test.title}
             </AvText>
           ))}
+          <TouchableOpacity onPress={onPress}>
+            <AvText type="Link" style={styles.viewMoreText}>
+              View More
+            </AvText>
+          </TouchableOpacity>
         </View>
         <View style={styles.packageButtons}>
           <TouchableOpacity style={styles.addButton} onPress={onAdd}>
-            <Icon name="add-circle" size={30} color={COLORS.PRIMARY} />
+            <Icon name="add-circle" size={normalize(30)} color={COLORS.PRIMARY} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.bookButton} onPress={onBookNow}>
             <AvText type="buttonText" style={styles.bookButtonText}>
@@ -251,7 +269,7 @@ const PackageCard = ({
   </AvCard>
 );
 
-// ---------------- MAIN COMPONENT ----------------
+// Main Component
 const LabHome: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'tests' | 'scans'>('tests');
   const [searchQuery, setSearchQuery] = useState('');
@@ -259,8 +277,8 @@ const LabHome: React.FC = () => {
   const [scans, setScans] = useState<Scan[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState<(Test | Scan | Package)[]>([]);
-  const navigation = useNavigation<NavigationProp>();
+  const [cart, setCart] = useState<any[]>([]);
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -279,21 +297,23 @@ const LabHome: React.FC = () => {
   }, []);
 
   const filteredTests = tests.filter((test) =>
-    test.title.toLowerCase().includes(searchQuery.toLowerCase())
+    test.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
-
   const filteredScans = scans.filter((scan) =>
-    scan.title.toLowerCase().includes(searchQuery.toLowerCase())
+    scan.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleCardPress = (id: string) => {
-    navigation.navigate('DetailsPage', { id });
+    navigation.navigate(PAGES.LAB_DETAILS_PAGE, { id, cart, setCart });
   };
 
   const handleAddToCart = (item: Test | Scan | Package) => {
     setCart((prevCart) => {
       const isItemInCart = prevCart.some((cartItem) => cartItem.id === item.id);
       if (!isItemInCart) {
+        if (item.type === 'package') {
+          return [...prevCart, { ...item, includedTests: item.tests }];
+        }
         return [...prevCart, item];
       }
       return prevCart;
@@ -301,11 +321,29 @@ const LabHome: React.FC = () => {
   };
 
   const handleBookNow = (item: Test | Scan | Package) => {
-    navigation.navigate('AvailableLabs', { cart: [item] });
+    let testDetails: any[] = [];
+    if (item.type === 'package') {
+      testDetails = [
+        item,
+        ...item.tests.map((test, index) => ({
+          id: `${item.id}_${index}`,
+          title: test.title,
+          code: test.code || 'N/A',
+          price: test.price || 0,
+          type: 'test',
+        })),
+      ];
+    } else {
+      testDetails = [item];
+    }
+    navigation.navigate(PAGES.AVAILABLE_LABS, {
+      cart: [...cart, item],
+      testDetails,
+    });
   };
 
   const handleNavigateToCart = () => {
-    navigation.navigate('LabCart', { cart });
+    navigation.navigate(PAGES.LAB_CART, { cart, setCart });
   };
 
   if (loading) {
@@ -388,17 +426,15 @@ const LabHome: React.FC = () => {
   );
 };
 
-export default LabHome;
-
-// ---------------- STYLES ----------------
+// Styles
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.BG_OFF_WHITE },
-  scrollView: { flex: 1, padding: 16 },
+  scrollView: { flex: 1, padding: normalize(16) },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: normalize(16),
     backgroundColor: COLORS.WHITE,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.LIGHT_GREY,
@@ -408,87 +444,86 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.WHITE,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: normalize(12),
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(8),
     borderWidth: 1,
     borderColor: COLORS.LIGHT_GREY,
   },
-  searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 16, color: COLORS.PRIMARY },
-  cartIconContainer: { marginLeft: 12, position: 'relative' },
+  searchIcon: { marginRight: normalize(8) },
+  searchInput: { flex: 1, fontSize: normalize(16), color: COLORS.PRIMARY },
+  cartIconContainer: { marginLeft: normalize(12), position: 'relative' },
   cartBadge: {
     position: 'absolute',
-    top: -8,
-    right: -8,
+    top: -normalize(8),
+    right: -normalize(8),
     backgroundColor: COLORS.ERROR,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+    borderRadius: normalize(10),
+    width: normalize(20),
+    height: normalize(20),
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cartBadgeText: { color: COLORS.WHITE, fontSize: 12, fontWeight: 'bold' },
+  cartBadgeText: { color: COLORS.WHITE, fontSize: normalize(12), fontWeight: 'bold' },
   prescriptionCard: {
     backgroundColor: COLORS.PRIMARY,
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 4,
-    marginBottom: 16,
+    borderRadius: normalize(12),
+    padding: normalize(16),
+    marginHorizontal: normalize(4),
+    marginBottom: normalize(16),
   },
-  prescriptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  prescriptionText: { flex: 1, marginLeft: 8 },
-  prescriptionTitle: { color: COLORS.WHITE, fontWeight: 'bold', fontSize: 16 },
-  prescriptionSubtext: { color: COLORS.WHITE, fontSize: 12, opacity: 0.9 },
+  prescriptionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  prescriptionText: { flex: 1, marginLeft: normalize(8) },
+  prescriptionTitle: { color: COLORS.WHITE, fontWeight: 'bold', fontSize: normalize(16) },
+  prescriptionSubtext: { color: COLORS.WHITE, fontSize: normalize(12), opacity: 0.9 },
   uploadButton: {
     backgroundColor: COLORS.WHITE,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginLeft: 12,
+    paddingVertical: normalize(8),
+    paddingHorizontal: normalize(16),
+    borderRadius: normalize(20),
+    marginLeft: normalize(12),
   },
-  uploadButtonText: { color: COLORS.PRIMARY, fontWeight: '500', fontSize: 12 },
-  testCard: { marginBottom: 12 },
-  testCardContent: { padding: 12 },
-  testHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  uploadButtonText: { color: COLORS.PRIMARY, fontWeight: '500', fontSize: normalize(12) },
+  testCard: { marginBottom: normalize(12) },
+  testCardContent: { padding: normalize(12) },
+  testHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: normalize(4) },
   testTitle: { fontWeight: 'bold' },
   testCode: { color: COLORS.GREY },
-  testDescription: { color: COLORS.GREY, marginBottom: 8 },
+  testDescription: { color: COLORS.GREY, marginBottom: normalize(8) },
   testFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   testPrice: { fontWeight: 'bold' },
-  testButtons: { flexDirection: 'row' },
-  addButton: { padding: 4 },
+  testButtons: { flexDirection: 'row', alignItems: 'center' },
+  addButton: { padding: normalize(4) },
   bookButton: {
     backgroundColor: COLORS.SECONDARY,
-    padding: 8,
-    borderRadius: 6,
-    marginLeft: 8,
+    padding: normalize(8),
+    borderRadius: normalize(6),
+    marginLeft: normalize(8),
   },
   bookButtonText: { color: COLORS.WHITE },
-  scanCard: { marginBottom: 12 },
-  scanCardContent: { padding: 12 },
-  scanHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  scanCard: { marginBottom: normalize(12) },
+  scanCardContent: { padding: normalize(12) },
+  scanHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: normalize(4) },
   scanTitle: { fontWeight: 'bold' },
   scanCode: { color: COLORS.GREY },
-  scanDescription: { color: COLORS.GREY, marginBottom: 8 },
+  scanDescription: { color: COLORS.GREY, marginBottom: normalize(8) },
   scanFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   scanPrice: { fontWeight: 'bold' },
-  scanButtons: { flexDirection: 'row' },
-  packageCard: { marginBottom: 12 },
-  packageCardContent: { padding: 12 },
-  packageHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  scanButtons: { flexDirection: 'row', alignItems: 'center' },
+  packageCard: { marginBottom: normalize(12) },
+  packageCardContent: { padding: normalize(12) },
+  packageHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: normalize(4) },
   packageName: { fontWeight: 'bold' },
-  testsCountBadge: { backgroundColor: COLORS.LIGHT_GREY, padding: 4, borderRadius: 4 },
-  testsCountText: { fontSize: 12 },
+  testsCountBadge: { backgroundColor: COLORS.LIGHT_GREY, padding: normalize(4), borderRadius: normalize(4) },
+  testsCountText: { fontSize: normalize(12), color: COLORS.PRIMARY },
+  viewMoreText: { color: COLORS.PRIMARY, textDecorationLine: 'underline', marginTop: normalize(4) },
   packagePrice: { fontWeight: 'bold' },
-  packageOldPrice: { textDecorationLine: 'line-through', color: COLORS.GREY, marginLeft: 8 },
-  packageIncludes: { marginBottom: 12 },
-  packageInclude: { color: COLORS.GREY, marginBottom: 2 },
-  packageButtons: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 },
-  sectionTitle: { fontWeight: 'bold', marginVertical: 12 },
-  listContent: { paddingBottom: 16 },
+  packageOldPrice: { textDecorationLine: 'line-through', color: COLORS.GREY, marginLeft: normalize(8) },
+  packageIncludes: { marginBottom: normalize(12) },
+  packageInclude: { color: COLORS.GREY, marginBottom: normalize(2) },
+  packageButtons: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: normalize(8) },
+  sectionTitle: { fontWeight: 'bold', marginVertical: normalize(12) },
+  listContent: { paddingBottom: normalize(16) },
 });
+
+export default LabHome;

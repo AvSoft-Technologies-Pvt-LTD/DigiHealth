@@ -222,3 +222,35 @@ export const AppointmentTabs: Tab[] = [
   { key: 'doctor', label: 'Doctor Appointments' },
   { key: 'lab', label: 'Lab Appointments' },
 ];
+
+// Billing Data// Billing Data
+export interface DataRecord {
+  recordId: string;
+  isHidden: boolean;
+  patientName: string;
+  service: string;
+  amount: number;
+  status: 'Paid' | 'Pending';
+  date: string;
+}
+const billingData: DataRecord[] = [
+  {
+    recordId: "INV-1001",
+    isHidden: false,
+    patientName: "John Doe",
+    service: "Consultation",
+    amount: 1200,
+    status: "Paid",
+    date: "2025-09-18",
+  },
+  {
+    recordId: "INV-1002",
+    isHidden: false,
+    patientName: "Jane Smith",
+    service: "Lab Test",
+    amount: 800,
+    status: "Pending",
+    date: "2025-09-19",
+  },
+];
+export default billingData;

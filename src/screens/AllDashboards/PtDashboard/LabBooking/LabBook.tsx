@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp, NativeStackNavigationProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AvText from '../../../../elements/AvText';
 import AvCard from '../../../../elements/AvCards';
 import AvButton from '../../../../elements/AvButton';
 import { COLORS } from '../../../../constants/colors';
+import { PAGES } from '../../../../constants/pages';
+import { normalize } from '../../../../constants/platform';
 
+// Define the expected route parameters
 type LabBookRouteParams = {
   lab: {
     name: string;
@@ -25,44 +28,52 @@ type LabBookRouteParams = {
   }[];
 };
 
-const LabBook = () => {
-  const route = useRoute();
-  const { lab, cart } = route.params as LabBookRouteParams;
-  const navigation = useNavigation<any>();
+// Define the RootStackParamList type
+type RootStackParamList = {
+  [PAGES.LAB_BOOKING_PAGE]: LabBookRouteParams;
+  [PAGES.LAB_BOOK_APPOINTMENT]: LabBookRouteParams;
+  // Add other routes as needed
+};
 
+const LabBook = () => {
+  // Type the route and navigation
+  const route = useRoute<RouteProp<RootStackParamList, typeof PAGES.LAB_BOOKING_PAGE>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const { lab, cart } = route.params;
   const totalPrice = cart.reduce((sum, test) => sum + test.price, 0);
 
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       {/* Back Button */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Icon name="arrow-back" size={20} color={COLORS.PRIMARY} />
+        <Icon name="arrow-back" size={normalize(20)} color={COLORS.PRIMARY} />
         <AvText style={styles.backText}>Back to Labs List</AvText>
       </TouchableOpacity>
 
       {/* Lab Info */}
-      <AvCard style={styles.labInfoCard}>
+      <AvCard cardStyle={styles.labInfoCard}>
         <View style={styles.labHeader}>
           <AvText type="title_6" style={styles.labName}>{lab.name}</AvText>
           <View style={styles.locationRow}>
-            <Icon name="location-on" size={16} color={COLORS.GREY} />
+            <Icon name="location-on" size={normalize(16)} color={COLORS.GREY} />
             <AvText type="body" style={styles.locationText}>{lab.location}</AvText>
           </View>
         </View>
         <View style={styles.ratingRow}>
-          <Icon name="star" size={16} color={COLORS.GREEN} />
+          <Icon name="star" size={normalize(16)} color={COLORS.GREEN} />
           <AvText type="body" style={styles.ratingText}>{lab.rating}/5</AvText>
         </View>
         {lab.homeCollection && (
           <View style={styles.facilityItem}>
-            <Icon name="check" size={16} color={COLORS.GREEN} />
+            <Icon name="check" size={normalize(16)} color={COLORS.GREEN} />
             <AvText type="body" style={styles.facilityText}>Home Collection Available</AvText>
           </View>
         )}
       </AvCard>
 
       {/* Selected Tests */}
-      <AvCard style={styles.selectedTestsCard}>
+      <AvCard cardStyle={styles.selectedTestsCard}>
         <AvText type="title_6" style={styles.sectionTitle}>Selected Tests</AvText>
         {cart.map((test) => (
           <View key={test.id} style={styles.testItem}>
@@ -83,25 +94,18 @@ const LabBook = () => {
       </AvCard>
 
       {/* Booking Section */}
-      <AvCard style={styles.bookingCard}>
+      <AvCard cardStyle={styles.bookingCard}>
         <AvText type="title_6" style={styles.sectionTitle}>Book Your Appointment</AvText>
         <AvText type="body" style={styles.bookingDescription}>
           Choose between home sample collection or visiting the lab for your selected tests.
         </AvText>
         <AvButton
           mode="contained"
-          onPress={() => navigation.navigate('BookAppointment', { lab, cart })}
-          style={styles.bookButton} // only style for the button container
+          onPress={() => navigation.navigate(PAGES.LAB_BOOK_APPOINTMENT, { lab, cart })}
+          style={styles.bookButton}
         >
           Book Appointment
         </AvButton>
-      </AvCard>
-
-      {/* Lab Details */}
-      <AvCard style={styles.labDetailsCard}>
-        <AvText type="title_6" style={styles.sectionTitle}>Lab Information:</AvText>
-        <AvText type="body" style={styles.labDetailsText}>Lab Name: {lab.name}</AvText>
-        <AvText type="body" style={styles.labDetailsText}>Location: {lab.location}</AvText>
       </AvCard>
     </ScrollView>
   );
@@ -111,133 +115,123 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.BG_OFF_WHITE,
-    padding: 16,
+    padding: normalize(16),
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: normalize(16),
   },
   backText: {
     color: COLORS.PRIMARY,
-    marginLeft: 8,
+    marginLeft: normalize(8),
   },
   labInfoCard: {
-    marginBottom: 16,
-    padding: 16,
+    marginBottom: normalize(16),
+    padding: normalize(16),
   },
   labHeader: {
-    marginBottom: 8,
+    marginBottom: normalize(8),
   },
   labName: {
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: normalize(18),
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: normalize(4),
   },
   locationText: {
     color: COLORS.GREY,
-    marginLeft: 4,
+    marginLeft: normalize(4),
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: normalize(12),
   },
   ratingText: {
     color: COLORS.GREY,
-    marginLeft: 4,
-  },
-  facilitiesSection: {
-    marginTop: 12,
-  },
-  sectionTitle: {
-    fontWeight: 'bold',
-    marginBottom: 8,
+    marginLeft: normalize(4),
   },
   facilityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: normalize(4),
   },
   facilityText: {
-    color: COLORS.GREY,
-    marginLeft: 4,
+    color: COLORS.GREEN,
+    marginLeft: normalize(4),
   },
   selectedTestsCard: {
-    marginBottom: 16,
-    padding: 16,
+    marginBottom: normalize(16),
+    padding: normalize(16),
   },
   testItem: {
-    marginBottom: 16,
+    marginBottom: normalize(16),
     borderWidth: 1,
     borderColor: COLORS.LIGHT_GREY,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: normalize(8),
+    padding: normalize(12),
   },
   testHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: normalize(4),
   },
   testTitle: {
     fontWeight: 'bold',
   },
   testTag: {
     backgroundColor: COLORS.LIGHT_GREY,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    paddingHorizontal: normalize(8),
+    paddingVertical: normalize(4),
+    borderRadius: normalize(4),
   },
   testTagText: {
     color: COLORS.GREY,
-    fontSize: 12,
+    fontSize: normalize(12),
   },
   testCode: {
     color: COLORS.GREY,
-    marginBottom: 2,
+    marginBottom: normalize(2),
   },
   testReportTime: {
     color: COLORS.GREY,
-    marginBottom: 2,
+    marginBottom: normalize(2),
   },
   testFasting: {
     color: COLORS.GREY,
   },
   totalRow: {
     alignItems: 'flex-end',
-    marginTop: 8,
+    marginTop: normalize(8),
   },
   totalPrice: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: normalize(16),
   },
   bookingCard: {
-    marginBottom: 16,
-    padding: 16,
+    marginBottom: normalize(16),
+    padding: normalize(16),
   },
   bookingDescription: {
     color: COLORS.GREY,
-    marginBottom: 16,
+    marginBottom: normalize(16),
   },
   bookButton: {
-    borderRadius: 24,
-    paddingVertical: 8,
-  },
-  bookButtonText: {
-    color: COLORS.WHITE,
+    borderRadius: normalize(24),
+    paddingVertical: normalize(8),
   },
   labDetailsCard: {
-    marginBottom: 16,
-    padding: 16,
+    marginBottom: normalize(16),
+    padding: normalize(16),
   },
   labDetailsText: {
     color: COLORS.GREY,
-    marginBottom: 4,
+    marginBottom: normalize(4),
   },
 });
 

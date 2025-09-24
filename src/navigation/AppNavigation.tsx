@@ -51,6 +51,7 @@ const AppNavigator: React.FC = () => {
       <Stack.Screen name={PAGES.PATIENT_HEALTHCARD} component={HealthCard} />
        <Stack.Screen name={PAGES.PATIENT_APPOINTMENTS} component={Appointments} />
        <Stack.Screen name={PAGES.LAB_BOOKING} component={LabBookingView} />
+       <Stack.Screen name={PAGES.PAYMENT_GATEWAY_PAGE} component={PaymentGateway} /> 
     </Stack.Navigator>
     <CustomDrawer />
   </> //Drawer outside navigator but inside container

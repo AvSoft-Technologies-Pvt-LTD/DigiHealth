@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp, NativeStackNavigationProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AvText from '../../../../elements/AvText';
-import { COLORS } from '../../../../constants/colors';
 import DynamicForm from '../../../../components/CommonComponents/form/AvForm';
+import { COLORS } from '../../../../constants/colors';
+import { PAGES } from '../../../../constants/pages';
 import { normalize } from '../../../../constants/platform';
-import AvIcons from '../../../../elements/AvIcons';
 
+// Define RootStackParamList with correct route keys
 type RootStackParamList = {
-  BookAppointment: {
+  [PAGES.LAB_BOOK_APPOINTMENT]: {
     lab: any;
     cart: any[];
   };
-  LabPayment: {
+  [PAGES.LAB_PAYMENT]: {
     lab: any;
     cart: any[];
     totalPrice: number;
@@ -39,14 +40,42 @@ type RootStackParamList = {
   };
 };
 
-const BookAppointment = () => {
-  const route = useRoute<RouteProp<RootStackParamList, 'BookAppointment'>>();
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { lab, cart } = route.params;
+// Form Field Types
+type FormFieldOption = { label: string; value: string };
+type FormField = {
+  name: string;
+  label: string;
+  type: 'text' | 'textarea' | 'date' | 'time' | 'radio';
+  required?: boolean;
+  placeholder?: string;
+  options?: FormFieldOption[];
+  validation?: {
+    pattern?: RegExp;
+    minLength?: number;
+    errorMessage?: string;
+  };
+};
 
+// Form Data Type
+type AppointmentFormData = {
+  location: string;
+  address?: string;
+  date: string;
+  time: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+};
+
+const BookAppointment: React.FC = () => {
+  // Correctly type useRoute and useNavigation
+  const route = useRoute<RouteProp<RootStackParamList, typeof PAGES.LAB_BOOK_APPOINTMENT>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const { lab, cart } = route.params;
   const totalPrice = cart.reduce((sum, test) => sum + test.price, 0);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<AppointmentFormData>({
     location: 'Visit Lab',
     address: '',
     date: '',
@@ -56,8 +85,9 @@ const BookAppointment = () => {
     email: '',
   });
 
-  const getFormFields = () => {
-    const baseFields = [
+  // Generate form fields dynamically
+  const getFormFields = (): FormField[] => {
+    const baseFields: FormField[] = [
       {
         name: 'location',
         label: 'Appointment Location',
@@ -106,6 +136,7 @@ const BookAppointment = () => {
       },
     ];
 
+    // Add address field if Home Collection is selected
     if (form.location === 'Home Collection') {
       baseFields.splice(1, 0, {
         name: 'address',
@@ -121,13 +152,14 @@ const BookAppointment = () => {
 
   const formFields = getFormFields();
 
+  // Handle field changes
   const handleFormChange = (name: string, value: any) => {
-    setForm({ ...form, [name]: value });
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFormSubmit = (formData: typeof form) => {
-    const payload: RootStackParamList['LabPayment'] = {
-      ...formData,
+  // Handle form submission
+  const handleFormSubmit = (formData: AppointmentFormData) => {
+    const payload: RootStackParamList[typeof PAGES.LAB_PAYMENT] = {
       lab,
       cart,
       totalPrice,
@@ -143,38 +175,35 @@ const BookAppointment = () => {
         reportTime: test.reportTime,
         fasting: test.fasting,
       })),
+      ...formData,
     };
 
-    navigation.navigate('LabPayment', payload);
+    navigation.navigate(PAGES.LAB_PAYMENT, payload);
   };
 
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <AvIcons
-            type={"MaterialIcons"}
-            name={"arrow-back"}
-            size={normalize(20)}
-            color={COLORS.PRIMARY}
-          />
+          <Icon name="arrow-back" size={normalize(20)} color={COLORS.PRIMARY} />
           <AvText style={styles.backText}>Back to Lab Details</AvText>
         </TouchableOpacity>
 
         <DynamicForm
           fields={formFields}
-          onSubmit={handleFormSubmit}
-          headerTitle="Book Appointment"
           formData={form}
           onChange={handleFormChange}
+          onSubmit={handleFormSubmit as (data: Record<string, any>) => void}
+          headerTitle="Book Appointment"
           buttonTitle="Proceed to Book"
-          singleButton={true}
+          singleButton
         />
       </ScrollView>
     </View>
   );
 };
 
+// Styles with normalize for responsive sizing
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -182,16 +211,16 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    padding: 16,
+    padding: normalize(16),
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: normalize(16),
   },
   backText: {
     color: COLORS.PRIMARY,
-    marginLeft: 8,
+    marginLeft: normalize(8),
   },
 });
 

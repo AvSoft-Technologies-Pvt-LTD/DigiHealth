@@ -23,8 +23,14 @@ export const PAGES = {
     BOOKING_APPOITMENT:"BookAppoitment",
     BILLING:"Billing",
 
-    // Lab Pages
-    LAB_HOME:"Lab Home",
-    LAB_CART:"Lab Cart",
-    LAB_BOOK:"Lab Booking"
+    // Lab Page
+  LAB_HOME: "LabHome",
+  LAB_CART: "LabCart",
+  LAB_DETAILS_PAGE: "LabDetails",
+  AVAILABLE_LABS: "AvailableLabs",
+  LAB_BOOKING_PAGE: "LabBooking",
+  LAB_BOOK_APPOINTMENT: "LabBookAppointment",
+  LAB_PAYMENT: "LabPayment",
+  LAB_PAYMENT_SUCCESS: "LabPaymentSuccess",
+  LAB_TRACK_APPOINTMENT: "LabTrackAppointment",
 } as const;
