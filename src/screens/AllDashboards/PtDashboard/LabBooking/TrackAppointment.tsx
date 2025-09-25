@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRoute, useNavigation, RouteProp, NativeStackNavigationProp } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AvText from '../../../../elements/AvText';
 import AvCard from '../../../../elements/AvCards';
@@ -248,152 +249,36 @@ const TrackAppointment = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.BG_OFF_WHITE,
-  },
-  scrollContent: {
-    padding: normalize(16),
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(16),
-  },
-  backText: {
-    color: COLORS.PRIMARY,
-    marginLeft: normalize(8),
-  },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: normalize(16),
-    fontSize: normalize(18),
-  },
-  card: {
-    marginBottom: normalize(16),
-    padding: normalize(16),
-  },
-  trackingStep: {
-    marginVertical: normalize(16),
-    paddingHorizontal: normalize(8),
-  },
-  stepContainer: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    marginBottom: normalize(8),
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(4),
-  },
-  stepIconContainer: {
-    width: normalize(32),
-    height: normalize(32),
-    borderRadius: normalize(16),
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: normalize(12),
-    borderWidth: normalize(2),
-  },
-  stepNumber: {
-    color: COLORS.GREY,
-    fontWeight: 'bold',
-    fontSize: normalize(12),
-  },
-  stepText: {
-    flex: 1,
-    fontSize: normalize(14),
-  },
-  stepLine: {
-    height: normalize(24),
-    width: normalize(2),
-    marginLeft: normalize(15),
-    marginBottom: normalize(8),
-    borderRadius: normalize(1),
-  },
-  detailSection: {
-    marginBottom: normalize(12),
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(8),
-  },
-  iconTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  detailLabel: {
-    color: COLORS.GREY,
-    marginLeft: normalize(6),
-  },
-  detailValue: {
-    color: COLORS.BLACK,
-    flex: 1,
-    textAlign: 'right',
-  },
-  cardTitle: {
-    fontWeight: 'bold',
-    marginBottom: normalize(12),
-  },
-  sectionTitle: {
-    fontWeight: 'bold',
-    marginBottom: normalize(8),
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: normalize(8),
-  },
-  touchableButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: normalize(10),
-    paddingHorizontal: normalize(8),
-    borderRadius: normalize(4),
-    marginHorizontal: normalize(4),
-  },
-  outlinedButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: COLORS.PRIMARY,
-  },
-  buttonText: {
-    color: COLORS.WHITE,
-    marginLeft: normalize(6),
-    fontSize: normalize(14),
-  },
-  testItem: {
-    borderWidth: 1,
-    borderColor: COLORS.LIGHT_GREY,
-    borderRadius: normalize(8),
-    padding: normalize(12),
-    marginBottom: normalize(8),
-  },
-  testName: {
-    fontWeight: 'bold',
-    marginBottom: normalize(2),
-  },
-  testCode: {
-    color: COLORS.GREY,
-    marginBottom: normalize(2),
-  },
-  testCategory: {
-    color: COLORS.GREY,
-    marginBottom: normalize(2),
-  },
-  testReportTime: {
-    color: COLORS.GREY,
-    marginBottom: normalize(2),
-  },
-  testFasting: {
-    color: COLORS.ERROR,
-    fontStyle: 'italic',
-  },
+  container: { flex: 1, backgroundColor: COLORS.BG_OFF_WHITE },
+  scrollContent: { padding: normalize(16) },
+  backButton: { flexDirection: 'row', alignItems: 'center', marginBottom: normalize(16) },
+  backText: { color: COLORS.PRIMARY, marginLeft: normalize(8) },
+  title: { fontWeight: 'bold', marginBottom: normalize(16), fontSize: normalize(18) },
+  card: { marginBottom: normalize(16), padding: normalize(16) },
+  trackingStep: { marginVertical: normalize(16), paddingHorizontal: normalize(8) },
+  stepContainer: { flexDirection: 'column', alignItems: 'flex-start', marginBottom: normalize(8) },
+  stepRow: { flexDirection: 'row', alignItems: 'center', marginBottom: normalize(4) },
+  stepIconContainer: { width: normalize(32), height: normalize(32), borderRadius: normalize(16), justifyContent: 'center', alignItems: 'center', marginRight: normalize(12), borderWidth: normalize(2) },
+  stepNumber: { color: COLORS.GREY, fontWeight: 'bold', fontSize: normalize(12) },
+  stepText: { flex: 1, fontSize: normalize(14) },
+  stepLine: { height: normalize(24), width: normalize(2), marginLeft: normalize(15), marginBottom: normalize(8), borderRadius: normalize(1) },
+  detailSection: { marginBottom: normalize(12) },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: normalize(8) },
+  iconTitleContainer: { flexDirection: 'row', alignItems: 'center' },
+  detailLabel: { color: COLORS.GREY, marginLeft: normalize(6) },
+  detailValue: { color: COLORS.BLACK, flex: 1, textAlign: 'right' },
+  cardTitle: { fontWeight: 'bold', marginBottom: normalize(12) },
+  sectionTitle: { fontWeight: 'bold', marginBottom: normalize(8) },
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: normalize(8) },
+  touchableButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: normalize(10), paddingHorizontal: normalize(8), borderRadius: normalize(4), marginHorizontal: normalize(4) },
+  outlinedButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: COLORS.PRIMARY },
+  buttonText: { color: COLORS.WHITE, marginLeft: normalize(6), fontSize: normalize(14) },
+  testItem: { borderWidth: 1, borderColor: COLORS.LIGHT_GREY, borderRadius: normalize(8), padding: normalize(12), marginBottom: normalize(8) },
+  testName: { fontWeight: 'bold', marginBottom: normalize(2) },
+  testCode: { color: COLORS.GREY, marginBottom: normalize(2) },
+  testCategory: { color: COLORS.GREY, marginBottom: normalize(2) },
+  testReportTime: { color: COLORS.GREY, marginBottom: normalize(2) },
+  testFasting: { color: COLORS.ERROR, fontStyle: 'italic' },
 });
 
 export default TrackAppointment;

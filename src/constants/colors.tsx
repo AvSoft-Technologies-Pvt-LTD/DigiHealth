@@ -39,6 +39,8 @@ export type ColorsType = {
   SKY_BLUE: string;
   GRADIENT_START: string;
   GRADIENT_END: string;
+     LIGHT_PURPLE: string; // Added
+  LIGHT_RED: string; 
 };
 
 // Define a type for the GRADIENT object
@@ -101,6 +103,8 @@ export const COLORS: ColorsType = {
   SKY_BLUE: "#31E4F4",
   GRADIENT_START: "#01B07A",
   GRADIENT_END: "#1A223F",
+  LIGHT_PURPLE: "#e6d4fcff", // Light purple
+  LIGHT_RED: "#f8cfcfff"
 };
 
 // Define the GRADIENT object

@@ -11,6 +11,7 @@ import { normalize } from "../../../constants/platform";
 import { PAGES } from '../../../constants/pages';
 import { RootStackParamList } from '../../../types/navigation';
 import { SearchFilterBar, FilterOption } from "../../../components/CommonComponents/SearchFilter";
+import Header from "../../../components/Header";
 
 interface Invoice {
   invoiceNo: string;
@@ -166,10 +167,17 @@ export default function Billing() {
 
   const handleInvoicePress = (record: DataRecord) => {
     const invoiceData = transformToInvoiceFormat(record);
-    navigation.navigate(PAGES.INVOICE_COMPONENT, { invoice: invoiceData } as any);
+    navigation.navigate(PAGES.INVOICE_DETAILS, { invoice: invoiceData } as any);
   };
 
   return (
+    <>
+      <Header
+                title={PAGES.BILLING}
+                showBackButton={true}
+                // backgroundColor={COLORS.WHITE}
+                titleColor={COLORS.BLACK}
+            />
     <View style={styles.container}>
       <AvText type="heading_3" style={styles.title}>
         Billing Records
@@ -195,6 +203,7 @@ export default function Billing() {
         }}
       />
     </View>
+    </>
   );
 }
 

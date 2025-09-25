@@ -107,9 +107,9 @@ const LoginView: React.FC<LoginViewProps> = ({
         }}
       />
 
-      <AvButton
+       <AvButton
         mode="text"
-        onPress={() => { console.log("Forgot Password CLiked") }}
+        onPress={() => navigation.navigate(PAGES.PASSWORD_RESET_PAGE, { email })}
         style={styles.forgotPassword}
         labelStyle={styles.forgotPasswordText}
       >

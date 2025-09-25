@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRoute, useNavigation, RouteProp, NativeStackNavigationProp } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AvText from '../../../../elements/AvText';
 import DynamicForm from '../../../../components/CommonComponents/form/AvForm';
@@ -205,23 +206,10 @@ const BookAppointment: React.FC = () => {
 
 // Styles with normalize for responsive sizing
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.BG_OFF_WHITE,
-  },
-  scrollView: {
-    flex: 1,
-    padding: normalize(16),
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(16),
-  },
-  backText: {
-    color: COLORS.PRIMARY,
-    marginLeft: normalize(8),
-  },
+  container: { flex: 1, backgroundColor: COLORS.BG_OFF_WHITE },
+  scrollView: { flex: 1, padding: normalize(16) },
+  backButton: { flexDirection: 'row', alignItems: 'center', marginBottom: normalize(16) },
+  backText: { color: COLORS.PRIMARY, marginLeft: normalize(8) },
 });
 
 export default BookAppointment;

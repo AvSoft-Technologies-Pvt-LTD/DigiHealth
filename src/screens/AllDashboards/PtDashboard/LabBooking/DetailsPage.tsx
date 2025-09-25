@@ -187,179 +187,39 @@ const DetailsPage: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-    backgroundColor: COLORS.BG_OFF_WHITE,
-    padding: normalize(16),
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  itemCard: {
-    marginBottom: normalize(16),
-    padding: normalize(16),
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(12),
-  },
-  cartIconContainer: {
-    position: 'relative',
-  },
-  cartBadge: {
-    position: 'absolute',
-    right: normalize(-6),
-    top: normalize(-3),
-    backgroundColor: COLORS.ERROR,
-    borderRadius: normalize(10),
-    width: normalize(20),
-    height: normalize(20),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cartBadgeText: {
-    color: COLORS.WHITE,
-    fontSize: normalize(12),
-    fontWeight: 'bold',
-  },
-  itemHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(8),
-  },
-  itemTitle: {
-    fontWeight: 'bold',
-    marginRight: normalize(8),
-  },
-  codeBadge: {
-    backgroundColor: COLORS.LIGTH_BLUE,
-    paddingHorizontal: normalize(8),
-    paddingVertical: normalize(4),
-    borderRadius: normalize(12),
-  },
-  codeText: {
-    color: COLORS.PRIMARY,
-  },
-  itemDescription: {
-    color: COLORS.GREY,
-    marginBottom: normalize(12),
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(16),
-  },
-  itemPrice: {
-    fontWeight: 'bold',
-    marginRight: normalize(8),
-  },
-  discountedPrice: {
-    textDecorationLine: 'line-through',
-    color: COLORS.GREY,
-  },
-  addToCartButton: {
-    backgroundColor: COLORS.PRIMARY,
-    padding: normalize(12),
-    borderRadius: normalize(8),
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: normalize(16),
-    flexDirection: 'row',
-  },
-  addToCartButtonText: {
-    color: COLORS.WHITE,
-    fontWeight: 'bold',
-    marginLeft: normalize(8),
-  },
-  includedTestsContainer: {
-    marginVertical: normalize(12),
-    backgroundColor: COLORS.WHITE,
-    padding: normalize(12),
-    borderRadius: normalize(8),
-    borderWidth: 1,
-    borderColor: COLORS.LIGHT_GREY,
-    width: '100%',
-  },
-  includedTestsTitle: {
-    fontWeight: 'bold',
-    marginBottom: normalize(12),
-    color: COLORS.BLACK,
-  },
-  testsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-  },
-  testItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.LIGHT_GREY,
-    paddingHorizontal: normalize(12),
-    paddingVertical: normalize(8),
-    borderRadius: normalize(8),
-    marginRight: normalize(8),
-    marginBottom: normalize(8),
-    maxWidth: '48%',
-  },
-  testText: {
-    marginLeft: normalize(6),
-    color: COLORS.BLACK,
-    flexShrink: 1,
-  },
-  viewLabsButton: {
-    backgroundColor: COLORS.LIGHT_GREY,
-    padding: normalize(12),
-    borderRadius: normalize(8),
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: normalize(16),
-  },
-  viewLabsButtonText: {
-    color: COLORS.PRIMARY,
-  },
-  labsCard: {
-    marginBottom: normalize(16),
-    padding: normalize(16),
-  },
-  labsHeader: {
-    marginBottom: normalize(16),
-  },
-  labsTitle: {
-    fontWeight: 'bold',
-    marginBottom: normalize(4),
-  },
-  labsSubtitle: {
-    color: COLORS.GREY,
-  },
-  aboutCard: {
-    marginBottom: normalize(16),
-    padding: normalize(16),
-  },
-  aboutTitle: {
-    fontWeight: 'bold',
-    marginBottom: normalize(12),
-  },
-  aboutSection: {
-    marginBottom: normalize(12),
-  },
-  aboutSubtitle: {
-    fontWeight: 'bold',
-    marginBottom: normalize(4),
-  },
-  aboutText: {
-    color: COLORS.GREY,
-  },
+  scrollView: { flex: 1, backgroundColor: COLORS.BG_OFF_WHITE, padding: normalize(16) },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  itemCard: { marginBottom: normalize(16), padding: normalize(16) },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: normalize(12) },
+  cartIconContainer: { position: 'relative' },
+  cartBadge: { position: 'absolute', right: normalize(-6), top: normalize(-3), backgroundColor: COLORS.ERROR, borderRadius: normalize(10), width: normalize(20), height: normalize(20), justifyContent: 'center', alignItems: 'center' },
+  cartBadgeText: { color: COLORS.WHITE, fontSize: normalize(12), fontWeight: 'bold' },
+  itemHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: normalize(8) },
+  itemTitle: { fontWeight: 'bold', marginRight: normalize(8) },
+  codeBadge: { backgroundColor: COLORS.LIGTH_BLUE, paddingHorizontal: normalize(8), paddingVertical: normalize(4), borderRadius: normalize(12) },
+  codeText: { color: COLORS.PRIMARY },
+  itemDescription: { color: COLORS.GREY, marginBottom: normalize(12) },
+  priceContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: normalize(16) },
+  itemPrice: { fontWeight: 'bold', marginRight: normalize(8) },
+  discountedPrice: { textDecorationLine: 'line-through', color: COLORS.GREY },
+  addToCartButton: { backgroundColor: COLORS.PRIMARY, padding: normalize(12), borderRadius: normalize(8), alignItems: 'center', justifyContent: 'center', marginBottom: normalize(16), flexDirection: 'row' },
+  addToCartButtonText: { color: COLORS.WHITE, fontWeight: 'bold', marginLeft: normalize(8) },
+  includedTestsContainer: { marginVertical: normalize(12), backgroundColor: COLORS.WHITE, padding: normalize(12), borderRadius: normalize(8), borderWidth: 1, borderColor: COLORS.LIGHT_GREY, width: '100%' },
+  includedTestsTitle: { fontWeight: 'bold', marginBottom: normalize(12), color: COLORS.BLACK },
+  testsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
+  testItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.LIGHT_GREY, paddingHorizontal: normalize(12), paddingVertical: normalize(8), borderRadius: normalize(8), marginRight: normalize(8), marginBottom: normalize(8), maxWidth: '48%' },
+  testText: { marginLeft: normalize(6), color: COLORS.BLACK, flexShrink: 1 },
+  viewLabsButton: { backgroundColor: COLORS.LIGHT_GREY, padding: normalize(12), borderRadius: normalize(8), alignItems: 'center', justifyContent: 'center', marginTop: normalize(16) },
+  viewLabsButtonText: { color: COLORS.PRIMARY },
+  labsCard: { marginBottom: normalize(16), padding: normalize(16) },
+  labsHeader: { marginBottom: normalize(16) },
+  labsTitle: { fontWeight: 'bold', marginBottom: normalize(4) },
+  labsSubtitle: { color: COLORS.GREY },
+  aboutCard: { marginBottom: normalize(16), padding: normalize(16) },
+  aboutTitle: { fontWeight: 'bold', marginBottom: normalize(12) },
+  aboutSection: { marginBottom: normalize(12) },
+  aboutSubtitle: { fontWeight: 'bold', marginBottom: normalize(4) },
+  aboutText: { color: COLORS.GREY },
 });
-
 export default DetailsPage;
-
-

@@ -7,10 +7,13 @@ export const PAGES = {
     DRAWER: "Drawer",
     REGISTER: "Register",
     PATIENT_REGISTER: "Patient Register",
+    FORGOT_PASSWORD: "ForgotPassword",
+    VERIFY_OTP: "VerifyOTP",
+    RESET_PASSWORD: "ResetPassword",
+    PASSWORD_RESET_PAGE:"PasswordResetPage",
     HOSPITAL_REGISTER: "Hospital Register",
     DOCTOR_REGISTER: "Doctor Register",
     LABS_SCAN_REGISTER: "Labs Scan Register",
-    DASHBOARD: "Dashboard",
     PATIENT_DASHBOARD:"Patient Dashboard",
     PATIENT_SETTINGS:"Patient Settings",
     PATIENT_HEALTHCARD:"Health Card",
@@ -20,9 +23,8 @@ export const PAGES = {
     AMBULANCE_BOOKING_VIEW:"AmbulanceBookingView",
     PHARMACY_FINDER_VIEW:"PharmacyFinderView",
     NOTIFICATION_SCREEN:"NotificationsScreen",
-    BOOKING_APPOITMENT:"BookAppoitment",
     BILLING:"Billing",
-
+DR_BOOKAPPOITMENT_COMPONENT:"DrBookAppointmentComponent",
     // Lab Page
   LAB_HOME: "LabHome",
   LAB_CART: "LabCart",
@@ -33,4 +35,13 @@ export const PAGES = {
   LAB_PAYMENT: "LabPayment",
   LAB_PAYMENT_SUCCESS: "LabPaymentSuccess",
   LAB_TRACK_APPOINTMENT: "LabTrackAppointment",
+   PAYMENT_GATEWAY_PAGE:"PaymentGateway",
+
+    INVOICE_DETAILS:"InvoiceDetails",
+    INVOICEPRINTPREVIEW:"InvoicePrintPreview",
+    VIEW_ALL_DOCTOR:"ViewAllDoctor",
+    QUICK_ACTIONS_MODAL:"QuickActionsModal",
+    PAYMENT_PAGE:"PaymentPage",
+    SEARCH_AMBULANCE_VIEW:"SearchAmbulanceView",
+    PAYMENT_SCREEN:"PaymentScreen"
 } as const;

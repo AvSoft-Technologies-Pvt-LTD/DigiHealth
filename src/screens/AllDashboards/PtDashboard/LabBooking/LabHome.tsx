@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, FlatList, TouchableOpacity, TextInput, ActivityIndicator,} from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AvText from '../../../../elements/AvText';
@@ -39,9 +31,8 @@ type Scan = {
   type: 'scan';
 };
 
-type Package = {
-  id: string;
-  title: string;
+type Package = {id: string;
+title: string;
   testsCount: number;
   price: number;
   originalPrice: number;
@@ -60,11 +51,7 @@ type RootStackParamList = {
 const API_URL = 'https://mocki.io/v1/64038255-16d2-4d67-a269-a35cbeca1c62';
 
 // Components
-const SearchBar = ({
-  onSearch,
-  cartItemCount,
-  onCartPress,
-}: {
+const SearchBar = ({ onSearch,cartItemCount,onCartPress,}: {
   onSearch: (text: string) => void;
   cartItemCount: number;
   onCartPress: () => void;
@@ -120,12 +107,7 @@ const PrescriptionUploadCard = () => (
   </View>
 );
 
-const TestCard = ({
-  item,
-  onPress,
-  onAdd,
-  onBookNow,
-}: {
+const TestCard = ({item,onPress,onAdd,onBookNow,}: {
   item: Test;
   onPress: () => void;
   onAdd: () => void;
@@ -431,58 +413,19 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.BG_OFF_WHITE },
   scrollView: { flex: 1, padding: normalize(16) },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  searchBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: normalize(16),
-    backgroundColor: COLORS.WHITE,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.LIGHT_GREY,
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.WHITE,
-    borderRadius: normalize(12),
-    paddingHorizontal: normalize(12),
-    paddingVertical: normalize(8),
-    borderWidth: 1,
-    borderColor: COLORS.LIGHT_GREY,
-  },
+  searchBarContainer: { flexDirection: 'row', alignItems: 'center', padding: normalize(16), backgroundColor: COLORS.WHITE, borderBottomWidth: 1, borderBottomColor: COLORS.LIGHT_GREY },
+  searchInputContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.WHITE, borderRadius: normalize(12), paddingHorizontal: normalize(12), paddingVertical: normalize(8), borderWidth: 1, borderColor: COLORS.LIGHT_GREY },
   searchIcon: { marginRight: normalize(8) },
   searchInput: { flex: 1, fontSize: normalize(16), color: COLORS.PRIMARY },
   cartIconContainer: { marginLeft: normalize(12), position: 'relative' },
-  cartBadge: {
-    position: 'absolute',
-    top: -normalize(8),
-    right: -normalize(8),
-    backgroundColor: COLORS.ERROR,
-    borderRadius: normalize(10),
-    width: normalize(20),
-    height: normalize(20),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  cartBadge: { position: 'absolute', top: -normalize(8), right: -normalize(8), backgroundColor: COLORS.ERROR, borderRadius: normalize(10), width: normalize(20), height: normalize(20), justifyContent: 'center', alignItems: 'center' },
   cartBadgeText: { color: COLORS.WHITE, fontSize: normalize(12), fontWeight: 'bold' },
-  prescriptionCard: {
-    backgroundColor: COLORS.PRIMARY,
-    borderRadius: normalize(12),
-    padding: normalize(16),
-    marginHorizontal: normalize(4),
-    marginBottom: normalize(16),
-  },
+  prescriptionCard: { backgroundColor: COLORS.PRIMARY, borderRadius: normalize(12), padding: normalize(16), marginHorizontal: normalize(4), marginBottom: normalize(16) },
   prescriptionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   prescriptionText: { flex: 1, marginLeft: normalize(8) },
   prescriptionTitle: { color: COLORS.WHITE, fontWeight: 'bold', fontSize: normalize(16) },
   prescriptionSubtext: { color: COLORS.WHITE, fontSize: normalize(12), opacity: 0.9 },
-  uploadButton: {
-    backgroundColor: COLORS.WHITE,
-    paddingVertical: normalize(8),
-    paddingHorizontal: normalize(16),
-    borderRadius: normalize(20),
-    marginLeft: normalize(12),
-  },
+  uploadButton: { backgroundColor: COLORS.WHITE, paddingVertical: normalize(8), paddingHorizontal: normalize(16), borderRadius: normalize(20), marginLeft: normalize(12) },
   uploadButtonText: { color: COLORS.PRIMARY, fontWeight: '500', fontSize: normalize(12) },
   testCard: { marginBottom: normalize(12) },
   testCardContent: { padding: normalize(12) },
@@ -494,12 +437,7 @@ const styles = StyleSheet.create({
   testPrice: { fontWeight: 'bold' },
   testButtons: { flexDirection: 'row', alignItems: 'center' },
   addButton: { padding: normalize(4) },
-  bookButton: {
-    backgroundColor: COLORS.SECONDARY,
-    padding: normalize(8),
-    borderRadius: normalize(6),
-    marginLeft: normalize(8),
-  },
+  bookButton: { backgroundColor: COLORS.SECONDARY, padding: normalize(8), borderRadius: normalize(6), marginLeft: normalize(8) },
   bookButtonText: { color: COLORS.WHITE },
   scanCard: { marginBottom: normalize(12) },
   scanCardContent: { padding: normalize(12) },

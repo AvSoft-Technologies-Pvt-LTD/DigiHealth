@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRoute, useNavigation, RouteProp, NativeStackNavigationProp } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AvText from '../../../../elements/AvText';
 import AvCard from '../../../../elements/AvCards';
@@ -91,7 +92,7 @@ const PaymentSuccess = () => {
       </View>
 
       {/* Appointment Card */}
-      <AvCard style={styles.card}>
+      <AvCard cardStyle={styles.card}>
         <AvText type="title_6" style={styles.sectionTitle}>
           Appointment Details
         </AvText>
@@ -141,7 +142,7 @@ const PaymentSuccess = () => {
         </View>
 
         {/* Test Details Section */}
-        <AvText type="subtitle" style={styles.subSectionTitle}>
+        <AvText varient="subtitle" style={styles.subSectionTitle}>
           Test Details
         </AvText>
         {testDetails.map((test, index) => (
@@ -168,7 +169,7 @@ const PaymentSuccess = () => {
         {/* Address/Lab Section */}
         {homeCollection ? (
           <>
-            <AvText type="subtitle" style={styles.subSectionTitle}>
+            <AvText varient="subtitle" style={styles.subSectionTitle}>
               Home Collection Address
             </AvText>
             <View style={styles.addressContainer}>
@@ -182,7 +183,7 @@ const PaymentSuccess = () => {
           </>
         ) : (
           <>
-            <AvText type="subtitle" style={styles.subSectionTitle}>
+            <AvText varient="subtitle" style={styles.subSectionTitle}>
               Lab Details
             </AvText>
             <View style={styles.detailRow}>
@@ -208,22 +209,8 @@ const PaymentSuccess = () => {
       <View style={styles.buttonsContainer}>
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate(PAGES.LAB_TRACK_APPOINTMENT, {
-              bookingId,
-              fullName,
-              testTitle,
-              labName,
-              date,
-              time,
-              phone,
-              testDetails,
-              location,
-              homeCollection,
-              address,
-            })
-          }
-          style={[styles.actionButton, { backgroundColor: COLORS.PRIMARY }]}
-        >
+            navigation.navigate(PAGES.LAB_TRACK_APPOINTMENT, { bookingId, fullName, testTitle, labName, date, time, phone, testDetails, location,  homeCollection, address,  })}
+          style={[styles.actionButton, { backgroundColor: COLORS.PRIMARY }]}>
           <Icon name="track-changes" size={normalize(18)} color={COLORS.WHITE} />
           <AvText style={[styles.actionButtonText, { color: COLORS.WHITE }]}>Track Appointment</AvText>
         </TouchableOpacity>
@@ -240,159 +227,33 @@ const PaymentSuccess = () => {
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    padding: normalize(16),
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: COLORS.BG_OFF_WHITE,
-  },
-  successContainer: {
-    alignItems: 'center',
-    marginBottom: normalize(24),
-    paddingHorizontal: normalize(16),
-  },
-  successIconContainer: {
-    marginBottom: normalize(16),
-  },
-  successTitle: {
-    fontWeight: 'bold',
-    fontSize: normalize(20),
-    marginBottom: normalize(8),
-    color: COLORS.PRIMARY,
-    textAlign: 'center',
-  },
-  successMessage: {
-    color: COLORS.GREY,
-    textAlign: 'center',
-    fontSize: normalize(14),
-    lineHeight: normalize(20),
-  },
-  card: {
-    marginBottom: normalize(24),
-    padding: normalize(16),
-    borderRadius: normalize(12),
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: normalize(4),
-    elevation: 2,
-    backgroundColor: COLORS.WHITE,
-  },
-  sectionTitle: {
-    fontWeight: 'bold',
-    marginBottom: normalize(16),
-    fontSize: normalize(16),
-    color: COLORS.PRIMARY,
-  },
-  subSectionTitle: {
-    fontWeight: 'bold',
-    marginTop: normalize(20),
-    marginBottom: normalize(12),
-    fontSize: normalize(15),
-    color: COLORS.PRIMARY,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(12),
-  },
-  iconTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  detailLabel: {
-    color: COLORS.GREY,
-    marginLeft: normalize(8),
-    fontSize: normalize(14),
-  },
-  detailValue: {
-    color: COLORS.BLACK,
-    fontSize: normalize(14),
-    fontWeight: '500',
-    textAlign: 'right',
-    maxWidth: '50%',
-  },
-  addressContainer: {
-    marginTop: normalize(8),
-  },
-  addressText: {
-    color: COLORS.GREY,
-    marginLeft: normalize(8),
-    fontSize: normalize(14),
-    marginBottom: normalize(4),
-    lineHeight: normalize(20),
-  },
-  testItem: {
-    borderWidth: 1,
-    borderColor: COLORS.LIGHT_GREY,
-    borderRadius: normalize(8),
-    padding: normalize(12),
-    marginBottom: normalize(16),
-    backgroundColor: COLORS.WHITE,
-  },
-  testName: {
-    fontWeight: 'bold',
-    marginBottom: normalize(8),
-    fontSize: normalize(15),
-    color: COLORS.PRIMARY,
-  },
-  testDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: normalize(4),
-  },
-  testCode: {
-    color: COLORS.GREY,
-    fontSize: normalize(13),
-  },
-  testPrice: {
-    color: COLORS.BLACK,
-    fontSize: normalize(13),
-    fontWeight: '500',
-  },
-  testCategory: {
-    color: COLORS.GREY,
-    fontSize: normalize(13),
-  },
-  testReportTime: {
-    color: COLORS.GREY,
-    fontSize: normalize(13),
-  },
-  testFasting: {
-    color: COLORS.ERROR,
-    fontStyle: 'italic',
-    fontSize: normalize(13),
-    marginTop: normalize(8),
-  },
-  buttonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: normalize(24),
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: normalize(12),
-    paddingHorizontal: normalize(16),
-    borderRadius: normalize(8),
-    marginHorizontal: normalize(4),
-  },
-  outlinedActionButton: {
-    backgroundColor: COLORS.WHITE,
-    borderWidth: 1,
-    borderColor: COLORS.PRIMARY,
-  },
-  actionButtonText: {
-    marginLeft: normalize(8),
-    fontWeight: '500',
-    fontSize: normalize(14),
-  },
+  scrollContainer: { flexGrow: 1, padding: normalize(16) },
+  scrollView: { flex: 1, backgroundColor: COLORS.BG_OFF_WHITE },
+  successContainer: { alignItems: 'center', marginBottom: normalize(24), paddingHorizontal: normalize(16) },
+  successIconContainer: { marginBottom: normalize(16) },
+  successTitle: { fontWeight: 'bold', fontSize: normalize(20), marginBottom: normalize(8), color: COLORS.PRIMARY, textAlign: 'center' },
+  successMessage: { color: COLORS.GREY, textAlign: 'center', fontSize: normalize(14), lineHeight: normalize(20) },
+  card: { marginBottom: normalize(24), padding: normalize(16), borderRadius: normalize(12), shadowColor: COLORS.BLACK, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: normalize(4), elevation: 2, backgroundColor: COLORS.WHITE },
+  sectionTitle: { fontWeight: 'bold', marginBottom: normalize(16), fontSize: normalize(16), color: COLORS.PRIMARY },
+  subSectionTitle: { fontWeight: 'bold', marginTop: normalize(20), marginBottom: normalize(12), fontSize: normalize(15), color: COLORS.PRIMARY },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: normalize(12) },
+  iconTitleContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  detailLabel: { color: COLORS.GREY, marginLeft: normalize(8), fontSize: normalize(14) },
+  detailValue: { color: COLORS.BLACK, fontSize: normalize(14), fontWeight: '500', textAlign: 'right', maxWidth: '50%' },
+  addressContainer: { marginTop: normalize(8) },
+  addressText: { color: COLORS.GREY, marginLeft: normalize(8), fontSize: normalize(14), marginBottom: normalize(4), lineHeight: normalize(20) },
+  testItem: { borderWidth: 1, borderColor: COLORS.LIGHT_GREY, borderRadius: normalize(8), padding: normalize(12), marginBottom: normalize(16), backgroundColor: COLORS.WHITE },
+  testName: { fontWeight: 'bold', marginBottom: normalize(8), fontSize: normalize(15), color: COLORS.PRIMARY },
+  testDetailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: normalize(4) },
+  testCode: { color: COLORS.GREY, fontSize: normalize(13) },
+  testPrice: { color: COLORS.BLACK, fontSize: normalize(13), fontWeight: '500' },
+  testCategory: { color: COLORS.GREY, fontSize: normalize(13) },
+  testReportTime: { color: COLORS.GREY, fontSize: normalize(13) },
+  testFasting: { color: COLORS.ERROR, fontStyle: 'italic', fontSize: normalize(13), marginTop: normalize(8) },
+  buttonsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: normalize(24) },
+  actionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: normalize(12), paddingHorizontal: normalize(16), borderRadius: normalize(8), marginHorizontal: normalize(4) },
+  outlinedActionButton: { backgroundColor: COLORS.WHITE, borderWidth: 1, borderColor: COLORS.PRIMARY },
+  actionButtonText: { marginLeft: normalize(8), fontWeight: '500', fontSize: normalize(14) },
 });
 
 export default PaymentSuccess;

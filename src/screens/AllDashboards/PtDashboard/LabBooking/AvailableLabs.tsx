@@ -136,7 +136,7 @@ const AvailableLabs: React.FC = () => {
 
 {isPackage && isExpanded && item.tests && (
   <View style={styles.includedTestsContainer}>
-    <AvText type="subtitle" style={styles.includedTestsTitle}>Included Tests:</AvText>
+    <AvText varient="subtitle" style={styles.includedTestsTitle}>Included Tests:</AvText>
     {item.tests.map((test: any, index: number) => (
       <View key={index} style={styles.testItem}>
         <Icon name="check-circle" size={16} color={COLORS.SUCCESS} />
@@ -212,162 +212,41 @@ const AvailableLabs: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.BG_OFF_WHITE,
-    padding: normalize(16),
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(16),
-  },
-  backIcon: {
-    fontSize: normalize(20),
-    color: COLORS.PRIMARY,
-    marginRight: normalize(8),
-  },
-  backText: {
-    color: COLORS.PRIMARY,
-  },
-  selectedTestsContainer: {
-    backgroundColor: COLORS.WHITE,
-    borderRadius: normalize(8),
-    padding: normalize(16),
-    marginBottom: normalize(16),
-  },
-  selectedTestsTitle: {
-    fontWeight: 'bold',
-    marginBottom: normalize(12),
-  },
-  cartItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.LIGHT_GREY,
-    paddingBottom: normalize(16),
-    marginBottom: normalize(16),
-  },
-  itemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(8),
-  },
-  itemTitle: {
-    fontWeight: 'bold',
-    flex: 1,
-  },
-  priceContainer: {
-    alignItems: 'flex-end',
-  },
-  itemPrice: {
-    fontWeight: 'bold',
-  },
-  originalPrice: {
-    textDecorationLine: 'line-through',
-    color: COLORS.GREY,
-  },
-  itemCode: {
-    color: COLORS.GREY,
-    marginBottom: normalize(4),
-  },
-  itemDescription: {
-    color: COLORS.GREY,
-    marginBottom: normalize(8),
-  },
-  viewMoreButton: {
-    marginBottom: normalize(8),
-  },
-  viewMoreText: {
-    color: COLORS.PRIMARY,
-    textDecorationLine: 'underline',
-  },
-  includedTestsContainer: {
-    marginTop: normalize(8),
-    backgroundColor: COLORS.WHITE,
-    padding: normalize(8),
-    borderRadius: normalize(8),
-    borderWidth: 1,
-    borderColor: COLORS.LIGHT_GREY,
-  },
-  includedTestsTitle: {
-    fontWeight: 'bold',
-    marginBottom: normalize(4),
-    color: COLORS.BLACK,
-  },
-  testItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: normalize(4),
-  },
-  testText: {
-    marginLeft: normalize(4),
-    color: COLORS.BLACK,
-  },
-  totalPriceText: {
-    fontWeight: 'bold',
-    marginTop: normalize(12),
-    textAlign: 'right',
-  },
-  loader: {
-    marginTop: normalize(20),
-  },
-  errorText: {
-    textAlign: 'center',
-    marginTop: normalize(20),
-    color: COLORS.ERROR,
-  },
-  noLabsText: {
-    textAlign: 'center',
-    marginTop: normalize(20),
-  },
-  labCard: {
-    backgroundColor: COLORS.WHITE,
-    borderRadius: normalize(8),
-    padding: normalize(12),
-    marginBottom: normalize(12),
-    elevation: 2,
-  },
-  labInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  labDetails: {
-    flex: 1,
-  },
-  labName: {
-    fontWeight: 'bold',
-    marginBottom: normalize(4),
-  },
-  labLocation: {
-    color: COLORS.GREY,
-    marginBottom: normalize(4),
-  },
-  labMeta: {
-    flexDirection: 'row',
-    marginBottom: normalize(4),
-  },
-  labRating: {
-    color: COLORS.GREY,
-    marginRight: normalize(12),
-  },
-  labReportTime: {
-    color: COLORS.GREY,
-  },
-  homeCollectionBadge: {
-    backgroundColor: COLORS.LIGHT_GREEN,
-    padding: normalize(4),
-    borderRadius: normalize(4),
-    alignSelf: 'flex-start',
-    marginTop: normalize(4),
-  },
-  homeCollectionText: {
-    color: COLORS.GREEN,
-    fontSize: normalize(12),
-  },
-  labPrice: {
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, backgroundColor: COLORS.BG_OFF_WHITE, padding: normalize(16) },
+  backButton: { flexDirection: 'row', alignItems: 'center', marginBottom: normalize(16) },
+  backIcon: { fontSize: normalize(20), color: COLORS.PRIMARY, marginRight: normalize(8) },
+  backText: { color: COLORS.PRIMARY },
+  selectedTestsContainer: { backgroundColor: COLORS.WHITE, borderRadius: normalize(8), padding: normalize(16), marginBottom: normalize(16) },
+  selectedTestsTitle: { fontWeight: 'bold', marginBottom: normalize(12) },
+  cartItem: { borderBottomWidth: 1, borderBottomColor: COLORS.LIGHT_GREY, paddingBottom: normalize(16), marginBottom: normalize(16) },
+  itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: normalize(8) },
+  itemTitle: { fontWeight: 'bold', flex: 1 },
+  priceContainer: { alignItems: 'flex-end' },
+  itemPrice: { fontWeight: 'bold' },
+  originalPrice: { textDecorationLine: 'line-through', color: COLORS.GREY },
+  itemCode: { color: COLORS.GREY, marginBottom: normalize(4) },
+  itemDescription: { color: COLORS.GREY, marginBottom: normalize(8) },
+  viewMoreButton: { marginBottom: normalize(8) },
+  viewMoreText: { color: COLORS.PRIMARY, textDecorationLine: 'underline' },
+  includedTestsContainer: { marginTop: normalize(8), backgroundColor: COLORS.WHITE, padding: normalize(8), borderRadius: normalize(8), borderWidth: 1, borderColor: COLORS.LIGHT_GREY },
+  includedTestsTitle: { fontWeight: 'bold', marginBottom: normalize(4), color: COLORS.BLACK },
+  testItem: { flexDirection: 'row', alignItems: 'center', marginBottom: normalize(4) },
+  testText: { marginLeft: normalize(4), color: COLORS.BLACK },
+  totalPriceText: { fontWeight: 'bold', marginTop: normalize(12), textAlign: 'right' },
+  loader: { marginTop: normalize(20) },
+  errorText: { textAlign: 'center', marginTop: normalize(20), color: COLORS.ERROR },
+  noLabsText: { textAlign: 'center', marginTop: normalize(20) },
+  labCard: { backgroundColor: COLORS.WHITE, borderRadius: normalize(8), padding: normalize(12), marginBottom: normalize(12), elevation: 2 },
+  labInfo: { flexDirection: 'row', justifyContent: 'space-between' },
+  labDetails: { flex: 1 },
+  labName: { fontWeight: 'bold', marginBottom: normalize(4) },
+  labLocation: { color: COLORS.GREY, marginBottom: normalize(4) },
+  labMeta: { flexDirection: 'row', marginBottom: normalize(4) },
+  labRating: { color: COLORS.GREY, marginRight: normalize(12) },
+  labReportTime: { color: COLORS.GREY },
+  homeCollectionBadge: { backgroundColor: COLORS.LIGHT_GREEN, padding: normalize(4), borderRadius: normalize(4), alignSelf: 'flex-start', marginTop: normalize(4) },
+  homeCollectionText: { color: COLORS.GREEN, fontSize: normalize(12) },
+  labPrice: { fontWeight: 'bold' },
 });
-
 
 export default AvailableLabs;
