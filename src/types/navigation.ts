@@ -6,6 +6,7 @@ export type RootStackParamList = {
   [PAGES.SPLASH]: undefined;
   [PAGES.LOGIN]: undefined;
   [PAGES.REGISTER]: undefined;
+  [PAGES.PASSWORD_RESET_PAGE]:undefined;
   [PAGES.PATIENT_REGISTER]: undefined;
   [PAGES.DOCTOR_REGISTER]: undefined;
   [PAGES.HOSPITAL_REGISTER]: undefined;
@@ -18,6 +19,16 @@ export type RootStackParamList = {
   [PAGES.NOTIFICATION_SCREEN]:undefined;
   [PAGES.BILLING]:undefined;
   [PAGES.PHARMACY_FINDER_VIEW]:undefined;
+  [PAGES.PAYMENT_GATEWAY_PAGE]: undefined;
+
+  [PAGES.INVOICEPRINTPREVIEW]:undefined;
+  [PAGES.INVOICE_DETAILS]:undefined;
+  [PAGES.PAYMENT_SCREEN]:undefined;
+  [PAGES.PAYMENT_PAGE]:undefined;
+  [PAGES.SEARCH_AMBULANCE_VIEW]:undefined;
+  [PAGES.QUICK_ACTIONS_MODAL]:undefined;
+  [PAGES.VIEW_ALL_DOCTOR]:undefined;
+  [PAGES.DR_BOOKAPPOITMENT_COMPONENT]:undefined;
 
 };
 

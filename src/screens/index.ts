@@ -12,17 +12,31 @@ import PatientSetting from './AllDashboards/PtDashboard/PtSetting';
 import Appointments from './AllDashboards/PtDashboard/Appointments';
 import PatientDashboardView from './AllDashboards/PtDashboard/Overview/PatientDashboardView';
 import LabBookingView from './AllDashboards/PtDashboard/LabBooking/LabBookingView';
-import AmbulanceBookingView from './AllDashboards/PtDashboard/AmbulanceBookingView';
+import AmbulanceBookingView from './AllDashboards/PtDashboard/Ambulance/AmbulanceBooking';
 import PharmacyFinderView from "./AllDashboards/PtDashboard/PharmacyFinderView";
-import BookAppointment from './AllDashboards/PtDashboard/BookAppoitment';
 import Billing from './AllDashboards/PtDashboard/Billing';
+import PaymentGateway from '../elements/AvPayment';
+import ViewAllDoctor from './AllDashboards/PtDashboard/BookingComponent/ViewAllDoctor';
+import PaymentPage from './AllDashboards/PtDashboard/PaymentPage';
+import SearchAmbulanceView from './AllDashboards/PtDashboard/Ambulance/SearchAmbulanceView';
+import PaymentScreen from './AllDashboards/PtDashboard/Ambulance/PaymentScreen';
+import InvoiceDetails from './AllDashboards/PtDashboard/Invoice/InvoiceComponent';
+import InvoicePrintPreview from './AllDashboards/PtDashboard/Invoice/InvoicePrintPreview';
+import DrBookAppointmentComponent from './AllDashboards/PtDashboard/BookingComponent/DrBookAppointmentComponent';
+import ForgotPassword  from '../components/CommonComponents/form/ForgotPassword';
+import VerifyOTP from '../components/CommonComponents/form/VerifyOTP';
+import ResetPassword from '../components/CommonComponents/form/ResetPassword';
+import PasswordResetPage from './Auth/PasswordReset/PasswordResetPage';
 export {
   // Auth
   Login,
   Register,
   PatientRegister,
   DoctorRegister,
-  
+  ForgotPassword,
+ VerifyOTP,
+ ResetPassword,
+ PasswordResetPage,
   // Main
   Home,
   SplashScreen,
@@ -33,7 +47,14 @@ export {
   LabBookingView,
  AmbulanceBookingView,
  PharmacyFinderView,
- BookAppointment,
- 
- Billing
-};
+  PaymentGateway,
+ Billing,
+DrBookAppointmentComponent,
+
+
+ViewAllDoctor,
+ PaymentPage,
+ SearchAmbulanceView,
+ PaymentScreen,
+InvoiceDetails,
+InvoicePrintPreview};

@@ -1,13 +1,17 @@
 import React from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
-import { useRoute, useNavigation, RouteProp, NavigationProp } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import PaymentComponent from '../../../../elements/AvPayment';
 import AvText from '../../../../elements/AvText';
 import AvCard from '../../../../elements/AvCards';
 import { COLORS } from '../../../../constants/colors';
+import { PAGES } from '../../../../constants/pages';
+import { normalize } from '../../../../constants/platform';
 
+// Define RootStackParamList with PAGES constants
 type RootStackParamList = {
-  LabPayment: {
+  [PAGES.LAB_PAYMENT]: {
     lab: any;
     cart: any[];
     totalPrice: number;
@@ -31,7 +35,7 @@ type RootStackParamList = {
       fasting?: boolean;
     }>;
   };
-  PaymentSuccess: {
+  [PAGES.LAB_PAYMENT_SUCCESS]: {
     bookingId: string;
     fullName: string;
     testTitle: string;
@@ -56,8 +60,9 @@ type RootStackParamList = {
 };
 
 const LabPayment = () => {
-  const route = useRoute<RouteProp<RootStackParamList, 'LabPayment'>>();
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  // Type the route and navigation
+  const route = useRoute<RouteProp<RootStackParamList, typeof PAGES.LAB_PAYMENT>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const {
     lab,
@@ -74,7 +79,7 @@ const LabPayment = () => {
   } = route.params;
 
   const handlePaymentSuccess = (paymentData: any) => {
-    navigation.navigate('PaymentSuccess', {
+    navigation.navigate(PAGES.LAB_PAYMENT_SUCCESS, {
       bookingId: `APT${Date.now().toString().slice(-6)}`,
       fullName,
       testTitle: cart.map((test) => test.title).join(', '),
@@ -109,8 +114,9 @@ const LabPayment = () => {
         onSuccess={handlePaymentSuccess}
         onError={handlePaymentError}
       />
+
       {/* Booking Summary Card */}
-      <AvCard style={styles.card}>
+      <AvCard cardStyle={styles.card}>
         <AvText type="title_6" style={styles.cardTitle}>
           Booking Summary
         </AvText>
@@ -187,72 +193,24 @@ const LabPayment = () => {
   );
 };
 
+// Styles with normalize for responsive sizing
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.BG_OFF_WHITE,
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  card: {
-    marginBottom: 16,
-    padding: 16,
-  },
-  cardTitle: {
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  section: {
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  text: {
-    color: COLORS.GREY,
-    marginBottom: 2,
-  },
-  testItem: {
-    borderWidth: 1,
-    borderColor: COLORS.LIGHT_GREY,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  testName: {
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  testCode: {
-    color: COLORS.GREY,
-    marginBottom: 2,
-  },
-  testCategory: {
-    color: COLORS.GREY,
-    marginBottom: 2,
-  },
-  testPrice: {
-    color: COLORS.GREY,
-    marginBottom: 2,
-  },
-  testReportTime: {
-    color: COLORS.GREY,
-    marginBottom: 2,
-  },
-  testFasting: {
-    color: COLORS.ERROR,
-    fontStyle: 'italic',
-  },
-  totalRow: {
-    alignItems: 'flex-end',
-    marginTop: 8,
-  },
-  totalPrice: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  container: { flex: 1, backgroundColor: COLORS.BG_OFF_WHITE },
+  scrollContent: { padding: normalize(16) },
+  card: { marginBottom: normalize(16), padding: normalize(16) },
+  cardTitle: { fontWeight: 'bold', marginBottom: normalize(12) },
+  section: { marginBottom: normalize(12) },
+  sectionTitle: { fontWeight: 'bold', marginBottom: normalize(4) },
+  text: { color: COLORS.GREY, marginBottom: normalize(2) },
+  testItem: { borderWidth: 1, borderColor: COLORS.LIGHT_GREY, borderRadius: normalize(8), padding: normalize(12), marginBottom: normalize(8) },
+  testName: { fontWeight: 'bold', marginBottom: normalize(2) },
+  testCode: { color: COLORS.GREY, marginBottom: normalize(2) },
+  testCategory: { color: COLORS.GREY, marginBottom: normalize(2) },
+  testPrice: { color: COLORS.GREY, marginBottom: normalize(2) },
+  testReportTime: { color: COLORS.GREY, marginBottom: normalize(2) },
+  testFasting: { color: COLORS.ERROR, fontStyle: 'italic' },
+  totalRow: { alignItems: 'flex-end', marginTop: normalize(8) },
+  totalPrice: { fontWeight: 'bold', fontSize: normalize(16) },
 });
 
 export default LabPayment;
