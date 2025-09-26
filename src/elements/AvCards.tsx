@@ -75,4 +75,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AvCard;
+export default React.memo(AvCard);

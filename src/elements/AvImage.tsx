@@ -8,7 +8,6 @@ import {
   ImageProps as RNImageProps,
   ActivityIndicator,
   StyleSheet,
-  Platform
 } from 'react-native';
 import { isIos } from '../constants/platform';
 import { COLORS } from '../constants/colors';
@@ -60,7 +59,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const AvImage: React.FC<AvImageProps> = ({
+const AvImageComponent: React.FC<AvImageProps> = ({
   style,
   containerStyle,
   imageStyle,
@@ -69,7 +68,7 @@ const AvImage: React.FC<AvImageProps> = ({
   source,
   fallbackSource,
   showLoadingIndicator = true,
-  loadingIndicatorColor = '#000000',
+  loadingIndicatorColor = COLORS.PRIMARY,
   fadeDuration = 300,
   progressiveRenderingEnabled = true,
   onError,
@@ -99,11 +98,8 @@ const AvImage: React.FC<AvImageProps> = ({
     [onLoad]
   );
 
-  const imageResizeMode = useMemo(() => {
-    return resizeMode || 'cover';
-  }, [resizeMode]);
+  const imageResizeMode = useMemo(() => resizeMode, [resizeMode]);
 
-  // Optimize image loading based on priority
   const imageProps = useMemo(() => {
     const props: any = {
       ...rest,
@@ -118,17 +114,26 @@ const AvImage: React.FC<AvImageProps> = ({
       defaultSource: fallbackSource,
     };
 
-    // iOS specific optimizations
     if (isIos()) {
-      // @ts-ignore - iOS specific prop
+      // @ts-ignore - iOS specific
       props.shouldRasterizeIOS = true;
-    }else{
+    } else {
       props.fadeDuration = fadeDuration;
-
     }
 
     return props;
-  }, [currentSource, style, imageStyle, imageResizeMode, handleError, handleLoad, rest, fadeDuration, progressiveRenderingEnabled, fallbackSource]);
+  }, [
+    currentSource,
+    style,
+    imageStyle,
+    imageResizeMode,
+    handleError,
+    handleLoad,
+    rest,
+    fadeDuration,
+    progressiveRenderingEnabled,
+    fallbackSource,
+  ]);
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -141,5 +146,7 @@ const AvImage: React.FC<AvImageProps> = ({
     </View>
   );
 };
+
+const AvImage = React.memo(AvImageComponent);
 
 export default AvImage;

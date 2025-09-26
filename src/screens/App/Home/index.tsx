@@ -1,78 +1,78 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import HomeView from './HomeView';
-
-import { COLORS } from '../../../constants/colors';
-import { setHomeData,selectHomeError } from '../../../store/slices/homeSlice';
+import { setHomeData, selectHomeError } from '../../../store/slices/homeSlice';
 import { benefits, features, stats } from '../../../constants/data';
 
-type HomeProps = {
-  // Props can be added here if needed
-};
-
-const Home: React.FC<HomeProps> = () => {
+const Home: React.FC = () => {
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
   const [isConsultationModalVisible, setConsultationModalVisible] = useState(false);
-  
-  // Prepare home data
-  const homeData = {
-    stats: [...stats],
-    features: [...features],
-    benefits: [...benefits],
-  };
+  const [isContentLoaded, setIsContentLoaded] = useState(false);
 
-  // Load initial data
-  // useEffect(() => {
-  //   dispatch(setHomeData(homeData));
-  // }, [dispatch]);
+  // ✅ memoize static data
+  const homeData = useMemo(
+    () => ({
+      stats,
+      features,
+      benefits,
+    }),
+    []
+  );
 
-  // Handle pull-to-refresh
+  // Load home data once
+  useEffect(() => {
+    dispatch(setHomeData(homeData));
+  }, [dispatch, homeData]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // In a real app, you would fetch fresh data here
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000));
       dispatch(setHomeData(homeData));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      console.error('Error refreshing data:', errorMessage);
+      console.error('Error refreshing data:', error);
     } finally {
       setRefreshing(false);
     }
   }, [dispatch, homeData]);
 
-  // Show error state if there was an error loading data
   const error = useSelector(selectHomeError);
   if (error) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ color: COLORS.ERROR, marginBottom: 16, textAlign: 'center' }}>
-          {error}
-        </Text>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
         <Button onPress={onRefresh} title="Retry" />
       </View>
     );
   }
 
-  console.log("Stats Passing", stats);
-
   return (
-    <View style={styles.container}>
-      <HomeView
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        isConsultationModalVisible={isConsultationModalVisible}
-        setConsultationModalVisible={setConsultationModalVisible}
-      />
-    </View>
+    <HomeView
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      isConsultationModalVisible={isConsultationModalVisible}
+      setConsultationModalVisible={setConsultationModalVisible}
+      onContentLoadComplete={() => !isContentLoaded && setIsContentLoaded(true)}
+    />
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: 'red',
+    marginBottom: 16,
   },
 });
 

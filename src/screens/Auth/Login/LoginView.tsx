@@ -16,13 +16,12 @@ import {
   SegmentedButtons,
   Snackbar,
 } from 'react-native-paper';
-import AvText from '../../../elements/AvText';
 import { COLORS } from '../../../constants/colors';
 import { PAGES } from '../../../constants/pages';
 import { RootStackParamList } from '../../../types/navigation';
-import AvButton from '../../../elements/AvButton';
-import AvTextInput from '../../../elements/AvTextInput';
+
 import { normalize } from '../../../constants/platform';
+import { AvButton, AvText, AvTextInput } from '../../../elements';
 
 type LoginViewProps = {
   loading: boolean;

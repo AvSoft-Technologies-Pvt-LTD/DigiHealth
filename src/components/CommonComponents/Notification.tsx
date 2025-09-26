@@ -404,4 +404,4 @@ const styles = StyleSheet.create({
 });
 
 const NotificationsScreen: React.FC = () => <MessagesScreen />;
-export default NotificationsScreen;
+export default React.memo(NotificationsScreen);

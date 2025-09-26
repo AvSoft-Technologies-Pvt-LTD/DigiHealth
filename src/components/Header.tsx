@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import AvText from '../elements/AvText';
 import { COLORS } from '../constants/colors';
 import { useDrawer } from '../navigation/DrawerContext';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -17,11 +16,11 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { isIos, normalize } from '../constants/platform';
 import { RootStackParamList } from '../types/navigation';
-import AvButton from '../elements/AvButton';
 import { PAGES } from '../constants/pages';
 import { width } from '../constants/common';
 import { ScrollView } from 'react-native-gesture-handler';
 import AvIcons from '../elements/AvIcons';
+import { AvText } from '../elements';
 
 interface HeaderProps {
     title?: string;
@@ -405,4 +404,4 @@ const styles = StyleSheet.create({
 });
 
 
-export default Header;
+export default React.memo(Header);

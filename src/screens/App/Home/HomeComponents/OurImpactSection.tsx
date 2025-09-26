@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, memo } from 'react';
 import { View, StyleSheet, Animated, Easing, Text } from 'react-native';
 import { Card } from 'react-native-paper';
 import { useSelector } from 'react-redux';
@@ -14,36 +14,35 @@ interface AnimatedNumberProps {
   style: any;
 }
 
-const AnimatedNumber: React.FC<AnimatedNumberProps> = ({ value, style }) => {
-  const animatedValue = useRef(new Animated.Value(0)).current;
-  const [displayValue, setDisplayValue] = useState(0);
+const AnimatedNumber = memo(
+  ({ value, style }: AnimatedNumberProps) => {
+    const animatedValue = useRef(new Animated.Value(0)).current;
+    const [displayValue, setDisplayValue] = useState(0);
 
-  useEffect(() => {
-    const listener = animatedValue.addListener(({ value }) => {
-      setDisplayValue(Math.floor(value));
-    });
+    useEffect(() => {
+      const listener = animatedValue.addListener(({ value }) => {
+        setDisplayValue(Math.floor(value));
+      });
 
-    Animated.timing(animatedValue, {
-      toValue: value,
-      duration: 2000,
-      useNativeDriver: true,
-      easing: Easing.out(Easing.exp)
-    }).start();
+      Animated.timing(animatedValue, {
+        toValue: value,
+        duration: 2000,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.exp),
+      }).start();
 
-    return () => {
-      animatedValue.removeListener(listener);
-      animatedValue.removeAllListeners();
-    };
-  }, [value]);
+      return () => {
+        animatedValue.removeListener(listener);
+        animatedValue.removeAllListeners();
+      };
+    }, [value]);
 
-  return (
-    <Animated.Text style={style}>
-      {displayValue.toLocaleString()}
-    </Animated.Text>
-  );
-};
+    return <Animated.Text style={style}>{displayValue.toLocaleString()}</Animated.Text>;
+  },
+  (prev, next) => prev.value === next.value && prev.style === next.style
+);
 
-const OurImpactSection = () => {
+const OurImpactSection = memo(() => {
   const stats = useSelector(selectStats);  
   return (
     <View style={styles.section}>
@@ -72,7 +71,8 @@ const OurImpactSection = () => {
       </View>
     </View>
   );
-};
+});
+
 
 const styles = StyleSheet.create({
   section: {

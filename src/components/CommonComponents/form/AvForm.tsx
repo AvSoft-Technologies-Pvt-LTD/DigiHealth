@@ -273,4 +273,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DynamicForm;
+export default React.memo(DynamicForm);

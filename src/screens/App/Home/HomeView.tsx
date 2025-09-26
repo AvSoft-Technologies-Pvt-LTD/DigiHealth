@@ -1,140 +1,127 @@
-import React, { useState } from 'react';
-import { View, ScrollView, RefreshControl, StyleSheet, Image, Platform } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, ScrollView, RefreshControl, StyleSheet, Platform } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-// elements
-import AvText from '../../../elements/AvText';
-import AvButton from '../../../elements/AvButton';
-// constants
+import { IMAGES } from '../../../assets';
 import { COLORS } from '../../../constants/colors';
 import { normalize } from '../../../constants/platform';
-
-// Sections
 import Header from '../../../components/Header';
 import QuickAccessSection from './HomeComponents/QuickAccessSection';
 import OurImpactSection from './HomeComponents/OurImpactSection';
 import WhyChooseUsSection from './HomeComponents/WhyChooseUsSection';
-
-// data
-import AvModal from '../../../elements/AvModal';
 import BookAppointmentComponent from './HomeComponents/BookAppointmentComponent';
-import AvImage from '../../../elements/AvImage';
-import { IMAGES } from '../../../assets';
-import { PAGES } from '../../../constants/pages';
+import { AvButton, AvImage, AvModal, AvText } from '../../../elements';
+import LocationPermission from '../../../components/CommonComponents/LocationPermission';
 
-// Define the props type for the HomeView component (if needed in the future)
 type HomeViewProps = {
   refreshing: boolean;
   onRefresh: () => void;
   isConsultationModalVisible: boolean;
   setConsultationModalVisible: (visible: boolean) => void;
+  onContentLoadComplete?: () => void;
 };
 
-// Define the HomeView component with React.FC and props type
 const HomeView: React.FC<HomeViewProps> = ({
   refreshing,
   onRefresh,
   isConsultationModalVisible,
   setConsultationModalVisible,
+  onContentLoadComplete,
 }) => {
   const theme = useTheme();
   const navigation = useNavigation();
-  const handleLoginPress = () => {
-    navigation.navigate('Login');
-  };
 
-  const handleRegisterPress = () => {
-    navigation.navigate('Register');
-  };
+  React.useEffect(() => {
+    onContentLoadComplete?.();
+  }, [onContentLoadComplete]);
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
       <Header
-        title={"DigiHealth"}
+        title="DigiHealth"
         showBackButton={false}
-        onLoginPress={handleLoginPress}
-        onRegisterPress={handleRegisterPress}
+        onLoginPress={() => navigation.navigate('Login')}
+        onRegisterPress={() => navigation.navigate('Register')}
         backgroundColor={COLORS.PRIMARY}
         titleColor={COLORS.WHITE}
       />
-
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[COLORS.PRIMARY]}
-            tintColor={COLORS.PRIMARY}
-          />
-        }
+      <LocationPermission
+        permissionMessage="We need your location to show nearby services."
+        settingsMessage="Please enable location access in settings to use this feature."
+        onPermissionGranted={() => console.log('Location permission granted!')}
+        onPermissionDenied={() => console.log('Location permission denied')}
       >
-        {/* Hero Section */}
-        <View style={styles.heroContainer}>
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <AvImage
-                source={IMAGES.LOGO_CROPPED}
-                style={styles.logoImage}
-              />
-            </View>
-            <AvText type="heading_2" style={styles.title}>
-              Welcome to DigiHealth
-            </AvText>
-            <AvText type="title_3" style={styles.subtitle}>
-              Your Digital Healthcare Partner
-            </AvText>
-          </View>
-        </View>
-
-        {/* CTA Buttons */}
-        <View style={styles.buttonRow}>
-          <AvButton
-            mode="contained"
-            onPress={() => setConsultationModalVisible(true)}
-            labelStyle={styles.btnText}
-            buttonColor={COLORS.PRIMARY}
-            icon="calendar"
-            style={{ flex: 1, marginRight: normalize(8) }}
-          >
-            Book Consultation
-          </AvButton>
-          <AvButton
-            mode="contained"
-            onPress={() => console.log("Explore Services")}
-            labelStyle={[styles.btnText, { color: COLORS.WHITE }]}
-            buttonColor={COLORS.SECONDARY}
-            icon="magnify"
-            style={{ flex: 1, marginLeft: normalize(8) }}
-          >
-            Explore Services
-          </AvButton>
-        </View>
-        <AvModal
-          isModalVisible={isConsultationModalVisible}
-          setModalVisible={setConsultationModalVisible}
-          animationType="fade"
-          title="Booking Consultation"
-          containerStyle={{ padding: normalize(6) }}
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.PRIMARY]}
+              tintColor={COLORS.PRIMARY}
+            />
+          }
         >
-          <BookAppointmentComponent />
-        </AvModal>
-        {/* Stats Section */}
-        <OurImpactSection />
+          {/* Hero Section */}
+          <View style={styles.heroContainer}>
+            <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <AvImage source={IMAGES.LOGO_CROPPED} style={styles.logoImage} />
+              </View>
+              <AvText type="heading_2" style={styles.title}>
+                Welcome to DigiHealth
+              </AvText>
+              <AvText type="title_3" style={styles.subtitle}>
+                Your Digital Healthcare Partner
+              </AvText>
+            </View>
+          </View>
 
-        {/* Quick Access Section */}
-        <QuickAccessSection />
+          {/* CTA Buttons */}
+          <View style={styles.buttonRow}>
+            <AvButton
+              mode="contained"
+              onPress={() => setConsultationModalVisible(true)}
+              labelStyle={styles.btnText}
+              buttonColor={COLORS.PRIMARY}
+              icon="calendar"
+              style={{ flex: 1, marginRight: normalize(8) }}
+            >
+              Book Consultation
+            </AvButton>
+            <AvButton
+              mode="contained"
+              onPress={() => console.log('Explore Services')}
+              labelStyle={[styles.btnText, { color: COLORS.WHITE }]}
+              buttonColor={COLORS.SECONDARY}
+              icon="magnify"
+              style={{ flex: 1, marginLeft: normalize(8) }}
+            >
+              Explore Services
+            </AvButton>
+          </View>
 
-        {/* Why Choose Us Section */}
-        <WhyChooseUsSection />
+          <AvModal
+            isModalVisible={isConsultationModalVisible}
+            setModalVisible={setConsultationModalVisible}
+            animationType="fade"
+            title="Booking Consultation"
+            containerStyle={{ padding: normalize(6) }}
+          >
+            <BookAppointmentComponent />
+          </AvModal>
 
-        {/* Bottom Spacer */}
-        <View style={{ height: 24 }} />
+          {/* Sections */}
+          <OurImpactSection />
+          <QuickAccessSection />
+          <WhyChooseUsSection />
+          <View style={{ height: 24 }} />
+        </ScrollView>
 
-      </ScrollView>
+      </LocationPermission>
     </View>
   );
 };

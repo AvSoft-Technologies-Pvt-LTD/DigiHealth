@@ -578,4 +578,4 @@ const styles = StyleSheet.create({
   toggleLeft: { flex: 1, marginRight: 16 },
 });
 
-export default FormField;
+export default React.memo(FormField);

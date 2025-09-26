@@ -103,7 +103,6 @@ const getIcon = (props: AvIconsProps) => {
       image
     )
   }
-
   // Vector icons
   const IconComponent = iconComponents[props.type]
   if (!IconComponent) return null
@@ -125,4 +124,4 @@ const AvIcons: React.FC<AvIconsProps> = (props) => {
   return getIcon(props)
 }
 
-export default AvIcons
+export default React.memo(AvIcons);

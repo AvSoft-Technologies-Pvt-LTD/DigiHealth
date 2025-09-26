@@ -59,4 +59,4 @@ const styles = StyleSheet.create({
   },
 })
 
-export default AvButton
+export default React.memo(AvButton)
