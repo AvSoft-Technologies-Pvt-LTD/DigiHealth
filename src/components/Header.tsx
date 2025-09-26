@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  StatusBar,
-  Pressable,
-} from 'react-native';
+import {  View,  StyleSheet,  StatusBar,   Pressable} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { COLORS } from '../constants/colors';
@@ -18,6 +12,7 @@ import { RootStackParamList } from '../types/navigation';
 import QuickActionsModal from './CommonComponents/QuickActionsModal';
 import { useDrawer } from '../navigation/DrawerContext'; // Make sure this import is correct
 import {PAGES}  from "../constants/pages"
+import { AvText } from '../elements';
 interface HeaderProps {
   title?: string;
   showBackButton?: boolean;
