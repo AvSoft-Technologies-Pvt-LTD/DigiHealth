@@ -968,100 +968,98 @@ const EmergencySearch = () => {
             <div className="hidden xl:block">
               <div className="flex items-center justify-between gap-4 mb-4">
                 {/* Search Section - Right Side */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 relative" ref={searchRef}>
-                    <div className="relative">
-                      <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
-                      <input
-                        type="text"
-                        placeholder="Search by name, location..."
-                        value={searchQuery}
-                        onChange={(e) => handleSearchInputChange(e.target.value)}
-                        onKeyPress={handleSearchKeyPress}
-                        className="w-138 pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm"
-                      />
+                <div className="flex items-center gap-2 min-w-0">
+  <div className="flex-1 relative min-w-0" ref={searchRef}>
+    <div className="relative">
+      <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+      <input
+        type="text"
+        placeholder="Search by name, location..."
+        value={searchQuery}
+        onChange={(e) => handleSearchInputChange(e.target.value)}
+        onKeyPress={handleSearchKeyPress}
+        className="w-full max-w-[640px] pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm"
+      />
 
-                      {searchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSearchQuery("");
-                            setShowSuggestions(false);
-                            setFilteredAmbulances([]);
-                            setOriginalAmbulances([]);
-                            setHasSearched(false);
-                          }}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 bg-white rounded-full w-5 h-5 flex items-center justify-center transition-all duration-200 text-xs z-10"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
+      {searchQuery && (
+        <button
+          type="button"
+          onClick={() => {
+            setSearchQuery("");
+            setShowSuggestions(false);
+            setFilteredAmbulances([]);
+            setOriginalAmbulances([]);
+            setHasSearched(false);
+          }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 bg-white rounded-full w-5 h-5 flex items-center justify-center transition-all duration-200 text-xs z-10"
+        >
+          ✕
+        </button>
+      )}
+    </div>
 
-                    {showSuggestions && suggestions.length > 0 && (
-                      <div className="absolute z-[99999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto shadow-2xl">
-                        {suggestions.map((suggestion, index) => (
-                          <button
-                            key={`${suggestion.type}-${suggestion.value}-${index}`}
-                            onClick={() => handleSuggestionSelect(suggestion)}
-                            className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2 border-b border-gray-100 last:border-b-0 transition-colors text-sm"
-                          >
-                            {suggestion.type === "ambulance" && (
-                              <Lucide.Ambulance className="text-red-500 flex-shrink-0 w-4 h-4" />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">
-                                {suggestion.value}
-                              </div>
-                              {suggestion.location && (
-                                <div className="text-xs text-gray-500 flex items-center gap-1">
-                                  <span className="truncate">
-                                    {suggestion.location}
-                                  </span>
-                                  {suggestion.available !== undefined && (
-                                    <span
-                                      className={`ml-1 px-1 py-0.5 rounded-full text-xs ${
-                                        suggestion.available
-                                          ? "bg-green-100 text-green-700"
-                                          : "bg-red-100 text-red-700"
-                                      }`}
-                                    >
-                                      {suggestion.available ? "Available" : "Busy"}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => searchAmbulances()}
-                    disabled={searchLoading}
-                    style={{ backgroundColor: "var(--accent-color)" }}
-                    className={`px-4 py-2.5 text-white rounded-lg hover:brightness-90 flex items-center gap-2 whitespace-nowrap text-sm ${
-                      searchLoading ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {searchLoading ? (
-                      <Lucide.Loader2 className="animate-spin w-4 h-4" />
-                    ) : (
-                      <Lucide.Search className="w-4 h-4" />
-                    )}
-                    Search
-                  </button>
-                  <button
-                    onClick={searchByCurrentLocation}
-                    style={{ backgroundColor: "var(--accent-color)" }}
-                    className="px-4 py-2.5 text-white rounded-lg hover:brightness-90 flex items-center gap-2 whitespace-nowrap text-sm"
-                  >
-                    <Lucide.MapPin className="w-4 h-4" />
-                    Current Location
-                  </button>
+    {showSuggestions && suggestions.length > 0 && (
+      <div className="absolute z-[99999] left-0 right-0 w-full max-w-[640px] mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto shadow-2xl">
+        {suggestions.map((suggestion, index) => (
+          <button
+            key={`${suggestion.type}-${suggestion.value}-${index}`}
+            onClick={() => handleSuggestionSelect(suggestion)}
+            className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2 border-b border-gray-100 last:border-b-0 transition-colors text-sm"
+          >
+            {suggestion.type === "ambulance" && (
+              <Lucide.Ambulance className="text-red-500 flex-shrink-0 w-4 h-4" />
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="font-medium truncate">{suggestion.value}</div>
+              {suggestion.location && (
+                <div className="text-xs text-gray-500 flex items-center gap-1">
+                  <span className="truncate">{suggestion.location}</span>
+                  {suggestion.available !== undefined && (
+                    <span
+                      className={`ml-1 px-1 py-0.5 rounded-full text-xs ${
+                        suggestion.available
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {suggestion.available ? "Available" : "Busy"}
+                    </span>
+                  )}
                 </div>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <button
+    onClick={() => searchAmbulances()}
+    disabled={searchLoading}
+    style={{ backgroundColor: "var(--accent-color)" }}
+    className={`px-4 py-2.5 text-white rounded-lg hover:brightness-90 flex items-center gap-2 whitespace-nowrap text-sm ${
+      searchLoading ? "opacity-50 cursor-not-allowed" : ""
+    }`}
+  >
+    {searchLoading ? (
+      <Lucide.Loader2 className="animate-spin w-4 h-4" />
+    ) : (
+      <Lucide.Search className="w-4 h-4" />
+    )}
+    Search
+  </button>
+
+  <button
+    onClick={searchByCurrentLocation}
+    style={{ backgroundColor: "var(--accent-color)" }}
+    className="px-4 py-2.5 text-white rounded-lg hover:brightness-90 flex items-center gap-2 whitespace-nowrap text-sm"
+  >
+    <Lucide.MapPin className="w-4 h-4" />
+    Current Location
+  </button>
+</div>
+
                 {/* Filter Section - Left Side */}
                 <div className="flex items-center gap-4">
                   <button

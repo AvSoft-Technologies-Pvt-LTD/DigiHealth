@@ -24,6 +24,11 @@ const NeatFileUpload = ({ name, accept, multiple = false, files, onFileChange, l
     setIsModalOpen(true);
   };
 
+
+// friendly label for heading
+
+
+
   return (
     <div className="relative floating-input" data-placeholder={`${label}${required ? ' *' : ''}`}>
       <label className="block cursor-pointer">
@@ -203,8 +208,18 @@ const RegisterForm = () => {
   const userType = location.state?.userType;
   const dispatch = useDispatch();
   const { loading, error, isOTPSent } = useSelector((state) => state.auth || {});
-  
+
+  // friendly label for heading — define here so it's in scope for the JSX
+  const displayUserType = {
+    patient: "User / Patient",
+    hospital: "Hospital",
+    doctor: "Doctor",
+    lab: "Lab"
+  }[userType] || userType;
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // ...rest of your state/hooks
+
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1293,7 +1308,8 @@ const RegisterForm = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-8">
       <div className="w-full max-w-5xl bg-white p-8 sm:p-10 shadow-lg border rounded-xl">
-        <h2 className="text-3xl font-bold text-center mb-1 capitalize">Register as {userType}</h2>
+        <h2 className="text-3xl font-bold text-center mb-1">{`Register as ${displayUserType}`}</h2>
+
         <p className="text-gray-600 text-center mb-6">Please fill in your details to create an account.</p>
         
         <form onSubmit={handleSubmit} className="space-y-6">

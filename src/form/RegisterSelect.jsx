@@ -6,7 +6,7 @@ const RegisterSelect = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const userType = [
-    { label: "Patient", value: "patient", icon: <FaUser className="mr-2" /> },
+    { label: "User/Patient", value: "patient", icon: <FaUser className="mr-2" /> },
     { label: "Hospital", value: "hospital", icon: <FaHospital className="mr-2" /> },
     { label: "Doctor", value: "doctor", icon: <FaStethoscope className="mr-2" /> },
     { label: "Labs / Scan", value: "lab", icon: <FaFlask className="mr-2" /> },
