@@ -5,7 +5,7 @@ import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight, FaMapMarkerAlt, FaStethoscope, FaCalendarAlt, FaClock, FaUser, FaHospital } from 'react-icons/fa';
 import { getHospitalDropdown } from '../utils/masterService';
-import { ChevronDown } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 
 
 const symptomSpecialtyMap = {
@@ -617,6 +617,16 @@ const MultiStepForm = () => {
   return (
     <div className="min-h-screen  px-5">
   <div className="w-full">
+
+{/* Back Button */}
+{/* Back Button */}
+<button 
+  onClick={() => navigate("/patientdashboard/app")}
+  className="mt-4 flex items-center gap-1.5 md:gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600 text-xs md:text-sm"
+>
+  <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+  <span className="font-medium">Back to Appointments</span>
+</button>
 
 
         {/* Compact Header */}

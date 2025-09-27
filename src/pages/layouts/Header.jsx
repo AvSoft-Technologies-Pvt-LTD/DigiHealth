@@ -7,7 +7,9 @@ import {
   FileText,
   Ambulance,
   MoreHorizontal,
+  ArrowLeft,
 } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
@@ -212,10 +214,16 @@ const HeaderWithNotifications = ({ toggleSidebar, currentPageName }) => {
               {/* Desktop - User Name and Current Page */}
               <div className="hidden xl:block">
                 <div className="flex items-center gap-3">
+                  {/* Back Button */}
+                  <button
+                    onClick={() => navigate(-1)}
+                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                    title="Go Back"
+                  >
+                    <ArrowLeft className="h-5 w-5 text-gray-700" />
+                  </button>
+
                   <div>
-                    <p className="text-sm text-gray-500 hidden xl:block">
-                      Welcome back, {userDisplayName}!
-                    </p>
                     <p className="text-[var(--primary-color)] font-bold text-lg">
                       {currentPageName}
                     </p>
