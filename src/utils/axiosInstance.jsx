@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://avsoft-render-18.onrender.com/api",
+  baseURL: "http://localhost:8080/api",
 });
 
 export default api;
