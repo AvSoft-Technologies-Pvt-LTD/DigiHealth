@@ -1,5 +1,6 @@
 import axios from "axios";
-import { API, BASE_URL } from "../config/api";
+import {  BASE_URL } from "../config/api";
+import StorageService from "./storageService";
 
 // Create an Axios instance
 const apiClient = axios.create({
@@ -29,7 +30,8 @@ export const getAccessJwtToken = async (): Promise<string | null> => {
   try {
     // Replace this with actual logic to retrieve the token, e.g., from AsyncStorage
     // For now, returning null as placeholder - you'll need to implement actual token retrieval
-    return null;
+    const token = await StorageService.get("userToken");
+    return token;
   } catch (error) {
     console.error("Error fetching JWT token:", error);
     return null;
@@ -38,8 +40,9 @@ export const getAccessJwtToken = async (): Promise<string | null> => {
 
 // Utility functions for API calls
 export const get = async (url: string, params?: object) => {
+  const token = await getAccessJwtToken();
   try {
-    const response = await apiClient.get(url, { params });
+    const response = await apiClient.get(url, { params ,headers: { Authorization: `Bearer ${token}` } });
     return response.data;
   } catch (error) {
     console.error("GET request error:", error);
@@ -48,9 +51,10 @@ export const get = async (url: string, params?: object) => {
 };
 
 export const post = async <T = any>(url: string, data: object): Promise<T> => {
-  console.log("Calling API ", url, data);
   try {
-    const response = await apiClient.post(url, data);
+    const token = await getAccessJwtToken();
+
+    const response = await apiClient.post(url, data,{headers: { Authorization: `Bearer ${token}` }});
     return response.data;
   } catch (error) {
     console.error("POST request error:", error);
@@ -60,7 +64,8 @@ export const post = async <T = any>(url: string, data: object): Promise<T> => {
 
 export const put = async (url: string, data: object) => {
   try {
-    const response = await apiClient.put(url, data);
+    const token = await getAccessJwtToken();
+    const response = await apiClient.put(url, data,{headers: { Authorization: `Bearer ${token}` }});
     return response.data;
   } catch (error) {
     console.error("PUT request error:", error);
@@ -70,7 +75,8 @@ export const put = async (url: string, data: object) => {
 
 export const plainDelete = async (url: string) => {
   try {
-    const response = await apiClient.delete(url);
+    const token = await getAccessJwtToken();
+    const response = await apiClient.delete(url,{headers: { Authorization: `Bearer ${token}` }});
     return response.data;
   } catch (error) {
     console.error("DELETE request error:", error);
@@ -80,7 +86,8 @@ export const plainDelete = async (url: string) => {
 
 export const patch = async (url: string, data: object) => {
   try {
-    const response = await apiClient.patch(url, data);
+    const token = await getAccessJwtToken();
+    const response = await apiClient.patch(url, data,{headers: { Authorization: `Bearer ${token}` }});
     return response.data;
   } catch (error) {
     console.error("PATCH request error:", error);

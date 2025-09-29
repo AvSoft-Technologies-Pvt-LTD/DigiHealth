@@ -3,10 +3,9 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export type UserRole = 'Patient' | 'Hospital' | 'Doctor' | 'Labs/Scan';
 
 interface UserState {
-  selectedRole: UserRole | null;
   isAuthenticated: boolean;
   userProfile: {
-    id: string | null;
+    userId: string | null;
     name: string | null;
     email: string | null;
     phone: string | null;
@@ -15,10 +14,9 @@ interface UserState {
 }
 
 const initialState: UserState = {
-  selectedRole: null,
   isAuthenticated: false,
   userProfile: {
-    id: null,
+    userId: null,
     name: null,
     email: null,
     phone: null,
@@ -31,10 +29,10 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setSelectedRole: (state, action: PayloadAction<UserRole>) => {
-      state.selectedRole = action.payload;
+      state.userProfile.role = action.payload;
     },
     clearSelectedRole: (state) => {
-      state.selectedRole = null;
+      state.userProfile.role = null;
     },
     setAuthenticated: (state, action: PayloadAction<boolean>) => {
       state.isAuthenticated = action.payload;
@@ -43,13 +41,13 @@ const userSlice = createSlice({
       state.userProfile = { ...state.userProfile, ...action.payload };
     },
     clearUserData: (state) => {
-      state.selectedRole = null;
       state.isAuthenticated = false;
       state.userProfile = {
-        id: null,
+        userId: null,
         name: null,
         email: null,
         phone: null,
+        role: null,
       };
     },
   },

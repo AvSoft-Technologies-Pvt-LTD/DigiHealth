@@ -30,8 +30,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
 
 
   useEffect(() => {
-  homeData();
-  dispatch(setHomeData(homeData()));
+    homeData();
+    dispatch(setHomeData(homeData()));
   }, [dispatch]);
   const homeData = () => ({
     stats: stats,
@@ -42,22 +42,29 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   useEffect(() => {
     const checkToken = async () => {
       try {
-        const [token, userRole] = await Promise.all([
+        const [token, userRole, userId, userEmail] = await Promise.all([
           StorageService.get<string>("userToken"),
           StorageService.get<string>("userRole"),
+          StorageService.get<string>("userId"),
+          StorageService.get<string>("userEmail"),
         ]);
-        
-        console.log("Token and role from storage:", { token, userRole });
-        
+
+        console.log("Token and role from storage:", { token, userRole, userId, userEmail });
+
         if (token) {
           // Update Redux store with authentication state
           dispatch(setAuthenticated(true));
-          
+
           // If user role is available, update it in the store
           if (userRole) {
             dispatch(setUserProfile({ role: userRole as any }));
           }
-          
+          if (userId) {
+            dispatch(setUserProfile({ userId: userId as any }));
+          }
+          if (userEmail) {
+            dispatch(setUserProfile({ email: userEmail as any }));
+          } 
           navigation.replace(PAGES.HOME);
         } else {
           // If no token, ensure Redux state is cleared

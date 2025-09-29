@@ -14,6 +14,8 @@ export const BASE_URL = getBaseUrl();
 export const API = {
   LOGIN_API: `${BASE_URL}auth/login`,
   PATIENT_REGISTER_API: `${BASE_URL}auth/patient/register`,
+  ALL_PATIENT_API: `${BASE_URL}auth/patient/all`,
+  PATIENT_DASHBOARD_API: `${BASE_URL}auth/patient/`,
 //   REGISTER: `${BASE_URL}auth/register`,
 //   PROFILE: `${BASE_URL}user/profile`,
 };

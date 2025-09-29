@@ -22,7 +22,7 @@ const QuickActionsModal: React.FC<QuickActionsModalProps> = ({
   onNotificationsPress,
 }) => {
   const userProfile = useAppSelector((state) => state.user.userProfile);
-  const userRole = useAppSelector((state) => state.user.selectedRole);
+  const userRole = useAppSelector((state) => state.user.userProfile.role);
   const slideAnim = useRef(new Animated.Value(widthPercentageToDP(100))).current;
 
   useEffect(() => {

@@ -5,8 +5,11 @@ import Header from "../../../../components/Header";
 import { PAGES } from "../../../../constants/pages";
 import PatientOverview from "./PtDashboard";
 import HealthSummary from "./HealthSummary";
+import { useAppSelector } from "../../../../store/hooks";
 
 const PatientDashboardView = () => {
+    const userRole = useAppSelector((state) => state?.user?.userProfile?.role);
+    console.log("userRole", userRole);
     return (
         <>
             <Header

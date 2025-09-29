@@ -14,7 +14,7 @@ type RegisterProps = {
 
 const Register: React.FC<RegisterProps> = () => {
   const dispatch = useAppDispatch();
-  const selectedRole = useAppSelector((state) => state.user.selectedRole);
+  const selectedRole = useAppSelector((state) => state.user.userProfile.role);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleRoleSelect = (role: UserRole) => {

@@ -50,6 +50,8 @@ interface LoginResponse {
     token: string;
     role: UserRole;
     message?: string;
+    userId:string;
+    email:string;
 }
 
 const Login: React.FC<LoginProps> = () => {
@@ -90,8 +92,10 @@ const Login: React.FC<LoginProps> = () => {
             // Save token and role to AsyncStorage
             await StorageService.save("userToken", responseData.token);
             await StorageService.save("userRole", responseData.role);
+            await StorageService.save("userEmail", responseData.email);
+            await StorageService.save("userId",responseData.userId)
             dispatch(setAuthenticated(true));
-            dispatch(setUserProfile({ role: responseData.role }));
+            dispatch(setUserProfile({ role: responseData.role,email:responseData.email,userId:responseData.userId }));
             
             // Show success message
             setSnackbarMessage(responseData.message || 'Login successful!');

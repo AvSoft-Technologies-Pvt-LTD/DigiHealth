@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, TextInput } from "react-native";
 import AvModal from "../../../../elements/AvModal";
 import AvTextInput from "../../../../elements/AvTextInput";
@@ -8,6 +8,8 @@ import { COLORS } from "../../../../constants/colors";
 import { Switch } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useAppSelector } from "../../../../store/hooks";
+import { RootState } from "../../../../store";
 
 type ModalNames = "personalHealth" | "family" | "additionalDetails";
 
@@ -41,6 +43,7 @@ const PatientModals: React.FC<PatientModalsProps> = ({
     }
   };
 
+  const userId = useAppSelector((state: RootState) => state?.user?.userProfile?.userId);
   return (
     <>
       {/* Personal Health Modal */}

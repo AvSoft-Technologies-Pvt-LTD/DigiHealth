@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import AvText from "../../../../elements/AvText";
@@ -15,6 +14,8 @@ import { useNavigation } from "@react-navigation/native";
 import PatientModals from "./index";
 import AvImage from "../../../../elements/AvImage";
 import { IMAGES } from "../../../../assets";
+import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
+import { fetchAllPatients, fetchPatientDashboardData } from "../../../../store/thunks/patientThunks";
 
 const PatientOverview = () => {
   const navigation = useNavigation();
@@ -27,6 +28,7 @@ const PatientOverview = () => {
     name: "Trupti Chavan",
     gender: "Female",
     dob: "2001-03-09",
+    email: "",
     phone: "9370672873",
     bloodGroup: "O+",
     height: "",
@@ -83,7 +85,66 @@ const PatientOverview = () => {
 
   const completedSections = Object.values(completion).filter(Boolean).length;
   const progress = (completedSections / 4) * 100;
+  const { allPatients, loading, error, } = useAppSelector((state) => state.patient);
+  const { patientDashboardData, } = useAppSelector((state) => state.patientDashboardData);
+  const userEmail = useAppSelector((state) => state.user.userProfile.email);
+  const dispatch = useAppDispatch();
+  // Fetch patient data on component mount
 
+  useEffect(() => {
+    // Initial data fetch
+    dispatch(fetchAllPatients());
+  }, [dispatch]);
+
+  // Handle patient data once it's loaded
+useEffect(() => {
+  if (allPatients.length > 0) {
+    const currentPatient = allPatients.find((item: any) => userEmail === item.email);
+    if (currentPatient) {
+      dispatch(fetchPatientDashboardData(currentPatient.id));
+    }
+  }
+}, [allPatients, userEmail, dispatch]);
+
+useEffect(() => {
+  if (patientDashboardData && !Array.isArray(patientDashboardData)) {
+    setFormData(prev => ({
+      ...prev,
+      ...patientDashboardData
+    }));
+  } else if (Array.isArray(patientDashboardData) && patientDashboardData.length > 0) {
+    setFormData(prev => ({
+      ...prev,
+      ...patientDashboardData[0]
+    }));
+  }
+}, [patientDashboardData]);
+
+// At the top of your component, add a ref to track initial load
+const initialLoad = useRef(true);
+
+// Then in your last useEffect
+useEffect(() => {
+  if (initialLoad.current) {
+    initialLoad.current = false;
+    return;
+  }
+  
+  if (patientDashboardData) {
+    const newData = Array.isArray(patientDashboardData) 
+      ? patientDashboardData[0] || {}
+      : patientDashboardData;
+      
+    setFormData(prev => {
+      // Only update if there are actual changes
+      const hasChanges = Object.keys(newData).some(
+        key => JSON.stringify(prev[key]) !== JSON.stringify(newData[key])
+      );
+      return hasChanges ? { ...prev, ...newData } : prev;
+    });
+  }
+}, [patientDashboardData]);
+console.log(JSON.stringify(formData))
   return (
     <View style={[styles.card, styles.cardShadow]}>
       {/* Header */}
@@ -115,7 +176,7 @@ const PatientOverview = () => {
           style={styles.profileImage}
         />
         <AvText type="title_6" style={{ color: COLORS.PRIMARY }}>
-          {formData.name}
+          {formData.email}
         </AvText>
       </View>
 

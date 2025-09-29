@@ -444,3 +444,11 @@ export const equipmentData: EquipmentItem[] = [
   { label: "Suction Machine", value: "suction_machine", price: 1200 },
   { label: "Spinal Board", value: "spinal_board", price: 800 }
 ];
+
+
+export const ROLES = {
+  PATIENT: "PATIENT",
+  DOCTOR: "DOCTOR",
+  HOSPITAL: "HOSPITAL",
+  LAB: "LAB",
+}

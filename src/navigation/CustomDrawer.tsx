@@ -13,11 +13,17 @@ import { width } from '../constants/common';
 import { normalize } from '../constants/platform';
 import { useDispatch } from 'react-redux';
 import { setAuthenticated, setUserProfile } from '../store/slices/userSlice';
+import { useAppSelector } from '../store/hooks';
+import { ROLES } from '../constants/data';
 
 
 const DRAWER_WIDTH = width * 0.75;
 
-const CustomDrawer: React.FC = () => {
+interface CustomDrawerProps {
+  userRole?: string;  // Make it optional with '?' if it might not always be provided
+}
+
+const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
   const { isOpen, closeDrawer } = useDrawer();
   const navigation = useNavigation<any>();
   const animation = useRef(new Animated.Value(0)).current;
@@ -91,19 +97,19 @@ const CustomDrawer: React.FC = () => {
   if (!isVisible) return null;
  
   const menuItems = [
-    { title: 'Home', icon: 'home', screen: PAGES.HOME },
-    // { title: 'Patient Dashboard', icon: 'home', screen: PAGES.PATIENT_DASHBOARD },
-    // { title: 'Home', icon: 'home', screen: PAGES.HOME },
-    { title: 'Patient Dashboard', icon: 'home', screen: PAGES.PATIENT_OVERVIEW },
-    // { title: 'Patient Register', icon: 'account-plus', screen: PAGES.PATIENT_REGISTER },
-    // { title: 'Doctor Register', icon: 'stethoscope', screen: PAGES.DOCTOR_REGISTER },
-    // { title: 'Hospital Register', icon: 'hospital-building', screen: PAGES.HOSPITAL_REGISTER },
-    // { title: 'Labs & Scan', icon: 'microscope', screen: PAGES.LABS_SCAN_REGISTER },
-     { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
-         { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
-    { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
-    // { title: 'Settings', icon: 'setting', screen: PAGES.PATIENT_SETTINGS },
-   
+    ...(userRole === ROLES.PATIENT ? [
+      { title: 'Patient Dashboard', icon: 'account-details', screen: PAGES.PATIENT_OVERVIEW },
+      { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
+      { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
+      { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
+    ] : [
+      // Add other role-specific menu items here if needed
+      { title: 'Home', icon: 'home', screen: PAGES.HOME },
+      { title: 'Patient Dashboard', icon: 'account-details', screen: PAGES.PATIENT_OVERVIEW },
+      { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
+      { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
+      { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
+    ]),
     { title: 'Logout', icon: 'logout', action: handleLogout, isDestructive: true },
   ];
 
