@@ -430,21 +430,6 @@ const Billing = () => {
 
   return (
     <div className="p-4 sm:p-6">
-      {/* Back Button */}
-      <div className="mb-2">
-        <button
-          onClick={handleBackNavigation}
-          className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-[var(--accent-color)] rounded-lg transition-all duration-200 group"
-          title="Go back to previous page"
-        >
-          <ArrowLeft
-            size={18}
-            className="transition-transform duration-200 group-hover:-translate-x-1"
-          />
-          <span className="font-medium text-sm">Back</span>
-        </button>
-      </div>
-
       {/* Billing Table */}
       <div>
         <DynamicTable
