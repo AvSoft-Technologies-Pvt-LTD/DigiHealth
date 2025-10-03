@@ -15,7 +15,7 @@ import PatientModals from "./index";
 import AvImage from "../../../../elements/AvImage";
 import { IMAGES } from "../../../../assets";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
-import { fetchAllPatients, fetchPatientDashboardData } from "../../../../store/thunks/patientThunks";
+import { fetchAllPatients, fetchPatientBloodGroupData, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchPatientPersonalHealthData as personalHealthData,  } from "../../../../store/thunks/patientThunks";
 
 const PatientOverview = () => {
   const navigation = useNavigation();
@@ -30,7 +30,7 @@ const PatientOverview = () => {
     dob: "2001-03-09",
     email: "",
     phone: "9370672873",
-    bloodGroup: "O+",
+    bloodGroup: "",
     height: "",
     weight: "",
     surgeries: "",
@@ -53,6 +53,7 @@ const PatientOverview = () => {
     endDate: new Date(),
     isPrimaryHolder: false,
   });
+  
   const [completion, setCompletion] = useState({
     basicDetails: true,
     personalHealth: false,
@@ -61,6 +62,9 @@ const PatientOverview = () => {
   });
 
   const openModal = (modalName: keyof typeof modalVisible) => {
+    if (modalName === "personalHealth") {
+      dispatch(fetchPatientBloodGroupData());
+    }
     setModalVisible((prev) => ({ ...prev, [modalName]: true }));
   };
 
@@ -87,6 +91,7 @@ const PatientOverview = () => {
   const progress = (completedSections / 4) * 100;
   const { allPatients, loading, error, } = useAppSelector((state) => state.patient);
   const { patientDashboardData, } = useAppSelector((state) => state.patientDashboardData);
+  const { patientPersonalData, } = useAppSelector((state) => state.patientPersonalData);
   const userEmail = useAppSelector((state) => state.user.userProfile.email);
   const dispatch = useAppDispatch();
   // Fetch patient data on component mount
@@ -98,7 +103,7 @@ const PatientOverview = () => {
 
   // Handle patient data once it's loaded
 useEffect(() => {
-  if (allPatients.length > 0) {
+  if (allPatients?.length > 0) {
     const currentPatient = allPatients.find((item: any) => userEmail === item.email);
     if (currentPatient) {
       dispatch(fetchPatientDashboardData(currentPatient.id));
@@ -144,7 +149,33 @@ useEffect(() => {
     });
   }
 }, [patientDashboardData]);
-console.log(JSON.stringify(formData))
+  // const id = useAppSelector((state) => state.user.userProfile.userId);
+  const id = "1";
+  
+  // Fetch personal health data
+  useEffect(() => {
+    dispatch(fetchPatientPersonalHealthData(id as string));
+  }, [dispatch]);
+
+  // Update formData when patientPersonalData is available
+  useEffect(() => {
+    if (patientPersonalData) {
+      setFormData(prev => ({
+        ...prev,
+        bloodGroup: patientPersonalData?.bloodGroupName || "",
+        height: patientPersonalData?.height?.toString() || "",
+        weight: patientPersonalData?.weight?.toString() || "",
+        surgeries: patientPersonalData?.surgeries || "",
+        allergies: patientPersonalData?.allergies || "",
+        drinkAlcohol: patientPersonalData?.isAlcoholic || false,
+        smoke: patientPersonalData?.isSmoker || false,
+        tobaccoUse: patientPersonalData?.isTobacco || false,
+        alcoholSinceYears: patientPersonalData?.yearsAlcoholic?.toString() || "",
+        smokeSinceYears: patientPersonalData?.yearsSmoking?.toString() || "",
+        tobaccoSinceYears: patientPersonalData?.yearsTobacco?.toString() || ""
+      }));
+    }
+  }, [patientPersonalData]);
   return (
     <View style={[styles.card, styles.cardShadow]}>
       {/* Header */}
@@ -176,7 +207,7 @@ console.log(JSON.stringify(formData))
           style={styles.profileImage}
         />
         <AvText type="title_6" style={{ color: COLORS.PRIMARY }}>
-          {formData.email}
+          {formData.email||formData.name}
         </AvText>
       </View>
 

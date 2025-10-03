@@ -16,6 +16,9 @@ export const API = {
   PATIENT_REGISTER_API: `${BASE_URL}auth/patient/register`,
   ALL_PATIENT_API: `${BASE_URL}auth/patient/all`,
   PATIENT_DASHBOARD_API: `${BASE_URL}auth/patient/`,
-//   REGISTER: `${BASE_URL}auth/register`,
-//   PROFILE: `${BASE_URL}user/profile`,
+  BLOOD_GROUP_API: `${BASE_URL}auth/patient/blood-group`,
+  PATIENT_PERSONAL_HEALTH_API: `${BASE_URL}patient-dashboard/personal-health/`,
+  PATIENT_FAMILY_API: `${BASE_URL}auth/patient/family`,
+  PATIENT_ADDITIONAL_DETAILS_API: `${BASE_URL}auth/patient/additional-details`,
+  PATIENT_BLOOD_GROUP_API: `${BASE_URL}master/blood-group`,
 };
