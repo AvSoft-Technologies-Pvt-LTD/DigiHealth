@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Calendar, Pencil, Users, UserPlus, Video, UserCheck, ChevronRight,Mail, GraduationCap, Edit3  } from 'lucide-react';
+import { Calendar, Pencil, Users, UserPlus, Video, UserCheck, ChevronRight, Mail, GraduationCap, Edit3 } from 'lucide-react';
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import DoctorAppointments from "./Appointments";
@@ -17,7 +17,7 @@ const Overview = () => {
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const navigate = useNavigate();
   const pendingAppointments = appointments.filter(appt => appt.status === 'Pending');
-const recentPendingAppointments = pendingAppointments.slice(0, 4);
+  const recentPendingAppointments = pendingAppointments.slice(0, 4);
 
   useEffect(() => {
     (async () => {
@@ -28,13 +28,13 @@ const recentPendingAppointments = pendingAppointments.slice(0, 4);
         const doctorData = allDoctors[0];
         if (!doctorData) throw new Error('Doctor not found');
 
-        const dashboardRes = await axios.get('https://mocki.io/v1/16f62a47-cb52-4f02-b5cd-dc13feee53fe');
-        const { appointments, payments } = dashboardRes.data;
+        // TODO: Replace with your own API or mock data for appointments and payments
+        // const dashboardRes = await axios.get('https://mocki.io/v1/16f62a47-cb52-4f02-b5cd-dc13feee53fe');
+        // const { appointments, payments } = dashboardRes.data;
 
         const patientsRes = await axios.get('https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient');
         const allPatients = patientsRes.data;
         const doctorPatients = allPatients.filter(patient => patient.doctorId === doctorData.id);
-
         const patientStats = {
           totalPatients: doctorPatients.length,
           opdPatients: doctorPatients.filter(p => p.patientType?.toLowerCase().includes('opd')).length,
@@ -52,11 +52,11 @@ const recentPendingAppointments = pendingAppointments.slice(0, 4);
         };
 
         setDoctor(formattedDoctor);
-        setAppointments(appointments);
-        setRevenue({
-          total: Array.isArray(payments) ? payments.reduce((s, p) => s + Number(p.amount), 0) : 0,
-          breakdown: calculateRevenueBreakdown(Array.isArray(payments) ? payments : []),
-        });
+        // setAppointments(appointments); // Uncomment and replace with your data
+        // setRevenue({
+        //   total: Array.isArray(payments) ? payments.reduce((s, p) => s + Number(p.amount), 0) : 0,
+        //   breakdown: calculateRevenueBreakdown(Array.isArray(payments) ? payments : []),
+        // });
         setStats(patientStats);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -125,108 +125,100 @@ const recentPendingAppointments = pendingAppointments.slice(0, 4);
     >
       {/* Main Container: Flex Layout for Profile and Stats */}
       <div className="flex flex-col lg:flex-row gap-6 mb-6">
-   <div className="w-full lg:w-[70%] bg-[var(--color-surface)] rounded-xl shadow-md p-4">
-      {/* Top Section */}
-      <div className="flex justify-between items-start">
-        {/* Left Section: Profile Image & Name */}
-        <div className="flex items-center gap-4">
-          <img
-          src={doctor.photo}
-          alt={doctor.name}
-          className="w-24 h-24 rounded-full border-3 border-white shadow-md"
-        />
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">{doctor.name}</h2>
-            <p className="text-gray-500 text-sm">{doctor.specialty}</p>
+        <div className="w-full lg:w-[70%] bg-[var(--color-surface)] rounded-xl shadow-md p-4">
+          {/* Top Section */}
+          <div className="flex justify-between items-start">
+            {/* Left Section: Profile Image & Name */}
+            <div className="flex items-center gap-4">
+              <img
+                src={doctor.photo}
+                alt={doctor.name}
+                className="w-24 h-24 rounded-full border-3 border-white shadow-md"
+              />
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">{doctor.name}</h2>
+                <p className="text-gray-500 text-sm">{doctor.specialty}</p>
+              </div>
+            </div>
+            {/* Edit Icon */}
+            <button onClick={handleEditClick} className="bg-green-500 text-white rounded-full p-2 shadow-md hover:bg-green-600 transition">
+              <Edit3 size={20} />
+            </button>
+          </div>
+          {/* Details Section */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex items-center gap-3">
+              <GraduationCap className="text-gray-400" size={22} />
+              <div>
+                <p className="text-gray-500 text-sm">Qualification</p>
+                <p className="text-gray-900 font-semibold">{doctor.qualifications}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Mail className="text-gray-400" size={22} />
+              <div>
+                <p className="text-gray-500 text-sm">Email</p>
+                <p className="text-gray-900 font-semibold">{doctor.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Edit3 className="text-gray-400" size={22} />
+              <div>
+                <p className="text-gray-500 text-sm">Reg No.</p>
+                <p className="text-gray-900 font-semibold">{doctor.registrationId}</p>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Edit Icon */}
-        <button onClick={handleEditClick} className="bg-green-500 text-white rounded-full p-2 shadow-md hover:bg-green-600 transition">
-          <Edit3 size={20} />
-        </button>
+        {/* Stats Cards (Right Side) */}
+        <div className="w-full lg:w-[30%] grid grid-cols-2 gap-3">
+          {[{
+            label: "Total Patients",
+            value: stats.totalPatients,
+            icon: <Users size={18} className="text-[var(--primary-color)]" />,
+            borderColor: "border-r-[3px] border-[var(--primary-color)]",
+            textColor: "text-[var(--primary-color)]"
+          }, {
+            label: "OPD Patients",
+            value: stats.opdPatients,
+            icon: <UserPlus size={18} className="text-[var(--accent-color)]" />,
+            borderColor: "border-r-[3px] border-[var(--accent-color)]",
+            textColor: "text-[var(--accent-color)]"
+          }, {
+            label: "IPD Patients",
+            value: stats.ipdPatients,
+            icon: <UserCheck size={18} className="text-[var(--accent-color)]" />,
+            borderColor: "border-r-[3px] border-[var(--accent-color)]",
+            textColor: "text-[var(--accent-color)]"
+          }, {
+            label: "Virtual Patients",
+            value: stats.virtualPatients,
+            icon: <Video size={18} className="text-[var(--primary-color)]" />,
+            borderColor: "border-r-[3px] border-[var(--primary-color)]",
+            textColor: "text-[var(--primary-color)]"
+          }].map((card, i) => (
+            <Link key={card.label} to={`/doctordashboard/patients?tab=${card.label.split(" ")[0]}`} className="block">
+              <motion.div
+                className={`bg-white ${card.borderColor} p-2.5 rounded-lg shadow-sm hover:shadow-md min-h-[90px] text-center transition-shadow`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.3 + i * 0.1 }}
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="p-1 rounded-full">
+                    {card.icon}
+                  </div>
+                  <div>
+                    <p className={`text-xs font-semibold truncate ${card.textColor}`}>{card.label}</p>
+                    <h3 className={`text-lg font-bold mt-3 ${card.textColor}`}>{card.value.toLocaleString()}</h3>
+                  </div>
+                </div>
+              </motion.div>
+            </Link>
+          ))}
+        </div>
       </div>
-
-      {/* Details Section */}
-      {/* For desktop & tablet → horizontal | For mobile → vertical */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="flex items-center gap-3">
-          <GraduationCap className="text-gray-400" size={22} />
-          <div>
-            <p className="text-gray-500 text-sm">Qualification</p>
-            <p className="text-gray-900 font-semibold">{doctor.qualifications}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Mail className="text-gray-400" size={22} />
-          <div>
-            <p className="text-gray-500 text-sm">Email</p>
-            <p className="text-gray-900 font-semibold">{doctor.email}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Edit3 className="text-gray-400" size={22} />
-          <div>
-            <p className="text-gray-500 text-sm">Reg No.</p>
-            <p className="text-gray-900 font-semibold">{doctor.registrationId}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-  {/* Stats Cards (Right Side) - 30% Width, 2 cards per row */}
-  <div className="w-full lg:w-[30%] grid grid-cols-2 gap-3">
-  {[{
-      label: "Total Patients",
-      value: stats.totalPatients,
-      icon: <Users size={18} className="text-[var(--primary-color)]" />,
-      borderColor: "border-r-[3px] border-[var(--primary-color)]",
-      textColor: "text-[var(--primary-color)]"
-    }, {
-      label: "OPD Patients",
-      value: stats.opdPatients,
-      icon: <UserPlus size={18} className="text-[var(--accent-color)]" />,
-      borderColor: "border-r-[3px] border-[var(--accent-color)]",
-      textColor: "text-[var(--accent-color)]"
-    }, {
-      label: "IPD Patients",
-      value: stats.ipdPatients,
-      icon: <UserCheck size={18} className="text-[var(--accent-color)]" />,
-      borderColor: "border-r-[3px] border-[var(--accent-color)]",
-      textColor: "text-[var(--accent-color)]"
-    }, {
-      label: "Virtual Patients",
-      value: stats.virtualPatients,
-      icon: <Video size={18} className="text-[var(--primary-color)]" />,
-      borderColor: "border-r-[3px] border-[var(--primary-color)]",
-      textColor: "text-[var(--primary-color)]"
-    },
-  ].map((card, i) => (
-    <Link key={card.label} to={`/doctordashboard/patients?tab=${card.label.split(" ")[0]}`} className="block">
-      <motion.div
-        className={`bg-white ${card.borderColor} p-2.5 rounded-lg shadow-sm hover:shadow-md min-h-[90px] text-center transition-shadow`}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.3 + i * 0.1 }}
-        whileHover={{ scale: 1.02 }}
-      >
-        <div className="flex items-center space-x-2">
-          <div className="p-1 rounded-full">
-            {card.icon}
-          </div>
-          <div>
-            <p className={`text-xs font-semibold truncate ${card.textColor}`}>{card.label}</p>
-            <h3 className={`text-lg font-bold mt-3 ${card.textColor}`}>{card.value.toLocaleString()}</h3>
-          </div>
-        </div>
-      </motion.div>
-    </Link>
-  ))}
-</div>
-</div>
       {/* Rest of your layout (Appointments & Revenue) */}
       <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6">
         {/* Appointments */}
@@ -247,9 +239,8 @@ const recentPendingAppointments = pendingAppointments.slice(0, 4);
               View All <ChevronRight size={16} />
             </Link>
           </div>
-          <DoctorAppointments showOnlyPending={true} isOverview={true} appointments={recentPendingAppointments}/>
+          <DoctorAppointments showOnlyPending={true} isOverview={true} appointments={recentPendingAppointments} />
         </motion.div>
-
         {/* Revenue */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -263,7 +254,7 @@ const recentPendingAppointments = pendingAppointments.slice(0, 4);
             <div className="flex justify-between items-center mb-4">
               <div>
                 <p className="text-sm text-[var(--primary-color)]">Total Revenue</p>
-                <h4 className="text-2xl font-bold text-[var(--primary-color)]">₹{revenue?.total.toLocaleString()}</h4>
+                <h4 className="text-2xl font-bold text-[var(--primary-color)]">₹{revenue?.total?.toLocaleString()}</h4>
               </div>
               <Link
                 to="/doctordashboard/billing"
@@ -273,7 +264,7 @@ const recentPendingAppointments = pendingAppointments.slice(0, 4);
               </Link>
             </div>
             <div className="space-y-3">
-              {(revenue?.breakdown.slice(0, 3) || []).map((item, i) => {
+              {(revenue?.breakdown?.slice(0, 3) || []).map((item, i) => {
                 const Icon = item.type.includes("Virtual") ? Video : item.type.includes("Physical") ? UserCheck : Users;
                 const isHovered = hoveredIndex === i;
                 return (

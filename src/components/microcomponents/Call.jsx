@@ -1,8 +1,5 @@
 
 
-
-
-
 import React, { useState, useEffect, useRef } from "react";
 import { FaPhone, FaVideo, FaUser, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 import { FiVideo } from "react-icons/fi";
@@ -10,7 +7,7 @@ import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import Videocall from "../../assets/videocalling.avif";
 
-// Helper: Save blob, context, and metadata to localStorage
+// Helper: Save recording to localStorage
 const saveRecordingToLocalStorage = (blob, key, context, metadata) => {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -24,7 +21,7 @@ const saveRecordingToLocalStorage = (blob, key, context, metadata) => {
   });
 };
 
-// Helper: Load blob, context, and metadata from localStorage
+// Helper: Load recording from localStorage
 const loadRecordingFromLocalStorage = (key) => {
   const dataUrl = localStorage.getItem(key);
   const context = localStorage.getItem(`${key}_context`);
@@ -50,14 +47,14 @@ const loadRecordingFromLocalStorage = (key) => {
 };
 
 // --- Modal Components ---
-const Modal = ({ show, onClose, children, large, showEndButton }) =>
+const Modal = ({ show, onClose, children, large, showEndButton, widthClass = "max-w-md" }) =>
   show
     ? createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div onClick={onClose} className="absolute inset-0" />
           <div
             className={`relative bg-white p-6 rounded-xl z-10 shadow-lg animate-fadeInUp ${
-              large ? "w-[90%] max-w-4xl" : "w-full max-w-md"
+              large ? "w-[90%] max-w-4xl" : `w-full ${widthClass}`
             }`}
           >
             {showEndButton && (
@@ -231,119 +228,131 @@ const TeleConsultFlow = ({ phone, patientName, context = "virtual", patientEmail
       >
         <FaPhone className="rotate-[100deg] text-sm" />
       </button>
-      {recordedBlob && (
-        <button
-          onClick={() => setShowRecordedVideo(true)}
-          className="ml-2 text-green-600 hover:text-green-800"
-          title="View Recorded Consultation"
-        >
-          <FiVideo className="text-base" />
-        </button>
-      )}
       <Modal
         show={open}
         onClose={handleEndConsultation}
         large={step === 3 && callType === "video"}
         showEndButton={step === 3 && callType === "video"}
+        widthClass={step === 1 || step === 2 ? "max-w-3xl" : "max-w-md"}
       >
-        <h2 className="h4-heading font-semibold mb-2">Tele Consult</h2>
-        <img src={Videocall} alt="Consultation" className="w-54 h-54 m-4 mx-auto" />
+        <h2 className="h4-heading text-center mb-5 font-semibold mb-2">Tele Consult</h2>
+
         {step === 1 && (
-          <div className="space-y-4">
-            <div>
-              <p className="paragraph">Consultation Type</p>
-              <div className="flex gap-4">
-                {["Consultation", "Followup"].map((t) => (
-                  <label key={t} className="flex items-center gap-2">
-                    <input type="radio" name="type" /> {t}
-                  </label>
+          <div className="flex flex-col md:flex-row gap-6 w-full">
+            <div className="w-full md:w-1/2 flex items-center justify-center">
+              <img
+                src={Videocall}
+                alt="Video Call"
+                className="w-full h-auto rounded-lg"
+              />
+            </div>
+            <div className="w-full md:w-1/2 space-y-4">
+              <div>
+                <p className="paragraph">Consultation Type</p>
+                <div className="flex gap-4">
+                  {["Consultation", "Followup"].map((t) => (
+                    <label key={t} className="flex items-center gap-2">
+                      <input type="radio" name="type" /> {t}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  id="amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Amount"
+                  className="peer w-full rounded-lg p-2 pb-3 border shadow-sm placeholder-transparent focus:outline-none focus:border-[var(--primary-color)]"
+                  required
+                />
+                <label htmlFor="amount" className={floatLabel}>
+                  Amount
+                </label>
+              </div>
+              <select className="w-full border border-gray-300 p-2 rounded-md">
+                <option>Select Payment Mode</option>
+                {[
+                  "Cash",
+                  "GPay",
+                  "Paytm",
+                  "PhonePe",
+                  "Credit Card",
+                  "Debit Card",
+                ].map((m) => (
+                  <option key={m}>{m}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => setStep(2)}
+                className="relative w-full mt-2 px-6 py-2 font-semibold text-white bg-[var(--primary-color)] rounded-lg group overflow-hidden"
+              >
+                <span className="absolute inset-0 bg-[var(--accent-color)] transform translate-y-full group-hover:translate-y-0 transition duration-300 ease-in-out z-0" />
+                <span className="relative z-10 group-hover:opacity-0 transition duration-300">
+                  Create Online Consultation
+                </span>
+                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 text-white font-bold z-10 transition duration-300">
+                  Booking Ready!
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="flex flex-col md:flex-row gap-6 w-full">
+            <div className="w-full md:w-1/2 flex items-center justify-center">
+              <img
+                src={Videocall}
+                alt="Video Call"
+                className="w-full h-auto rounded-lg"
+              />
+            </div>
+            <div className="w-full md:w-1/2 space-y-4 text-center">
+              <div className="relative">
+                <input
+                  type="text"
+                  id="patientPhone"
+                  value={phone}
+                  readOnly
+                  placeholder="Patient Phone Number"
+                  className="peer w-full rounded-lg p-2 pb-3 border shadow-sm placeholder-transparent focus:outline-none focus:border-[var(--primary-color)]"
+                  required
+                />
+                <label htmlFor="patientPhone" className={floatLabel}>
+                  Patient Phone Number
+                </label>
+              </div>
+              <div className="flex justify-center gap-4">
+                {[
+                  {
+                    type: "voice",
+                    icon: <FaPhone className="rotate-[100deg]" />,
+                    label: "Phone Call",
+                  },
+                  { type: "video", icon: <FaVideo />, label: "Video Call" },
+                ].map(({ type, icon, label }) => (
+                  <button
+                    key={type}
+                    onClick={() => {
+                      setCallType(type);
+                      setStep(3);
+                      if (type === "video") setTimeout(openCamera, 1000);
+                    }}
+                    className="relative overflow-hidden px-5 py-2 rounded-lg text-white font-semibold bg-[var(--primary-color)] group"
+                  >
+                    <span className="absolute inset-0 bg-[var(--accent-color)] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500 ease-in-out z-0" />
+                    <span className="relative z-10 flex items-center gap-2">
+                      {icon} <span>{label}</span>
+                    </span>
+                  </button>
                 ))}
               </div>
             </div>
-            <div className="relative">
-              <input
-                type="number"
-                id="amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Amount"
-                className="peer w-full rounded-lg p-2 pb-3 border shadow-sm placeholder-transparent focus:outline-none focus:border-[var(--primary-color)]"
-                required
-              />
-              <label htmlFor="amount" className={floatLabel}>
-                Amount
-              </label>
-            </div>
-            <select className="w-full border border-gray-300 p-2 rounded-md">
-              <option>Select Payment Mode</option>
-              {[
-                "Cash",
-                "GPay",
-                "Paytm",
-                "PhonePe",
-                "Credit Card",
-                "Debit Card",
-              ].map((m) => (
-                <option key={m}>{m}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => setStep(2)}
-              className="relative w-full mt-2 px-6 py-2 font-semibold text-white bg-[var(--primary-color)] rounded-lg group overflow-hidden"
-            >
-              <span className="absolute inset-0 bg-[var(--accent-color)] transform translate-y-full group-hover:translate-y-0 transition duration-300 ease-in-out z-0" />
-              <span className="relative z-10 group-hover:opacity-0 transition duration-300">
-                Create Online Consultation
-              </span>
-              <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 text-white font-bold z-10 transition duration-300">
-                Booking Ready!
-              </span>
-            </button>
           </div>
         )}
-        {step === 2 && (
-          <div className="space-y-4 text-center">
-            <div className="relative">
-              <input
-                type="text"
-                id="patientPhone"
-                value={phone}
-                readOnly
-                placeholder="Patient Phone Number"
-                className="peer w-full rounded-lg p-2 pb-3 border shadow-sm placeholder-transparent focus:outline-none focus:border-[var(--primary-color)]"
-                required
-              />
-              <label htmlFor="patientPhone" className={floatLabel}>
-                Patient Phone Number
-              </label>
-            </div>
-            <div className="flex justify-center gap-4">
-              {[
-                {
-                  type: "voice",
-                  icon: <FaPhone className="rotate-[100deg]" />,
-                  label: "Phone Call",
-                },
-                { type: "video", icon: <FaVideo />, label: "Video Call" },
-              ].map(({ type, icon, label }) => (
-                <button
-                  key={type}
-                  onClick={() => {
-                    setCallType(type);
-                    setStep(3);
-                    if (type === "video") setTimeout(openCamera, 1000);
-                  }}
-                  className="relative overflow-hidden px-5 py-2 rounded-lg text-white font-semibold bg-[var(--primary-color)] group"
-                >
-                  <span className="absolute inset-0 bg-[var(--accent-color)] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500 ease-in-out z-0" />
-                  <span className="relative z-10 flex items-center gap-2">
-                    {icon} <span>{label}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+
         {step === 3 && callType === "voice" && (
           <div className="text-center space-y-4">
             <FaUser className="text-5xl mx-auto text-gray-500" />
@@ -356,6 +365,7 @@ const TeleConsultFlow = ({ phone, patientName, context = "virtual", patientEmail
             </button>
           </div>
         )}
+
         {step === 3 && callType === "video" && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -409,3 +419,8 @@ const TeleConsultFlow = ({ phone, patientName, context = "virtual", patientEmail
 };
 
 export default TeleConsultFlow;
+
+
+
+
+
