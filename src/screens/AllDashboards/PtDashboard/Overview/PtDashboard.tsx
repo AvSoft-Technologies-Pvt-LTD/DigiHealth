@@ -16,6 +16,7 @@ import AvImage from "../../../../elements/AvImage";
 import { IMAGES } from "../../../../assets";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
 import { fetchAllPatients, fetchPatientBloodGroupData, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchPatientPersonalHealthData as personalHealthData,  } from "../../../../store/thunks/patientThunks";
+import { setUserProfile } from "../../../../store/slices/userSlice";
 
 const PatientOverview = () => {
   const navigation = useNavigation();
@@ -107,6 +108,7 @@ useEffect(() => {
     const currentPatient = allPatients.find((item: any) => userEmail === item.email);
     if (currentPatient) {
       dispatch(fetchPatientDashboardData(currentPatient.id));
+      dispatch(setUserProfile({ patientId: currentPatient.id }));
     }
   }
 }, [allPatients, userEmail, dispatch]);

@@ -6,6 +6,7 @@ interface UserState {
   isAuthenticated: boolean;
   userProfile: {
     userId: string | null;
+    patientId: string | null;
     name: string | null;
     email: string | null;
     phone: string | null;
@@ -17,6 +18,7 @@ const initialState: UserState = {
   isAuthenticated: false,
   userProfile: {
     userId: null,
+    patientId: null,
     name: null,
     email: null,
     phone: null,
@@ -44,6 +46,7 @@ const userSlice = createSlice({
       state.isAuthenticated = false;
       state.userProfile = {
         userId: null,
+        patientId: null,
         name: null,
         email: null,
         phone: null,

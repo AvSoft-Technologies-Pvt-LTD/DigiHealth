@@ -16,6 +16,18 @@ const relationSlice = createSlice({
   name: 'relations',
   initialState,
   reducers: {
+    saveFamilyHealthDataStart(state) {
+      state.loading = true;
+      state.error = null;
+    },
+    saveFamilyHealthDataSuccess(state, action: PayloadAction<any[]>) {
+      state.loading = false;
+      state.relationData = action.payload;
+    },
+    saveFamilyHealthDataFailure(state, action: PayloadAction<string>) {
+      state.loading = false;
+      state.error = action.payload;
+    },
     fetchRelationDataStart(state) {
       state.loading = true;
       state.error = null;
@@ -32,6 +44,9 @@ const relationSlice = createSlice({
 });
 
 export const {
+  saveFamilyHealthDataStart,
+  saveFamilyHealthDataSuccess,
+  saveFamilyHealthDataFailure,
   fetchRelationDataStart,
   fetchRelationDataSuccess,
   fetchRelationDataFailure,

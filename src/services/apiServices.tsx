@@ -51,6 +51,7 @@ export const get = async (url: string, params?: object) => {
 };
 
 export const post = async <T = any>(url: string, data: object): Promise<T> => {
+  console.log("url",url,"data",data)
   try {
     const token = await getAccessJwtToken();
 

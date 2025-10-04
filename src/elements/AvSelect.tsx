@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback, Platform, ScrollView } from 'react-native';
 import AvText from './AvText';
 import { COLORS } from '../constants/colors';
@@ -19,12 +19,14 @@ interface AvSelectProps {
   errorText?: string;
   label?: string;
   required?: boolean;
+  multiselect?: boolean;
 }
 
 export const AvSelect: React.FC<AvSelectProps> = ({
   items,
   selectedValue,
   onValueChange,
+  multiselect = false,
   placeholder = 'Select an option',
   style = {},
   error = false,
@@ -34,7 +36,15 @@ export const AvSelect: React.FC<AvSelectProps> = ({
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [selectedValues, setSelectedValues] = useState<any[]>([]);
   const buttonRef = useRef<View>(null);
+
+  // Initialize selected values based on props
+  useEffect(() => {
+    if (multiselect) {
+      setSelectedValues(Array.isArray(selectedValue) ? selectedValue : (selectedValue ? [selectedValue] : []));
+    }
+  }, [selectedValue, multiselect]);
 
   const handlePress = () => {
     if (buttonRef.current) {
@@ -50,12 +60,39 @@ export const AvSelect: React.FC<AvSelectProps> = ({
   };
 
   const handleSelect = (value: any) => {
-    onValueChange(value);
-    setModalVisible(false);
+    if (multiselect) {
+      const newSelectedValues = selectedValues.includes(value)
+        ? selectedValues.filter(v => v !== value)
+        : [...selectedValues, value];
+      setSelectedValues(newSelectedValues);
+      onValueChange(newSelectedValues);
+    } else {
+      onValueChange(value);
+      setModalVisible(false);
+    }
   };
 
-  const selectedItem = items.find(item => item.value === selectedValue);
-  const displayText = selectedItem ? selectedItem.label : placeholder;
+  const handleClose = () => {
+    if (multiselect) {
+      setModalVisible(false);
+    }
+  };
+
+  const getDisplayText = () => {
+    if (multiselect) {
+      if (selectedValues.length === 0) return placeholder;
+      if (selectedValues.length === 1) {
+        const item = items.find(i => i.value === selectedValues[0]);
+        return item ? item.label : placeholder;
+      }
+      return `${selectedValues.length} items selected`;
+    } else {
+      const selectedItem = items.find(item => item.value === selectedValue);
+      return selectedItem ? selectedItem.label : placeholder;
+    }
+  };
+
+  const displayText = getDisplayText();
 
   return (
     <View style={[styles.container, style]}>
@@ -81,7 +118,7 @@ export const AvSelect: React.FC<AvSelectProps> = ({
           type="body" 
           style={[
             styles.buttonText, 
-            ...(!selectedItem ? [styles.placeholderText] : [])
+            ...((multiselect ? selectedValues.length === 0 : !selectedValue) ? [styles.placeholderText] : [])
           ]}
         >
           {displayText}
@@ -99,9 +136,9 @@ export const AvSelect: React.FC<AvSelectProps> = ({
         visible={modalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={handleClose}
       >
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={handleClose}>
           <View style={styles.modalOverlay}>
             <View 
               style={[
@@ -120,26 +157,47 @@ export const AvSelect: React.FC<AvSelectProps> = ({
                 showsVerticalScrollIndicator={true}
                 nestedScrollEnabled={true}
               >
-                {items.map((item) => (
-                  <TouchableOpacity
-                    key={item.value}
-                    style={[
-                      styles.dropdownItem,
-                      selectedValue === item.value && styles.selectedItem,
-                    ]}
-                    onPress={() => handleSelect(item.value)}
-                  >
-                    <AvText
+                {items.map((item) => {
+                  const isSelected = multiselect 
+                    ? selectedValues.includes(item.value)
+                    : selectedValue === item.value;
+                  
+                  return (
+                    <TouchableOpacity
+                      key={item.value}
                       style={[
-                        styles.dropdownItemText,
-                        ...(selectedValue === item.value ? [styles.selectedItemText] : []),
+                        styles.dropdownItem,
+                        isSelected && styles.selectedItem,
                       ]}
+                      onPress={() => handleSelect(item.value)}
                     >
-                      {item.label}
-                    </AvText>
-                  </TouchableOpacity>
-                ))}
+                      {multiselect && (
+                        <View style={[
+                          styles.checkbox,
+                          isSelected && styles.checkboxSelected
+                        ]}>
+                          {isSelected && <View style={styles.checkboxInner} />}
+                        </View>
+                      )}
+                      <AvText
+                        style={[
+                          styles.dropdownItemText,
+                          isSelected && styles.selectedItemText,
+                        ]}
+                      >
+                        {item.label}
+                      </AvText>
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
+              {multiselect && (
+                <View style={styles.multiSelectFooter}>
+                  <TouchableOpacity onPress={handleClose} style={styles.doneButton}>
+                    <AvText style={styles.doneButtonText}>Done</AvText>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -214,15 +272,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.LIGHT_GREY,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   selectedItem: {
     backgroundColor: COLORS.PRIMARY_BACKGROND,
   },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: COLORS.GREY,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    borderColor: COLORS.PRIMARY,
+    backgroundColor: COLORS.PRIMARY,
+  },
+  checkboxInner: {
+    width: 10,
+    height: 10,
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 2,
+  },
+  multiSelectFooter: {
+    padding: normalize(12),
+    borderTopWidth: 1,
+    borderTopColor: COLORS.LIGHT_GREY,
+    alignItems: 'flex-end',
+  },
+  doneButton: {
+    paddingVertical: normalize(8),
+    paddingHorizontal: normalize(16),
+    borderRadius: 4,
+    backgroundColor: COLORS.PRIMARY,
+  },
+  doneButtonText: {
+    color: COLORS.WHITE,
+    fontWeight: '600',
+  },
   dropdownItemText: {
     color: COLORS.PRIMARY_TXT,
+    flex: 1,
   },
   selectedItemText: {
     color: COLORS.PRIMARY,
-    fontWeight: 'bold',
-  },
-});
+    fontWeight: '600',
+  }
+})

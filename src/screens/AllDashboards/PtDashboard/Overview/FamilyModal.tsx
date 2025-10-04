@@ -1,16 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { AvButton, AvModal, AvSelect, AvText, AvTextInput } from '../../../../elements';
 import { StyleSheet, View } from 'react-native';
+import { Snackbar } from 'react-native-paper';
 import { COLORS } from '../../../../constants/colors';
-import { fetchHealthConditionData, fetchRelationData } from '../../../../store/thunks/patientThunks';
+import { fetchHealthConditionData, fetchRelationData, saveFamilyHealthData } from '../../../../store/thunks/patientThunks';
 import { useAppSelector } from '../../../../store/hooks';
 
 
 const FamilyModal = ({ modalVisible, closeModal, dispatch, formData, handleInputChange, handleSave }: any) => {
+    const [snackbarVisible, setSnackbarVisible] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+
+    const onSnackbarDismiss = () => {
+        setSnackbarVisible(false);
+    };
     const hCData = useAppSelector((state) => state.healthConditionData.healthConditionData);
     const relData = useAppSelector((state) => state.relationData.relationData);
     const [healthConditionData, setHealthConditionData] = useState<Array<{ label: string, value: string }>>([]);
     const [relationData, setRelationData] = useState<Array<{ label: string, value: string }>>([]);
+    const patientId = useAppSelector((state) => state.user.userProfile.patientId);
     useEffect(() => {
         if (hCData && hCData.length > 0) {
             const formattedBloodGroups = hCData.map((item: any) => ({
@@ -52,8 +60,29 @@ const FamilyModal = ({ modalVisible, closeModal, dispatch, formData, handleInput
 
         }
     }
+    const payload = {
+        patientId: patientId?.toString(),
+        relationId: formData.familyRelation,
+        memberName: formData.familyName,
+        phoneNumber: formData.familyPhone,
+        healthConditionIds: formData.familyHealthConditions,
+    }
+
+    const saveFamilyHealth = async () => {
+        try {
+            await dispatch(saveFamilyHealthData(payload));
+            setSnackbarMessage('Family member added successfully!');
+            setSnackbarVisible(true);
+            closeModal();
+        } catch (error) {
+            console.log("Error Saving family health data", error);
+            setSnackbarMessage('Failed to add family member. Please try again.');
+            setSnackbarVisible(true);
+        }
+    }
     return (
-        <AvModal
+        <View style={{flex: 1}}>
+            <AvModal
             isModalVisible={modalVisible}
             setModalVisible={closeModal}
             title="Add Family Member"
@@ -92,6 +121,7 @@ const FamilyModal = ({ modalVisible, closeModal, dispatch, formData, handleInput
                 </View>
                 <View style={styles.inputRow}>
                     <AvSelect
+                        multiselect={true}
                         items={healthConditionData}
                         selectedValue={formData.familyHealthConditions}
                         onValueChange={(text) => handleInputChange("familyHealthConditions", text)}
@@ -103,7 +133,7 @@ const FamilyModal = ({ modalVisible, closeModal, dispatch, formData, handleInput
                     <AvButton
                         mode="contained"
                         style={styles.saveButton}
-                        onPress={() => handleSave("family")}
+                        onPress={() => saveFamilyHealth()}
                         buttonColor={COLORS.SUCCESS}
                     >
                         <AvText type="buttonText" style={{ color: COLORS.WHITE }}>
@@ -113,20 +143,50 @@ const FamilyModal = ({ modalVisible, closeModal, dispatch, formData, handleInput
                 </View>
             </View>
         </AvModal>
+        <Snackbar
+            visible={snackbarVisible}
+            onDismiss={onSnackbarDismiss}
+            duration={3000}
+            style={styles.snackbar}
+            action={{
+                label: 'OK',
+                onPress: onSnackbarDismiss,
+            }}>
+            {snackbarMessage}
+        </Snackbar>
+    </View>
     )
 }
 const styles = StyleSheet.create({
-    modalContent: { padding: 16 },
-    inputRow: { marginBottom: 12 },
+    modalContent: { 
+        padding: 16 
+    },
+    inputRow: { 
+        marginBottom: 12 
+    },
     input: {
         marginBottom: 4,
         backgroundColor: COLORS.WHITE,
         height: 50,
     },
-    radioContainer: { flexDirection: "row", alignItems: "center", marginRight: 16 },
-    modalButtons: { flexDirection: "row", justifyContent: "flex-end", marginTop: 16 },
-    saveButton: { borderRadius: 8 },
-
+    radioContainer: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        marginRight: 16 
+    },
+    modalButtons: { 
+        flexDirection: 'row', 
+        justifyContent: 'flex-end', 
+        marginTop: 16 
+    },
+    saveButton: { 
+        borderRadius: 8 
+    },
+    snackbar: {
+        backgroundColor: COLORS.SUCCESS,
+        margin: 16,
+        borderRadius: 8,
+    },
 });
 
 export default FamilyModal
