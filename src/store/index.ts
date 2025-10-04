@@ -7,6 +7,8 @@ import patientReducer from './slices/allPatientSlice';
 import patientDashboardReducer from './slices/patientDashboardSlice';
 import patientBloodGroupReducer from './slices/patientBloodGroupSlice';
 import patientPersonalDataReducer from './slices/patientPersonalDataSlice';
+import healthConditionReducer from './slices/healthConditionSlice';
+import relationReducer from './slices/relationSlice';
 export const store = configureStore({
   reducer: {
     user: userReducer,
@@ -16,6 +18,8 @@ export const store = configureStore({
     patientDashboardData: patientDashboardReducer,
     patientBloodGroupData: patientBloodGroupReducer,
     patientPersonalData: patientPersonalDataReducer,
+    healthConditionData: healthConditionReducer,
+    relationData: relationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

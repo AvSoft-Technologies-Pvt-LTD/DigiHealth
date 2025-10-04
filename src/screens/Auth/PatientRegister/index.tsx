@@ -37,10 +37,8 @@ const PatientRegister: React.FC<PatientRegisterProps> = () => {
       formDataToSend.append('email', formData.email);
       formDataToSend.append('password', formData.password);
       formDataToSend.append('confirmPassword', formData.confirmPassword);
-      // Format Aadhaar with hyphens after every 4 digits
-      const formattedAadhaar = formData.aadhaar.replace(/(\d{4})(?=\d)/g, '$1-');
-      formDataToSend.append('aadhaar', formattedAadhaar);
-      formDataToSend.append('genderId', formData.genderId); // Keep as string, let backend parse
+      formDataToSend.append('aadhaar', formData.aadhaar);
+      formDataToSend.append('genderId', formData.genderId);
       formDataToSend.append('dob', formData.dob);
       formDataToSend.append('occupation', formData.occupation);
       formDataToSend.append('pinCode', formData.pinCode);

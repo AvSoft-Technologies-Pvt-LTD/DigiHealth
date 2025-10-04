@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback, Platform } from 'react-native';
+import { View, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback, Platform, ScrollView } from 'react-native';
 import AvText from './AvText';
 import { COLORS } from '../constants/colors';
 import { isIos, normalize } from '../constants/platform';
@@ -115,25 +115,31 @@ export const AvSelect: React.FC<AvSelectProps> = ({
                 },
               ]}
             >
-              {items.map((item) => (
-                <TouchableOpacity
-                  key={item.value}
-                  style={[
-                    styles.dropdownItem,
-                    selectedValue === item.value && styles.selectedItem,
-                  ]}
-                  onPress={() => handleSelect(item.value)}
-                >
-                  <AvText
+              <ScrollView 
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={true}
+                nestedScrollEnabled={true}
+              >
+                {items.map((item) => (
+                  <TouchableOpacity
+                    key={item.value}
                     style={[
-                      styles.dropdownItemText,
-                      ...(selectedValue === item.value ? [styles.selectedItemText] : []),
+                      styles.dropdownItem,
+                      selectedValue === item.value && styles.selectedItem,
                     ]}
+                    onPress={() => handleSelect(item.value)}
                   >
-                    {item.label}
-                  </AvText>
-                </TouchableOpacity>
-              ))}
+                    <AvText
+                      style={[
+                        styles.dropdownItemText,
+                        ...(selectedValue === item.value ? [styles.selectedItemText] : []),
+                      ]}
+                    >
+                      {item.label}
+                    </AvText>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -160,7 +166,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: COLORS.GREY,
+    borderColor: COLORS.LIGHT_GREY,
     borderRadius: normalize(8),
     paddingVertical: normalize(12),
     paddingHorizontal: normalize(16),
@@ -189,11 +195,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
+  scrollView: {
+    maxHeight: 200, // Fixed height for the scrollable area
+  },
   dropdown: {
     backgroundColor: COLORS.WHITE,
     borderRadius: normalize(8),
     borderWidth: 1,
-    borderColor: COLORS.GREY,
+    borderColor: COLORS.LIGHT_GREY,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -204,7 +213,7 @@ const styles = StyleSheet.create({
     paddingVertical: normalize(12),
     paddingHorizontal: normalize(16),
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.GREY,
+    borderBottomColor: COLORS.LIGHT_GREY,
   },
   selectedItem: {
     backgroundColor: COLORS.PRIMARY_BACKGROND,

@@ -1,21 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { View, StyleSheet, TouchableOpacity, TextInput } from "react-native";
+import React, { useState } from "react";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
 import AvModal from "../../../../elements/AvModal";
 import AvTextInput from "../../../../elements/AvTextInput";
 import AvButton from "../../../../elements/AvButton";
 import AvText from "../../../../elements/AvText";
 import { COLORS } from "../../../../constants/colors";
-import { Switch } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
-import { RootState } from "../../../../store";
-import { AvSelect } from "../../../../elements";
-import { pickupLocationData } from "../../../../constants/data";
-import { fetchPatientPersonalDataStart } from "../../../../store/slices/patientPersonalDataSlice";
-import { fetchPatientBloodGroupDataStart } from "../../../../store/slices/patientBloodGroupSlice";
-import { fetchPatientBloodGroupData, fetchPatientPersonalHealthData } from "../../../../store/thunks/patientThunks";
+import { useAppDispatch } from "../../../../store/hooks";
+
 import PersonalHealthModal from "./PersonalHealthModal";
+import FamilyModal from "./FamilyModal";
 
 type ModalNames = "personalHealth" | "family" | "additionalDetails";
 
@@ -39,8 +34,6 @@ const PatientModals: React.FC<PatientModalsProps> = ({
   formData,
   handleInputChange,
   handleToggleChange,
-  personalHealthData,
-  setPersonalHealthData,
 }) => {
   const [showDatePicker, setShowDatePicker] = useState<{ [key: string]: boolean }>({});
 
@@ -62,73 +55,17 @@ const PatientModals: React.FC<PatientModalsProps> = ({
         formData={formData}
         handleInputChange={handleInputChange}
         handleToggleChange={handleToggleChange}
-        personalHealthData={personalHealthData}
-        setPersonalHealthData={setPersonalHealthData}
       />
 
       {/* Family Modal */}
-      <AvModal
-        isModalVisible={modalVisible.family}
-        setModalVisible={() => closeModal("family")}
-        title="Add Family Member"
-
-      >
-        <View style={styles.modalContent}>
-          <View style={styles.inputRow}>
-            <AvTextInput
-              label="Relation"
-              value={formData.relation}
-              onChangeText={(text) => handleInputChange("relation", text)}
-              style={styles.input}
-              mode="outlined"
-              theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
-            />
-          </View>
-          <View style={styles.inputRow}>
-            <AvTextInput
-              label="Name"
-              value={formData.familyName}
-              onChangeText={(text) => handleInputChange("familyName", text)}
-              style={styles.input}
-              mode="outlined"
-              theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
-            />
-          </View>
-          <View style={styles.inputRow}>
-            <AvTextInput
-              label="Phone Number"
-              value={formData.familyPhone}
-              onChangeText={(text) => handleInputChange("familyPhone", text)}
-              style={styles.input}
-              mode="outlined"
-              keyboardType="phone-pad"
-              theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
-            />
-          </View>
-          <View style={styles.inputRow}>
-            <AvTextInput
-              label="Health Conditions"
-              value={formData.familyHealthConditions}
-              onChangeText={(text) => handleInputChange("familyHealthConditions", text)}
-              style={styles.input}
-              mode="outlined"
-              theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
-            />
-          </View>
-          <View style={styles.modalButtons}>
-            <AvButton
-              mode="contained"
-              style={styles.saveButton}
-              onPress={() => handleSave("family")}
-              buttonColor={COLORS.SUCCESS}
-            >
-              <AvText type="buttonText" style={{ color: COLORS.WHITE }}>
-                Save
-              </AvText>
-            </AvButton>
-          </View>
-        </View>
-      </AvModal>
+      <FamilyModal
+        modalVisible={modalVisible.family}
+        closeModal={() => closeModal("family")}
+        dispatch={dispatch}
+        formData={formData}
+        handleInputChange={handleInputChange}
+        handleSave={handleSave}
+      />
 
       {/* Additional Details Modal */}
       <AvModal

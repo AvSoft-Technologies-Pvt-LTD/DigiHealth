@@ -21,4 +21,6 @@ export const API = {
   PATIENT_FAMILY_API: `${BASE_URL}auth/patient/family`,
   PATIENT_ADDITIONAL_DETAILS_API: `${BASE_URL}auth/patient/additional-details`,
   PATIENT_BLOOD_GROUP_API: `${BASE_URL}master/blood-group`,
+  PATIENT_HEALTH_CONDITION_API: `${BASE_URL}master/healthConditions`,
+  PATIENT_RELATION_API: `${BASE_URL}master/relation`,
 };
