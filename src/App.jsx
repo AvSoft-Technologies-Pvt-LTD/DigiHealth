@@ -15,6 +15,7 @@ import Login from "./form/Login";
 import RegisterSelect from "./form/RegisterSelect";
 import Registration from "./form/Registration";
 import Verification from "./form/Verification";
+import PasswordResetPage from "./form/PasswordResetPage";
 import Healthcard from "./components/Healthcard";
 import BookApp from "./components/BookApp";
 import Home from "./pages/Home";
@@ -194,6 +195,7 @@ const App = () => {
         <Route path="/register" element={<RegisterSelect />} />
         <Route path="/registration" element={<Registration />} />
         <Route path="/verification" element={<Verification />} />
+        <Route path="/password-reset" element={<PasswordResetPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/healthcard" element={<Healthcard />} />
         <Route path="/bookconsultation" element={<BookApp />} />

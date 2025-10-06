@@ -7,6 +7,7 @@ import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import DocsReader from "../../../../components/DocsReader";
 import CameraCapture from "./CameraCapture";
 import PreviewModal from "./PreviewModal";
+import ProfileCard from "../../../../components/microcomponents/ProfileCard";
 import {
   ArrowLeft,
   FileText,
@@ -1002,91 +1003,22 @@ const allTabs = [
             </p>
           </div>
         )}
-        
- <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-4 sm:p-6 mb-6 text-white">
-  {/* Mobile View (iPhone & small phones) - Hidden on tablet and desktop */}
-  <div className="flex flex-col items-center mb-2 md:hidden">
-    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-sm font-bold uppercase shadow-inner ring-2 ring-white">
-      {getInitials(displayPatientName)}
-    </div>
-    <h3 className="text-sm font-bold mt-1 truncate">{displayPatientName}</h3>
-  </div>
 
-  {/* Details Grid (Left-Aligned) - Mobile View */}
-  <div className="grid grid-cols-2 gap-x-1 gap-y-0.5 w-full ps-1 text-[10px] md:hidden">
-    <p className="text-left">
-      <span className="font-semibold">Age:</span> {calculatedAge}
-    </p>
-    <p className="text-left">
-      <span className="font-semibold">Gender:</span> {displayGender}
-    </p>
-    <p className="text-left">
-      <span className="font-semibold">Hospital:</span> {hospitalName}
-    </p>
-    <p className="text-left">
-      <span className="font-semibold">Visit Date:</span>
-      {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}
-    </p>
-    <p className="col-span-2 text-left break-words">
-      <span className="font-semibold">Diagnosis:</span> {displayDiagnosis}
-    </p>
-    <p className="col-span-2 text-left truncate">
-      <span className="font-semibold">K/C/O:</span> {selectedRecord["K/C/O"] ?? "--"}
-    </p>
-  </div>
-
-  {/* Tablet View (iPad) - Hidden on mobile and desktop */}
-  <div className="hidden md:grid lg:hidden grid-cols-1 gap-2">
-    <div className="flex items-center gap-3">
-      <div className="h-8 w-9 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-sm font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2">
-        {getInitials(displayPatientName)}
-      </div>
-      <h3 className="text-lg font-bold truncate">{displayPatientName}</h3>
-    </div>
-    <div className="grid grid-cols-2 gap-x-6 gap-y-2 ml-12 text-sm">
-      <p><span className="font-semibold">Age:</span> {calculatedAge}</p>
-      <p><span className="font-semibold">Gender:</span> {displayGender}</p>
-      <p><span className="font-semibold">Hospital:</span> {hospitalName}</p>
-      <p><span className="font-semibold">Visit Date:</span>
-        {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}
-      </p>
-      <p><span className="font-semibold">Diagnosis:</span> {displayDiagnosis}</p>
-      <p><span className="font-semibold">K/C/O:</span> {selectedRecord["K/C/O"] ?? "--"}</p>
-    </div>
-  </div>
-
-  {/* Desktop View - Hidden on mobile and tablet */}
-  <div className="hidden lg:flex flex-row sm:items-start gap-6">
-    <div className="flex-shrink-0 flex justify-start">
-      <div className="h-20 w-20 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-2xl font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2">
-        {getInitials(displayPatientName)}
-      </div>
-    </div>
-    <div className="flex-1">
-      <h3 className="text-2xl font-bold mb-3 truncate">{displayPatientName}</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6 text-base">
-        <div>
-          <p><span className="font-semibold">Age:</span> {calculatedAge}</p>
-          <p><span className="font-semibold">Gender:</span> {displayGender}</p>
-        </div>
-        <div>
-          <p><span className="font-semibold">Hospital:</span> {hospitalName}</p>
-          <p><span className="font-semibold">Visit Date:</span>
-            {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A"}
-          </p>
-        </div>
-        <div>
-          <p><span className="font-semibold">Diagnosis:</span> {displayDiagnosis}</p>
-          <p><span className="font-semibold">K/C/O:</span> {selectedRecord["K/C/O"] ?? "--"}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-
+  <ProfileCard
+  initials={getInitials(displayPatientName)}
+  name={displayPatientName}
+  fields={[
+    { label: "Age", value: calculatedAge },
+    { label: "Gender", value: displayGender },
+    { label: "Hospital", value: hospitalName },
+    {
+      label: "Visit Date",
+      value: selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A",
+    },
+    { label: "Diagnosis", value: displayDiagnosis },
+    { label: "K/C/O", value: selectedRecord["K/C/O"] ?? "--" },
+  ]}
+/>
        <div className="space-y-6">
   <div className="flex justify-between items-center">
     <div className="flex items-center gap-2">

@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import ReusableModal from "../../../../components/microcomponents/Modal";
+import ProfileCard from "../../../../components/microcomponents/ProfileCard";
 import {
   ArrowLeft,
   Search,
@@ -673,182 +674,20 @@ const DrMedicalRecords = () => {
         <span className="ms-2 font-medium">Back to Patient List</span>
       </button>
 
-      {/* Patient Header */}
-      {(selectedRecord || patientDataFromOPD) && (
-        <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-3 sm:p-6 mb-6 text-white">
-     
-     <div className="flex flex-col items-center gap-2 md:hidden w-full">
-
-  <div className="h-10 w-10 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-xs font-bold uppercase shadow-inner ring-2 ring-white ring-offset-1">
-    {getInitials(patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "")}
-  </div>
-
-
-  <h3 className="text-sm font-bold truncate text-center w-full ">
-    {patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "--"}
-  </h3>
-{/* <div className="w-full flex justify-center">
-  <div className="grid grid-cols-[120px_1fr] gap-y-2 gap-x-1 text-xs max-w-lg w-full py-2 rounded-lg shadow-sm">
-    
-    <p className="font-semibold text-left ml-10">Age:</p>
-    <p>{patientAgeFromOPD || selectedRecord?.age || "35 year"}</p>
-
-    <p className="font-semibold text-left  ml-10">Gender:</p>
-    <p className="break-words">{patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--"}</p>
-
-    <p className="font-semibold text-left  ml-10">Hospital:</p>
-    <p className="break-words  mr-4">{selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital"}</p>
-
-    <p className="font-semibold text-left  ml-10">Visit Date:</p>
-    <p>{getVisitDate(selectedRecord || patientDataFromOPD || "23/10/2025")}</p>
-
-    <p className="font-semibold text-left  ml-10">Diagnosis:</p>
-    <p className="break-words">{patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "Fever"}</p>
-
-    <p className="font-semibold text-left  ml-10">K/C/O:</p>
-    <p className="break-words me-4">{selectedRecord?.["K/C/O"] || "--"}</p>
-
-    {(selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") && (
-      <>
-        <p className="font-semibold text-left">Ward Type:</p>
-        <p>{selectedRecord?.wardType || patientDataFromOPD?.wardType || "--"}</p>
-      </>
-    )}
-  </div>
-</div> */}
-
-
-<div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs w-full ps-2">
-  <div className="col-span-2 grid grid-cols-2">
-    <p className="">
-      <span className="font-semibold">Age:</span> {patientAgeFromOPD || selectedRecord?.age || "35 year"}
-    </p>
-    <p className="break-words">
-      <span className="font-semibold">Gender:</span> {patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--"}
-    </p>
-  </div>
-  <div className="col-span-2 grid grid-cols-2">
-    <p className="break-words">
-      <span className="font-semibold">Hospital:</span> {selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital"}
-    </p>
-    <p className="break-words">
-      <span className="font-semibold">Visit Date:</span> {getVisitDate(selectedRecord || patientDataFromOPD || "23/10/2025")}
-    </p>
-  </div>
-  <div className="col-span-2 grid grid-cols-2">
-    <p className="break-words">
-      <span className="font-semibold">Diagnosis:</span> {patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "Fever"}
-    </p>
-    <p className="break-words">
-      <span className="font-semibold">K/C/O:</span> {selectedRecord?.["K/C/O"] || "--"}
-    </p>
-  </div>
-  {(selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") && (
-    <p className="col-span-2 truncate">
-      <span className="font-semibold">Ward Type:</span> {selectedRecord?.wardType || patientDataFromOPD?.wardType || "--"}
-    </p>
-  )}
-</div>
-
-  
-  {/* <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs w-full ps-2 ">
-    <div className="col-span-2 grid grid-cols-2 ">
-      <p className="">
-        <span className="font-semibold">Age:</span> {patientAgeFromOPD || selectedRecord?.age || "35 year"}
-      </p>
-      <p className="break-words">
-        <span className="font-semibold">Gender:</span> {patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--"}
-      </p>
-    </div>
-
- <div className="col-span-2 grid grid-cols-2 ">
-  <p className="break-words">
-    <span className="font-semibold">Hospital:</span> {selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital"}
-  </p>
-  <p className="break-words">
-    <span className="font-semibold">Visit Date:</span> {getVisitDate(selectedRecord || patientDataFromOPD || "23/10/2025")}
-  </p>
-</div>
-
-
-    <div className="col-span-2 grid grid-cols-2">
-      <p className="break-words">
-        <span className="font-semibold">Diagnosis:</span> {patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "Fever"}
-      </p>
-      <p className="break-words">
-        <span className="font-semibold">K/C/O:</span> {selectedRecord?.["K/C/O"] || "--"}
-      </p>
-    </div>
-
-    {(selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") && (
-      <p className="col-span-2 truncate">
-        <span className="font-semibold">Ward Type:</span> {selectedRecord?.wardType || patientDataFromOPD?.wardType || "--"}
-      </p>
-    )}
-  </div> */}
-  
-</div>
-
-
-
-          {/* Tablet View (iPad) */}
-          <div className="hidden md:grid lg:hidden grid-cols-1 gap-2">
-            {/* Avatar + Name */}
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-lg font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2">
-                {getInitials(patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "")}
-              </div>
-              <h3 className="text-lg font-bold truncate">
-                {patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "--"}
-              </h3>
-            </div>
-            {/* Details grid */}
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 ml-14 text-sm">
-              <p><span className="font-semibold">Age:</span> {patientAgeFromOPD || selectedRecord?.age || "36 year old"}</p>
-              <p><span className="font-semibold">Gender:</span> {patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--"}</p>
-              <p><span className="font-semibold">Hospital:</span> {selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital"}</p>
-              <p><span className="font-semibold">Visit Date:</span> {getVisitDate(selectedRecord || patientDataFromOPD)}</p>
-              {(selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") && (
-                <p><span className="font-semibold">Ward Type:</span> {selectedRecord?.wardType || patientDataFromOPD?.wardType || "--"}</p>
-              )}
-              <p><span className="font-semibold">Diagnosis:</span> {patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "--"}</p>
-              <p><span className="font-semibold">K/C/O:</span> {selectedRecord?.["K/C/O"] || "--"}</p>
-            </div>
-          </div>
-
-          {/* Desktop View */}
-          <div className="hidden lg:flex flex-row sm:items-start gap-6">
-            {/* Avatar */}
-            <div className="flex-shrink-0 flex justify-start">
-              <div className="h-20 w-20 flex items-center justify-center rounded-full bg-white text-[#01B07A] text-2xl font-bold uppercase shadow-inner ring-4 ring-white ring-offset-2">
-                {getInitials(patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "")}
-              </div>
-            </div>
-            {/* Name + Details */}
-            <div className="flex-1">
-              <h3 className="text-2xl font-bold mb-3 truncate">
-                {patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "--"}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6 text-base">
-                <div>
-                  <p><span className="font-semibold">Age:</span> {patientAgeFromOPD || selectedRecord?.age || "--"}</p>
-                  <p><span className="font-semibold">Gender:</span> {patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--"}</p>
-                </div>
-                <div>
-                  <p><span className="font-semibold">Hospital:</span> {selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital"}</p>
-                  <p><span className="font-semibold">Visit Date:</span> {getVisitDate(selectedRecord || patientDataFromOPD)}</p>
-                  {(selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") && (
-                    <p><span className="font-semibold">Ward Type:</span> {selectedRecord?.wardType || patientDataFromOPD?.wardType || "--"}</p>
-                  )}
-                </div>
-                <div>
-                  <p><span className="font-semibold">Diagnosis:</span> {patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "--"}</p>
-                  <p><span className="font-semibold">K/C/O:</span> {selectedRecord?.["K/C/O"] || "--"}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+       {(selectedRecord || patientDataFromOPD) && (
+        <ProfileCard
+          initials={getInitials(patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "")}
+          name={patientNameFromOPD || selectedRecord?.patientName || selectedRecord?.name || "--"}
+          fields={[
+            { label: "Age", value: patientAgeFromOPD || selectedRecord?.age || "35 year" },
+            { label: "Gender", value: patientGenderFromOPD || selectedRecord?.gender || selectedRecord?.sex || "--" },
+            { label: "Hospital", value: selectedRecord?.hospitalName || patientDataFromOPD?.hospitalName || "AV Hospital" },
+            { label: "Visit Date", value: getVisitDate(selectedRecord || patientDataFromOPD || "23/10/2025") },
+            { label: "Diagnosis", value: patientDiagnosisFromOPD || selectedRecord?.diagnosis || selectedRecord?.chiefComplaint || "Fever" },
+            { label: "K/C/O", value: selectedRecord?.["K/C/O"] || "--" },
+            ...((selectedRecord?.type === "IPD" || patientTypeFromOPD === "IPD") ? [{ label: "Ward Type", value: selectedRecord?.wardType || patientDataFromOPD?.wardType || "--" }] : []),
+          ]}
+        />
       )}
 
       {/* Medical Records Header */}
