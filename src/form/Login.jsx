@@ -7,8 +7,9 @@ import { loginUser, sendLoginOTP, verifyOTP, clearError } from "../context-api/a
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading, error, isOTPSent, isAuthenticated, user } = useSelector((state) => state.auth || {});
+  const { loading, error } = useSelector((state) => state.auth || {});
 
+  // ------------------ STATE ------------------
   const [loginMode, setLoginMode] = useState("password");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -17,16 +18,36 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // ------------------ LOCAL STORAGE LOAD ------------------
   useEffect(() => {
+    const savedIdentifier = localStorage.getItem("rememberedIdentifier");
+    const savedLoginMode = localStorage.getItem("rememberedLoginMode");
+    const savedRememberMe = localStorage.getItem("rememberMe") === "true";
+
+    if (savedRememberMe && savedIdentifier) {
+      setIdentifier(savedIdentifier);
+      setRememberMe(true);
+    }
+    if (savedLoginMode) {
+      setLoginMode(savedLoginMode);
+    }
     dispatch(clearError());
   }, [dispatch]);
 
+  // ------------------ LOCAL STORAGE SAVE ------------------
   useEffect(() => {
-    if (isAuthenticated && user) {
-      routeToDashboard(user.userType);
+    if (rememberMe && identifier) {
+      localStorage.setItem("rememberedIdentifier", identifier);
+      localStorage.setItem("rememberedLoginMode", loginMode);
+      localStorage.setItem("rememberMe", "true");
+    } else {
+      localStorage.removeItem("rememberedIdentifier");
+      localStorage.removeItem("rememberedLoginMode");
+      localStorage.removeItem("rememberMe");
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [rememberMe, identifier, loginMode]);
 
+  // ------------------ HELPERS ------------------
   const routeToDashboard = (userType) => {
     const dashboardRoutes = {
       superadmin: "/superadmindashboard",
@@ -40,6 +61,7 @@ const Login = () => {
     navigate(route, { replace: true });
   };
 
+  // ------------------ LOGIN HANDLERS ------------------
   const handleLogin = async (e) => {
     e.preventDefault();
     dispatch(clearError());
@@ -47,32 +69,17 @@ const Login = () => {
     try {
       if (loginMode === "password") {
         const resultAction = await dispatch(
-          loginUser({
-            identifier,
-            password,
-          })
+          loginUser({ identifier, password })
         );
-
         if (loginUser.fulfilled.match(resultAction)) {
-          const userType = resultAction.payload.userType;
-          setTimeout(() => {
-            routeToDashboard(userType);
-          }, 100);
+          routeToDashboard(resultAction.payload.userType);
         }
       } else {
         const resultAction = await dispatch(
-          verifyOTP({
-            identifier,
-            otp,
-            type: "login",
-          })
+          verifyOTP({ identifier, otp, type: "login" })
         );
-
         if (verifyOTP.fulfilled.match(resultAction)) {
-          const userType = resultAction.payload.userType;
-          setTimeout(() => {
-            routeToDashboard(userType);
-          }, 100);
+          routeToDashboard(resultAction.payload.userType);
         }
       }
     } catch (err) {
@@ -83,7 +90,6 @@ const Login = () => {
   const handleSendOtp = async () => {
     if (!identifier.trim()) return;
     dispatch(clearError());
-
     try {
       const resultAction = await dispatch(sendLoginOTP(identifier));
       if (sendLoginOTP.fulfilled.match(resultAction)) {
@@ -101,41 +107,44 @@ const Login = () => {
     dispatch(clearError());
   };
 
+  const handleForgotPassword = () => {
+    navigate("/password-reset");
+  };
+
+  // ------------------ UI ------------------
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
       <div className="flex flex-col md:flex-row items-center w-full max-w-4xl bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
+        
         {/* Form Section */}
         <div className="w-full md:w-1/2 mb-6 md:mb-0 md:pr-4">
-          <h2 className="h2-heading text-center mb-6">
-            Login to Your Account
-          </h2>
+          <h2 className="h2-heading text-center mb-6">Login to Your Account</h2>
 
           {/* Login Mode Toggle */}
-<div className="flex justify-center mb-6 p-1">
-  <button
-    type="button"
-    className={`px-4 py-2 md:px-6 font-semibold transition-all border-b-2 ${
-      loginMode === "password"
-        ? "border-[#01D48C] text-[#01D48C]"
-        : "border-transparent text-gray-600 hover:bg-gray-100"
-    }`}
-    onClick={() => handleModeChange("password")}
-  >
-    Password
-  </button>
-  <button
-    type="button"
-    className={`px-4 py-2 md:px-6 font-semibold transition-all border-b-2 ${
-      loginMode === "otp"
-        ? "border-[#01D48C] text-[#01D48C]"
-        : "border-transparent text-gray-600 hover:bg-gray-100"
-    }`}
-    onClick={() => handleModeChange("otp")}
-  >
-    OTP
-  </button>
-</div>
-
+          <div className="flex justify-center mb-6 p-1">
+            <button
+              type="button"
+              className={`px-4 py-2 md:px-6 font-semibold transition-all border-b-2 ${
+                loginMode === "password"
+                  ? "border-[#01D48C] text-[#01D48C]"
+                  : "border-transparent text-gray-600 hover:bg-gray-100"
+              }`}
+              onClick={() => handleModeChange("password")}
+            >
+              Password
+            </button>
+            <button
+              type="button"
+              className={`px-4 py-2 md:px-6 font-semibold transition-all border-b-2 ${
+                loginMode === "otp"
+                  ? "border-[#01D48C] text-[#01D48C]"
+                  : "border-transparent text-gray-600 hover:bg-gray-100"
+              }`}
+              onClick={() => handleModeChange("otp")}
+            >
+              OTP
+            </button>
+          </div>
 
           {/* Password Login */}
           {loginMode === "password" && (
@@ -150,7 +159,6 @@ const Login = () => {
                   required
                 />
               </div>
-
               <div className="relative w-full mb-6">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -168,26 +176,23 @@ const Login = () => {
                   {showPassword ? <FiEye /> : <FiEyeOff />}
                 </button>
               </div>
-
-              {error && (
-                <p className="error-text">{error}</p>
-              )}
-
+              {error && <p className="error-text">{error}</p>}
               <div className="flex items-center justify-between mb-6">
                 <label className="flex items-center space-x-2 text-sm text-gray-700">
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={() => setRememberMe(!rememberMe)}
-                  
                   />
                   <span>Remember me</span>
                 </label>
-                <span className="text-[var(--accent-color)] hover:underline cursor-pointer">
+                <span
+                  className="text-[var(--accent-color)] hover:underline cursor-pointer"
+                  onClick={handleForgotPassword}
+                >
                   Forgot Password?
                 </span>
               </div>
-
               <button
                 type="submit"
                 className={`btn btn-primary w-full ${loading ? "btn-disabled" : ""}`}
@@ -211,7 +216,6 @@ const Login = () => {
                   required
                 />
               </div>
-
               {!otpSent && (
                 <button
                   type="button"
@@ -222,7 +226,6 @@ const Login = () => {
                   {loading ? "Sending OTP..." : "Send OTP"}
                 </button>
               )}
-
               {otpSent && (
                 <form onSubmit={handleLogin}>
                   <div className="relative w-full mb-6">
@@ -236,11 +239,7 @@ const Login = () => {
                       required
                     />
                   </div>
-
-                  {error && (
-                    <p className="error-text">{error}</p>
-                  )}
-
+                  {error && <p className="error-text">{error}</p>}
                   <div className="flex items-center justify-between mb-6">
                     <label className="flex items-center space-x-2 text-sm text-gray-700">
                       <input
@@ -260,7 +259,6 @@ const Login = () => {
                       Resend OTP
                     </button>
                   </div>
-
                   <button
                     type="submit"
                     className={`btn btn-primary w-full ${loading || !otp ? "btn-disabled" : ""}`}

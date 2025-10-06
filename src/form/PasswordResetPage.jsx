@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ForgotPassword from '../components/microcomponents/ForgotPassword';
-import VerifyOTP from '../components/microcomponents/VerifyOTP';
+import VerifyOTP from '../components/microcomponents/VerifyOtp';
 import ResetPassword from '../components/microcomponents/ResetPassword';
 
 const PasswordResetPage = () => {

@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -13,10 +10,10 @@ import {
   Search,
   Plus,
   CheckCircle,
-  EyeOff,
   Heart,
   Activity,
   Thermometer,
+  Share2,
 } from "lucide-react";
 import {
   getHospitalDropdown,
@@ -121,6 +118,7 @@ const DrMedicalRecords = () => {
       }
     };
     fetchAllRecords();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchPatientDetailsForRecords = async (records) => {
@@ -255,6 +253,7 @@ const DrMedicalRecords = () => {
       }
     };
     fetchMasterData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
@@ -347,6 +346,57 @@ const DrMedicalRecords = () => {
     updateState({
       hiddenIds: state.hiddenIds.filter((hiddenId) => hiddenId !== id),
     });
+  };
+
+  // Share handler: tries Web Share API; falls back to clipboard copy
+  const handleShareRecord = async (record) => {
+    try {
+      const patientDetails = patientDetailsMap[record.id];
+      const patientName = patientDetails ? `${patientDetails.firstName || ""} ${patientDetails.lastName || ""}`.trim() : record.patientName || record.name || "";
+      const visitDate = record.dateOfVisit || record.dateOfAdmission || record.dateOfConsultation || patientVisitDateFromOPD || "Unknown date";
+      const summaryText = `Medical Record for ${patientName}\nType: ${record.type || "N/A"}\nHospital: ${resolveHospitalLabel(record.hospitalId ?? record.hospitalName) || "N/A"}\nChief Complaint / Diagnosis: ${record.chiefComplaint || record.diagnosis || "N/A"}\nVisit Date: ${visitDate}\n\nShared via AV Hospital Portal.`;
+      // Construct a shareable URL (adjust path to match your app's shareable route if needed)
+      const shareUrl = `${window.location.origin}/doctordashboard/medical-records/${record.id}`;
+      const shareData = {
+        title: `Medical Record — ${patientName}`,
+        text: summaryText,
+        url: shareUrl,
+      };
+
+      if (navigator.share) {
+        // Use native share dialog
+        await navigator.share(shareData);
+        // Optionally notify user
+        // (use your own toast instead of alert in production)
+        // alert("Share dialog opened.");
+        return;
+      }
+
+      // Fallback: copy to clipboard
+      const clipboardText = `${shareData.title}\n\n${shareData.text}\n\nLink: ${shareData.url}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(clipboardText);
+        // alert("Share data copied to clipboard. You can paste it anywhere to share.");
+      } else {
+        // last resort: prompt with the text for manual copy
+        // eslint-disable-next-line no-alert
+        window.prompt("Copy the share text below:", clipboardText);
+      }
+    } catch (err) {
+      console.error("Error while sharing record:", err);
+      alert("Unable to open share dialog. The share text has been copied to clipboard if available.");
+      try {
+        const patientDetails = patientDetailsMap[record.id];
+        const patientName = patientDetails ? `${patientDetails.firstName || ""} ${patientDetails.lastName || ""}`.trim() : record.patientName || record.name || "";
+        const visitDate = record.dateOfVisit || record.dateOfAdmission || record.dateOfConsultation || patientVisitDateFromOPD || "Unknown date";
+        const clipboardText = `Medical Record for ${patientName}\nType: ${record.type || "N/A"}\nHospital: ${resolveHospitalLabel(record.hospitalId ?? record.hospitalName) || "N/A"}\nChief Complaint / Diagnosis: ${record.chiefComplaint || record.diagnosis || "N/A"}\nVisit Date: ${visitDate}\n\nLink: ${window.location.origin}/doctordashboard/medical-records/${record.id}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(clipboardText);
+        }
+      } catch (e) {
+        // ignore fallback errors
+      }
+    }
   };
 
   const handleAddRecord = async (formData) => {
@@ -519,12 +569,12 @@ const DrMedicalRecords = () => {
         cell: (row) => (
           <div className="flex gap-2">
             <button
-              onClick={() => row.hiddenByPatient ? handleUnhideRecord(row.id) : handleHideRecord(row.id)}
-              className={`transition-colors ${row.hiddenByPatient ? "text-green-500 hover:text-green-700" : "text-gray-500 hover:text-red-500"}`}
-              title={row.hiddenByPatient ? "Unhide Record" : "Hide Record"}
+              onClick={() => handleShareRecord(row)}
+              className="transition-colors text-blue-600 hover:text-blue-800"
+              title="Share Record"
               type="button"
             >
-              <EyeOff size={16} />
+              <Share2 size={16} />
             </button>
           </div>
         ),
