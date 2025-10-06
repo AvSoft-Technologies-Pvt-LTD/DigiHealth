@@ -41,9 +41,9 @@ import QueueManagement from "./components/QueueManagaement";
 import QueueToken from "./components/Queue-Token";
 import Frontdesk from "./components/FrontendDesk";
 import TokenDisplay from "./components/Token-Display";
-import BedRoomList from "./pages/layouts/menu/DoctorDashboard/BedRoomList"
+import BedRoomList from "./pages/layouts/menu/DoctorDashboard/bed-manangement/BedRoomList"
 import ImageAnnotationCanvas from "./components/microcomponents/ImageAnnotationCanvas";
-import BedMaster from "./pages/layouts/menu/DoctorDashboard/BedMaster";
+import BedMaster from "./pages/layouts/menu/DoctorDashboard/bed-manangement/BedMaster";
 // Toast
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";

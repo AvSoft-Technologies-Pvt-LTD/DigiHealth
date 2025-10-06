@@ -4,10 +4,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Mail, Phone, Building, User, Calendar, Bed, FileText, Activity, ChevronLeft, Plus, Eye, Heart, Edit, Trash2, CheckCircle, Clock, BarChart3, X, Search } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
-import VitalsForm from "./VitalsForm";
+import VitalsForm from "./dr-form/VitalsForm";
 import ReusableModal from "../../../../components/microcomponents/Modal";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
-import VitalsChart from "./VitalsChart";
+import VitalsChart from "./dr-form/VitalsChart";
 import { FaEdit, FaTrash } from "react-icons/fa";
 const NursingAndTreatment = () => {
   const navigate = useNavigate();

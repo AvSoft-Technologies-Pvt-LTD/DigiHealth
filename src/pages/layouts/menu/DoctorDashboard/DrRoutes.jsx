@@ -5,7 +5,7 @@ import PatientList from "./PatientList";
 import Settings from "./Settings";
 import Payments from "./Payments";
 import Overview from "./Overview";
-import FormsPage from "./Form";
+import FormsPage from "./dr-form/Form";
 // import StaffManagement from "./AdminModule";
 import QuickLinksPanel from "./QuickLinksPanel";
 import NotificationPage from "../../../../components/NotificationPage"; // Adjust the import path as needed

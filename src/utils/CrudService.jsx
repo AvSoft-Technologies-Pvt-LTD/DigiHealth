@@ -53,3 +53,147 @@ export const deletePersonalHealth = (patientId) =>
 // Legacy functions for backward compatibility (if needed elsewhere)
 export const getPersonalHealthById = (id) => 
   axiosInstance.get(`/patient-dashboard/personal-health/${id}`);
+
+
+/* -----------------------------
+   WARD TYPES (CRUD)
+------------------------------ */
+export const getAllWardTypes = () =>
+  axiosInstance.get('/ward-types');
+
+export const getWardTypeById = (id) =>
+  axiosInstance.get(`/ward-types/${id}`);
+
+export const createWardType = (data) =>
+  axiosInstance.post('/ward-types', data);
+
+export const updateWardType = (id, data) =>
+  axiosInstance.put(`/ward-types/${id}`, data);
+
+export const deleteWardType = (id) =>
+  axiosInstance.delete(`/ward-types/${id}`);
+
+
+/* -----------------------------
+   ROOM AMENITIES (CRUD)
+------------------------------ */
+// Get all room amenities
+export const getAllRoomAmenities = () =>
+  axiosInstance.get('/room-amenities');
+
+// Get room amenity by id
+export const getRoomAmenityById = (id) =>
+  axiosInstance.get(`/room-amenities/${id}`);
+
+// Create a new room amenity
+export const createRoomAmenity = (data) =>
+  axiosInstance.post('/room-amenities', data);
+
+// Update room amenity by id
+export const updateRoomAmenity = (id, data) =>
+  axiosInstance.put(`/room-amenities/${id}`, data);
+
+// Delete room amenity by id
+export const deleteRoomAmenity = (id) =>
+  axiosInstance.delete(`/room-amenities/${id}`);
+
+/* -----------------------------
+   BED AMENITIES (CRUD)  <-- ADDED
+   Endpoint base: /bed-amenities
+------------------------------ */
+// Get all bed amenities
+export const getAllBedAmenities = () =>
+  axiosInstance.get('/bed-amenities');
+
+// Get bed amenity by id
+export const getBedAmenityById = (id) =>
+  axiosInstance.get(`/bed-amenities/${id}`);
+
+// Create a new bed amenity
+export const createBedAmenity = (data) =>
+  axiosInstance.post('/bed-amenities', data);
+
+// Update bed amenity by id
+export const updateBedAmenity = (id, data) =>
+  axiosInstance.put(`/bed-amenities/${id}`, data);
+
+// Delete bed amenity by id
+export const deleteBedAmenity = (id) =>
+  axiosInstance.delete(`/bed-amenities/${id}`);
+/* -----------------------------
+   BED STATUSES (CRUD)  <-- NEW
+   Endpoint base: /bed-statuses
+   Typical backend shape handled:
+   [{ id:1, key: "available", statusName: "Available", color: "#..."} , ... ]
+------------------------------ */
+export const getAllBedStatuses = () =>
+  axiosInstance.get('/bed-statuses');
+
+export const getBedStatusById = (id) =>
+  axiosInstance.get(`/bed-statuses/${id}`);
+
+export const createBedStatus = (data) =>
+  axiosInstance.post('/bed-statuses', data);
+
+export const updateBedStatus = (id, data) =>
+  axiosInstance.put(`/bed-statuses/${id}`, data);
+
+export const deleteBedStatus = (id) =>
+  axiosInstance.delete(`/bed-statuses/${id}`);
+/* -----------------------------
+   SPECIALIZATIONS -> WARDS (NEW)
+   Endpoint: GET /specializations/wards
+   Returns an array of specializations, each containing wards -> rooms -> beds (nested).
+------------------------------ */
+export const getSpecializationsWithWards = () =>
+  axiosInstance.get("/specializations/wards");
+/* -----------------------------
+SPECIALIZATIONS -> WARDS (NEW)
+Endpoint: GET /specializations/wards
+Returns an array of specializations, each containing wards -> rooms -> beds (nested).
+
+POST /api/specializations/wards - Create full ward hierarchy
+PUT /api/specializations/wards/specializations/{specializationId}/wards - Update ward hierarchy
+------------------------------ */
+
+
+// POST: Create ward hierarchy for a specialization
+// Expected payload shape:
+// {
+//   "specializationId": 0,
+//   "wards": [
+//     {
+//       "wardName": "string",
+//       "wardTypeId": 0,
+//       "rooms": [
+//         {
+//           "roomNumber": "string",
+//           "amenityIds": [0],
+//           "bedAmenityIds": [0],
+//           "beds": [
+//             {
+//               "bedNumber": "string",
+//               "bedStatusId": 0,
+//               "amenityIds": [0]
+//             }
+//           ]
+//         }
+//       ]
+//     }
+//   ]
+// }
+// send as an array because backend expects a List<SpecializationWardRequestDto>
+export const createSpecializationWards = (data) =>
+  axiosInstance.post(
+    '/specializations/wards',
+    Array.isArray(data) ? data : [data]
+  );
+
+
+// PUT: Update ward hierarchy for a specific specialization
+export const updateSpecializationWards = (specializationId, data) =>
+  axiosInstance.put(`/specializations/wards/specializations/${specializationId}/wards`, data);
+
+// DELETE: Delete a specific ward by wardId
+export const deleteWard = (wardId) =>
+  axiosInstance.delete(`/specializations/wards/wards/${wardId}`);
