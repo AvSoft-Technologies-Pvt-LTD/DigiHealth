@@ -7,6 +7,7 @@ import emailjs from "emailjs-com";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import { ArrowLeft, User, Stethoscope, ChevronDown, X, Printer, CheckCircle, FileText, Pill, TestTube, Mail, MessageCircle, Send, Phone, AtSign } from "lucide-react";
 import { useSelector } from "react-redux";
+import ProfileCard from "../../../../components/microcomponents/ProfileCard";
 
 const PrintContent = ({ requestData, selectedRecord, formData, user }) => (
   <div style={{ fontFamily: "Arial, sans-serif", maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
@@ -223,16 +224,18 @@ const MedicalRecordsDetailsPreview = ({ selectedRecord, onClose, user }) => {
               Close
             </button>
           </div>
-          <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-6 mb-6 text-white">
-            <h3 className="text-2xl font-bold mb-4">{user?.firstName || 'N/A'} {user?.lastName || ''}</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6 text-sm">
-              <div>Age: {selectedRecord.age}</div>
-              <div>Gender: {selectedRecord.sex}</div>
-              <div>Hospital: {selectedRecord.hospitalName}</div>
-              <div>Diagnosis: {selectedRecord.diagnosis}</div>
-              <div>K/C/O: {selectedRecord["K/C/O"] ?? "--"}</div>
-            </div>
-          </div>
+           <ProfileCard
+            initials={user?.firstName?.charAt(0) || "N"}
+            name={`${user?.firstName || "N/A"} ${user?.lastName || ""}`}
+            fields={[
+              { label: "Age", value: selectedRecord.age },
+              { label: "Gender", value: selectedRecord.sex },
+              { label: "Hospital", value: selectedRecord.hospitalName },
+              { label: "Diagnosis", value: selectedRecord.diagnosis },
+              { label: "Visit Date", value: selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation },
+              { label: "K/C/O", value: selectedRecord["K/C/O"] ?? "--" },
+            ]}
+          />
           <section className="mb-6">
             <h4 className="text-xl font-semibold text-gray-800 mb-4">Vitals Summary</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -702,25 +705,18 @@ const SecondOpinion = () => {
           <button onClick={() => setShowMedicalRecords(true)} className="mt-4 sm:mt-0 view-btn px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Preview Medical Records</button>
         </div>
       </div>
-      <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-4 sm:p-6 mb-8 text-white">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 flex items-center gap-2">
-          <User size={20} />
-          Patient Information (Auto-attached)
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <p><span className="font-semibold">Patient Name:</span> {user?.firstName || 'N/A'} {user?.lastName || ''}</p>
-            <p><span className="font-semibold">Age:</span> {selectedRecord.age}</p>
-            <p><span className="font-semibold">Gender:</span> {selectedRecord.sex}</p>
-            <p><span className="font-semibold">K/C/O:</span> {selectedRecord["K/C/O"] ?? "--"}</p>
-          </div>
-          <div className="space-y-2">
-            <p><span className="font-semibold">Hospital:</span> {selectedRecord.hospitalName}</p>
-            <p><span className="font-semibold">Visit Date:</span> {selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation}</p>
-            <p><span className="font-semibold">Diagnosis:</span> {selectedRecord.diagnosis}</p>
-          </div>
-        </div>
-      </div>
+       <ProfileCard
+            initials={user?.firstName?.charAt(0) || "N"}
+            name={`${user?.firstName || "N/A"} ${user?.lastName || ""}`}
+            fields={[
+              { label: "Age", value: selectedRecord.age },
+              { label: "Gender", value: selectedRecord.sex },
+              { label: "Hospital", value: selectedRecord.hospitalName },
+              { label: "Diagnosis", value: selectedRecord.diagnosis },
+              { label: "Visit Date", value: selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation },
+              { label: "K/C/O", value: selectedRecord["K/C/O"] ?? "--" },
+            ]}
+          />
       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
