@@ -73,81 +73,74 @@ const BedMaster = () => {
 
   // Map server payload (full ward object) into local shape
   const mapServerPayloadToLocal = (server) => {
-    const base = Date.now();
-    const defaultRoomAmenities = ["1", "3"];
-    const defaultBedAmenities = ["monitor", "sidetable"];
-    const safeRooms = Array.isArray(server.rooms) ? server.rooms : [];
-    const safeBeds = Array.isArray(server.beds) ? server.beds : [];
-    const roomKeyToId = {};
-    const roomsMapped = safeRooms.map((room, i) => {
-      const incomingKey = room.roomNumber ?? room.number ?? room.name ?? `roomIdx-${i}`;
-      const generatedId = `room-${base}-${i}`;
-      roomKeyToId[incomingKey] = generatedId;
-      return {
-        id: generatedId,
-        name: room.name ?? `${server.specializationName ?? server.department ?? "Dept"} - ${server.wardName ?? server.ward ?? "Ward"} - Room ${i + 1}`,
-        number: room.roomNumber ?? room.number ?? incomingKey,
-        wardId: null,
-        amenities: Array.isArray(room.amenities) && room.amenities.length > 0 ? room.amenities : room.roomAmenities ?? defaultRoomAmenities,
-        capacity: room.capacity ?? null,
-      };
-    });
-    const wardId = server?.wardId ?? server?.id ?? `ward-${base}-1`;
-    const departmentId = server?.specializationId ?? `dept-${base}-1`;
-    const roomsWithWard = roomsMapped.map((r) => ({ ...r, wardId }));
-    const bedsMapped = safeBeds.map((bed, idx) => {
-      const incomingRoomKey = bed.roomNumber ?? bed.room ?? bed.roomId ?? bed.roomName ?? null;
-      let mappedRoomId = null;
-      if (incomingRoomKey && roomKeyToId[incomingRoomKey]) {
-        mappedRoomId = roomKeyToId[incomingRoomKey];
-      } else {
-        if (bed.roomName) {
-          const found = roomsWithWard.find((r) => r.name === bed.roomName || r.number === bed.roomName);
-          if (found) mappedRoomId = found.id;
-        }
-        mappedRoomId = mappedRoomId || (roomsWithWard[0]?.id ?? `room-${base}-0`);
-      }
-      return {
-        id: `bed-${base}-${idx}`,
-        name: bed.name ?? `Bed ${idx + 1}`,
-        number: `${mappedRoomId}-${idx + 1}`,
-        roomId: mappedRoomId,
-        status: bed.status ?? (idx < (server.occupied ?? 0) ? "occupied" : "available"),
-        wardId,
-        amenities: Array.isArray(bed.amenities) && bed.amenities.length > 0 ? bed.amenities : bed.bedAmenities ?? defaultBedAmenities,
-      };
-    });
-    const department = { id: departmentId, name: server.specializationName ?? server.department ?? "Unknown Department", locked: true };
-    const ward = { id: wardId, name: server.wardName ?? server.ward ?? "Ward 1", type: (server.wardTypeId ?? server.type ?? "").toString().toLowerCase() || "general", departmentId: department.id };
-    const roomAmenitiesByWard = {};
-    roomsWithWard.forEach((r) => {
-      roomAmenitiesByWard[ward.id] = [...(roomAmenitiesByWard[ward.id] || []), ...(Array.isArray(r.amenities) ? r.amenities : [])];
-    });
-    Object.keys(roomAmenitiesByWard).forEach((k) => {
-      roomAmenitiesByWard[k] = Array.from(new Set(roomAmenitiesByWard[k]));
-    });
-    const bedAmenitiesByRoom = {};
-    bedsMapped.forEach((b) => {
-      bedAmenitiesByRoom[b.roomId] = [...(bedAmenitiesByRoom[b.roomId] || []), ...(Array.isArray(b.amenities) ? b.amenities : [])];
-    });
-    Object.keys(bedAmenitiesByRoom).forEach((k) => {
-      bedAmenitiesByRoom[k] = Array.from(new Set(bedAmenitiesByRoom[k]));
-    });
+  const base = Date.now();
+  const defaultRoomAmenities = ["1", "3"];
+  const defaultBedAmenities = ["monitor", "sidetable"];
+  const safeRooms = Array.isArray(server.rooms) ? server.rooms : [];
+  const safeBeds = Array.isArray(server.beds) ? server.beds : [];
+  const roomsMapped = safeRooms.map((room) => {
     return {
-      departments: [department],
-      wards: [ward],
-      rooms: roomsWithWard,
-      beds: bedsMapped,
-      selectedDepartment: department,
-      selectedWard: ward,
-      selectedRoom: roomsWithWard[0] ?? null,
-      activeDepartmentId: department.id,
-      activeWardId: ward.id,
-      activeRoomId: roomsWithWard[0]?.id ?? null,
-      roomAmenitiesByWard,
-      bedAmenitiesByRoom,
+      id: room.roomId || `room-${base}-${Math.random().toString(36).slice(2, 7)}`, // Use server ID if available
+      name: room.name || `${server.specializationName || server.department || "Dept"} - ${server.wardName || server.ward || "Ward"} - Room ${room.roomNumber || "1"}`,
+      number: room.roomNumber || room.number || room.name || "1",
+      wardId: null,
+      amenities: Array.isArray(room.amenities) && room.amenities.length > 0 ? room.amenities : room.roomAmenities || defaultRoomAmenities,
+      capacity: room.capacity || null,
     };
+  });
+  const wardId = server?.wardId || server?.id || `ward-${base}-1`;
+  const departmentId = server?.specializationId || `dept-${base}-1`;
+  const roomsWithWard = roomsMapped.map((r) => ({ ...r, wardId }));
+  const bedsMapped = safeBeds.map((bed) => {
+    const room = roomsWithWard.find((r) => r.id === bed.roomId || r.number === bed.roomNumber);
+    return {
+      id: bed.bedId || `bed-${base}-${Math.random().toString(36).slice(2, 7)}`, // Use server ID if available
+      name: bed.name || `Bed ${bed.bedNumber || "1"}`,
+      number: bed.bedNumber || bed.number || bed.name || "1",
+      roomId: bed.roomId || (room ? room.id : roomsWithWard[0]?.id || `room-${base}-0`),
+      status: bed.status || (bed.bedStatusId === 2 ? "occupied" : "available"),
+      bedStatusId: bed.bedStatusId || 1,
+      wardId,
+      amenities: Array.isArray(bed.amenities) && bed.amenities.length > 0 ? bed.amenities : bed.bedAmenities || defaultBedAmenities,
+    };
+  });
+  const department = { id: departmentId, name: server.specializationName || server.department || "Unknown Department", locked: true };
+  const ward = {
+    id: wardId,
+    name: server.wardName || server.ward || "Ward 1",
+    type: (server.wardTypeId || server.type || "").toString().toLowerCase() || "general",
+    departmentId: department.id,
+    wardTypeId: server.wardTypeId || 0,
   };
+  const roomAmenitiesByWard = {};
+  roomsWithWard.forEach((r) => {
+    roomAmenitiesByWard[ward.id] = [...(roomAmenitiesByWard[ward.id] || []), ...(Array.isArray(r.amenities) ? r.amenities : [])];
+  });
+  Object.keys(roomAmenitiesByWard).forEach((k) => {
+    roomAmenitiesByWard[k] = Array.from(new Set(roomAmenitiesByWard[k]));
+  });
+  const bedAmenitiesByRoom = {};
+  bedsMapped.forEach((b) => {
+    bedAmenitiesByRoom[b.roomId] = [...(bedAmenitiesByRoom[b.roomId] || []), ...(Array.isArray(b.amenities) ? b.amenities : [])];
+  });
+  Object.keys(bedAmenitiesByRoom).forEach((k) => {
+    bedAmenitiesByRoom[k] = Array.from(new Set(bedAmenitiesByRoom[k]));
+  });
+  return {
+    departments: [department],
+    wards: [ward],
+    rooms: roomsWithWard,
+    beds: bedsMapped,
+    selectedDepartment: department,
+    selectedWard: ward,
+    selectedRoom: roomsWithWard[0] || null,
+    activeDepartmentId: department.id,
+    activeWardId: ward.id,
+    activeRoomId: roomsWithWard[0]?.id || null,
+    roomAmenitiesByWard,
+    bedAmenitiesByRoom,
+  };
+};
 
   // If editData is present but partial, fetch full ward payload; then map to local
 useEffect(() => {
@@ -468,103 +461,100 @@ useEffect(() => {
   // ---------------------------
   // Save / Review - POST/PUT
   // ---------------------------
-  const handleSave = async () => {
-    try {
-      // Build payload for each department (specialization)
-      const specializationPayloads = (bedMasterData.departments || []).map((department) => {
-        const departmentWards = (bedMasterData.wards || []).filter(
-          (w) => String(w.departmentId) === String(department.id)
+const handleSave = async () => {
+  try {
+    const specializationPayloads = (bedMasterData.departments || []).map((department) => {
+      const departmentWards = (bedMasterData.wards || []).filter(
+        (w) => String(w.departmentId) === String(department.id)
+      );
+      const wardsPayload = departmentWards.map((ward) => {
+        const wardRooms = (bedMasterData.rooms || []).filter(
+          (r) => String(r.wardId) === String(ward.id)
         );
-        const wardsPayload = departmentWards.map((ward) => {
-          const wardRooms = (bedMasterData.rooms || []).filter(
-            (r) => String(r.wardId) === String(ward.id)
+        const roomsPayload = wardRooms.map((room) => {
+          const roomBeds = (bedMasterData.beds || []).filter(
+            (b) => String(b.roomId) === String(room.id)
           );
-          const roomsPayload = wardRooms.map((room) => {
-            const roomBeds = (bedMasterData.beds || []).filter(
-              (b) => String(b.roomId) === String(room.id)
-            );
-            const bedsPayload = roomBeds.map((bed) => ({
-              bedNumber: bed.bedNumber || bed.number || bed.name,
-              bedStatusId: bed.bedStatusId || (bed.status === "occupied" ? 2 : 1),
-              amenityIds: Array.isArray(bed.amenityIds)
-                ? bed.amenityIds.map(a => parseInt(a) || 0).filter(a => a > 0)
-                : (Array.isArray(bed.amenities) ? bed.amenities.map(a => parseInt(a) || 0).filter(a => a > 0) : []),
-            }));
-            return {
-              roomNumber: room.roomNumber || room.number || room.name,
-              amenityIds: Array.isArray(room.amenityIds)
-                ? room.amenityIds.map(a => parseInt(a) || 0).filter(a => a > 0)
-                : (Array.isArray(room.amenities) ? room.amenities.map(a => parseInt(a) || 0).filter(a => a > 0) : []),
-              bedAmenityIds: Array.isArray(bedMasterData.bedAmenitiesByRoom?.[room.id])
-                ? bedMasterData.bedAmenitiesByRoom[room.id].map(a => parseInt(a) || 0).filter(a => a > 0)
-                : [],
-              beds: bedsPayload,
-            };
-          });
+          const bedsPayload = roomBeds.map((bed) => ({
+            bedId: bed.id, // Send server ID
+            bedNumber: bed.bedNumber || bed.number || bed.name,
+            bedStatusId: bed.bedStatusId || (bed.status === "occupied" ? 2 : 1),
+            amenityIds: Array.isArray(bed.amenityIds)
+              ? bed.amenityIds.map(a => parseInt(a) || 0).filter(a => a > 0)
+              : (Array.isArray(bed.amenities) ? bed.amenities.map(a => parseInt(a) || 0).filter(a => a > 0) : []),
+          }));
           return {
-            wardName: ward.wardName || ward.name,
-            wardTypeId: parseInt(ward.wardTypeId || ward.typeId || ward.type) || 0,
-            rooms: roomsPayload,
+            roomId: room.id, // Send server ID
+            roomNumber: room.roomNumber || room.number || room.name,
+            amenityIds: Array.isArray(room.amenityIds)
+              ? room.amenityIds.map(a => parseInt(a) || 0).filter(a => a > 0)
+              : (Array.isArray(room.amenities) ? room.amenities.map(a => parseInt(a) || 0).filter(a => a > 0) : []),
+            bedAmenityIds: Array.isArray(bedMasterData.bedAmenitiesByRoom?.[room.id])
+              ? bedMasterData.bedAmenitiesByRoom[room.id].map(a => parseInt(a) || 0).filter(a => a > 0)
+              : [],
+            beds: bedsPayload,
           };
         });
         return {
-specializationId:
-  parseInt(department.specializationId || department.id || department.specialization?.id) || null,
-          wards: wardsPayload,
+          wardName: ward.wardName || ward.name,
+          wardTypeId: parseInt(ward.wardTypeId || ward.typeId || ward.type) || 0,
+          rooms: roomsPayload,
         };
       });
-      if (!specializationPayloads.length) {
-        toast.warning("Nothing to save. Add departments/wards/rooms/beds first.");
-        return;
-      }
-      // send one request per specialization
-     for (const payload of specializationPayloads) {
-  if (isEditMode) {
-    await updateSpecializationWards(payload.specializationId, payload);
-  } else {
-    await createSpecializationWards(payload);
-  }
-}
-
-      // store consolidated summary locally
-      const savedSummary = {
-        id: isEditMode && incomingEditData?.id ? incomingEditData.id : `master-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
-        departments: bedMasterData.departments || [],
-        wards: bedMasterData.wards || [],
-        rooms: bedMasterData.rooms || [],
-        beds: bedMasterData.beds || [],
-        roomAmenitiesByWard: bedMasterData.roomAmenitiesByWard || {},
-        bedAmenitiesByRoom: bedMasterData.bedAmenitiesByRoom || {},
-        totalBeds: (bedMasterData.beds || []).length,
-        occupied: (bedMasterData.beds || []).filter(b => b.status === "occupied").length,
-        available: (bedMasterData.beds || []).filter(b => b.status !== "occupied").length,
-        createdAt: incomingEditData?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      return {
+        specializationId: parseInt(department.specializationId || department.id || department.specialization?.id) || null,
+        wards: wardsPayload,
       };
-      const existingData = JSON.parse(localStorage.getItem("bedMasterData") || "[]");
-      let updatedData;
-      if (isEditMode && incomingEditData?.id) {
-        let replaced = false;
-        updatedData = existingData.map(item => {
-          if (item.id === savedSummary.id) {
-            replaced = true;
-            return savedSummary;
-          }
-          return item;
-        });
-        if (!replaced) updatedData.push(savedSummary);
-        toast.success("Bed management configuration updated successfully!");
-      } else {
-        updatedData = [...existingData, savedSummary];
-        toast.success("Bed management configuration saved successfully!");
-      }
-      localStorage.setItem("bedMasterData", JSON.stringify(updatedData));
-      navigate("/doctordashboard/bedroommanagement");
-    } catch (error) {
-      console.error("Error saving to backend:", error);
-      toast.error("Failed to save configuration. Please try again.");
+    });
+    if (!specializationPayloads.length) {
+      toast.warning("Nothing to save. Add departments/wards/rooms/beds first.");
+      return;
     }
-  };
+    for (const payload of specializationPayloads) {
+      if (isEditMode) {
+        await updateSpecializationWards(payload.specializationId, payload);
+      } else {
+        await createSpecializationWards(payload);
+      }
+    }
+    const savedSummary = {
+      id: isEditMode && incomingEditData?.id ? incomingEditData.id : `master-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+      departments: bedMasterData.departments || [],
+      wards: bedMasterData.wards || [],
+      rooms: bedMasterData.rooms || [],
+      beds: bedMasterData.beds || [],
+      roomAmenitiesByWard: bedMasterData.roomAmenitiesByWard || {},
+      bedAmenitiesByRoom: bedMasterData.bedAmenitiesByRoom || {},
+      totalBeds: (bedMasterData.beds || []).length,
+      occupied: (bedMasterData.beds || []).filter(b => b.status === "occupied").length,
+      available: (bedMasterData.beds || []).filter(b => b.status !== "occupied").length,
+      createdAt: incomingEditData?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const existingData = JSON.parse(localStorage.getItem("bedMasterData") || "[]");
+    let updatedData;
+    if (isEditMode && incomingEditData?.id) {
+      let replaced = false;
+      updatedData = existingData.map(item => {
+        if (item.id === savedSummary.id) {
+          replaced = true;
+          return savedSummary;
+        }
+        return item;
+      });
+      if (!replaced) updatedData.push(savedSummary);
+      toast.success("Bed management configuration updated successfully!");
+    } else {
+      updatedData = [...existingData, savedSummary];
+      toast.success("Bed management configuration saved successfully!");
+    }
+    localStorage.setItem("bedMasterData", JSON.stringify(updatedData));
+    navigate("/doctordashboard/bedroommanagement");
+  } catch (error) {
+    console.error("Error saving to backend:", error);
+    toast.error("Failed to save configuration. Please try again.");
+  }
+};
 
   // ---------------------------
   // Rendering helpers

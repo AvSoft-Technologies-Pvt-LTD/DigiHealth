@@ -4,13 +4,12 @@ import { FaPlus, FaEdit, FaTrash, FaExclamationTriangle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import DynamicTable from "../../../../../components/microcomponents/DynamicTable";
 import { toast } from "react-toastify";
-import { getSpecializationsWardsSummary, getWardById } from "../../../../../utils/CrudService"; // adjust path if required
+import { getSpecializationsWardsSummary, getWardById } from "../../../../../utils/CrudService";
 
 const statusColors = {
   Active: "text-green-600 bg-green-100",
   Inactive: "text-red-600 bg-red-100",
 };
-
 const wardColors = {
   ICU: "bg-red-50 text-red-700 border-red-200",
   ICCU: "bg-purple-50 text-purple-700 border-purple-200",
@@ -22,8 +21,6 @@ const wardColors = {
 
 const BedRoomList = () => {
   const navigate = useNavigate();
-
-  // Initialize from localStorage (fallback)
   const [bedData, setBedData] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("bedMasterData")) || [];
@@ -31,7 +28,6 @@ const BedRoomList = () => {
       return [];
     }
   });
-
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteReason, setDeleteReason] = useState("");
@@ -39,7 +35,6 @@ const BedRoomList = () => {
   const [loading, setLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
 
-  // Persist state changes to localStorage (primary source)
   useEffect(() => {
     try {
       localStorage.setItem("bedMasterData", JSON.stringify(bedData));
@@ -48,25 +43,19 @@ const BedRoomList = () => {
     }
   }, [bedData]);
 
-  // Normalizer: map server response into table row shape
   const normalizeServerItem = (item, idx) => {
     const specialization = item.specializationName ?? item.specialization ?? item.department ?? "Unknown";
     const wardName = item.wardName ?? item.ward ?? item.name ?? "Unknown";
     const total = Number(item.totalBeds ?? item.total ?? 0);
-
     const availableFromGroups =
       item?.bedStatusGroups && typeof item.bedStatusGroups === "object"
         ? Number(item.bedStatusGroups.Available ?? item.bedStatusGroups.available ?? 0)
         : undefined;
-
     const available = typeof availableFromGroups === "number" && !Number.isNaN(availableFromGroups)
       ? availableFromGroups
       : Number(item.available ?? Math.max(0, total - Number(item.occupied ?? 0)));
-
     const occupied = Number(item.occupied ?? (total - available));
-
     const id = item.id ?? item.wardId ?? `${specialization.replace(/\s+/g, "_")}-${wardName.replace(/\s+/g, "_")}-${idx}`;
-
     return {
       id,
       department: specialization,
@@ -80,18 +69,14 @@ const BedRoomList = () => {
     };
   };
 
-  // Fetch live summary from server on mount
   useEffect(() => {
     let mounted = true;
-
     const fetchSummary = async () => {
       setLoading(true);
       try {
         const res = await getSpecializationsWardsSummary();
         const serverData = Array.isArray(res?.data) ? res.data : [];
-
         const normalized = serverData.map((it, i) => normalizeServerItem(it, i));
-
         if (mounted) {
           setBedData(normalized);
           try {
@@ -108,22 +93,18 @@ const BedRoomList = () => {
         if (mounted) setLoading(false);
       }
     };
-
     fetchSummary();
-
     return () => {
       mounted = false;
     };
   }, []);
 
-  // keyboard handler for delete modal
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && closeDeleteModal();
     if (deleteModalOpen) window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [deleteModalOpen]);
 
-  // Listen for storage changes (cross-tab) and custom event (same-tab)
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (!e) return;
@@ -136,7 +117,6 @@ const BedRoomList = () => {
         }
       }
     };
-
     const onCustomUpdate = (ev) => {
       try {
         const payload = ev?.detail ?? JSON.parse(localStorage.getItem("bedMasterData") || "[]");
@@ -145,10 +125,8 @@ const BedRoomList = () => {
         console.error("Failed to apply bedMasterUpdated payload", err);
       }
     };
-
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("bedMasterUpdated", onCustomUpdate);
-
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("bedMasterUpdated", onCustomUpdate);
@@ -195,8 +173,6 @@ const BedRoomList = () => {
       } catch (err) {
         console.error(err);
       }
-
-      // best-effort StorageEvent for cross-tab
       try {
         window.dispatchEvent(
           new StorageEvent("storage", {
@@ -205,12 +181,8 @@ const BedRoomList = () => {
             url: window.location.href,
           })
         );
-      } catch (err) {
-        // Some browsers restrict constructing StorageEvent — ignore
-      }
-      // notify same-tab listeners reliably
+      } catch (err) {}
       window.dispatchEvent(new CustomEvent("bedMasterUpdated", { detail: newData }));
-
       return newData;
     });
   };
@@ -244,30 +216,21 @@ const BedRoomList = () => {
     setIsConfirming(true);
   };
 
-  // EDIT: fetch authoritative ward payload then navigate to BedMaster
   const handleEdit = async (row) => {
-    // attempt to find candidate id
-    const candidateId =
-      row?.raw?.wardId ?? row?.raw?.id ?? row?.wardId ?? row?.id ?? null;
-
+    const candidateId = row?.raw?.wardId ?? row?.raw?.id ?? row?.wardId ?? row?.id ?? null;
     if (!candidateId) {
-      // no id available — navigate with the row as-is
       navigate("/doctordashboard/bedroommanagement/bedmaster", { state: { editData: row } });
       return;
     }
-
     try {
       setEditLoading(true);
       toast.info("Loading ward details...");
       const res = await getWardById(candidateId);
       const wardPayload = res?.data ?? null;
-
       if (!wardPayload) {
         toast.error("Ward details not found.");
         return;
       }
-
-      // pass full server payload to BedMaster
       navigate("/doctordashboard/bedroommanagement/bedmaster", { state: { editData: wardPayload } });
     } catch (err) {
       console.error("Failed to load ward details for edit:", err);
@@ -278,9 +241,7 @@ const BedRoomList = () => {
   };
 
   const handleCreateMaster = () => navigate("/doctordashboard/bedroommanagement/bedmaster");
-
   const handleView = (row) => toast.info(`Viewing details for ${row.department} - ${row.ward}`);
-
   const handleViewPatients = (ward, department) => {
     const patients = checkIPDPatients(ward, department);
     if (!patients.length) return toast.info("No admitted patients found.");
@@ -297,7 +258,7 @@ const BedRoomList = () => {
 
   const tabActions = [
     {
-      label: "Create",
+      label: "Create Master",
       icon: <FaPlus className="text-sm" />,
       onClick: handleCreateMaster,
       className: "bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color)] text-white",
@@ -366,23 +327,26 @@ const BedRoomList = () => {
   ];
 
   const filters = [
-    { key: "department", label: "Department", options: ["Cardiology", "Orthopedics", "Pediatrics", "Neurology", "Emergency"].map((dept) => ({ value: dept, label: dept })) },
-    { key: "ward", label: "Ward Type", options: ["ICU", "ICCU", "General Ward", "Private Room", "Emergency", "Maternity"].map((ward) => ({ value: ward, label: ward })) },
-    { key: "status", label: "Status", options: ["Active", "Inactive"].map((status) => ({ value: status, label: status })) },
+    {
+      key: "department",
+      title: "Department",
+      options: ["Cardiology", "Orthopedics", "Pediatrics", "Neurology", "Emergency"].map((dept) => ({ value: dept, label: dept })),
+    },
+    {
+      key: "ward",
+      title: "Ward Type",
+      options: ["ICU", "ICCU", "General Ward", "Private Room", "Emergency", "Maternity"].map((ward) => ({ value: ward, label: ward })),
+    },
+    {
+      key: "status",
+      title: "Status",
+      options: ["Active", "Inactive"].map((status) => ({ value: status, label: status })),
+    },
   ];
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Bed Management</h1>
-        <div className="hidden xl:flex">
-          <button onClick={handleCreateMaster} className="btn btn-primary flex items-center gap-2">
-            <FaPlus className="text-sm" /> Create Master
-          </button>
-        </div>
-      </div>
-
-      {/* Simple loading indicator */}
+     
       {loading && (
         <div className="mb-4 p-3 rounded-md bg-gray-50 border border-gray-100 text-sm text-gray-700 flex items-center gap-2">
           <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
@@ -392,7 +356,6 @@ const BedRoomList = () => {
           Loading ward summary...
         </div>
       )}
-
       <DynamicTable
         columns={columns}
         data={bedData}
@@ -401,30 +364,8 @@ const BedRoomList = () => {
         showPagination
         onCellClick={handleCellClick}
         rowClassName={rowClassName}
+        tabActions={tabActions}
       />
-
-      {tabActions.length > 0 && (
-        <div className="xl:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm">
-          <div className="flex gap-3 w-full mx-auto">
-            {tabActions.map((action, index) => (
-              <button
-                key={action.label}
-                onClick={action.onClick}
-                className={`flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 transform active:scale-95 shadow-md flex justify-center items-center ${
-                  index === 0
-                    ? "bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color)] text-white hover:from-[var(--primary-color)] hover:to-[var(--primary-color)] shadow-lg hover:shadow-xl border-2 border-[var(--primary-color)]"
-                    : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300 hover:border-gray-400"
-                } ${action.className || ""}`}
-              >
-                {action.icon && <span className="mr-2">{action.icon}</span>}
-                {action.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Delete modal */}
       {deleteModalOpen && deleteTarget && (
         <div role="dialog" aria-modal="true" aria-labelledby="delete-modal-title" aria-describedby="delete-modal-desc" className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={closeDeleteModal} />
