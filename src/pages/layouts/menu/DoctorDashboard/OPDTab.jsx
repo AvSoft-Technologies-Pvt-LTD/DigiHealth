@@ -1,7 +1,4 @@
-
-
-
-
+// OPDTab.jsx
 import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -232,435 +229,472 @@ const PatientViewModal = ({ isOpen, onClose, patient, personalHealthDetails, fam
   );
 };
 
-const OpdTab = forwardRef(({ doctorName, masterData, location, setTabActions }, ref) => {
-  const navigate = useNavigate();
-  const [patients, setPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [newPatientId, setNewPatientId] = useState(null);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [modals, setModals] = useState({ addPatient: false, appointment: false, viewPatient: false, editPatient: false });
-  const [formData, setFormData] = useState({ cityOptions: [] });
-  const [appointmentFormData, setAppointmentFormData] = useState({ date: getCurrentDate(), time: getCurrentTime() });
-  const [personalHealthDetails, setPersonalHealthDetails] = useState(null);
-  const [familyHistory, setFamilyHistory] = useState([]);
-  const [vitalSigns, setVitalSigns] = useState(null);
-  const [detailsLoading, setDetailsLoading] = useState(false);
-
-  useImperativeHandle(ref, () => ({
-    openAddPatientModal: () => {
-      openModal("addPatient");
+const OpdTab = forwardRef(
+  (
+    {
+      doctorName,
+      masterData,
+      location,
+      setTabActions,
+      tabActions = [],
+      tabs = [],
+      activeTab,
+      onTabChange,
     },
-  }));
+    ref
+  ) => {
+    const navigate = useNavigate();
+    const [patients, setPatients] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [newPatientId, setNewPatientId] = useState(null);
+    const [selectedPatient, setSelectedPatient] = useState(null);
+    const [modals, setModals] = useState({ addPatient: false, appointment: false, viewPatient: false, editPatient: false });
+    const [formData, setFormData] = useState({ cityOptions: [] });
+    const [appointmentFormData, setAppointmentFormData] = useState({ date: getCurrentDate(), time: getCurrentTime() });
+    const [personalHealthDetails, setPersonalHealthDetails] = useState(null);
+    const [familyHistory, setFamilyHistory] = useState([]);
+    const [vitalSigns, setVitalSigns] = useState(null);
+    const [detailsLoading, setDetailsLoading] = useState(false);
 
-  const hasRecording = useCallback((patientEmail, hospitalName) => {
-    const videoKeys = Object.keys(localStorage).filter((key) => key.startsWith("consultationVideo_"));
-    return videoKeys.some((key) => {
-      const metadataStr = localStorage.getItem(`${key}_metadata`);
-      if (!metadataStr) return false;
-      try {
-        const metadata = JSON.parse(metadataStr);
-        return metadata.patientEmail === patientEmail && metadata.hospitalName === hospitalName;
-      } catch { return false; }
-    });
-  }, []);
+    useImperativeHandle(ref, () => ({
+      openAddPatientModal: () => {
+        openModal("addPatient");
+      },
+      openScheduleConsultationModal: () => {
+        openModal("appointment");
+      },
+    }));
 
-  const fetchAllPatients = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(API.FORM);
-      const allPatients = await res.json();
-      const processedPatients = allPatients.map((p) => ({
-        ...p,
-        name: p.name || [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
-        fullName: [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
-      })).reverse();
-      setPatients(processedPatients.filter((p) => (!p.type || p.type.toLowerCase() === "opd") && p.doctorName === doctorName)
-        .map((p, i) => ({
-          ...p,
-          sequentialId: i + 1,
-          datetime: p.appointmentDate && p.appointmentTime ? `${p.appointmentDate} ${p.appointmentTime}` : "Not scheduled",
-          temporaryAddress: p.temporaryAddress || p.addressTemp || p.address || "",
-          address: p.address || p.temporaryAddress || p.addressTemp || "",
-          addressTemp: p.addressTemp || p.temporaryAddress || p.address || "",
-          diagnosis: p.diagnosis || "Not specified",
-          reason: p.reason || "General consultation",
-        })));
-    } catch (error) {
-      console.error("Error fetching patients:", error);
-      toast.error("Failed to fetch patients");
-    } finally { setLoading(false); }
-  };
-
-  const fetchPatientDetails = async (patientId) => {
-    if (!patientId) return;
-    setDetailsLoading(true);
-    try {
-      const [personalRes, familyRes, vitalRes] = await Promise.all([
-        getPersonalHealthByPatientId(patientId).catch(() => ({ data: null })),
-        getFamilyMembersByPatient(patientId).catch(() => ({ data: [] })),
-        fetch(API.VITAL_SIGNS).then((res) => res.json()).catch(() => []),
-      ]);
-      setPersonalHealthDetails(personalRes.data || null);
-      setFamilyHistory(Array.isArray(familyRes.data) ? familyRes.data : []);
-      const patientEmail = selectedPatient?.email?.toLowerCase().trim();
-      setVitalSigns(Array.isArray(vitalRes) ? vitalRes.find((v) => v.email?.toLowerCase().trim() === patientEmail) || null : null);
-      toast.success("Patient details loaded successfully!");
-    } catch (error) {
-      console.error("Error fetching patient details:", error);
-      toast.error("Failed to fetch some patient details");
-      setPersonalHealthDetails(null);
-      setFamilyHistory([]);
-      setVitalSigns(null);
-    } finally { setDetailsLoading(false); }
-  };
-
-  const openModal = (modalName) => {
-    setModals((prev) => ({ ...prev, [modalName]: true }));
-    if (modalName === "addPatient") {
-      setFormData({
-        cityOptions: [],
+    const hasRecording = useCallback((patientEmail, hospitalName) => {
+      const videoKeys = Object.keys(localStorage).filter((key) => key.startsWith("consultationVideo_"));
+      return videoKeys.some((key) => {
+        const metadataStr = localStorage.getItem(`${key}_metadata`);
+        if (!metadataStr) return false;
+        try {
+          const metadata = JSON.parse(metadataStr);
+          return metadata.patientEmail === patientEmail && metadata.hospitalName === hospitalName;
+        } catch { return false; }
       });
-    }
-  };
+    }, []);
 
-  const closeModal = (modalName) => {
-    setModals((prev) => ({ ...prev, [modalName]: false }));
-    if (modalName === "addPatient") setFormData({ cityOptions: [] });
-    if (modalName === "appointment") setAppointmentFormData({ date: getCurrentDate(), time: getCurrentTime() });
-    if (modalName === "viewPatient" || modalName === "editPatient") {
-      setSelectedPatient(null);
-      setPersonalHealthDetails(null);
-      setFamilyHistory([]);
-      setVitalSigns(null);
-      setDetailsLoading(false);
-    }
-  };
+    const fetchAllPatients = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(API.FORM);
+        const allPatients = await res.json();
+        const processedPatients = allPatients
+          .map((p) => ({
+            ...p,
+            name: p.name || [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
+            fullName: [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
+          }))
+          .reverse();
+        setPatients(
+          processedPatients
+            .filter((p) => (!p.type || p.type.toLowerCase() === "opd") && p.doctorName === doctorName)
+            .map((p, i) => ({
+              ...p,
+              sequentialId: i + 1,
+              datetime: p.appointmentDate && p.appointmentTime ? `${p.appointmentDate} ${p.appointmentTime}` : "Not scheduled",
+              temporaryAddress: p.temporaryAddress || p.addressTemp || p.address || "",
+              address: p.address || p.temporaryAddress || p.addressTemp || "",
+              addressTemp: p.addressTemp || p.temporaryAddress || p.address || "",
+              diagnosis: p.diagnosis || "Not specified",
+              reason: p.reason || "General consultation",
+            }))
+        );
+      } catch (error) {
+        console.error("Error fetching patients:", error);
+        toast.error("Failed to fetch patients");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchAddressFromPincode = async (pincode) => {
-    try {
-      const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
-      const data = await response.json();
-      if (data[0].Status === "Success") {
-        const postOffices = data[0].PostOffice;
-        const cities = [...new Set(postOffices.map((office) => office.Name))];
-        const cityOptions = cities.map((city) => ({ value: city, label: city }));
-        const firstPostOffice = postOffices[0];
-        return {
-          city: firstPostOffice.Name,
-          state: firstPostOffice.State,
-          district: firstPostOffice.District,
-          cityOptions,
-        };
-      } else {
-        toast.error("Invalid PIN code");
+    const fetchPatientDetails = async (patientId) => {
+      if (!patientId) return;
+      setDetailsLoading(true);
+      try {
+        const [personalRes, familyRes, vitalRes] = await Promise.all([
+          getPersonalHealthByPatientId(patientId).catch(() => ({ data: null })),
+          getFamilyMembersByPatient(patientId).catch(() => ({ data: [] })),
+          fetch(API.VITAL_SIGNS).then((res) => res.json()).catch(() => []),
+        ]);
+        setPersonalHealthDetails(personalRes.data || null);
+        setFamilyHistory(Array.isArray(familyRes.data) ? familyRes.data : []);
+        const patientEmail = selectedPatient?.email?.toLowerCase().trim();
+        setVitalSigns(Array.isArray(vitalRes) ? vitalRes.find((v) => v.email?.toLowerCase().trim() === patientEmail) || null : null);
+        toast.success("Patient details loaded successfully!");
+      } catch (error) {
+        console.error("Error fetching patient details:", error);
+        toast.error("Failed to fetch some patient details");
+        setPersonalHealthDetails(null);
+        setFamilyHistory([]);
+        setVitalSigns(null);
+      } finally {
+        setDetailsLoading(false);
+      }
+    };
+
+    const openModal = (modalName) => {
+      setModals((prev) => ({ ...prev, [modalName]: true }));
+      if (modalName === "addPatient") {
+        setFormData({
+          cityOptions: [],
+        });
+      }
+    };
+
+    const closeModal = (modalName) => {
+      setModals((prev) => ({ ...prev, [modalName]: false }));
+      if (modalName === "addPatient") setFormData({ cityOptions: [] });
+      if (modalName === "appointment") setAppointmentFormData({ date: getCurrentDate(), time: getCurrentTime() });
+      if (modalName === "viewPatient" || modalName === "editPatient") {
+        setSelectedPatient(null);
+        setPersonalHealthDetails(null);
+        setFamilyHistory([]);
+        setVitalSigns(null);
+        setDetailsLoading(false);
+      }
+    };
+
+    const fetchAddressFromPincode = async (pincode) => {
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+        const data = await response.json();
+        if (data[0].Status === "Success") {
+          const postOffices = data[0].PostOffice;
+          const cities = [...new Set(postOffices.map((office) => office.Name))];
+          const cityOptions = cities.map((city) => ({ value: city, label: city }));
+          const firstPostOffice = postOffices[0];
+          return {
+            city: firstPostOffice.Name,
+            state: firstPostOffice.State,
+            district: firstPostOffice.District,
+            cityOptions,
+          };
+        } else {
+          toast.error("Invalid PIN code");
+          return { city: "", state: "", district: "", cityOptions: [] };
+        }
+      } catch (error) {
+        console.error("Error fetching address:", error);
+        toast.error("Failed to fetch address details");
         return { city: "", state: "", district: "", cityOptions: [] };
       }
-    } catch (error) {
-      console.error("Error fetching address:", error);
-      toast.error("Failed to fetch address details");
-      return { city: "", state: "", district: "", cityOptions: [] };
-    }
-  };
+    };
 
-  const handleFormChange = async (data) => {
-    if (data.sameAsPermAddress && data.addressPerm) {
-      data.addressTemp = data.addressPerm;
-    }
-    if (data.pincode && data.pincode.length === 6) {
-      const address = await fetchAddressFromPincode(data.pincode);
-      data = {
-        ...data,
-        city: address.city,
-        state: address.state,
-        district: address.district,
-        cityOptions: address.cityOptions,
-      };
-    } else if (!data.pincode || data.pincode.length !== 6) {
-      data = {
-        ...data,
-        city: "",
-        state: "",
-        district: "",
-        cityOptions: [],
-      };
-    }
-    setFormData(data);
-  };
+    const handleFormChange = async (data) => {
+      if (data.sameAsPermAddress && data.addressPerm) {
+        data.addressTemp = data.addressPerm;
+      }
+      if (data.pincode && data.pincode.length === 6) {
+        const address = await fetchAddressFromPincode(data.pincode);
+        data = {
+          ...data,
+          city: address.city,
+          state: address.state,
+          district: address.district,
+          cityOptions: address.cityOptions,
+        };
+      } else if (!data.pincode || data.pincode.length !== 6) {
+        data = {
+          ...data,
+          city: "",
+          state: "",
+          district: "",
+          cityOptions: [],
+        };
+      }
+      setFormData(data);
+    };
 
-  const handleViewPatient = (patient) => {
-    setSelectedPatient(patient);
-    openModal("viewPatient");
-    const patientId = patient.id || patient.patientId;
-    if (patientId) fetchPatientDetails(patientId);
-    else toast.error("Unable to load patient details: Missing patient ID");
-  };
+    const handleViewPatient = (patient) => {
+      setSelectedPatient(patient);
+      openModal("viewPatient");
+      const patientId = patient.id || patient.patientId;
+      if (patientId) fetchPatientDetails(patientId);
+      else toast.error("Unable to load patient details: Missing patient ID");
+    };
 
-  const handleEditPatient = (patient) => {
-    setSelectedPatient(patient);
-    setFormData({
-      ...patient,
-      addressPerm: patient.permanentAddress || patient.addressPerm || "",
-      addressTemp: patient.temporaryAddress || patient.addressTemp || "",
-      cityOptions: patient.city ? [{ value: patient.city, label: patient.city }] : [],
-    });
-    closeModal("viewPatient");
-    openModal("editPatient");
-  };
-
-  const handleUpdatePatient = async (formData) => {
-    try {
-      const payload = {
-        ...formData,
-        name: `${formData.firstName || ""} ${formData.middleName || ""} ${formData.lastName || ""}`.trim(),
-        permanentAddress: formData.addressPerm,
-        temporaryAddress: formData.addressTemp,
-        updatedAt: new Date().toISOString(),
-      };
-      const response = await fetch(`${API.FORM}/${selectedPatient.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+    const handleEditPatient = (patient) => {
+      setSelectedPatient(patient);
+      setFormData({
+        ...patient,
+        addressPerm: patient.permanentAddress || patient.addressPerm || "",
+        addressTemp: patient.temporaryAddress || patient.addressTemp || "",
+        cityOptions: patient.city ? [{ value: patient.city, label: patient.city }] : [],
       });
-      if (!response.ok) throw new Error("Failed to update patient");
-      toast.success("Patient updated successfully!");
-      closeModal("editPatient");
-      fetchAllPatients();
-    } catch (error) {
-      console.error("Error updating patient:", error);
-      toast.error("Failed to update patient");
-    }
-  };
+      closeModal("viewPatient");
+      openModal("editPatient");
+    };
 
-  const handleSavePatient = async (formData) => {
-    try {
-      const payload = {
-        ...formData,
-        name: `${formData.firstName || ""} ${formData.middleName || ""} ${formData.lastName || ""}`.trim(),
-        permanentAddress: formData.addressPerm,
-        temporaryAddress: formData.addressTemp,
-        type: "opd",
-        doctorName,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const response = await fetch(API.FORM, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) throw new Error("Failed to save patient");
-      const responseData = await response.json();
-      setNewPatientId(responseData.id);
-      toast.success("Patient details saved!");
-      closeModal("addPatient");
-      openModal("appointment");
-      toast.success("Please schedule appointment.");
-      fetchAllPatients();
-    } catch (error) {
-      console.error("Error saving patient:", error);
-      toast.error("Failed to save patient details");
-    }
-  };
+    const handleUpdatePatient = async (formData) => {
+      try {
+        const payload = {
+          ...formData,
+          name: `${formData.firstName || ""} ${formData.middleName || ""} ${formData.lastName || ""}`.trim(),
+          permanentAddress: formData.addressPerm,
+          temporaryAddress: formData.addressTemp,
+          updatedAt: new Date().toISOString(),
+        };
+        const response = await fetch(`${API.FORM}/${selectedPatient.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error("Failed to update patient");
+        toast.success("Patient updated successfully!");
+        closeModal("editPatient");
+        fetchAllPatients();
+      } catch (error) {
+        console.error("Error updating patient:", error);
+        toast.error("Failed to update patient");
+      }
+    };
 
-  const handleScheduleAppointment = async (formData) => {
-    try {
-      const payload = {
-        ...formData,
-        appointmentDate: formData.date,
-        appointmentTime: formData.time,
-        diagnosis: formData.diagnosis,
-        reason: formData.reason,
-        doctorName,
-        type: "OPD",
-        updatedAt: new Date().toISOString(),
-      };
-      const response = await fetch(`${API.FORM}/${newPatientId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) throw new Error("Failed to schedule appointment");
-      toast.success("Appointment scheduled successfully!");
-      closeModal("appointment");
-      fetchAllPatients();
-    } catch (error) {
-      console.error("Error scheduling appointment:", error);
-      toast.error("Failed to schedule appointment.");
-    }
-  };
+    const handleSavePatient = async (formData) => {
+      try {
+        const payload = {
+          ...formData,
+          name: `${formData.firstName || ""} ${formData.middleName || ""} ${formData.lastName || ""}`.trim(),
+          permanentAddress: formData.addressPerm,
+          temporaryAddress: formData.addressTemp,
+          type: "opd",
+          doctorName,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        const response = await fetch(API.FORM, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error("Failed to save patient");
+        const responseData = await response.json();
+        setNewPatientId(responseData.id);
+        toast.success("Patient details saved!");
+        closeModal("addPatient");
+        openModal("appointment");
+        toast.success("Please schedule appointment.");
+        fetchAllPatients();
+      } catch (error) {
+        console.error("Error saving patient:", error);
+        toast.error("Failed to save patient details");
+      }
+    };
 
-  const handleAddRecord = (patient) => navigate("/doctordashboard/form", { state: { patient } });
+    const handleScheduleAppointment = async (formData) => {
+      try {
+        const payload = {
+          ...formData,
+          appointmentDate: formData.date,
+          appointmentTime: formData.time,
+          diagnosis: formData.diagnosis,
+          reason: formData.reason,
+          doctorName,
+          type: "OPD",
+          updatedAt: new Date().toISOString(),
+        };
+        const response = await fetch(`${API.FORM}/${newPatientId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error("Failed to schedule appointment");
+        toast.success("Appointment scheduled successfully!");
+        closeModal("appointment");
+        fetchAllPatients();
+      } catch (error) {
+        console.error("Error scheduling appointment:", error);
+        toast.error("Failed to schedule appointment.");
+      }
+    };
 
-  const generatePatientBasicFields = () => [
-    { name: "firstName", label: "First Name", type: "text", required: true },
-    { name: "middleName", label: "Middle Name", type: "text" },
-    { name: "lastName", label: "Last Name", type: "text", required: true },
-    { name: "phone", label: "Phone Number", type: "text", required: true },
-        { name: "Aadhaar Number", label: "Aadhaar Numbe", type: "text", required: true },
-    { name: "email", label: "Email Address", type: "email", required: true },
-    { name: "gender", label: "Gender", type: "select", required: true, options: masterData.genders },
-    { name: "dob", label: "Date of Birth", type: "date", required: true },
-    
-    { name: "occupation", label: "Occupation", type: "select", required: true, options: OCCUPATIONS },
-    { name: "pincode", label: "PIN Code", type: "text", required: true, placeholder: "Enter 6-digit PIN code" },
-    { name: "city", label: "City/Locality", type: "select", required: true, options: formData.cityOptions || [] },
-    { name: "state", label: "State", type: "text", required: true, disabled: true },
-    { name: "district", label: "District", type: "text", required: true, disabled: true },
-    {
-      name: "profileImage",
-      label: "Upload Profile Image",
-      type: "file",
-      accept: "image/*",
-      required: false,
-      colSpan: 1,
-      description: "Upload a profile picture or medical image (JPEG, PNG, etc.)",
-    },
-    { name: "password", label: "Create Password", type: "password", required: true },
-    { name: "confirmPassword", label: "Confirm Password", type: "password", required: true },
-    // { name: "addressPerm", label: "Permanent Address", type: "textarea", required: true, colSpan: 1 },
-    // { name: "addressTemp", label: "Temporary Address", type: "textarea", required: true, colSpan: 1 },
-  ];
+    const handleAddRecord = (patient) => navigate("/doctordashboard/form", { state: { patient } });
 
-  const APPOINTMENT_FIELDS = [
-    { name: "date", label: "Appointment Date", type: "date", required: true },
-    { name: "time", label: "Appointment Time", type: "time", required: true },
-    { name: "diagnosis", label: "Diagnosis", type: "text", required: true },
-    { name: "reason", label: "Reason for Visit", type: "select", required: true, options: ["Consultation", "Follow-up", "Test", "Other"].map((r) => ({ value: r, label: r })) },
-  ];
+    const generatePatientBasicFields = () => [
+      { name: "firstName", label: "First Name", type: "text", required: true },
+      { name: "middleName", label: "Middle Name", type: "text" },
+      { name: "lastName", label: "Last Name", type: "text", required: true },
+      { name: "phone", label: "Phone Number", type: "text", required: true },
+      { name: "Aadhaar Number", label: "Aadhaar Numbe", type: "text", required: true },
+      { name: "email", label: "Email Address", type: "email", required: true },
+      { name: "gender", label: "Gender", type: "select", required: true, options: masterData.genders },
+      { name: "dob", label: "Date of Birth", type: "date", required: true },
+      { name: "occupation", label: "Occupation", type: "select", required: true, options: OCCUPATIONS },
+      { name: "pincode", label: "PIN Code", type: "text", required: true, placeholder: "Enter 6-digit PIN code" },
+      { name: "city", label: "City/Locality", type: "select", required: true, options: formData.cityOptions || [] },
+      { name: "state", label: "State", type: "text", required: true, disabled: true },
+      { name: "district", label: "District", type: "text", required: true, disabled: true },
+      {
+        name: "profileImage",
+        label: "Upload Profile Image",
+        type: "file",
+        accept: "image/*",
+        required: false,
+        colSpan: 1,
+        description: "Upload a profile picture or medical image (JPEG, PNG, etc.)",
+      },
+      { name: "password", label: "Create Password", type: "password", required: true },
+      { name: "confirmPassword", label: "Confirm Password", type: "password", required: true },
+    ];
 
-  const columns = [
-    { header: "ID", accessor: "sequentialId" },
-    {
-      header: "Name",
-      accessor: "name",
-      clickable: true,
-      cell: (row) => (
-        <button className="cursor-pointer text-[var(--primary-color)] hover:text-[var(--accent-color)]" onClick={() => handleViewPatient(row)}>
-          {row.name || `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`.replace(/\s+/g, " ").trim()}
-        </button>
-      ),
-    },
-    { header: "Date", accessor: "appointmentDate" },
-    { header: "Time", accessor: "appointmentTime" },
-    { header: "Diagnosis", accessor: "diagnosis" },
-    {
-      header: "Actions",
-      cell: (row) => (
-        <div className="flex items-center gap-2">
-          <button onClick={() => handleAddRecord(row)} className="text-base p-1"><FaNotesMedical /></button>
-          <TeleConsultFlow phone={row.phone} patientName={row.name || `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`.replace(/\s+/g, " ").trim()} context="OPD" patientEmail={row.email} hospitalName={row.hospitalName || "AV Hospital"} />
-          <button title="View Medical Record" onClick={() => {
-            let age = "";
-            if (row.dob) {
-              const dobDate = new Date(row.dob);
-              const today = new Date();
-              age = today.getFullYear() - dobDate.getFullYear();
-              const m = today.getMonth() - dobDate.getMonth();
-              if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
-            }
-            navigate("/doctordashboard/medical-record", {
-              state: {
-                patientName: row.name,
-                email: row.email || "",
-                phone: row.phone || "",
-                gender: row.gender || row.sex || "",
-                temporaryAddress: row.temporaryAddress || row.addressTemp || row.address || "",
-                address: row.address || row.temporaryAddress || row.addressTemp || "",
-                addressTemp: row.addressTemp || row.temporaryAddress || row.address || "",
-                dob: row.dob || "",
-                age: age,
-                bloodType: row.bloodGroup || row.bloodType || "",
-                regNo: row.regNo || "2025/072/0032722",
-                mobileNo: row.mobileNo || row.phone || "",
-                department: row.department || "Ophthalmology",
-              },
-            });
-          }} className="p-1 text-base text-[var(--primary-color)]" style={{ display: "flex", alignItems: "center" }}><FiExternalLink /></button>
-        </div>
-      ),
-    },
-  ];
+    const APPOINTMENT_FIELDS = [
+      { name: "date", label: "Appointment Date", type: "date", required: true },
+      { name: "time", label: "Appointment Time", type: "time", required: true },
+      { name: "diagnosis", label: "Diagnosis", type: "text", required: true },
+      { name: "reason", label: "Reason for Visit", type: "select", required: true, options: ["Consultation", "Follow-up", "Test", "Other"].map((r) => ({ value: r, label: r })) },
+    ];
 
-  const tabActions = [];
-  const filters = [
-    { key: "status", label: "Status", options: ["Scheduled", "Completed", "Cancelled"].map((status) => ({ value: status, label: status })) },
-    { key: "department", label: "Department", options: masterData.departments },
-  ];
-
-  useEffect(() => { if (doctorName && !masterData.loading) fetchAllPatients(); }, [doctorName, masterData.loading]);
-  useEffect(() => { const highlightIdFromState = location.state?.highlightId; if (highlightIdFromState) setNewPatientId(highlightIdFromState); }, [location.state]);
-  useEffect(() => { setTabActions(tabActions); }, [setTabActions]);
-
-  return (
-    <>
-      <DynamicTable
-        columns={columns}
-        data={patients}
-        filters={filters}
-        loading={loading}
-        onViewPatient={handleViewPatient}
-        newRowIds={[newPatientId].filter(Boolean)}
-        tabActions={tabActions}
-        rowClassName={(row) => row.sequentialId === newPatientId || row.sequentialId === location.state?.highlightId ? "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150" : ""}
-      />
-      <PatientViewModal
-        isOpen={modals.viewPatient}
-        onClose={() => closeModal("viewPatient")}
-        patient={selectedPatient}
-        personalHealthDetails={personalHealthDetails}
-        familyHistory={familyHistory}
-        vitalSigns={vitalSigns}
-        loading={detailsLoading}
-        onEdit={handleEditPatient}
-      />
-      <ReusableModal
-        isOpen={modals.addPatient}
-        onClose={() => closeModal("addPatient")}
-        mode="add"
-        title="Add OPD Patient"
-        fields={generatePatientBasicFields()}
-        data={formData}
-        onSave={handleSavePatient}
-        onChange={handleFormChange}
-        saveLabel="Next"
-        cancelLabel="Cancel"
-        size="lg"
-      />
-      <ReusableModal
-        isOpen={modals.appointment}
-        onClose={() => closeModal("appointment")}
-        mode="add"
-        title="Schedule Appointment"
-        fields={APPOINTMENT_FIELDS}
-        data={appointmentFormData}
-        onSave={handleScheduleAppointment}
-        onChange={setAppointmentFormData}
-        saveLabel="Schedule"
-        cancelLabel="Back"
-        size="md"
-        extraContent={
-          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="text-sm font-semibold text-blue-800 mb-2">Patient Information</h4>
-            <p className="text-sm text-blue-700">{formData.firstName} {formData.middleName} {formData.lastName}</p>
-            <p className="text-xs text-blue-600">{formData.email}</p>
+    const columns = [
+      { header: "ID", accessor: "sequentialId" },
+      {
+        header: "Name",
+        accessor: "name",
+        clickable: true,
+        cell: (row) => (
+          <button className="cursor-pointer text-[var(--primary-color)] hover:text-[var(--accent-color)]" onClick={() => handleViewPatient(row)}>
+            {row.name || `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`.replace(/\s+/g, " ").trim()}
+          </button>
+        ),
+      },
+      { header: "Date", accessor: "appointmentDate" },
+      { header: "Time", accessor: "appointmentTime" },
+      { header: "Diagnosis", accessor: "diagnosis" },
+      {
+        header: "Actions",
+        cell: (row) => (
+          <div className="flex items-center gap-2">
+            <button onClick={() => handleAddRecord(row)} className="text-base p-1"><FaNotesMedical /></button>
+            <TeleConsultFlow phone={row.phone} patientName={row.name || `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`.replace(/\s+/g, " ").trim()} context="OPD" patientEmail={row.email} hospitalName={row.hospitalName || "AV Hospital"} />
+            <button title="View Medical Record" onClick={() => {
+              let age = "";
+              if (row.dob) {
+                const dobDate = new Date(row.dob);
+                const today = new Date();
+                age = today.getFullYear() - dobDate.getFullYear();
+                const m = today.getMonth() - dobDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
+              }
+              navigate("/doctordashboard/medical-record", {
+                state: {
+                  patientName: row.name,
+                  email: row.email || "",
+                  phone: row.phone || "",
+                  gender: row.gender || row.sex || "",
+                  temporaryAddress: row.temporaryAddress || row.addressTemp || row.address || "",
+                  address: row.address || row.temporaryAddress || row.addressTemp || "",
+                  addressTemp: row.addressTemp || row.temporaryAddress || row.address || "",
+                  dob: row.dob || "",
+                  age: age,
+                  bloodType: row.bloodGroup || row.bloodType || "",
+                  regNo: row.regNo || "2025/072/0032722",
+                  mobileNo: row.mobileNo || row.phone || "",
+                  department: row.department || "Ophthalmology",
+                },
+              });
+            }} className="p-1 text-base text-[var(--primary-color)]" style={{ display: "flex", alignItems: "center" }}><FiExternalLink /></button>
           </div>
-        }
-      />
-      <ReusableModal
-        isOpen={modals.editPatient}
-        onClose={() => closeModal("editPatient")}
-        mode="edit"
-        title="Edit OPD Patient"
-        fields={generatePatientBasicFields()}
-        data={formData}
-        onSave={handleUpdatePatient}
-        onChange={handleFormChange}
-        saveLabel="Update"
-        cancelLabel="Cancel"
-        size="lg"
-      />
-    </>
-  );
-});
+        ),
+      },
+    ];
+
+    // Child may populate its own tabActions; keep an array in case you want internal actions later
+    const childTabActions = []; // leave empty or populate as needed
+
+    const filters = [
+      { key: "status", label: "Status", options: ["Scheduled", "Completed", "Cancelled"].map((status) => ({ value: status, label: status })) },
+      { key: "department", label: "Department", options: masterData.departments },
+    ];
+
+    // Keep parent informed if childTabActions change
+    useEffect(() => {
+      if (typeof setTabActions === "function") {
+        setTabActions(childTabActions);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [/* childTabActions intentionally static here; add dependencies if dynamic */]);
+
+    useEffect(() => { if (doctorName && !masterData.loading) fetchAllPatients(); }, [doctorName, masterData.loading]);
+    useEffect(() => { const highlightIdFromState = location.state?.highlightId; if (highlightIdFromState) setNewPatientId(highlightIdFromState); }, [location.state]);
+
+    const tabActionsToUse = tabActions.length ? tabActions : childTabActions;
+
+    return (
+      <>
+        <DynamicTable
+          columns={columns}
+          data={patients}
+          filters={filters}
+          loading={loading}
+          onViewPatient={handleViewPatient}
+          newRowIds={[newPatientId].filter(Boolean)}
+          tabs={tabs}
+          tabActions={tabActionsToUse}
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+          rowClassName={(row) => row.sequentialId === newPatientId || row.sequentialId === location.state?.highlightId ? "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150" : ""}
+        />
+        <PatientViewModal
+          isOpen={modals.viewPatient}
+          onClose={() => closeModal("viewPatient")}
+          patient={selectedPatient}
+          personalHealthDetails={personalHealthDetails}
+          familyHistory={familyHistory}
+          vitalSigns={vitalSigns}
+          loading={detailsLoading}
+          onEdit={handleEditPatient}
+        />
+        <ReusableModal
+          isOpen={modals.addPatient}
+          onClose={() => closeModal("addPatient")}
+          mode="add"
+          title="Add OPD Patient"
+          fields={generatePatientBasicFields()}
+          data={formData}
+          onSave={handleSavePatient}
+          onChange={handleFormChange}
+          saveLabel="Next"
+          cancelLabel="Cancel"
+          size="lg"
+        />
+        <ReusableModal
+          isOpen={modals.appointment}
+          onClose={() => closeModal("appointment")}
+          mode="add"
+          title="Schedule Appointment"
+          fields={APPOINTMENT_FIELDS}
+          data={appointmentFormData}
+          onSave={handleScheduleAppointment}
+          onChange={setAppointmentFormData}
+          saveLabel="Schedule"
+          cancelLabel="Back"
+          size="md"
+          extraContent={
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="text-sm font-semibold text-blue-800 mb-2">Patient Information</h4>
+              <p className="text-sm text-blue-700">{formData.firstName} {formData.middleName} {formData.lastName}</p>
+              <p className="text-xs text-blue-600">{formData.email}</p>
+            </div>
+          }
+        />
+        <ReusableModal
+          isOpen={modals.editPatient}
+          onClose={() => closeModal("editPatient")}
+          mode="edit"
+          title="Edit OPD Patient"
+          fields={generatePatientBasicFields()}
+          data={formData}
+          onSave={handleUpdatePatient}
+          onChange={handleFormChange}
+          saveLabel="Update"
+          cancelLabel="Cancel"
+          size="lg"
+        />
+      </>
+    );
+  }
+);
 
 export default OpdTab;

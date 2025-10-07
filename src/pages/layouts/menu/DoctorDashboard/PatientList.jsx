@@ -1,3 +1,4 @@
+// PatientList.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -18,13 +19,17 @@ const PatientList = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
+
   const [activeTab, setActiveTab] = useState("OPD");
   const [doctorName, setDoctorName] = useState("");
+  // This can be updated by child (via setTabActions) or parent (parentTabActions)
   const [tabActions, setTabActions] = useState([]);
+
   // Refs for tab components
   const opdTabRef = useRef();
   const ipdTabRef = useRef();
   const virtualTabRef = useRef();
+
   // Master data state
   const [masterData, setMasterData] = useState({
     genders: [],
@@ -33,6 +38,26 @@ const PatientList = () => {
     hospitals: [],
     loading: true,
   });
+
+  // Build tabs array to pass to children / DynamicTable
+  const tabs = [
+    { label: "OPD", value: "OPD" },
+    { label: "IPD", value: "IPD" },
+    { label: "Virtual", value: "Virtual" },
+  ];
+
+  // Parent-level tab action that triggers child's modal via ref
+  const parentTabActions = [
+    {
+      label: "Add Patient",
+      onClick: () => {
+        if (activeTab === "OPD") opdTabRef.current?.openAddPatientModal();
+        else if (activeTab === "IPD") ipdTabRef.current?.openAddPatientModal();
+        else if (activeTab === "Virtual") virtualTabRef.current?.openScheduleConsultationModal();
+      },
+      className: "btn btn-primary",
+    },
+  ];
 
   // Load master data
   useEffect(() => {
@@ -165,7 +190,7 @@ const PatientList = () => {
     }
   }, [location.search, location.state]);
 
-  // Tab change handler
+  // Tab change handler (used as onTabChange passed to child)
   const handleTabChange = (tabValue) => {
     setActiveTab(tabValue);
     navigate(`/doctordashboard/patients?tab=${tabValue}`);
@@ -183,74 +208,50 @@ const PatientList = () => {
     );
   }
 
-  // Render active tab
+  // Render active tab component with tabs & actions passed in
   const renderActiveTab = () => {
     const commonProps = {
       doctorName,
       masterData,
       location,
-      setTabActions,
-      tabActions,
+      setTabActions, // let child update parent tabActions if desired
+      tabActions, // current parent tabActions value
     };
+
+    const sharedTabProps = {
+      tabs,
+      tabActions: tabActions.length ? tabActions : parentTabActions,
+      activeTab,
+      onTabChange: handleTabChange,
+    };
+
     switch (activeTab) {
       case "OPD":
-        return <OpdTab ref={opdTabRef} {...commonProps} />;
+        return <OpdTab ref={opdTabRef} {...commonProps} {...sharedTabProps} />;
       case "IPD":
-        return <IpdTab ref={ipdTabRef} {...commonProps} />;
+        return <IpdTab ref={ipdTabRef} {...commonProps} {...sharedTabProps} />;
       case "Virtual":
-        return <VirtualTab ref={virtualTabRef} {...commonProps} />;
+        return <VirtualTab ref={virtualTabRef} {...commonProps} {...sharedTabProps} />;
       default:
-        return <OpdTab ref={opdTabRef} {...commonProps} />;
+        return <OpdTab ref={opdTabRef} {...commonProps} {...sharedTabProps} />;
     }
   };
 
   return (
     <div className="p-2 sm:p-4 md:p-2">
-      {/* Tab Navigation */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 overflow-x-auto pb-1 mb-4">
-        <div className="flex gap-4">
-          {["OPD", "IPD", "Virtual"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => handleTabChange(tab)}
-              className={`relative cursor-pointer flex-shrink-0 flex items-center gap-1 px-4 font-medium transition-colors duration-300 ${
-                activeTab === tab
-                  ? "text-[var(--primary-color)] after:content-[''] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-[var(--primary-color)]"
-                  : "text-gray-500 hover:text-[var(--accent-color)]"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-        {/* Action Buttons (Hidden in all views, since we want them only at the bottom in tablet/mobile) */}
+      {/* Compact Header: We removed the old tab nav UI (DynamicTable will render tabs).
+          Keep title / optional desktop add button. */}
+      {/* <div className="flex items-center justify-between gap-4 mb-4">
+        <h3 className="text-lg font-semibold">Patients</h3>
         <div className="hidden lg:flex gap-3">
-          {activeTab === "OPD" && (
-            <button
-              onClick={() => opdTabRef.current?.openAddPatientModal()}
-              className="btn btn-secondary"
-            >
-              Add Patient
-            </button>
-          )}
-          {activeTab === "IPD" && (
-            <button
-              onClick={() => ipdTabRef.current?.openAddPatientModal()}
-              className="btn btn-secondary"
-            >
-              Add Patient
-            </button>
-          )}
-          {activeTab === "Virtual" && (
-            <button
-              onClick={() => virtualTabRef.current?.openScheduleConsultationModal()}
-              className="btn btn-secondary"
-            >
-              Schedule Consultation
-            </button>
-          )}
+          <button
+            onClick={() => parentTabActions[0].onClick()}
+            className="btn btn-secondary"
+          >
+            Add Patient
+          </button>
         </div>
-      </div>
+      </div> */}
 
       {/* Render Active Tab */}
       <div className="mb-16 lg:mb-4">{renderActiveTab()}</div>
@@ -258,40 +259,22 @@ const PatientList = () => {
       {/* Action Buttons (Fixed at bottom in tablet and mobile view) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm z-30">
         <div className="flex gap-3 w-full mx-auto">
-          {activeTab === "OPD" && (
-            <button
-              onClick={() => opdTabRef.current?.openAddPatientModal()}
-              className="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 transform active:scale-95 shadow-md bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color)] text-white hover:from-[var(--primary-color)] hover:to-[var(--primary-color)] shadow-lg hover:shadow-xl border-2 border-[var(--primary-color)]"
-            >
-              Add Patient
-            </button>
-          )}
-          {activeTab === "IPD" && (
-            <button
-              onClick={() => ipdTabRef.current?.openAddPatientModal()}
-              className="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 transform active:scale-95 shadow-md bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color)] text-white hover:from-[var(--primary-color)] hover:to-[var(--primary-color)] shadow-lg hover:shadow-xl border-2 border-[var(--primary-color)]"
-            >
-              Add Patient
-            </button>
-          )}
-          {activeTab === "Virtual" && (
-            <button
-              onClick={() => virtualTabRef.current?.openScheduleConsultationModal()}
-              className="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 transform active:scale-95 shadow-md bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color)] text-white hover:from-[var(--primary-color)] hover:to-[var(--primary-color)] shadow-lg hover:shadow-xl border-2 border-[var(--primary-color)]"
-            >
-              Schedule Consultation
-            </button>
-          )}
+          <button
+            onClick={() => parentTabActions[0].onClick()}
+            className="flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 transform active:scale-95 shadow-md bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-color)] text-white hover:from-[var(--primary-color)] hover:to-[var(--primary-color)] shadow-lg hover:shadow-xl border-2 border-[var(--primary-color)]"
+          >
+            Add Patient
+          </button>
         </div>
       </div>
 
-      {/* Tab Actions for Mobile/Tablet View */}
+      {/* Tab Actions for Mobile/Tablet View (if any provided by child via setTabActions) */}
       {tabActions.length > 0 && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-xl backdrop-blur-sm z-30">
           <div className="flex gap-3 w-full mx-auto">
             {tabActions.map((action, index) => (
               <button
-                key={action.label}
+                key={typeof action.label === "string" ? action.label : index}
                 onClick={action.onClick}
                 className={`flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 transform active:scale-95 shadow-md ${
                   index === 0

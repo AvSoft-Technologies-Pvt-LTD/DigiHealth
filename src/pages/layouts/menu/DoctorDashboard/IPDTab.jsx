@@ -44,14 +44,12 @@ import {
   getFamilyMembersByPatient,
   getPersonalHealthByPatientId,
 } from "../../../../utils/CrudService";
-
 // API endpoints
 const API = {
   FORM: "https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient",
   VITAL_SIGNS: "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary",
   MASTERS: "https://hospital-masters-api.mockapi.io/masters",
 };
-
 const STATIC_DATA = {
   insurance: ["None", "CGHS", "ESIC", "Private Insurance", "Other"].map((v, i) => ({
     value: v,
@@ -69,27 +67,23 @@ const STATIC_DATA = {
     key: `surgery-${i}`,
   })),
 };
-
 // Load ward data from localStorage (created by BedMaster)
 const getWardData = async () => {
   try {
     const savedData = localStorage.getItem("bedMasterData");
     if (savedData) {
       const bedMasterData = JSON.parse(savedData);
-
-      // Transform BedMaster data to ward structure expected by IpdTab
       return bedMasterData.map((item, index) => ({
         id: item.id || `${item.ward.toLowerCase()}-${index}`,
         type: item.ward,
-        number: String.fromCharCode(65 + index), // A, B, C, etc.
+        number: String.fromCharCode(65 + index),
         department: item.department,
         totalBeds: item.totalBeds,
         availableBeds: item.available,
         occupiedBeds: item.occupied,
-        // Generate occupied bed numbers based on occupied count
         occupiedBedNumbers: Array.from({ length: item.occupied }, (_, i) =>
           Math.floor(Math.random() * item.totalBeds) + 1
-        ).filter((v, i, arr) => arr.indexOf(v) === i), // Remove duplicates
+        ).filter((v, i, arr) => arr.indexOf(v) === i),
         status: item.status,
         rooms: item.rooms ? item.rooms.length : 1,
         beds: item.beds || [],
@@ -100,7 +94,6 @@ const getWardData = async () => {
   } catch (error) {
     console.error("Error loading ward data from localStorage:", error);
   }
-  // Fallback to default data if no saved data
   return [
     {
       id: "general-a",
@@ -140,7 +133,6 @@ const getWardData = async () => {
     },
   ];
 };
-
 // Load bed facilities from localStorage or generate based on amenities
 const getBedFacilities = async () => {
   try {
@@ -148,18 +140,12 @@ const getBedFacilities = async () => {
     if (savedData) {
       const bedMasterData = JSON.parse(savedData);
       const facilities = {};
-
-      // For each ward, generate facilities for all beds
       bedMasterData.forEach((wardData) => {
         const totalBeds = wardData.totalBeds;
-
-        // Extract amenities from beds data if available
         if (wardData.beds && Array.isArray(wardData.beds)) {
           wardData.beds.forEach((bed, index) => {
             const bedNumber = index + 1;
             const bedAmenities = bed.amenities || bed.bedAmenities || [];
-            
-            // Map amenity IDs to display names
             const facilityNames = bedAmenities.map(amenityId => {
               const amenityMap = {
                 'ac': 'AC',
@@ -178,16 +164,12 @@ const getBedFacilities = async () => {
               };
               return amenityMap[amenityId] || amenityId;
             });
-            
             facilities[bedNumber] = facilityNames;
           });
         } else {
-          // Generate facilities for each bed based on ward type if beds data not available
           for (let bedNum = 1; bedNum <= totalBeds; bedNum++) {
             const wardType = wardData.ward.toLowerCase();
             let bedFacilities = [];
-
-            // Assign facilities based on ward type
             if (wardType.includes('icu') || wardType.includes('iccu')) {
               bedFacilities = ["AC", "Monitor", "Oxygen", "Call Button"];
             } else if (wardType.includes('private')) {
@@ -201,18 +183,15 @@ const getBedFacilities = async () => {
             } else {
               bedFacilities = ["AC", "TV"];
             }
-
             facilities[bedNum] = bedFacilities;
           }
         }
       });
-
       return facilities;
     }
   } catch (error) {
     console.error("Error loading bed facilities from localStorage:", error);
   }
-  // Fallback to default facilities
   return Object.fromEntries(
     Array.from({ length: 30 }, (_, i) => [
       i + 1,
@@ -223,7 +202,6 @@ const getBedFacilities = async () => {
     ])
   );
 };
-
 const FACILITY_ICONS = {
   AC: Snowflake,
   TV: Monitor,
@@ -239,7 +217,6 @@ const FACILITY_ICONS = {
   WiFi: Wifi,
   Heating: Thermometer,
 };
-
 const WARD_ICONS = {
   "General Ward": Users,
   General: Users,
@@ -252,7 +229,6 @@ const WARD_ICONS = {
   Maternity: Baby,
   Surgical: Stethoscope,
 };
-
 const WIZARD_STEPS = [
   {
     id: 1,
@@ -279,7 +255,6 @@ const WIZARD_STEPS = [
     shortTitle: "Final",
   },
 ];
-
 const getCurrentDate = () => new Date().toISOString().slice(0, 10);
 const getCurrentTime = () => new Date().toTimeString().slice(0, 5);
 const to24Hour = (t) =>
@@ -298,7 +273,6 @@ const incrementTime = (time) => {
     .toString()
     .padStart(2, "0")}:${((m + 30) % 60).toString().padStart(2, "0")}`;
 };
-
 const PhotoUpload = ({ photoPreview, onPhotoChange, onPreviewClick, error }) => (
   <div className="relative w-full">
     <label className="block relative cursor-pointer">
@@ -331,7 +305,6 @@ const PhotoUpload = ({ photoPreview, onPhotoChange, onPreviewClick, error }) => 
     {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
   </div>
 );
-
 const PatientViewSections = ({
   data,
   personalHealthDetails,
@@ -462,7 +435,6 @@ const PatientViewSections = ({
     </div>
   );
 };
-
 const PatientViewModal = ({
   isOpen,
   onClose,
@@ -544,8 +516,20 @@ const PatientViewModal = ({
   );
 };
 
-const IpdTab = forwardRef(
-  ({ doctorName, masterData, location, setTabActions }, ref) => {
+const IPDTab  = forwardRef(
+  (
+    {
+      doctorName,
+      masterData,
+      location,
+      setTabActions,
+      tabActions = [],
+      tabs = [],
+      activeTab,
+      onTabChange,
+    },
+    ref
+  ) => {
     const navigate = useNavigate();
     const [ipdPatients, setIpdPatients] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -647,8 +631,8 @@ const IpdTab = forwardRef(
     // Check if bed is occupied by checking patient ward format like "ICU-A-2"
     const isBedOccupied = (wardType, wardNumber, bedNumber) => {
       const wardFormat = `${wardType}-${wardNumber}-${bedNumber}`;
-      return ipdPatients.some(patient => 
-        patient.status === "Admitted" && 
+      return ipdPatients.some(patient =>
+        patient.status === "Admitted" &&
         patient.ward === wardFormat
       );
     };
@@ -922,7 +906,7 @@ const IpdTab = forwardRef(
               .join(" "),
           }))
           .reverse();
-        
+
         const ipdPatientsData = processedPatients
           .filter(
             (p) =>
@@ -946,9 +930,8 @@ const IpdTab = forwardRef(
             admissionDate: p.admissionDate || "Not specified",
             department: p.department || "General Medicine",
           }));
-        
+
         setIpdPatients(ipdPatientsData);
-        // Store in localStorage for bed deletion validation
         localStorage.setItem("ipdPatients", JSON.stringify(ipdPatientsData));
       } catch (error) {
         console.error("Error fetching patients:", error);
@@ -1216,7 +1199,6 @@ const IpdTab = forwardRef(
           body: JSON.stringify(payload),
         });
         if (!response.ok) throw new Error("Failed to finalize IPD admission");
-
         // Update bed occupancy in localStorage
         const savedData = localStorage.getItem("bedMasterData");
         if (savedData) {
@@ -1232,7 +1214,7 @@ const IpdTab = forwardRef(
             return item;
           });
           localStorage.setItem("bedMasterData", JSON.stringify(updatedData));
-          
+
           // Dispatch storage event to notify other components
           window.dispatchEvent(new StorageEvent('storage', {
             key: 'bedMasterData',
@@ -1262,25 +1244,24 @@ const IpdTab = forwardRef(
 
     const handleBedSelection = (bedNumber) => {
       if (!selectedWard) return;
-      
-      // Check if bed is occupied using the ward format
+
       const wardFormat = `${selectedWard.type}-${selectedWard.number}-${bedNumber}`;
-      const isOccupied = ipdPatients.some(patient => 
-        patient.status === "Admitted" && 
+      const isOccupied = ipdPatients.some(patient =>
+        patient.status === "Admitted" &&
         patient.ward === wardFormat
       );
-      
+
       if (isOccupied) {
         toast.error("This bed is currently occupied by another patient");
         return;
       }
-      
+
       const isUnderMaintenance = Math.random() < 0.05;
       if (isUnderMaintenance) {
         toast.error("This bed is under maintenance");
         return;
       }
-      
+
       setSelectedBed(bedNumber);
       setIpdWizardData((prev) => ({
         ...prev,
@@ -1476,21 +1457,21 @@ const IpdTab = forwardRef(
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 sm:gap-2 flex-1">
               {visibleBeds.map((bedNumber) => {
                 const wardFormat = `${selectedWard.type}-${selectedWard.number}-${bedNumber}`;
-                const isOccupied = ipdPatients.some(patient => 
-                  patient.status === "Admitted" && 
+                const isOccupied = ipdPatients.some(patient =>
+                  patient.status === "Admitted" &&
                   patient.ward === wardFormat
                 );
                 const isSelected = selectedBed === bedNumber;
                 const facilities = bedFacilities[bedNumber] || [];
                 const isUnderMaintenance = Math.random() < 0.05;
-                
+
                 const getBedStatus = () =>
                   isUnderMaintenance
                     ? "maintenance"
                     : isOccupied
                     ? "occupied"
                     : "available";
-                    
+
                 const getBedColors = () => {
                   const status = getBedStatus();
                   if (isSelected)
@@ -1501,7 +1482,7 @@ const IpdTab = forwardRef(
                     return "border-gray-400 bg-gray-100 text-gray-500";
                   return "border-[var(--primary-color,#0E1630)] bg-white text-[var(--primary-color,#0E1630)] hover:border-[var(--primary-color,#0E1630)] hover:shadow-lg hover:shadow-blue-200 hover:glow";
                 };
-                
+
                 const getBedIcon = () => {
                   const status = getBedStatus();
                   if (isSelected) return "text-green-500";
@@ -1509,7 +1490,7 @@ const IpdTab = forwardRef(
                   if (status === "maintenance") return "text-gray-400";
                   return "text-[var(--primary-color,#0E1630)]";
                 };
-                
+
                 return (
                   <div
                     key={bedNumber}
@@ -1547,7 +1528,7 @@ const IpdTab = forwardRef(
                           const IconComponent = FACILITY_ICONS[facility];
                           return (
                             <div key={facility} className="relative group">
-                              <IconComponent className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-70" />
+                              {/* <IconComponent className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-70" /> */}
                               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
                                 {facility}
                               </div>
@@ -1574,7 +1555,7 @@ const IpdTab = forwardRef(
               </button>
             )}
           </div>
-          {selectedBed && (
+          {/* {selectedBed && (
             <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border-2 border-blue-200">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
                 <h5 className="font-semibold text-blue-700 flex items-center gap-2 text-xs sm:text-sm">
@@ -1616,7 +1597,7 @@ const IpdTab = forwardRef(
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       );
     };
@@ -2110,7 +2091,8 @@ const IpdTab = forwardRef(
       },
     ];
 
-    const tabActions = [];
+    const childTabActions = [];
+
     const filters = [
       { key: "status", label: "Status", options: STATIC_DATA.status },
       {
@@ -2121,6 +2103,12 @@ const IpdTab = forwardRef(
     ];
 
     useEffect(() => {
+      if (typeof setTabActions === "function") {
+        setTabActions(childTabActions);
+      }
+    }, [setTabActions]);
+
+    useEffect(() => {
       if (doctorName && !masterData.loading) fetchAllPatients();
     }, [doctorName, masterData.loading]);
 
@@ -2129,9 +2117,7 @@ const IpdTab = forwardRef(
       if (highlightIdFromState) setNewPatientId(highlightIdFromState);
     }, [location.state]);
 
-    useEffect(() => {
-      setTabActions(tabActions);
-    }, [setTabActions]);
+    const tabActionsToUse = tabActions.length ? tabActions : childTabActions;
 
     return (
       <>
@@ -2142,7 +2128,10 @@ const IpdTab = forwardRef(
           loading={loading}
           onViewPatient={handleViewPatient}
           newRowIds={[newPatientId].filter(Boolean)}
-          tabActions={tabActions}
+          tabs={tabs}
+          tabActions={tabActionsToUse}
+          activeTab={activeTab}
+          onTabChange={onTabChange}
           rowClassName={(row) =>
             row.sequentialId === newPatientId ||
             row.sequentialId === location.state?.highlightId
@@ -2166,4 +2155,4 @@ const IpdTab = forwardRef(
   }
 );
 
-export default IpdTab;
+export default IPDTab ;

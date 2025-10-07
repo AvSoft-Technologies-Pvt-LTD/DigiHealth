@@ -1,8 +1,10 @@
+// BedRoomList.jsx
 import React, { useEffect, useState } from "react";
 import { FaPlus, FaEdit, FaTrash, FaExclamationTriangle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import DynamicTable from "../../../../../components/microcomponents/DynamicTable";
 import { toast } from "react-toastify";
+import { getSpecializationsWardsSummary, getWardById } from "../../../../../utils/CrudService"; // adjust path if required
 
 const statusColors = {
   Active: "text-green-600 bg-green-100",
@@ -20,6 +22,8 @@ const wardColors = {
 
 const BedRoomList = () => {
   const navigate = useNavigate();
+
+  // Initialize from localStorage (fallback)
   const [bedData, setBedData] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("bedMasterData")) || [];
@@ -32,6 +36,8 @@ const BedRoomList = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   // Persist state changes to localStorage (primary source)
   useEffect(() => {
@@ -41,6 +47,74 @@ const BedRoomList = () => {
       console.error("Failed to save bedMasterData to localStorage", err);
     }
   }, [bedData]);
+
+  // Normalizer: map server response into table row shape
+  const normalizeServerItem = (item, idx) => {
+    const specialization = item.specializationName ?? item.specialization ?? item.department ?? "Unknown";
+    const wardName = item.wardName ?? item.ward ?? item.name ?? "Unknown";
+    const total = Number(item.totalBeds ?? item.total ?? 0);
+
+    const availableFromGroups =
+      item?.bedStatusGroups && typeof item.bedStatusGroups === "object"
+        ? Number(item.bedStatusGroups.Available ?? item.bedStatusGroups.available ?? 0)
+        : undefined;
+
+    const available = typeof availableFromGroups === "number" && !Number.isNaN(availableFromGroups)
+      ? availableFromGroups
+      : Number(item.available ?? Math.max(0, total - Number(item.occupied ?? 0)));
+
+    const occupied = Number(item.occupied ?? (total - available));
+
+    const id = item.id ?? item.wardId ?? `${specialization.replace(/\s+/g, "_")}-${wardName.replace(/\s+/g, "_")}-${idx}`;
+
+    return {
+      id,
+      department: specialization,
+      ward: wardName,
+      totalBeds: total,
+      occupied,
+      available,
+      status: item.status ?? (occupied < total ? "Active" : "Inactive"),
+      raw: item,
+      ...item,
+    };
+  };
+
+  // Fetch live summary from server on mount
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchSummary = async () => {
+      setLoading(true);
+      try {
+        const res = await getSpecializationsWardsSummary();
+        const serverData = Array.isArray(res?.data) ? res.data : [];
+
+        const normalized = serverData.map((it, i) => normalizeServerItem(it, i));
+
+        if (mounted) {
+          setBedData(normalized);
+          try {
+            localStorage.setItem("bedMasterData", JSON.stringify(normalized));
+            window.dispatchEvent(new CustomEvent("bedMasterUpdated", { detail: normalized }));
+          } catch (err) {
+            console.error("Failed to persist server bed data to localStorage", err);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch wards summary:", err);
+        toast.error("Could not load ward summary — using cached data.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchSummary();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // keyboard handler for delete modal
   useEffect(() => {
@@ -170,8 +244,38 @@ const BedRoomList = () => {
     setIsConfirming(true);
   };
 
-  const handleEdit = (row) =>
-    navigate("/doctordashboard/bedroommanagement/bedmaster", { state: { editData: row } });
+  // EDIT: fetch authoritative ward payload then navigate to BedMaster
+  const handleEdit = async (row) => {
+    // attempt to find candidate id
+    const candidateId =
+      row?.raw?.wardId ?? row?.raw?.id ?? row?.wardId ?? row?.id ?? null;
+
+    if (!candidateId) {
+      // no id available — navigate with the row as-is
+      navigate("/doctordashboard/bedroommanagement/bedmaster", { state: { editData: row } });
+      return;
+    }
+
+    try {
+      setEditLoading(true);
+      toast.info("Loading ward details...");
+      const res = await getWardById(candidateId);
+      const wardPayload = res?.data ?? null;
+
+      if (!wardPayload) {
+        toast.error("Ward details not found.");
+        return;
+      }
+
+      // pass full server payload to BedMaster
+      navigate("/doctordashboard/bedroommanagement/bedmaster", { state: { editData: wardPayload } });
+    } catch (err) {
+      console.error("Failed to load ward details for edit:", err);
+      toast.error("Could not load ward details. Try again.");
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const handleCreateMaster = () => navigate("/doctordashboard/bedroommanagement/bedmaster");
 
@@ -250,7 +354,7 @@ const BedRoomList = () => {
       accessor: "actions",
       cell: (row) => (
         <div className="flex gap-2">
-          <button onClick={() => handleEdit(row)} className="p-2 text-green-500 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Edit">
+          <button onClick={() => handleEdit(row)} className="p-2 text-green-500 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors" title="Edit" disabled={editLoading}>
             <FaEdit size={14} />
           </button>
           <button onClick={() => handleDelete(row)} className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
@@ -277,6 +381,17 @@ const BedRoomList = () => {
           </button>
         </div>
       </div>
+
+      {/* Simple loading indicator */}
+      {loading && (
+        <div className="mb-4 p-3 rounded-md bg-gray-50 border border-gray-100 text-sm text-gray-700 flex items-center gap-2">
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+          Loading ward summary...
+        </div>
+      )}
 
       <DynamicTable
         columns={columns}

@@ -115,8 +115,18 @@ const PatientViewSections = ({ data, personalHealthDetails, familyHistory, vital
 const PatientViewModal = ({ isOpen, onClose, patient, personalHealthDetails, familyHistory, vitalSigns, loading, onEdit }) => {
   if (!isOpen) return null;
   return (
-    <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <motion.div className="flex flex-col relative w-full max-w-4xl max-h-[95vh] rounded-xl bg-white shadow-xl overflow-hidden" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ duration: 0.3 }}>
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="flex flex-col relative w-full max-w-4xl max-h-[95vh] rounded-xl bg-white shadow-xl overflow-hidden"
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="sticky top-0 z-20 bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-t-xl p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -128,285 +138,398 @@ const PatientViewModal = ({ isOpen, onClose, patient, personalHealthDetails, fam
                 <p className="text-white text-lg">Virtual #{patient?.sequentialId || "-"}</p>
               </div>
             </div>
-            <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full border border-white text-white hover:bg-white hover:text-[#01B07A] transition-all duration-200">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <button
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white text-white hover:bg-white hover:text-[#01B07A] transition-all duration-200"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
         </div>
         <div className="flex-1 overflow-auto p-6 bg-gray-50">
-          <PatientViewSections data={patient || {}} personalHealthDetails={personalHealthDetails} familyHistory={familyHistory} vitalSigns={vitalSigns} loading={loading} />
+          <PatientViewSections
+            data={patient || {}}
+            personalHealthDetails={personalHealthDetails}
+            familyHistory={familyHistory}
+            vitalSigns={vitalSigns}
+            loading={loading}
+          />
         </div>
         <div className="bg-white border-t p-4 flex justify-end">
-          <button onClick={() => onEdit(patient)} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Edit Consultation</button>
+          <button
+            onClick={() => onEdit(patient)}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Edit Consultation
+          </button>
         </div>
       </motion.div>
     </motion.div>
   );
 };
 
-const VirtualTab = forwardRef(({ doctorName, masterData, location, setTabActions }, ref) => {
-  const navigate = useNavigate();
-  const [virtualPatients, setVirtualPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [newPatientId, setNewPatientId] = useState(null);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [modals, setModals] = useState({ scheduleConsultation: false, viewPatient: false, editPatient: false });
-  const [consultationFormData, setConsultationFormData] = useState({ scheduledDate: getCurrentDate(), scheduledTime: getCurrentTime(), duration: 30 });
-  const [personalHealthDetails, setPersonalHealthDetails] = useState(null);
-  const [familyHistory, setFamilyHistory] = useState([]);
-  const [vitalSigns, setVitalSigns] = useState(null);
-  const [detailsLoading, setDetailsLoading] = useState(false);
-
-  // Expose the openScheduleConsultationModal function to the parent
-  useImperativeHandle(ref, () => ({
-    openScheduleConsultationModal: () => {
-      openModal("scheduleConsultation");
+const VirtualTab = forwardRef(
+  (
+    {
+      doctorName,
+      masterData,
+      location,
+      setTabActions,
+      tabActions = [],
+      tabs = [],
+      activeTab,
+      onTabChange,
     },
-  }));
-
-  const CONSULTATION_FIELDS = [
-    { name: "firstName", label: "First Name", type: "text", required: true },
-    { name: "lastName", label: "Last Name", type: "text", required: true },
-    { name: "email", label: "Email Address", type: "email", required: true },
-    { name: "phone", label: "Phone Number", type: "text", required: true },
-    { name: "consultationType", label: "Consultation Type", type: "select", required: true, options: ["Video Call", "Voice Call", "Chat"].map((t) => ({ value: t, label: t })) },
-    { name: "scheduledDate", label: "Scheduled Date", type: "date", required: true },
-    { name: "scheduledTime", label: "Scheduled Time", type: "time", required: true },
-    { name: "duration", label: "Duration (minutes)", type: "number", required: true },
-    { name: "notes", label: "Consultation Notes", type: "textarea", colSpan: 2 },
-  ];
-
-  const fetchAllPatients = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(API.FORM);
-      const allPatients = await res.json();
-      const processedPatients = allPatients.map((p) => ({
-        ...p,
-        name: p.name || [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
-        fullName: [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
-      })).reverse();
-
-      setVirtualPatients(processedPatients.filter((p) => (p.type?.toLowerCase() === "virtual" || p.consultationType) && p.doctorName === doctorName)
-        .map((p, i) => ({
-          ...p,
-          sequentialId: i + 1,
-          scheduledDateTime: p.scheduledDateTime || (p.scheduledDate && p.scheduledTime ? `${p.scheduledDate} ${p.scheduledTime}` : "Not scheduled"),
-          consultationStatus: p.consultationStatus || "Scheduled",
-          duration: p.duration || 30,
-          temporaryAddress: p.temporaryAddress || p.addressTemp || p.address || "",
-          address: p.address || p.temporaryAddress || p.addressTemp || "",
-          addressTemp: p.addressTemp || p.temporaryAddress || p.address || "",
-          consultationType: p.consultationType || "Video Call",
-        })));
-    } catch (error) {
-      console.error("Error fetching patients:", error);
-      toast.error("Failed to fetch patients");
-    } finally { setLoading(false); }
-  };
-
-  const fetchPatientDetails = async (patientId) => {
-    if (!patientId) return;
-    setDetailsLoading(true);
-    try {
-      const [personalRes, familyRes, vitalRes] = await Promise.all([
-        getPersonalHealthByPatientId(patientId).catch(() => ({ data: null })),
-        getFamilyMembersByPatient(patientId).catch(() => ({ data: [] })),
-        fetch(API.VITAL_SIGNS).then((res) => res.json()).catch(() => []),
-      ]);
-      setPersonalHealthDetails(personalRes.data || null);
-      setFamilyHistory(Array.isArray(familyRes.data) ? familyRes.data : []);
-      const patientEmail = selectedPatient?.email?.toLowerCase().trim();
-      setVitalSigns(Array.isArray(vitalRes) ? vitalRes.find((v) => v.email?.toLowerCase().trim() === patientEmail) || null : null);
-      toast.success("Patient details loaded successfully!");
-    } catch (error) {
-      console.error("Error fetching patient details:", error);
-      toast.error("Failed to fetch some patient details");
-      setPersonalHealthDetails(null);
-      setFamilyHistory([]);
-      setVitalSigns(null);
-    } finally { setDetailsLoading(false); }
-  };
-
-  const openModal = (modalName) => setModals((prev) => ({ ...prev, [modalName]: true }));
-  const closeModal = (modalName) => {
-    setModals((prev) => ({ ...prev, [modalName]: false }));
-    if (modalName === "scheduleConsultation") setConsultationFormData({ scheduledDate: getCurrentDate(), scheduledTime: getCurrentTime(), duration: 30 });
-    if (modalName === "viewPatient" || modalName === "editPatient") {
-      setSelectedPatient(null);
-      setPersonalHealthDetails(null);
-      setFamilyHistory([]);
-      setVitalSigns(null);
-      setDetailsLoading(false);
-    }
-  };
-
-  const handleViewPatient = (patient) => {
-    setSelectedPatient(patient);
-    openModal("viewPatient");
-    const patientId = patient.id || patient.patientId;
-    if (patientId) fetchPatientDetails(patientId);
-    else toast.error("Unable to load patient details: Missing patient ID");
-  };
-
-  const handleEditPatient = (patient) => {
-    setSelectedPatient(patient);
-    setConsultationFormData({
-      ...patient,
-      scheduledDate: patient.scheduledDate || getCurrentDate(),
-      scheduledTime: patient.scheduledTime || getCurrentTime(),
-      duration: patient.duration || 30,
+    ref
+  ) => {
+    const navigate = useNavigate();
+    const [virtualPatients, setVirtualPatients] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [newPatientId, setNewPatientId] = useState(null);
+    const [selectedPatient, setSelectedPatient] = useState(null);
+    const [modals, setModals] = useState({ scheduleConsultation: false, viewPatient: false, editPatient: false });
+    const [consultationFormData, setConsultationFormData] = useState({
+      scheduledDate: getCurrentDate(),
+      scheduledTime: getCurrentTime(),
+      duration: 30,
     });
-    closeModal("viewPatient");
-    openModal("editPatient");
-  };
+    const [personalHealthDetails, setPersonalHealthDetails] = useState(null);
+    const [familyHistory, setFamilyHistory] = useState([]);
+    const [vitalSigns, setVitalSigns] = useState(null);
+    const [detailsLoading, setDetailsLoading] = useState(false);
 
-  const handleUpdateConsultation = async (formData) => {
-    try {
-      const payload = {
-        ...formData,
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
-        type: "virtual",
-        scheduledDateTime: `${formData.scheduledDate} ${formData.scheduledTime}`,
-        consultationStatus: "Scheduled",
-        doctorName,
-        updatedAt: new Date().toISOString(),
-      };
-      const response = await fetch(`${API.FORM}/${selectedPatient.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+    useImperativeHandle(ref, () => ({
+      openScheduleConsultationModal: () => {
+        openModal("scheduleConsultation");
+      },
+    }));
+
+    const CONSULTATION_FIELDS = [
+      { name: "firstName", label: "First Name", type: "text", required: true },
+      { name: "lastName", label: "Last Name", type: "text", required: true },
+      { name: "email", label: "Email Address", type: "email", required: true },
+      { name: "phone", label: "Phone Number", type: "text", required: true },
+      { name: "consultationType", label: "Consultation Type", type: "select", required: true, options: ["Video Call", "Voice Call", "Chat"].map((t) => ({ value: t, label: t })) },
+      { name: "scheduledDate", label: "Scheduled Date", type: "date", required: true },
+      { name: "scheduledTime", label: "Scheduled Time", type: "time", required: true },
+      { name: "duration", label: "Duration (minutes)", type: "number", required: true },
+      { name: "notes", label: "Consultation Notes", type: "textarea", colSpan: 2 },
+    ];
+
+    const fetchAllPatients = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(API.FORM);
+        const allPatients = await res.json();
+        const processedPatients = allPatients
+          .map((p) => ({
+            ...p,
+            name: p.name || [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
+            fullName: [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" "),
+          }))
+          .reverse();
+        setVirtualPatients(
+          processedPatients
+            .filter((p) => (p.type?.toLowerCase() === "virtual" || p.consultationType) && p.doctorName === doctorName)
+            .map((p, i) => ({
+              ...p,
+              sequentialId: i + 1,
+              scheduledDateTime: p.scheduledDateTime || (p.scheduledDate && p.scheduledTime ? `${p.scheduledDate} ${p.scheduledTime}` : "Not scheduled"),
+              consultationStatus: p.consultationStatus || "Scheduled",
+              duration: p.duration || 30,
+              temporaryAddress: p.temporaryAddress || p.addressTemp || p.address || "",
+              address: p.address || p.temporaryAddress || p.addressTemp || "",
+              addressTemp: p.addressTemp || p.temporaryAddress || p.address || "",
+              consultationType: p.consultationType || "Video Call",
+            }))
+        );
+      } catch (error) {
+        console.error("Error fetching patients:", error);
+        toast.error("Failed to fetch patients");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchPatientDetails = async (patientId) => {
+      if (!patientId) return;
+      setDetailsLoading(true);
+      try {
+        const [personalRes, familyRes, vitalRes] = await Promise.all([
+          getPersonalHealthByPatientId(patientId).catch(() => ({ data: null })),
+          getFamilyMembersByPatient(patientId).catch(() => ({ data: [] })),
+          fetch(API.VITAL_SIGNS).then((res) => res.json()).catch(() => []),
+        ]);
+        setPersonalHealthDetails(personalRes.data || null);
+        setFamilyHistory(Array.isArray(familyRes.data) ? familyRes.data : []);
+        const patientEmail = selectedPatient?.email?.toLowerCase().trim();
+        setVitalSigns(Array.isArray(vitalRes) ? vitalRes.find((v) => v.email?.toLowerCase().trim() === patientEmail) || null : null);
+        toast.success("Patient details loaded successfully!");
+      } catch (error) {
+        console.error("Error fetching patient details:", error);
+        toast.error("Failed to fetch some patient details");
+        setPersonalHealthDetails(null);
+        setFamilyHistory([]);
+        setVitalSigns(null);
+      } finally {
+        setDetailsLoading(false);
+      }
+    };
+
+    const openModal = (modalName) => setModals((prev) => ({ ...prev, [modalName]: true }));
+    const closeModal = (modalName) => {
+      setModals((prev) => ({ ...prev, [modalName]: false }));
+      if (modalName === "scheduleConsultation")
+        setConsultationFormData({ scheduledDate: getCurrentDate(), scheduledTime: getCurrentTime(), duration: 30 });
+      if (modalName === "viewPatient" || modalName === "editPatient") {
+        setSelectedPatient(null);
+        setPersonalHealthDetails(null);
+        setFamilyHistory([]);
+        setVitalSigns(null);
+        setDetailsLoading(false);
+      }
+    };
+
+    const handleViewPatient = (patient) => {
+      setSelectedPatient(patient);
+      openModal("viewPatient");
+      const patientId = patient.id || patient.patientId;
+      if (patientId) fetchPatientDetails(patientId);
+      else toast.error("Unable to load patient details: Missing patient ID");
+    };
+
+    const handleEditPatient = (patient) => {
+      setSelectedPatient(patient);
+      setConsultationFormData({
+        ...patient,
+        scheduledDate: patient.scheduledDate || getCurrentDate(),
+        scheduledTime: patient.scheduledTime || getCurrentTime(),
+        duration: patient.duration || 30,
       });
-      if (!response.ok) throw new Error("Failed to update consultation");
-      toast.success("Consultation updated successfully!");
-      closeModal("editPatient");
-      fetchAllPatients();
-    } catch (error) {
-      console.error("Error updating consultation:", error);
-      toast.error("Failed to update consultation");
-    }
-  };
+      closeModal("viewPatient");
+      openModal("editPatient");
+    };
 
-  const handleScheduleConsultation = async (formData) => {
-    try {
-      const payload = {
-        ...formData,
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
-        type: "virtual",
-        scheduledDateTime: `${formData.scheduledDate} ${formData.scheduledTime}`,
-        consultationStatus: "Scheduled",
-        doctorName,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const response = await fetch(API.FORM, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) throw new Error("Failed to schedule consultation");
-      const responseData = await response.json();
-      toast.success("Virtual consultation scheduled successfully!");
-      closeModal("scheduleConsultation");
-      setNewPatientId(responseData.id);
-      fetchAllPatients();
-    } catch (error) {
-      console.error("Error scheduling consultation:", error);
-      toast.error("Failed to schedule consultation.");
-    }
-  };
+    const handleUpdateConsultation = async (formData) => {
+      try {
+        const payload = {
+          ...formData,
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          type: "virtual",
+          scheduledDateTime: `${formData.scheduledDate} ${formData.scheduledTime}`,
+          consultationStatus: "Scheduled",
+          doctorName,
+          updatedAt: new Date().toISOString(),
+        };
+        const response = await fetch(`${API.FORM}/${selectedPatient.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error("Failed to update consultation");
+        toast.success("Consultation updated successfully!");
+        closeModal("editPatient");
+        fetchAllPatients();
+      } catch (error) {
+        console.error("Error updating consultation:", error);
+        toast.error("Failed to update consultation");
+      }
+    };
 
-  const handleAddRecord = (patient) => navigate("/doctordashboard/form", { state: { patient } });
+    const handleScheduleConsultation = async (formData) => {
+      try {
+        const payload = {
+          ...formData,
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          type: "virtual",
+          scheduledDateTime: `${formData.scheduledDate} ${formData.scheduledTime}`,
+          consultationStatus: "Scheduled",
+          doctorName,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        const response = await fetch(API.FORM, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error("Failed to schedule consultation");
+        const responseData = await response.json();
+        toast.success("Virtual consultation scheduled successfully!");
+        closeModal("scheduleConsultation");
+        setNewPatientId(responseData.id);
+        fetchAllPatients();
+      } catch (error) {
+        console.error("Error scheduling consultation:", error);
+        toast.error("Failed to schedule consultation.");
+      }
+    };
 
-  const columns = [
-    { header: "ID", accessor: "sequentialId" },
-    {
-      header: "Name",
-      accessor: "name",
-      clickable: true,
-      cell: (row) => (
-        <button className="cursor-pointer text-[var(--primary-color)] hover:text-[var(--accent-color)]" onClick={() => handleViewPatient(row)}>
-          {row.name || `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`.replace(/\s+/g, " ").trim()}
-        </button>
-      ),
-    },
-    { header: "Date", accessor: "scheduledDate" },
-    { header: "Time", accessor: "scheduledTime" },
-    { header: "Type", accessor: "consultationType" },
-    { header: "Duration", accessor: "duration" },
-    {
-      header: "Actions",
-      cell: (row) => (
-        <div className="flex items-center gap-2">
-          <button onClick={() => handleAddRecord(row)} className="text-base p-1"><FaNotesMedical /></button>
-          <TeleConsultFlow phone={row.phone} patientName={row.name || `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`.replace(/\s+/g, " ").trim()} context="Virtual" patientEmail={row.email} hospitalName={row.hospitalName || "AV Hospital"} />
-          <button title="View Medical Record" onClick={() => {
-            let age = "";
-            if (row.dob) {
-              const dobDate = new Date(row.dob);
-              const today = new Date();
-              age = today.getFullYear() - dobDate.getFullYear();
-              const m = today.getMonth() - dobDate.getMonth();
-              if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
-            }
-            navigate("/doctordashboard/medical-record", {
-              state: {
-                patientName: row.name,
-                email: row.email || "",
-                phone: row.phone || "",
-                gender: row.gender || row.sex || "",
-                temporaryAddress: row.temporaryAddress || row.addressTemp || row.address || "",
-                address: row.address || row.temporaryAddress || row.addressTemp || "",
-                addressTemp: row.addressTemp || row.temporaryAddress || row.address || "",
-                dob: row.dob || "",
-                age: age,
-                bloodType: row.bloodGroup || row.bloodType || "",
-                regNo: row.regNo || "2025/072/0032722",
-                mobileNo: row.mobileNo || row.phone || "",
-                department: row.department || "Ophthalmology",
-              },
-            });
-          }} className="p-1 text-base text-[var(--primary-color)]" style={{ display: "flex", alignItems: "center" }}><FiExternalLink /></button>
-        </div>
-      ),
-    },
-  ];
+    const handleAddRecord = (patient) => navigate("/doctordashboard/form", { state: { patient } });
 
-  const tabActions = [];
+    const columns = [
+      { header: "ID", accessor: "sequentialId" },
+      {
+        header: "Name",
+        accessor: "name",
+        clickable: true,
+        cell: (row) => (
+          <button className="cursor-pointer text-[var(--primary-color)] hover:text-[var(--accent-color)]" onClick={() => handleViewPatient(row)}>
+            {row.name || `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`.replace(/\s+/g, " ").trim()}
+          </button>
+        ),
+      },
+      { header: "Date", accessor: "scheduledDate" },
+      { header: "Time", accessor: "scheduledTime" },
+      { header: "Type", accessor: "consultationType" },
+      { header: "Duration", accessor: "duration" },
+      {
+        header: "Actions",
+        cell: (row) => (
+          <div className="flex items-center gap-2">
+            <button onClick={() => handleAddRecord(row)} className="text-base p-1"><FaNotesMedical /></button>
+            <TeleConsultFlow
+              phone={row.phone}
+              patientName={row.name || `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`.replace(/\s+/g, " ").trim()}
+              context="Virtual"
+              patientEmail={row.email}
+              hospitalName={row.hospitalName || "AV Hospital"}
+            />
+            <button
+              title="View Medical Record"
+              onClick={() => {
+                let age = "";
+                if (row.dob) {
+                  const dobDate = new Date(row.dob);
+                  const today = new Date();
+                  age = today.getFullYear() - dobDate.getFullYear();
+                  const m = today.getMonth() - dobDate.getMonth();
+                  if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
+                }
+                navigate("/doctordashboard/medical-record", {
+                  state: {
+                    patientName: row.name,
+                    email: row.email || "",
+                    phone: row.phone || "",
+                    gender: row.gender || row.sex || "",
+                    temporaryAddress: row.temporaryAddress || row.addressTemp || row.address || "",
+                    address: row.address || row.temporaryAddress || row.addressTemp || "",
+                    addressTemp: row.addressTemp || row.temporaryAddress || row.address || "",
+                    dob: row.dob || "",
+                    age: age,
+                    bloodType: row.bloodGroup || row.bloodType || "",
+                    regNo: row.regNo || "2025/072/0032722",
+                    mobileNo: row.mobileNo || row.phone || "",
+                    department: row.department || "Ophthalmology",
+                  },
+                });
+              }}
+              className="p-1 text-base text-[var(--primary-color)]"
+              style={{ display: "flex", alignItems: "center" }}
+            >
+              <FiExternalLink />
+            </button>
+          </div>
+        ),
+      },
+    ];
 
-  const filters = [
-    { key: "consultationStatus", label: "Status", options: ["Scheduled", "Completed", "Cancelled"].map((status) => ({ value: status, label: status })) },
-    { key: "consultationType", label: "Type", options: ["Video Call", "Voice Call", "Chat"].map((type) => ({ value: type, label: type })) },
-  ];
+    const childTabActions = [];
 
-  useEffect(() => { if (doctorName && !masterData.loading) fetchAllPatients(); }, [doctorName, masterData.loading]);
-  useEffect(() => { const highlightIdFromState = location.state?.highlightId; if (highlightIdFromState) setNewPatientId(highlightIdFromState); }, [location.state]);
-  useEffect(() => { setTabActions(tabActions); }, [setTabActions]);
+    const filters = [
+      { key: "consultationStatus", label: "Status", options: ["Scheduled", "Completed", "Cancelled"].map((status) => ({ value: status, label: status })) },
+      { key: "consultationType", label: "Type", options: ["Video Call", "Voice Call", "Chat"].map((type) => ({ value: type, label: type })) },
+    ];
 
-  return (
-    <>
-      <DynamicTable
-        columns={columns}
-        data={virtualPatients}
-        filters={filters}
-        loading={loading}
-        onViewPatient={handleViewPatient}
-        newRowIds={[newPatientId].filter(Boolean)}
-        tabActions={tabActions}
-        rowClassName={(row) => row.sequentialId === newPatientId || row.sequentialId === location.state?.highlightId ? "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150" : ""}
-      />
+    useEffect(() => {
+      if (typeof setTabActions === "function") {
+        setTabActions(childTabActions);
+      }
+    }, [setTabActions]);
 
-      <PatientViewModal isOpen={modals.viewPatient} onClose={() => closeModal("viewPatient")} patient={selectedPatient} personalHealthDetails={personalHealthDetails} familyHistory={familyHistory} vitalSigns={vitalSigns} loading={detailsLoading} onEdit={handleEditPatient} />
+    useEffect(() => {
+      if (doctorName && !masterData.loading) fetchAllPatients();
+    }, [doctorName, masterData.loading]);
 
-      <ReusableModal isOpen={modals.scheduleConsultation} onClose={() => closeModal("scheduleConsultation")} mode="add" title="Schedule Virtual Consultation" fields={CONSULTATION_FIELDS} data={consultationFormData} onSave={handleScheduleConsultation} onChange={setConsultationFormData} saveLabel="Schedule" cancelLabel="Cancel" size="lg"
-        extraContent={<div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200"><h4 className="text-sm font-semibold text-green-800 mb-2">Virtual Consultation Info</h4><p className="text-sm text-green-700">This will create a virtual consultation appointment. The patient will receive notification with joining details.</p></div>}
-      />
+    useEffect(() => {
+      const highlightIdFromState = location.state?.highlightId;
+      if (highlightIdFromState) setNewPatientId(highlightIdFromState);
+    }, [location.state]);
 
-      <ReusableModal isOpen={modals.editPatient} onClose={() => closeModal("editPatient")} mode="edit" title="Edit Virtual Consultation" fields={CONSULTATION_FIELDS} data={consultationFormData} onSave={handleUpdateConsultation} onChange={setConsultationFormData} saveLabel="Update" cancelLabel="Cancel" size="lg" />
-    </>
-  );
-});
+    const tabActionsToUse = tabActions.length ? tabActions : childTabActions;
+
+    return (
+      <>
+        <DynamicTable
+          columns={columns}
+          data={virtualPatients}
+          filters={filters}
+          loading={loading}
+          onViewPatient={handleViewPatient}
+          newRowIds={[newPatientId].filter(Boolean)}
+          tabs={tabs}
+          tabActions={tabActionsToUse}
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+          rowClassName={(row) => row.sequentialId === newPatientId || row.sequentialId === location.state?.highlightId ? "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150" : ""}
+        />
+        <PatientViewModal
+          isOpen={modals.viewPatient}
+          onClose={() => closeModal("viewPatient")}
+          patient={selectedPatient}
+          personalHealthDetails={personalHealthDetails}
+          familyHistory={familyHistory}
+          vitalSigns={vitalSigns}
+          loading={detailsLoading}
+          onEdit={handleEditPatient}
+        />
+        <ReusableModal
+          isOpen={modals.scheduleConsultation}
+          onClose={() => closeModal("scheduleConsultation")}
+          mode="add"
+          title="Schedule Virtual Consultation"
+          fields={CONSULTATION_FIELDS}
+          data={consultationFormData}
+          onSave={handleScheduleConsultation}
+          onChange={setConsultationFormData}
+          saveLabel="Schedule"
+          cancelLabel="Cancel"
+          size="lg"
+          extraContent={
+            <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+              <h4 className="text-sm font-semibold text-green-800 mb-2">Virtual Consultation Info</h4>
+              <p className="text-sm text-green-700">This will create a virtual consultation appointment. The patient will receive notification with joining details.</p>
+            </div>
+          }
+        />
+        <ReusableModal
+          isOpen={modals.editPatient}
+          onClose={() => closeModal("editPatient")}
+          mode="edit"
+          title="Edit Virtual Consultation"
+          fields={CONSULTATION_FIELDS}
+          data={consultationFormData}
+          onSave={handleUpdateConsultation}
+          onChange={setConsultationFormData}
+          saveLabel="Update"
+          cancelLabel="Cancel"
+          size="lg"
+        />
+      </>
+    );
+  }
+);
 
 export default VirtualTab;

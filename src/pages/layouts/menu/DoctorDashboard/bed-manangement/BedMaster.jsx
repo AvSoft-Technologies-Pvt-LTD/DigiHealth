@@ -12,33 +12,32 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-
 import DepartmentStep from "./DepartmentStep";
 import WardStep from "./WardStep";
 import RoomAmenitiesStep from "./RoomAmenitiesStep";
 import BedAmenitiesStep from "./BedAmenitiesStep";
 import ReviewAndSaveStep from "./ReviewAndSaveStep";
-
 import {
   createSpecializationWards,
   updateSpecializationWards,
+  getWardById,
 } from "../../../../../utils/CrudService";
 
 const BedMaster = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const editData = location.state?.editData;
-  const isEditMode = !!editData;
-
+  const incomingEditData = location.state?.editData;
+  const isEditMode = !!incomingEditData;
   const [roomAddErrors, setRoomAddErrors] = useState({});
   const [currentStep, setCurrentStep] = useState(0);
+  const [loadingEdit, setLoadingEdit] = useState(false);
   const [bedMasterData, setBedMasterData] = useState({
     departments: [],
     wards: [],
     rooms: [],
     beds: [],
-    roomAmenities: [],
-    bedAmenities: [],
+    roomAmenitiesByWard: {},
+    bedAmenitiesByRoom: {},
     selectedDepartment: null,
     selectedWard: null,
     selectedRoom: null,
@@ -46,11 +45,8 @@ const BedMaster = () => {
     activeDepartmentId: null,
     activeWardId: null,
     activeRoomId: null,
-    roomAmenitiesByWard: {},
-    bedAmenitiesByRoom: {},
-    wardTypes: [], // Store ward types here
+    wardTypes: [],
   });
-
   const [specDropdownOpen, setSpecDropdownOpen] = useState(false);
   const [bedCountByRoom, setBedCountByRoom] = useState({});
   const [newRoomNameByWard, setNewRoomNameByWard] = useState({});
@@ -75,35 +71,30 @@ const BedMaster = () => {
     { id: "emergency", name: "Emergency", description: "Emergency treatment area" },
   ];
 
-  // If editData passed from list, map it to local structures (defensive)
-  useEffect(() => {
-    if (!editData) return;
+  // Map server payload (full ward object) into local shape
+  const mapServerPayloadToLocal = (server) => {
     const base = Date.now();
     const defaultRoomAmenities = ["1", "3"];
     const defaultBedAmenities = ["monitor", "sidetable"];
-
-    const safeRooms = Array.isArray(editData.rooms) ? editData.rooms : [];
-    const safeBeds = Array.isArray(editData.beds) ? editData.beds : [];
+    const safeRooms = Array.isArray(server.rooms) ? server.rooms : [];
+    const safeBeds = Array.isArray(server.beds) ? server.beds : [];
     const roomKeyToId = {};
-
     const roomsMapped = safeRooms.map((room, i) => {
       const incomingKey = room.roomNumber ?? room.number ?? room.name ?? `roomIdx-${i}`;
       const generatedId = `room-${base}-${i}`;
       roomKeyToId[incomingKey] = generatedId;
       return {
         id: generatedId,
-        name: room.name ?? `${editData.department ?? "Dept"} - ${editData.ward ?? "Ward"} - Room ${i + 1}`,
+        name: room.name ?? `${server.specializationName ?? server.department ?? "Dept"} - ${server.wardName ?? server.ward ?? "Ward"} - Room ${i + 1}`,
         number: room.roomNumber ?? room.number ?? incomingKey,
         wardId: null,
         amenities: Array.isArray(room.amenities) && room.amenities.length > 0 ? room.amenities : room.roomAmenities ?? defaultRoomAmenities,
         capacity: room.capacity ?? null,
       };
     });
-
-    const wardId = `ward-${base}-1`;
-    const departmentId = `dept-${base}-1`;
+    const wardId = server?.wardId ?? server?.id ?? `ward-${base}-1`;
+    const departmentId = server?.specializationId ?? `dept-${base}-1`;
     const roomsWithWard = roomsMapped.map((r) => ({ ...r, wardId }));
-
     const bedsMapped = safeBeds.map((bed, idx) => {
       const incomingRoomKey = bed.roomNumber ?? bed.room ?? bed.roomId ?? bed.roomName ?? null;
       let mappedRoomId = null;
@@ -121,15 +112,13 @@ const BedMaster = () => {
         name: bed.name ?? `Bed ${idx + 1}`,
         number: `${mappedRoomId}-${idx + 1}`,
         roomId: mappedRoomId,
-        status: bed.status ?? (idx < (editData.occupied ?? 0) ? "occupied" : "available"),
+        status: bed.status ?? (idx < (server.occupied ?? 0) ? "occupied" : "available"),
         wardId,
         amenities: Array.isArray(bed.amenities) && bed.amenities.length > 0 ? bed.amenities : bed.bedAmenities ?? defaultBedAmenities,
       };
     });
-
-    const department = { id: departmentId, name: editData.department ?? "Unknown Department", locked: true };
-    const ward = { id: wardId, name: editData.ward ?? "Ward 1", type: (editData.ward ?? "").toLowerCase() ?? "general", departmentId: department.id };
-
+    const department = { id: departmentId, name: server.specializationName ?? server.department ?? "Unknown Department", locked: true };
+    const ward = { id: wardId, name: server.wardName ?? server.ward ?? "Ward 1", type: (server.wardTypeId ?? server.type ?? "").toString().toLowerCase() || "general", departmentId: department.id };
     const roomAmenitiesByWard = {};
     roomsWithWard.forEach((r) => {
       roomAmenitiesByWard[ward.id] = [...(roomAmenitiesByWard[ward.id] || []), ...(Array.isArray(r.amenities) ? r.amenities : [])];
@@ -137,7 +126,6 @@ const BedMaster = () => {
     Object.keys(roomAmenitiesByWard).forEach((k) => {
       roomAmenitiesByWard[k] = Array.from(new Set(roomAmenitiesByWard[k]));
     });
-
     const bedAmenitiesByRoom = {};
     bedsMapped.forEach((b) => {
       bedAmenitiesByRoom[b.roomId] = [...(bedAmenitiesByRoom[b.roomId] || []), ...(Array.isArray(b.amenities) ? b.amenities : [])];
@@ -145,9 +133,7 @@ const BedMaster = () => {
     Object.keys(bedAmenitiesByRoom).forEach((k) => {
       bedAmenitiesByRoom[k] = Array.from(new Set(bedAmenitiesByRoom[k]));
     });
-
-    setBedMasterData((prev) => ({
-      ...prev,
+    return {
       departments: [department],
       wards: [ward],
       rooms: roomsWithWard,
@@ -160,8 +146,65 @@ const BedMaster = () => {
       activeRoomId: roomsWithWard[0]?.id ?? null,
       roomAmenitiesByWard,
       bedAmenitiesByRoom,
-    }));
-  }, [editData]);
+    };
+  };
+
+  // If editData is present but partial, fetch full ward payload; then map to local
+useEffect(() => {
+  if (!incomingEditData) return;
+  let mounted = true;
+  const ensureFullPayloadThenMap = async () => {
+    try {
+      setLoadingEdit(true);
+      if (incomingEditData?.specializationName || incomingEditData?.wardName || Array.isArray(incomingEditData?.rooms) || Array.isArray(incomingEditData?.beds)) {
+        const mapped = mapServerPayloadToLocal(incomingEditData);
+        if (!mounted) return;
+        setBedMasterData((prev) => ({ ...prev, ...mapped }));
+        return;
+      }
+      const candidateId = incomingEditData?.id ?? incomingEditData?.wardId ?? null;
+      if (!candidateId) {
+        toast.error("Invalid edit data - missing ward id");
+        return;
+      }
+      // Validate and convert ID
+      if (typeof candidateId !== 'number' && (typeof candidateId === 'string' && !/^\d+$/.test(candidateId))) {
+        toast.error("Invalid ward ID. Only numeric IDs are supported.");
+        return;
+      }
+      const numericId = Number(candidateId);
+      if (isNaN(numericId)) {
+        toast.error("Invalid ward ID. Must be a number.");
+        return;
+      }
+      toast.info("Fetching ward details for edit...");
+      const res = await getWardById(numericId);
+      const serverPayload = res?.data;
+      if (!serverPayload) {
+        toast.error("Ward not found");
+        return;
+      }
+      // Ensure specializationId is set in the server payload
+      if (!serverPayload.specializationId) {
+        toast.error("Specialization ID is missing in the ward data.");
+        return;
+      }
+      const mapped = mapServerPayloadToLocal(serverPayload);
+      if (!mounted) return;
+      setBedMasterData((prev) => ({ ...prev, ...mapped }));
+    } catch (err) {
+      console.error("Failed to load ward for edit:", err);
+      toast.error("Failed to load ward details for editing.");
+    } finally {
+      if (mounted) setLoadingEdit(false);
+    }
+  };
+  ensureFullPayloadThenMap();
+  return () => {
+    mounted = false;
+  };
+}, [incomingEditData]);
+
 
   const canGoNext = () => {
     switch (currentStep) {
@@ -177,29 +220,29 @@ const BedMaster = () => {
     if (canGoNext()) setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
     else toast.warning("Please complete the current step before proceeding.");
   };
-
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
 
   // ---------------------------
   // Department functions
   // ---------------------------
-  const addDepartment = (specializationData) => {
-    if (!specializationData) return;
-    const departmentName = specializationData.name || specializationData.specializationName || specializationData.description || "Unnamed";
-    const existingDept = (bedMasterData.departments || []).find((d) => d.name === departmentName);
-    if (existingDept) {
-      toast.warning("Department already exists");
-      return;
-    }
-    const newDept = {
-      id: `dept-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      name: departmentName,
-      specializationId: specializationData.id || specializationData.specializationId || null,
-      createdAt: new Date().toISOString(),
-    };
-    setBedMasterData((prev) => ({ ...prev, departments: [...(prev.departments || []), newDept] }));
-    toast.success("Department added successfully");
+ const addDepartment = (specializationData) => {
+  if (!specializationData) return;
+  const departmentName = specializationData.name || specializationData.specializationName || specializationData.description || "Unnamed";
+  const existingDept = (bedMasterData.departments || []).find((d) => d.name === departmentName);
+  if (existingDept) {
+    toast.warning("Department already exists");
+    return;
+  }
+  const newDept = {
+    id: `dept-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: departmentName,
+    specializationId: specializationData.id || specializationData.specializationId || null, // Ensure this is set
+    createdAt: new Date().toISOString(),
   };
+  setBedMasterData((prev) => ({ ...prev, departments: [...(prev.departments || []), newDept] }));
+  toast.success("Department added successfully");
+};
+
 
   const deleteDepartment = (id) => {
     setBedMasterData((prev) => {
@@ -423,8 +466,7 @@ const BedMaster = () => {
   };
 
   // ---------------------------
-  // Save / Review - POST to /api/specializations/wards
-  // (fixed: removed duplicate POST and cleaned localStorage save)
+  // Save / Review - POST/PUT
   // ---------------------------
   const handleSave = async () => {
     try {
@@ -433,17 +475,14 @@ const BedMaster = () => {
         const departmentWards = (bedMasterData.wards || []).filter(
           (w) => String(w.departmentId) === String(department.id)
         );
-
         const wardsPayload = departmentWards.map((ward) => {
           const wardRooms = (bedMasterData.rooms || []).filter(
             (r) => String(r.wardId) === String(ward.id)
           );
-
           const roomsPayload = wardRooms.map((room) => {
             const roomBeds = (bedMasterData.beds || []).filter(
               (b) => String(b.roomId) === String(room.id)
             );
-
             const bedsPayload = roomBeds.map((bed) => ({
               bedNumber: bed.bedNumber || bed.number || bed.name,
               bedStatusId: bed.bedStatusId || (bed.status === "occupied" ? 2 : 1),
@@ -451,7 +490,6 @@ const BedMaster = () => {
                 ? bed.amenityIds.map(a => parseInt(a) || 0).filter(a => a > 0)
                 : (Array.isArray(bed.amenities) ? bed.amenities.map(a => parseInt(a) || 0).filter(a => a > 0) : []),
             }));
-
             return {
               roomNumber: room.roomNumber || room.number || room.name,
               amenityIds: Array.isArray(room.amenityIds)
@@ -463,37 +501,34 @@ const BedMaster = () => {
               beds: bedsPayload,
             };
           });
-
           return {
             wardName: ward.wardName || ward.name,
             wardTypeId: parseInt(ward.wardTypeId || ward.typeId || ward.type) || 0,
             rooms: roomsPayload,
           };
         });
-
         return {
-          specializationId: parseInt(department.specializationId) || 0,
+specializationId:
+  parseInt(department.specializationId || department.id || department.specialization?.id) || null,
           wards: wardsPayload,
         };
       });
-
       if (!specializationPayloads.length) {
         toast.warning("Nothing to save. Add departments/wards/rooms/beds first.");
         return;
       }
+      // send one request per specialization
+     for (const payload of specializationPayloads) {
+  if (isEditMode) {
+    await updateSpecializationWards(payload.specializationId, payload);
+  } else {
+    await createSpecializationWards(payload);
+  }
+}
 
-      // Option A (chosen): send one POST per specialization (safe default)
-      for (const payload of specializationPayloads) {
-        if (isEditMode) {
-          await updateSpecializationWards(payload.specializationId, payload);
-        } else {
-          await createSpecializationWards(payload);
-        }
-      }
-
-      // --- Local storage: save ONE consolidated summary object instead of one-per-ward ---
+      // store consolidated summary locally
       const savedSummary = {
-        id: isEditMode && editData?.id ? editData.id : `master-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+        id: isEditMode && incomingEditData?.id ? incomingEditData.id : `master-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
         departments: bedMasterData.departments || [],
         wards: bedMasterData.wards || [],
         rooms: bedMasterData.rooms || [],
@@ -503,14 +538,12 @@ const BedMaster = () => {
         totalBeds: (bedMasterData.beds || []).length,
         occupied: (bedMasterData.beds || []).filter(b => b.status === "occupied").length,
         available: (bedMasterData.beds || []).filter(b => b.status !== "occupied").length,
-        createdAt: editData?.createdAt || new Date().toISOString(),
+        createdAt: incomingEditData?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-
       const existingData = JSON.parse(localStorage.getItem("bedMasterData") || "[]");
       let updatedData;
-
-      if (isEditMode && editData?.id) {
+      if (isEditMode && incomingEditData?.id) {
         let replaced = false;
         updatedData = existingData.map(item => {
           if (item.id === savedSummary.id) {
@@ -525,9 +558,7 @@ const BedMaster = () => {
         updatedData = [...existingData, savedSummary];
         toast.success("Bed management configuration saved successfully!");
       }
-
       localStorage.setItem("bedMasterData", JSON.stringify(updatedData));
-
       navigate("/doctordashboard/bedroommanagement");
     } catch (error) {
       console.error("Error saving to backend:", error);
@@ -581,6 +612,9 @@ const BedMaster = () => {
   );
 
   const renderStepContent = () => {
+    if (loadingEdit) {
+      return <div className="p-6 text-center text-sm text-gray-600">Loading ward for edit...</div>;
+    }
     switch (currentStep) {
       case 0:
         return (
@@ -655,12 +689,11 @@ const BedMaster = () => {
                 </button>
               </div>
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-                {editData ? "Edit" : "Create"} Bed Management Master
+                {incomingEditData ? "Edit" : "Create"} Bed Management Master
               </h1>
             </motion.div>
             {renderStepIndicator()}
           </div>
-
           <div className="max-w-7xl mx-auto">
             <div className="p-2 sm:p-4 md:p-6 lg:p-8">
               {renderStepContent()}
@@ -668,7 +701,6 @@ const BedMaster = () => {
           </div>
         </div>
       </div>
-
       <div className="mt-6 pt-6 border-t border-gray-200">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -686,7 +718,6 @@ const BedMaster = () => {
                 <span className="hidden sm:inline">Back</span>
               </button>
             </div>
-
             <div className="w-full sm:w-auto flex justify-end">
               {currentStep < steps.length - 1 ? (
                 <button
@@ -707,7 +738,7 @@ const BedMaster = () => {
                   className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-color)] hover:bg-opacity-90 text-white rounded-lg transition-all duration-200 font-medium shadow-lg text-sm"
                 >
                   <Save size={16} />
-                  <span>{editData ? "Update" : "Save"} & Finish</span>
+                  <span>{incomingEditData ? "Update" : "Save"} & Finish</span>
                 </button>
               )}
             </div>
