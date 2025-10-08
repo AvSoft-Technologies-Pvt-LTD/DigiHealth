@@ -5,6 +5,7 @@ import axios from "axios";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import DocsReader from "../../../../components/DocsReader";
 import ProfileCard from "../../../../components/microcomponents/ProfileCard";
+import ReusableModal from "../../../../components/microcomponents/Modal";
 import {
   ArrowLeft,
   FileText,
@@ -20,6 +21,7 @@ import {
   Stethoscope,
   Video,
   Receipt,
+  Pencil,
 } from "lucide-react";
 import { createPortal } from "react-dom";
 
@@ -85,52 +87,52 @@ const loadRecordingFromLocalStorage = (key) => {
 const VideoPlaybackModal = ({ show, onClose, videoBlob, metadata }) =>
   show
     ? createPortal(
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 md:p-4">
-        <div className="relative bg-white p-3 md:p-6 rounded-xl w-full max-w-md md:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-          <div className="flex justify-between items-center mb-2 md:mb-4">
-            <h3 className="text-lg md:text-xl font-semibold">Consultation Recording</h3>
-            <p className="text-xs md:text-sm text-gray-600">
-              Recorded on: {metadata?.timestamp ? new Date(metadata.timestamp).toLocaleString() : "N/A"}
-            </p>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-xl md:text-2xl"
-            >
-              ×
-            </button>
-          </div>
-          <div className="bg-black rounded-lg overflow-hidden mb-2 md:mb-4">
-            {!videoBlob ? (
-              <div className="w-full h-48 md:h-64 lg:h-96 flex items-center justify-center text-white text-sm md:text-base">
-                <p>No video recording available.</p>
-              </div>
-            ) : (
-              <video
-                controls
-                className="w-full h-48 md:h-64 lg:h-96 object-contain"
-                src={URL.createObjectURL(videoBlob)}
-                onError={(e) => {
-                  console.error("Video playback error:", e);
-                  e.target.error = null;
-                  e.target.src = "";
-                }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 md:p-4">
+          <div className="relative bg-white p-3 md:p-6 rounded-xl w-full max-w-md md:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <div className="flex justify-between items-center mb-2 md:mb-4">
+              <h3 className="text-lg md:text-xl font-semibold">Consultation Recording</h3>
+              <p className="text-xs md:text-sm text-gray-600">
+                Recorded on: {metadata?.timestamp ? new Date(metadata.timestamp).toLocaleString() : "N/A"}
+              </p>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 text-xl md:text-2xl"
               >
-                <p className="text-center text-white p-4">Unable to load video recording.</p>
-              </video>
-            )}
+                ×
+              </button>
+            </div>
+            <div className="bg-black rounded-lg overflow-hidden mb-2 md:mb-4">
+              {!videoBlob ? (
+                <div className="w-full h-48 md:h-64 lg:h-96 flex items-center justify-center text-white text-sm md:text-base">
+                  <p>No video recording available.</p>
+                </div>
+              ) : (
+                <video
+                  controls
+                  className="w-full h-48 md:h-64 lg:h-96 object-contain"
+                  src={URL.createObjectURL(videoBlob)}
+                  onError={(e) => {
+                    console.error("Video playback error:", e);
+                    e.target.error = null;
+                    e.target.src = "";
+                  }}
+                >
+                  <p className="text-center text-white p-4">Unable to load video recording.</p>
+                </video>
+              )}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={onClose}
+                className="px-3 py-1.5 md:px-4 md:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs md:text-sm"
+              >
+                Close
+              </button>
+            </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={onClose}
-              className="px-3 py-1.5 md:px-4 md:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-xs md:text-sm"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>,
-      document.body
-    )
+        </div>,
+        document.body
+      )
     : null;
 
 const PatientMedicalRecordDetails = () => {
@@ -157,7 +159,6 @@ const PatientMedicalRecordDetails = () => {
   const displayAge = opdPatientData?.age || "";
   const hospitalName = selectedRecord?.hospitalname || selectedRecord?.hospitalName || "AV Hospital";
   const ptemail = selectedRecord?.ptemail || displayEmail;
-
   const [state, setState] = useState({
     detailsActiveTab: "medical-records",
     billingActiveTab: "pharmacy",
@@ -172,6 +173,7 @@ const PatientMedicalRecordDetails = () => {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [selectedVideoBlob, setSelectedVideoBlob] = useState(null);
   const [selectedVideoMetadata, setSelectedVideoMetadata] = useState(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   const mockData = {
     medicalDetails: {
@@ -253,7 +255,6 @@ const PatientMedicalRecordDetails = () => {
   };
 
   const calculatedAge = displayAge || calculateAge(displayDob, selectedRecord?.dateOfVisit || selectedRecord?.dateOfAdmission || selectedRecord?.dateOfConsultation);
-
   const getInitials = (name) => {
     if (!name) return "NA";
     return name
@@ -261,6 +262,97 @@ const PatientMedicalRecordDetails = () => {
       .map((n) => n[0])
       .join("")
       .toUpperCase();
+  };
+
+  const validateVitals = (values) => {
+    const errors = {};
+    const warnings = {};
+
+    // Temperature validation (in Celsius)
+    if (values.temperature) {
+      const tempValue = parseFloat(values.temperature);
+      if (!isNaN(tempValue)) {
+        if (tempValue < 35.5 || tempValue > 37.9) {
+          warnings.temperature = `Abnormal temperature (35.5-37.9°C)`;
+        }
+      }
+    }
+
+    // Heart Rate validation
+    if (values.heartRate) {
+      const hrValue = parseInt(values.heartRate);
+      if (!isNaN(hrValue)) {
+        if (hrValue < 60 || hrValue > 100) {
+          warnings.heartRate = `Abnormal heart rate (60-100 bpm)`;
+        }
+      }
+    }
+
+    // SpO2 validation
+    if (values.spO2) {
+      const spo2Value = parseInt(values.spO2);
+      if (!isNaN(spo2Value)) {
+        if (spo2Value < 95) {
+          warnings.spO2 = `Low SpO2 (Normal: >95%)`;
+        }
+      }
+    }
+
+    // Blood Pressure validation
+    if (values.bloodPressure) {
+      const bpParts = values.bloodPressure.split('/');
+      if (bpParts.length === 2) {
+        const systolic = parseInt(bpParts[0]);
+        const diastolic = parseInt(bpParts[1]);
+        if (!isNaN(systolic) && !isNaN(diastolic)) {
+          if (systolic < 90 || systolic > 120 || diastolic < 60 || diastolic > 80) {
+            warnings.bloodPressure = `Abnormal blood pressure (Normal: 90-120/60-80 mmHg)`;
+          }
+        }
+      }
+    }
+
+    // Respiratory Rate validation
+    if (values.respiratoryRate) {
+      const rrValue = parseInt(values.respiratoryRate);
+      if (!isNaN(rrValue)) {
+        if (rrValue < 12 || rrValue > 20) {
+          warnings.respiratoryRate = `Abnormal respiratory rate (12-20 bpm)`;
+        }
+      }
+    }
+
+    return { errors, warnings };
+  };
+
+  const handleSaveVitals = async (formValues) => {
+    const { errors, warnings } = validateVitals(formValues);
+
+    if (Object.keys(errors).length > 0) {
+      // Handle errors if any
+      return;
+    }
+
+    const payload = {
+      ...formValues,
+      ptemail,
+      hospitalName,
+      timestamp: Date.now(),
+      warnings: Object.keys(warnings).length > 0 ? warnings : null
+    };
+
+    try {
+      const res = await axios.post(
+        "https://689887d3ddf05523e55f1e6c.mockapi.io/vitals",
+        payload
+      );
+      setVitalsData(res.data || payload);
+      setShowUpdateModal(false);
+    } catch (err) {
+      console.error("Failed to save vitals:", err);
+      alert("Unable to save vitals. Please try again.");
+      throw err;
+    }
   };
 
   const fetchClinicalNotes = async () => {
@@ -475,13 +567,11 @@ const PatientMedicalRecordDetails = () => {
                 Medical Information
               </h3>
             </div>
-
             {/* Button Section */}
             <button className="px-2 sm:px-3 py-1 sm:py-1.5 bg-[var(--primary-color)] text-white rounded-md sm:rounded-lg hover:opacity-90 transition-opacity text-xs sm:text-sm self-start md:self-auto">
               View Original
             </button>
           </div>
-
           {/* Content */}
           {loading ? (
             <div className="text-center py-6 md:py-8 text-sm md:text-base">
@@ -529,7 +619,6 @@ const PatientMedicalRecordDetails = () => {
               No clinical notes found for this patient and hospital.
             </div>
           )}
-
           {/* Discharge Summary */}
           {selectedRecord?.type === "IPD" && (
             <div className="mt-4 sm:mt-5 md:mt-6">
@@ -553,7 +642,6 @@ const PatientMedicalRecordDetails = () => {
             </div>
           )}
         </div>
-
       ),
       "prescriptions": (
         <div className="ml-6 mr-6 space-y-4 md:space-y-6">
@@ -766,6 +854,72 @@ const PatientMedicalRecordDetails = () => {
 
   const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
 
+  // Fields configuration for ReusableModal
+  const vitalsFields = [
+    {
+      name: "bloodPressure",
+      label: "Blood Pressure",
+      type: "text",
+      placeholder: "e.g. 120/80",
+      unit: "mmHg",
+      normalRange: "90-120/60-80 mmHg",
+      colSpan: 1,
+    },
+    {
+      name: "heartRate",
+      label: "Heart Rate",
+      type: "number",
+      placeholder: "e.g. 72",
+      unit: "bpm",
+      normalRange: "60-100 bpm",
+      colSpan: 1,
+    },
+    {
+      name: "temperature",
+      label: "Temperature",
+      type: "number",
+      placeholder: "e.g. 36.5",
+      unit: "°C",
+      normalRange: "35.5-37.9°C",
+      colSpan: 1,
+    },
+    {
+      name: "respiratoryRate",
+      label: "Respiratory Rate",
+      type: "number",
+      placeholder: "e.g. 16",
+      unit: "bpm",
+      normalRange: "12-20 bpm",
+      colSpan: 1,
+    },
+    {
+      name: "spO2",
+      label: "SpO2",
+      type: "number",
+      placeholder: "e.g. 98",
+      unit: "%",
+      normalRange: ">95%",
+      colSpan: 1,
+    },
+    {
+      name: "height",
+      label: "Height",
+      type: "number",
+      placeholder: "e.g. 170",
+      unit: "cm",
+      colSpan: 1,
+    },
+    {
+      name: "weight",
+      label: "Weight",
+      type: "number",
+      placeholder: "e.g. 65",
+      unit: "kg",
+      colSpan: 1,
+    },
+    
+  ];
+
   return (
     <ErrorBoundary>
       <div className="p-3 md:p-6 space-y-4 md:space-y-6">
@@ -779,21 +933,20 @@ const PatientMedicalRecordDetails = () => {
 
         {/* Patient Header: Responsive for all devices */}
         <ProfileCard
-  initials={getInitials(displayPatientName)}
-  name={displayPatientName}
-  fields={[
-    { label: "Age", value: calculatedAge },
-    { label: "Gender", value: displayGender },
-    { label: "Hospital", value: hospitalName },
-    {
-      label: "Visit Date",
-      value: selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A",
-    },
-    { label: "Diagnosis", value: displayDiagnosis },
-    { label: "K/C/O", value: selectedRecord["K/C/O"] ?? "--" },
-  ]}
-/>
-
+          initials={getInitials(displayPatientName)}
+          name={displayPatientName}
+          fields={[
+            { label: "Age", value: calculatedAge },
+            { label: "Gender", value: displayGender },
+            { label: "Hospital", value: hospitalName },
+            {
+              label: "Visit Date",
+              value: selectedRecord.dateOfVisit || selectedRecord.dateOfAdmission || selectedRecord.dateOfConsultation || "N/A",
+            },
+            { label: "Diagnosis", value: displayDiagnosis },
+            { label: "K/C/O", value: selectedRecord["K/C/O"] ?? "--" },
+          ]}
+        />
 
         {/* Vitals Summary: Responsive Grid */}
         <div className="space-y-4 md:space-y-6">
@@ -803,17 +956,18 @@ const PatientMedicalRecordDetails = () => {
               <Activity size={20} className="text-green-600" />
               <h3 className="text-lg md:text-xl font-semibold">Vitals Summary</h3>
             </div>
+            {/* Update Vitals Button */}
+            <button
+              onClick={() => setShowUpdateModal(true)}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm md:text-base rounded-lg shadow-sm transition duration-200 flex items-center gap-2 self-start md:self-auto"
+            >
+              <Pencil size={16} />
+              Update Vitals
+            </button>
           </div>
 
           {/* Vitals Grid */}
-          {/* <div className="
-      grid grid-cols-2 
-      sm:grid-cols-3 
-      md:grid-cols-4 
-      lg:grid-cols-5 
-      xl:grid-cols-7 
-      gap-3
-    ">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 p-2">
             {[
               { key: "bloodPressure", icon: Heart, color: "red", label: "Blood Pressure", value: vitalsData?.bloodPressure || "--" },
               { key: "heartRate", icon: Activity, color: "blue", label: "Heart Rate", value: vitalsData?.heartRate || "--" },
@@ -822,128 +976,96 @@ const PatientMedicalRecordDetails = () => {
               { key: "respiratoryRate", icon: Activity, color: "violet", label: "Respiratory Rate", value: vitalsData?.respiratoryRate || "--" },
               { key: "height", icon: Activity, color: "cyan", label: "Height", value: vitalsData?.height || "--" },
               { key: "weight", icon: Activity, color: "amber", label: "Weight", value: vitalsData?.weight || "--" },
-            ].map(({ key, icon: Icon, color, label, value }) => (
-              <div
-                key={key}
-                className={`
-          bg-${color}-50 
-          border-l-4 border-${color}-500 
-          p-3 
-          rounded-lg 
-          shadow-sm
-          flex flex-col justify-between
-        `}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  {Icon && <Icon size={16} className={`text-${color}-500`} />}
-                  <span className={`text-xs md:text-sm font-medium text-${color}-700`}>
-                    {label}
-                  </span>
+            ].map(({ key, icon: Icon, color, label, value }) => {
+              const colorMap = {
+                red: "red",
+                blue: "blue",
+                orange: "orange",
+                emerald: "emerald",
+                violet: "violet",
+                cyan: "cyan",
+                amber: "amber",
+              };
+              const c = colorMap[color];
+
+              // Check for warnings
+              let warning = null;
+              if (vitalsData?.warnings?.[key]) {
+                warning = vitalsData.warnings[key];
+              }
+
+              return (
+                <div
+                  key={key}
+                  className={`bg-${c}-50 border-l-4 border-${c}-500 p-3 rounded-lg shadow-sm flex flex-col justify-between hover:shadow-md transition relative`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    {Icon && <Icon size={16} className={`text-${c}-500`} />}
+                    <span className={`text-xs md:text-sm font-medium text-${c}-700 truncate`}>
+                      {label}
+                    </span>
+                  </div>
+                  <div className={`text-sm md:text-base font-semibold text-${c}-800 truncate`}>
+                    {value}
+                  </div>
+              
                 </div>
-                <div className={`text-sm md:text-base font-semibold text-${color}-800`}>
-                  {value}
-                </div>
-              </div>
-            ))}
-          </div> */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 p-2">
-  {[
-    { key: "bloodPressure", icon: Heart, color: "red", label: "Blood Pressure", value: vitalsData?.bloodPressure || "--" },
-    { key: "heartRate", icon: Activity, color: "blue", label: "Heart Rate", value: vitalsData?.heartRate || "--" },
-    { key: "temperature", icon: Thermometer, color: "orange", label: "Temperature", value: vitalsData?.temperature || "--" },
-    { key: "spO2", icon: Activity, color: "emerald", label: "SpO2", value: vitalsData?.spO2 || "--" },
-    { key: "respiratoryRate", icon: Activity, color: "violet", label: "Respiratory Rate", value: vitalsData?.respiratoryRate || "--" },
-    { key: "height", icon: Activity, color: "cyan", label: "Height", value: vitalsData?.height || "--" },
-    { key: "weight", icon: Activity, color: "amber", label: "Weight", value: vitalsData?.weight || "--" },
-  ].map(({ key, icon: Icon, color, label, value }) => {
-    // Map colors manually for Tailwind-safe classes
-    const colorMap = {
-      red: "red",
-      blue: "blue",
-      orange: "orange",
-      emerald: "emerald",
-      violet: "violet",
-      cyan: "cyan",
-      amber: "amber",
-    };
-    const c = colorMap[color];
-
-    return (
-      <div
-        key={key}
-        className={`bg-${c}-50 border-l-4 border-${c}-500 p-3 rounded-lg shadow-sm flex flex-col justify-between hover:shadow-md transition`}
-      >
-        <div className="flex items-center gap-2 mb-1">
-          {Icon && <Icon size={16} className={`text-${c}-500`} />}
-          <span className={`text-xs md:text-sm font-medium text-${c}-700 truncate`}>
-            {label}
-          </span>
+              );
+            })}
+          </div>
         </div>
-        <div className={`text-sm md:text-base font-semibold text-${c}-800 truncate`}>
-          {value}
-        </div>
-      </div>
-    );
-  })}
-</div>
-
-        </div>
-
-
 
         {/* Tabs: Responsive */}
         <div className="w-full border-b border-gray-200">
           <div
             className="
-      flex 
-      overflow-x-auto 
-      sm:overflow-visible 
-      scrollbar-thin 
-      scrollbar-thumb-gray-300 
-      scrollbar-track-gray-100
-      gap-2 sm:gap-4
-      px-2 sm:px-0
-    "
+              flex
+              overflow-x-auto
+              sm:overflow-visible
+              scrollbar-thin
+              scrollbar-thumb-gray-300
+              scrollbar-track-gray-100
+              gap-2 sm:gap-4
+              px-2 sm:px-0
+            "
           >
             {detailsTabs.map((tab) => {
               const IconComponent = tab.icon;
               const isActive = state.detailsActiveTab === tab.id;
-
               return (
                 <button
                   key={tab.id}
                   onClick={() => updateState({ detailsActiveTab: tab.id })}
                   className={`
-            flex items-center gap-2 
-            px-3 py-2 rounded-md 
-            text-sm sm:text-base font-medium
-            transition-all duration-300
-            whitespace-nowrap
-            ${isActive
+                    flex items-center gap-2
+                    px-3 py-2 rounded-md
+                    text-sm sm:text-base font-medium
+                    transition-all duration-300
+                    whitespace-nowrap
+                    ${isActive
                       ? "bg-[var(--primary-color)] text-white shadow-sm"
                       : "text-gray-600 hover:text-[var(--primary-color)] hover:bg-gray-100"
                     }
-          `}
+                  `}
                 >
                   <IconComponent size={16} />
                   <span>{tab.label}</span>
                 </button>
               );
             })}
-          {selectedRecord?.type && !selectedRecord?.isNewlyAdded && (
-          <div className="flex-1  mb-3 flex justify-end">
-            <button
-              onClick={handleSecondOpinion}
-              className="btn btn-primary text-white px-2 sm:px-4 py-1 sm:py-2 text-xs flex items-center gap-1 hover:opacity-90 transition-opacity"
-            >
-              <Stethoscope size={14} />
-              <span className="text-xs sm:text-sm xs:text-xs">Second Opinion</span>
-            </button>
-          </div>
-        )}
+            {selectedRecord?.type && !selectedRecord?.isNewlyAdded && (
+              <div className="flex-1 mb-3 flex justify-end">
+                <button
+                  onClick={handleSecondOpinion}
+                  className="btn btn-primary text-white px-2 sm:px-4 py-1 sm:py-2 text-xs flex items-center gap-1 hover:opacity-90 transition-opacity"
+                >
+                  <Stethoscope size={14} />
+                  <span className="text-xs sm:text-sm xs:text-xs">Second Opinion</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
-        
       </div>
 
       {/* Tab Content */}
@@ -964,10 +1086,30 @@ const PatientMedicalRecordDetails = () => {
         videoBlob={selectedVideoBlob}
         metadata={selectedVideoMetadata}
       />
+
+      {/* Update Vitals Modal using ReusableModal */}
+      <ReusableModal
+        isOpen={showUpdateModal}
+        onClose={() => setShowUpdateModal(false)}
+        title="Update Vitals"
+        mode="edit"
+        saveLabel="Save Vitals"
+        fields={vitalsFields}
+        data={{
+          bloodPressure: vitalsData?.bloodPressure?.replace(" mmHg", "") || "",
+          heartRate: vitalsData?.heartRate?.replace(" bpm", "") || "",
+          temperature: vitalsData?.temperature?.replace("°C", "") || "",
+          respiratoryRate: vitalsData?.respiratoryRate?.replace(" bpm", "") || "",
+          spO2: vitalsData?.spO2?.replace("%", "") || "",
+          height: vitalsData?.height?.replace(" cm", "") || "",
+          weight: vitalsData?.weight?.replace(" kg", "") || "",
+          notes: vitalsData?.notes || "",
+        }}
+        onSave={handleSaveVitals}
+        shouldValidate={true}
+      />
     </ErrorBoundary>
   );
 };
 
 export default PatientMedicalRecordDetails;
-
-

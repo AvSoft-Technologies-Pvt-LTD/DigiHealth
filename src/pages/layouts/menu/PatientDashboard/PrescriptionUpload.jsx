@@ -172,15 +172,15 @@ const PrescriptionUpload = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <button
+          {/* <button
             onClick={() => navigate('/patientdashboard/lab-tests')}
             className="text-gray-600 hover:text-gray-800 text-sm sm:text-base mb-4 flex items-center gap-1 transition-colors"
           >
             ← Back to Lab Tests
-          </button>
+          </button> */}
           <h1 className="h4-heading">Upload Prescription</h1>
           <p className="text-sm sm:text-base text-gray-600">
             Upload your doctor's prescription and get personalized test recommendations
