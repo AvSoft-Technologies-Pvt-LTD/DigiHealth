@@ -1,6 +1,17 @@
 import axios from "axios";
 import {  BASE_URL } from "../config/api";
 import StorageService from "./storageService";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
+import { NavigationContainerRef } from '@react-navigation/native';
+import { RootStackParamList } from "../types/navigation";
+// Add this type for navigation reference
+let navigationRef: NavigationContainerRef<RootStackParamList> | null = null;
+
+// Function to set the navigation reference
+export const setNavigationReference = (ref: NavigationContainerRef<RootStackParamList>) => {
+  navigationRef = ref;
+};
 
 // Create an Axios instance
 const apiClient = axios.create({
@@ -21,6 +32,10 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized errors (token expired, etc.)
+      handleServerError();
+    }
     return Promise.reject(error);
   }
 );
@@ -39,16 +54,27 @@ export const getAccessJwtToken = async (): Promise<string | null> => {
 };
 
 // Utility functions for API calls
-export const get = async (url: string, params?: object) => {
+export const get = async (
+  url: string,
+  params?: object,
+  responseType: 'json' | 'blob' | 'arraybuffer' = 'json'
+) => {
   const token = await getAccessJwtToken();
   try {
-    const response = await apiClient.get(url, { params ,headers: { Authorization: `Bearer ${token}` } });
+    const response = await apiClient.get(url, {
+      params,
+      responseType, // 👈 allows binary data for images
+      headers: { Authorization: `Bearer ${token}` },
+    });
     return response.data;
   } catch (error) {
-    console.error("GET request error:", error);
+    console.error('Error handling server error:', error);
     throw error;
   }
 };
+
+
+
 
 export const post = async <T = any>(url: string, data: object): Promise<T> => {
   console.log("url",url,"data",data)

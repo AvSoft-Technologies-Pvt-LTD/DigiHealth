@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Image, TouchableOpacity, Animated,KeyboardAvoidingView } from "react-native";
+import { View, ScrollView, StyleSheet, TouchableOpacity, Animated, KeyboardAvoidingView, ActivityIndicator } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import AvText from "../../../elements/AvText";
 import AvTextInput from "../../../elements/AvTextInput";
@@ -10,6 +10,8 @@ import { PAGES } from "../../../constants/pages";
 import { isIos } from "../../../constants/platform";
 import AvImage from "../../../elements/AvImage";
 import { IMAGES } from "../../../assets";
+import { useAppDispatch, useAppSelector } from "../../../store/hooks";
+import { fetchPatientPhoto } from "../../../store/thunks/patientThunks";
 
 const PatientSettingsView = () => {
   const [patient, setPatient] = useState({
@@ -29,6 +31,7 @@ const PatientSettingsView = () => {
   const [editing, setEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const blinkAnim = useRef(new Animated.Value(0)).current;
+  const dispatch = useAppDispatch();
 
   const handleChange = (field, value) => {
     setPatient({ ...patient, [field]: value });
@@ -79,198 +82,216 @@ const PatientSettingsView = () => {
       .replace('Aadhaar', 'Aadhaar'); // Keep Aadhaar capitalized properly
   };
 
+  // Get the current patient from Redux store
+  const { photo } = useAppSelector((state) => state.patientSettingData || {});
+
   return (
     <>
-     <KeyboardAvoidingView
-                style={styles.container}
-                behavior={isIos() ? 'padding' : 'height'}
-                keyboardVerticalOffset={isIos() ? 90 : 0}
-            >
-      <Header
-        title={PAGES.PATIENT_SETTINGS}
-        showBackButton={false}
-        backgroundColor={COLORS.WHITE}
-        titleColor={COLORS.BLACK}
-      />
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={isIos() ? 'padding' : 'height'}
+        keyboardVerticalOffset={isIos() ? 90 : 0}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <AvText type="heading_3" style={styles.headerTitle}>
-            Profile Settings
-          </AvText>
-          <AvText type="description" style={styles.headerSubtitle}>
-            Manage your account information and preferences
-          </AvText>
-        </View>
-
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <AvImage
-            source={{ uri: IMAGES.PROFILE }}
-            fallbackSource={{ uri: IMAGES.PROFILE }}
-            style={{ width: 200, height: 200 }}
-            resizeMode="cover"
-            showLoadingIndicator={true}
-            loadingIndicatorColor="#0000ff"
-            fadeDuration={300}
-            progressiveRenderingEnabled={true}
-          />
-          <AvText type="title_7" style={styles.profileName}>
-            {patient.firstName} {patient.lastName}
-          </AvText>
-          <AvText type="title_3" style={styles.profileEmail}>
-            {patient.email}
-          </AvText>
-        </View>
-
-        {/* Tabs */}
-        <View style={styles.tabsContainer}>
-          <View style={styles.tabs}>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "personal" && styles.activeTab]}
-              onPress={() => setActiveTab("personal")}
-            >
-              <Icon
-                name="person"
-                size={22}
-                color={activeTab === "personal" ? COLORS.WHITE : COLORS.GREY}
-              />
-              <AvText
-                type="buttonText"
-                style={{ color: activeTab === "personal" ? COLORS.WHITE : COLORS.GREY, marginLeft: 6 }}
-              >
-                Personal
-              </AvText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "password" && styles.activeTab]}
-              onPress={() => setActiveTab("password")}
-            >
-              <Icon
-                name="lock"
-                size={22}
-                color={activeTab === "password" ? COLORS.WHITE : COLORS.GREY}
-              />
-              <AvText
-                type="buttonText"
-                style={{ color: activeTab === "password" ? COLORS.WHITE : COLORS.GREY, marginLeft: 6 }}
-              >
-                Password
-              </AvText>
-            </TouchableOpacity>
+        <Header
+          title={PAGES.PATIENT_SETTINGS}
+          showBackButton={false}
+          backgroundColor={COLORS.WHITE}
+          titleColor={COLORS.BLACK}
+        />
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <AvText type="heading_3" style={styles.headerTitle}>
+              Profile Settings
+            </AvText>
+            <AvText type="description" style={styles.headerSubtitle}>
+              Manage your account information and preferences
+            </AvText>
           </View>
-        </View>
 
-        {/* Content based on active tab */}
-        {activeTab === "personal" ? (
-          <View style={styles.formSection}>
-            <View style={styles.sectionHeader}>
-              <AvText type="title_6">Personal Information</AvText>
-              <TouchableOpacity onPress={toggleEditing} style={styles.editIconContainer}>
-                {editing ? (
-                  <Animated.View style={[styles.blinkingDot, { opacity: blinkAnim }]} />
-                ) : (
-                  <Icon name="edit" size={22} color={COLORS.SECONDARY} />
-                )}
+          {/* Profile Card */}
+          <View style={styles.profileCard}>
+
+            <AvImage
+              source={{ uri: photo }} // now contains data:image/jpeg;base64,...
+              style={{ width: 200, height: 200, borderRadius: 100 }}
+              resizeMode="cover"
+              showLoadingIndicator={true}
+            />
+            <AvText type="title_7" style={styles.profileName}>
+              {patient.firstName} {patient.lastName}
+            </AvText>
+            <AvText type="title_3" style={styles.profileEmail}>
+              {patient.email}
+            </AvText>
+          </View>
+
+          {/* Tabs */}
+          <View style={styles.tabsContainer}>
+            <View style={styles.tabs}>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === "personal" && styles.activeTab]}
+                onPress={() => setActiveTab("personal")}
+              >
+                <Icon
+                  name="person"
+                  size={22}
+                  color={activeTab === "personal" ? COLORS.WHITE : COLORS.GREY}
+                />
+                <AvText
+                  type="buttonText"
+                  style={{ color: activeTab === "personal" ? COLORS.WHITE : COLORS.GREY, marginLeft: 6 }}
+                >
+                  Personal
+                </AvText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === "password" && styles.activeTab]}
+                onPress={() => setActiveTab("password")}
+              >
+                <Icon
+                  name="lock"
+                  size={22}
+                  color={activeTab === "password" ? COLORS.WHITE : COLORS.GREY}
+                />
+                <AvText
+                  type="buttonText"
+                  style={{ color: activeTab === "password" ? COLORS.WHITE : COLORS.GREY, marginLeft: 6 }}
+                >
+                  Password
+                </AvText>
               </TouchableOpacity>
             </View>
+          </View>
 
-            {/* Form Fields - Only inputs with labels inside */}
-            <View style={styles.formFields}>
-              {Object.entries(patient).map(([field, value]) => (
+          {/* Content based on active tab */}
+          {activeTab === "personal" ? (
+            <View style={styles.formSection}>
+              <View style={styles.sectionHeader}>
+                <AvText type="title_6">Personal Information</AvText>
+                <TouchableOpacity onPress={toggleEditing} style={styles.editIconContainer}>
+                  {editing ? (
+                    <Animated.View style={[styles.blinkingDot, { opacity: blinkAnim }]} />
+                  ) : (
+                    <Icon name="edit" size={22} color={COLORS.SECONDARY} />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {/* Form Fields - Only inputs with labels inside */}
+              <View style={styles.formFields}>
+                {Object.entries(patient).map(([field, value]) => (
+                  <AvTextInput
+                    key={field}
+                    label={formatFieldName(field)}
+                    value={value}
+                    onChangeText={(text) => handleChange(field, text)}
+                    editable={editing}
+                    mode="outlined"
+                    style={styles.input}
+                    placeholder={!value ? "Not provided" : ""}
+                    keyboardType={
+                      field.includes("Phone") || field.includes("Number") || field === "aadhaarNumber"
+                        ? "phone-pad"
+                        : field.includes("Email")
+                          ? "email-address"
+                          : field === "dateOfBirth"
+                            ? "numbers-and-punctuation"
+                            : "default"
+                    }
+                    theme={inputTheme}
+                  />
+                ))}
+              </View>
+
+              {/* Action Buttons - Only show when editing */}
+              {editing && (
+                <View style={styles.buttonContainer}>
+                  <AvButton
+                    mode="outlined"
+                    onPress={() => setEditing(false)}
+                    style={[styles.button, styles.cancelButton]}
+                  >
+                    Cancel
+                  </AvButton>
+                  <AvButton
+                    mode="contained"
+                    onPress={handleSave}
+                    style={[styles.button, styles.saveButton]}
+                  >
+                    Save Changes
+                  </AvButton>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View style={styles.passwordSection}>
+              <AvText type="title_6" style={styles.sectionTitle}>
+                Change Password
+              </AvText>
+              <View style={styles.passwordForm}>
                 <AvTextInput
-                  key={field}
-                  label={formatFieldName(field)}
-                  value={value}
-                  onChangeText={(text) => handleChange(field, text)}
-                  editable={editing}
+                  label="Current Password"
+                  secureTextEntry
                   mode="outlined"
                   style={styles.input}
-                  placeholder={!value ? "Not provided" : ""}
-                  keyboardType={
-                    field.includes("Phone") || field.includes("Number") || field === "aadhaarNumber"
-                      ? "phone-pad"
-                      : field.includes("Email")
-                        ? "email-address"
-                        : field === "dateOfBirth"
-                          ? "numbers-and-punctuation"
-                          : "default"
-                  }
+                  placeholder="Enter current password"
                   theme={inputTheme}
                 />
-              ))}
-            </View>
-
-            {/* Action Buttons - Only show when editing */}
-            {editing && (
-              <View style={styles.buttonContainer}>
-                <AvButton
+                <AvTextInput
+                  label="New Password"
+                  secureTextEntry
                   mode="outlined"
-                  onPress={() => setEditing(false)}
-                  style={[styles.button, styles.cancelButton]}
-                >
-                  Cancel
-                </AvButton>
-                <AvButton
-                  mode="contained"
-                  onPress={handleSave}
-                  style={[styles.button, styles.saveButton]}
-                >
-                  Save Changes
+                  style={[styles.input, styles.inputSpacing]}
+                  placeholder="Enter new password"
+                  theme={inputTheme}
+                />
+                <AvTextInput
+                  label="Confirm New Password"
+                  secureTextEntry
+                  mode="outlined"
+                  style={[styles.input, styles.inputSpacing]}
+                  placeholder="Confirm new password"
+                  theme={inputTheme}
+                />
+                <AvButton mode="contained" style={styles.savePasswordButton}>
+                  Change Password
                 </AvButton>
               </View>
-            )}
-          </View>
-        ) : (
-          <View style={styles.passwordSection}>
-            <AvText type="title_6" style={styles.sectionTitle}>
-              Change Password
-            </AvText>
-            <View style={styles.passwordForm}>
-              <AvTextInput
-                label="Current Password"
-                secureTextEntry
-                mode="outlined"
-                style={styles.input}
-                placeholder="Enter current password"
-                theme={inputTheme}
-              />
-              <AvTextInput
-                label="New Password"
-                secureTextEntry
-                mode="outlined"
-                style={[styles.input, styles.inputSpacing]}
-                placeholder="Enter new password"
-                theme={inputTheme}
-              />
-              <AvTextInput
-                label="Confirm New Password"
-                secureTextEntry
-                mode="outlined"
-                style={[styles.input, styles.inputSpacing]}
-                placeholder="Confirm new password"
-                theme={inputTheme}
-              />
-              <AvButton mode="contained" style={styles.savePasswordButton}>
-                Change Password
-              </AvButton>
             </View>
-          </View>
-        )}
-      </ScrollView>
+          )}
+        </ScrollView>
       </KeyboardAvoidingView>
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.WHITE,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: COLORS.WHITE,
+  },
+  errorText: {
+    color: COLORS.ERROR,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
   container: {
-        flex: 1,
-        backgroundColor: COLORS.WHITE,
-    },
+    flex: 1,
+    backgroundColor: COLORS.WHITE,
+  },
   scrollContainer: {
     padding: 16,
     paddingBottom: 24,
@@ -369,24 +390,22 @@ const styles = StyleSheet.create({
   },
   editIconContainer: {
     backgroundColor: COLORS.BG_OFF_WHITE,
-    padding: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.SECONDARY,
-  },
-  formFields: {
-    marginBottom: 10,
-  },
-  input: {
-    marginBottom: 12,
-    backgroundColor: COLORS.WHITE,
   },
   inputSpacing: {
     marginTop: 12,
   },
+  passwordForm: {
+    marginTop: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: COLORS.BLACK,
+  },
   buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 16,
   },
   button: {

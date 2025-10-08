@@ -49,7 +49,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           StorageService.get<string>("userEmail"),
         ]);
 
-        console.log("Token and role from storage:", { token, userRole, userId, userEmail });
 
         if (token) {
           // Update Redux store with authentication state

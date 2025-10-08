@@ -15,8 +15,9 @@ import PatientModals from "./index";
 import AvImage from "../../../../elements/AvImage";
 import { IMAGES } from "../../../../assets";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
-import { fetchAllPatients, fetchPatientBloodGroupData, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchPatientPersonalHealthData as personalHealthData,  } from "../../../../store/thunks/patientThunks";
+import { fetchAllPatients, fetchPatientBloodGroupData, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchPatientPhoto, fetchPatientPersonalHealthData as personalHealthData, } from "../../../../store/thunks/patientThunks";
 import { setUserProfile } from "../../../../store/slices/userSlice";
+import { setCurrentPatient } from "../../../../store/slices/allPatientSlice";
 
 const PatientOverview = () => {
   const navigation = useNavigation();
@@ -54,7 +55,7 @@ const PatientOverview = () => {
     endDate: new Date(),
     isPrimaryHolder: false,
   });
-  
+
   const [completion, setCompletion] = useState({
     basicDetails: true,
     personalHealth: false,
@@ -103,57 +104,77 @@ const PatientOverview = () => {
   }, [dispatch]);
 
   // Handle patient data once it's loaded
-useEffect(() => {
-  if (allPatients?.length > 0) {
-    const currentPatient = allPatients.find((item: any) => userEmail === item.email);
-    if (currentPatient) {
-      dispatch(fetchPatientDashboardData(currentPatient.id));
-      dispatch(setUserProfile({ patientId: currentPatient.id }));
+  useEffect(() => {
+
+    if (allPatients?.length > 0) {
+      const currentPatient = allPatients.find((item: any) => userEmail === item.email);
+
+      if (currentPatient) {
+        dispatch(setCurrentPatient(currentPatient));
+        dispatch(fetchPatientDashboardData(currentPatient.id));
+        dispatch(setUserProfile({ patientId: currentPatient.id }));
+      } else {
+        console.log('No patient found with email:', userEmail);
+      }
+    } else {
+      console.log('No patients loaded yet or empty patients array');
+    }
+  }, [allPatients, userEmail, dispatch]);
+
+  useEffect(() => {
+    if (patientDashboardData && !Array.isArray(patientDashboardData)) {
+      setFormData(prev => ({
+        ...prev,
+        ...patientDashboardData
+      }));
+    } else if (Array.isArray(patientDashboardData) && patientDashboardData.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        ...patientDashboardData[0]
+      }));
+    }
+  }, [patientDashboardData]);
+
+  // At the top of your component, add a ref to track initial load
+  const initialLoad = useRef(true);
+
+  // Then in your last useEffect
+  useEffect(() => {
+    if (initialLoad.current) {
+      initialLoad.current = false;
+      return;
+    }
+
+    if (patientDashboardData) {
+      const newData = Array.isArray(patientDashboardData)
+        ? patientDashboardData[0] || {}
+        : patientDashboardData;
+
+      setFormData(prev => {
+        // Only update if there are actual changes
+        const hasChanges = Object.keys(newData).some(
+          key => JSON.stringify(prev[key]) !== JSON.stringify(newData[key])
+        );
+        return hasChanges ? { ...prev, ...newData } : prev;
+      });
+    }
+  }, [patientDashboardData]);
+  const id = useAppSelector((state) => state.user.userProfile.patientId);
+
+  const { currentPatient } = useAppSelector((state) => state.currentPatient || {});
+  const fetchPtImage = async () => {
+    try {
+      await dispatch(fetchPatientPhoto(currentPatient?.photo));
+    } catch (error) {
+      console.log("Error fetching photo", error);
     }
   }
-}, [allPatients, userEmail, dispatch]);
+  useEffect(() => {
+    fetchPtImage();
+  }, []);
+  const { photo } = useAppSelector((state) => state.patientSettingData || {});
 
-useEffect(() => {
-  if (patientDashboardData && !Array.isArray(patientDashboardData)) {
-    setFormData(prev => ({
-      ...prev,
-      ...patientDashboardData
-    }));
-  } else if (Array.isArray(patientDashboardData) && patientDashboardData.length > 0) {
-    setFormData(prev => ({
-      ...prev,
-      ...patientDashboardData[0]
-    }));
-  }
-}, [patientDashboardData]);
 
-// At the top of your component, add a ref to track initial load
-const initialLoad = useRef(true);
-
-// Then in your last useEffect
-useEffect(() => {
-  if (initialLoad.current) {
-    initialLoad.current = false;
-    return;
-  }
-  
-  if (patientDashboardData) {
-    const newData = Array.isArray(patientDashboardData) 
-      ? patientDashboardData[0] || {}
-      : patientDashboardData;
-      
-    setFormData(prev => {
-      // Only update if there are actual changes
-      const hasChanges = Object.keys(newData).some(
-        key => JSON.stringify(prev[key]) !== JSON.stringify(newData[key])
-      );
-      return hasChanges ? { ...prev, ...newData } : prev;
-    });
-  }
-}, [patientDashboardData]);
-  // const id = useAppSelector((state) => state.user.userProfile.userId);
-  const id = "1";
-  
   // Fetch personal health data
   useEffect(() => {
     dispatch(fetchPatientPersonalHealthData(id as string));
@@ -205,11 +226,11 @@ useEffect(() => {
       {/* Profile Section */}
       <View style={styles.profileSection}>
         <AvImage
-          source={{ uri:IMAGES.PROFILE }}
+          source={{ uri: photo || IMAGES.PROFILE }}
           style={styles.profileImage}
         />
         <AvText type="title_6" style={{ color: COLORS.PRIMARY }}>
-          {formData.email||formData.name}
+          {formData.email || formData.name}
         </AvText>
       </View>
 
@@ -281,7 +302,7 @@ useEffect(() => {
           mode="contained"
           style={styles.actionButton}
           buttonColor={COLORS.PRIMARY}
-          onPress={() => {}}
+          onPress={() => { }}
         >
           <View style={styles.buttonContent}>
             <Icon name="account-details" size={16} color={COLORS.WHITE} />

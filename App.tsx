@@ -13,10 +13,12 @@ import { DrawerProvider } from './src/navigation/DrawerContext';
 // import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import ErrorBoundary from './src/components/ErrorBoundary';
+import { setNavigationReference } from './src/services/apiServices';
 
 
 // This is needed for react-native-gesture-handler to work in the whole app
-const GestureHandlerWrapper: React.FC<{children: React.ReactNode}> = ({ children }) => (
+const GestureHandlerWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <GestureHandlerRootView style={{ flex: 1 }}>
     {children}
   </GestureHandlerRootView>
@@ -49,25 +51,33 @@ const App: React.FC = () => {
     StatusBar.setBackgroundColor(defaultBackgroundColor, true);
   }, []);
 
-  return (
+    return (
+    <ErrorBoundary>
     <GestureHandlerWrapper>
-      <Provider store={store}>
-        <PaperProvider theme={theme}>
-          <NavigationContainer>
-            <StatusBar 
-              barStyle={statusBarStyle}
-              backgroundColor={defaultBackgroundColor}
-              translucent={false}
-            />
-            <DrawerProvider>
-              {/* <SafeAreaProvider> */}
-              <AppNavigator />
-              {/* </SafeAreaProvider> */}
-            </DrawerProvider>
-          </NavigationContainer>
-        </PaperProvider>
-      </Provider>
-    </GestureHandlerWrapper>
+        <Provider store={store}>
+          <PaperProvider theme={theme}>
+            <NavigationContainer
+            ref={(ref)=>{
+              if(ref){
+                setNavigationReference(ref);
+              }
+            }}
+            >
+              <StatusBar
+                barStyle={statusBarStyle}
+                backgroundColor={defaultBackgroundColor}
+                translucent={false}
+              />
+              <DrawerProvider>
+                {/* <SafeAreaProvider> */}
+                <AppNavigator />
+                {/* </SafeAreaProvider> */}
+              </DrawerProvider>
+            </NavigationContainer>
+          </PaperProvider>
+        </Provider>
+      </GestureHandlerWrapper>
+    </ErrorBoundary>
   );
 };
 

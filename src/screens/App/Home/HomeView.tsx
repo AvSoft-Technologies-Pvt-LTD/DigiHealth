@@ -48,8 +48,8 @@ const HomeView: React.FC<HomeViewProps> = ({
       <LocationPermission
         permissionMessage="We need your location to show nearby services."
         settingsMessage="Please enable location access in settings to use this feature."
-        onPermissionGranted={() => console.log('Location permission granted!')}
-        onPermissionDenied={() => console.log('Location permission denied')}
+        // onPermissionGranted={() => console.log('Location permission granted!')}
+        // onPermissionDenied={() => console.log('Location permission denied')}
       >
         <ScrollView
           style={styles.container}

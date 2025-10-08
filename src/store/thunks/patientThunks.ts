@@ -7,6 +7,7 @@ import { fetchPatientPersonalDataStart, fetchPatientPersonalDataSuccess, fetchPa
 import { fetchPatientBloodGroupDataStart, fetchPatientBloodGroupDataSuccess, fetchPatientBloodGroupDataFailure } from '../slices/patientBloodGroupSlice';
 import { fetchHealthConditionDataFailure, fetchHealthConditionDataStart, fetchHealthConditionDataSuccess } from '../slices/healthConditionSlice';
 import { fetchRelationDataFailure, fetchRelationDataStart, fetchRelationDataSuccess, saveFamilyHealthDataFailure, saveFamilyHealthDataStart, saveFamilyHealthDataSuccess } from '../slices/relationSlice';
+import { getPatientPhotoFailure, getPatientPhotoStart, getPatientPhotoSuccess } from '../slices/patientSettingSlice';
 
 export const fetchAllPatients = () => async (dispatch: AppDispatch) => {
   try {
@@ -98,3 +99,37 @@ export const fetchPatientDashboardData = (id:string) => async (dispatch: AppDisp
       dispatch(saveFamilyHealthDataFailure(errorMessage));
     }
   };
+
+export const fetchPatientPhoto = (path: string) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(getPatientPhotoStart());
+
+    // Get binary data
+    const response = await get(API.PATIENT_PHOTO + path, {}, 'arraybuffer');
+
+    // Convert binary -> base64 (React Native safe)
+    const base64 = arrayBufferToBase64(response);
+    const imageUri = `data:image/jpeg;base64,${base64}`;
+
+    dispatch(getPatientPhotoSuccess(imageUri));
+  } catch (error) {
+    console.error('Error in fetchPatientPhoto:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient photo';
+    dispatch(getPatientPhotoFailure(errorMessage));
+    return Promise.reject(error);
+  }
+};
+
+// Utility function to convert ArrayBuffer -> base64
+const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 8192; // for large images
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+
+  return global.btoa(binary); // btoa is safe in React Native
+};
