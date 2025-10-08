@@ -449,13 +449,13 @@ const ChartModal = ({ isOpen, onClose, vital, records, selectedIdx }) => {
           <CompactLegendItem icon={AlertTriangle} label="Out of Range" value={`${stats.outOfRange}`} color="bg-gradient-to-r from-red-400 to-red-500" delay={0.7} />
         </div>
         
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <motion.h5 className="text-xs font-semibold text-gray-700 flex items-center gap-1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.8 }}>
             <TrendingUp className="w-3 h-3 text-blue-500" /> Metrics
           </motion.h5>
           <CompactLegendItem icon={Activity} label="Avg" value={`${stats.average} ${range?.label || ""}`} color="bg-gradient-to-r from-blue-400 to-blue-500" delay={0.9} />
           <CompactLegendItem icon={Gauge} label="Range" value={`${range?.min}-${range?.max}`} color="bg-gradient-to-r from-gray-400 to-gray-500" delay={1.0} />
-        </div>
+        </div> */}
       </div>
     );
   };

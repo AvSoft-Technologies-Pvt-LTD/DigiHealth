@@ -279,9 +279,7 @@ zIndexBackdrop = 9999,
                 ))}
               </div>
 
-              <div className="mt-4 text-xs text-gray-500">
-                Quick links for <span className="font-medium text-gray-700">{patient?.name}</span>
-              </div>
+             
             </div>
           </aside>
         </>

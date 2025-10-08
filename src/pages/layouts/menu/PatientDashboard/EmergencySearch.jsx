@@ -1388,12 +1388,16 @@ const EmergencySearch = () => {
                     </div>
 
                     <div className="border rounded-lg p-2 sm:p-3 mb-2 sm:mb-3 lg:mb-4 bg-green-50 border-green-200">
-                      <div className="flex items-center gap-1 sm:gap-2 text-green-600">
-                        <Lucide.Phone className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="font-semibold text-sm sm:text-base lg:text-lg">
-                          {ambulance.phone}
-                        </span>
-                      </div>
+                                      <div className="flex items-center gap-1 sm:gap-2 text-green-600">
+  <Lucide.Phone className="w-3 h-3 sm:w-4 sm:h-4" />
+  <button
+    onClick={() => navigator.clipboard.writeText(ambulance.phone)}
+    className="font-semibold text-sm sm:text-base lg:text-lg underline hover:text-green-700 focus:outline-none"
+    title="Click to copy"
+  >
+    {ambulance.phone}
+  </button>
+</div>
                     </div>
 
                     <div className="flex gap-1 sm:gap-2">
