@@ -297,8 +297,16 @@ const PatientOverview = () => {
       </View>
 
       {/* Action Buttons */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.buttonsContainer}>
-        <AvButton
+<ScrollView
+  horizontal
+  showsHorizontalScrollIndicator={true} // 👈 force ON
+  persistentScrollbar={true}            // 👈 makes it always visible (Android only)
+contentContainerStyle={{
+  flexDirection: "row",
+  alignItems: "center",
+  paddingBottom: 10,   // 👈 gives room for scrollbar
+}}  style={{  height: 70 }}                // 👈 ensures scrollbar has space to render
+>        <AvButton
           mode="contained"
           style={styles.actionButton}
           buttonColor={COLORS.PRIMARY}

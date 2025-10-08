@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Image, TouchableOpacity } from "react-native";
+import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { COLORS } from "../../../../constants/colors";
 import AvText from "../../../../elements/AvText";
 import AvCard from "../../../../elements/AvCards";
@@ -37,7 +37,6 @@ const HealthCard: React.FC = () => {
   };
 
   const healthId = generateHealthId(userData);
-  const qrCodeData = `HEALTHID:${healthId}`;
 
   const renderPlanCard = (plan: SubscriptionPlan) => {
     const isSelected = selectedPlan?.id === plan.id;
@@ -104,7 +103,7 @@ const HealthCard: React.FC = () => {
 
   const renderPlansView = () => {
     return (
-      <View>
+      <View style={{ paddingBottom: 80 }}>
         <AvText type="heading_2" style={styles.plansHeader}>
           Choose Your Health Plan
         </AvText>
@@ -114,17 +113,6 @@ const HealthCard: React.FC = () => {
         <View style={styles.plansColumn}>
           {subscriptionPlans.map((plan) => renderPlanCard(plan))}
         </View>
-        <AvButton
-          mode="contained"
-          onPress={() => handleActivatePlan(selectedPlan, setIsCardActivated, setShowPlansView)}
-          style={[
-            styles.activateButton,
-            { backgroundColor: selectedPlan?.color },
-          ]}
-          disabled={!selectedPlan}
-        >
-          Activate {selectedPlan?.name} Plan
-        </AvButton>
       </View>
     );
   };
@@ -133,8 +121,7 @@ const HealthCard: React.FC = () => {
     if (!selectedPlan) return null;
     return (
       <>
-     
-        {/* Removed AvCard wrapper, replaced with a simple View */}
+        {/* Plan Badge */}
         <View style={[styles.planBadge, { backgroundColor: `${selectedPlan.color}20` }]}>
           <View style={styles.planBadgeContent}>
             <AvText type="title_7" style={[styles.planBadgeText, { color: selectedPlan.color }]}>
@@ -150,13 +137,13 @@ const HealthCard: React.FC = () => {
           </View>
         </View>
 
-        {/* Health Card (with larger logo) */}
+        {/* Health Card */}
         <View style={[styles.healthCard, { backgroundColor: selectedPlan.color }]}>
           <View style={styles.cardContent}>
             <View style={styles.logoContainer}>
               <AvImage
                 source={IMAGES.LOGO}
-                style={[styles.logoImage, { width: 120, height: 72 }]} // Increased size
+                style={[styles.logoImage, { width: 120, height: 72 }]}
                 resizeMode="contain"
               />
             </View>
@@ -194,39 +181,54 @@ const HealthCard: React.FC = () => {
             </View>
           </View>
         </View>
-
-        {/* Download Button */}
-        <TouchableOpacity
-          style={[
-            styles.downloadButton,
-            {
-              backgroundColor: COLORS.WHITE,
-              borderColor: selectedPlan.color,
-            }
-          ]}
-        >
-          <Icon name="download" size={16} color={selectedPlan.color} />
-          <AvText type="caption" style={[styles.downloadButtonText, { color: selectedPlan.color }]}>
-            Download Card
-          </AvText>
-        </TouchableOpacity>
-        </>
+      </>
     );
   };
 
   return (
-    <>
-     <Header
-                title={PAGES.PATIENT_HEALTHCARD}
-                showBackButton={true}
-                backgroundColor={COLORS.WHITE}
-                titleColor={COLORS.BLACK}
-            />
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {showPlansView ? renderPlansView() : renderHealthCardView()}
-    </ScrollView>
-      </>
+    <View style={styles.container}>
+      <Header
+        title={PAGES.PATIENT_HEALTHCARD}
+        showBackButton={true}
+        backgroundColor={COLORS.WHITE}
+        titleColor={COLORS.BLACK}
+      />
 
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        {showPlansView ? renderPlansView() : renderHealthCardView()}
+      </ScrollView>
+
+      {/* Floating Buttons */}
+      <View style={styles.floatingButtonContainer}>
+        {showPlansView ? (
+          <AvButton
+            mode="contained"
+            onPress={() => handleActivatePlan(selectedPlan, setIsCardActivated, setShowPlansView)}
+            style={[styles.floatingButton, { backgroundColor: selectedPlan?.color }]}
+            disabled={!selectedPlan}
+          >
+            Activate {selectedPlan?.name} Plan
+          </AvButton>
+        ) : (
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <AvButton
+              mode="outlined"
+              onPress={() => handleChangePlan(setShowPlansView)}
+              style={[styles.floatingButton, { borderColor: selectedPlan?.color }]}
+            >
+              Change Plan
+            </AvButton>
+            <AvButton
+              mode="contained"
+              onPress={() => console.log("Download Card")}
+              style={[styles.floatingButton, { backgroundColor: selectedPlan?.color }]}
+            >
+              Download Card
+            </AvButton>
+          </View>
+        )}
+      </View>
+    </View>
   );
 };
 
@@ -234,9 +236,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.WHITE,
-    padding: 16,
   },
- 
   plansHeader: {
     textAlign: "center",
     marginBottom: 8,
@@ -251,6 +251,7 @@ const styles = StyleSheet.create({
   },
   plansColumn: {
     marginBottom: 24,
+    paddingHorizontal: 16,
   },
   planCard: {
     marginBottom: 12,
@@ -338,13 +339,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.PRIMARY_TXT,
   },
-  activateButton: {
-    marginBottom: 50,
-  },
   planBadge: {
     marginBottom: 16,
     borderRadius: 8,
     padding: 12,
+    marginHorizontal: 16,
   },
   planBadgeContent: {
     flexDirection: "row",
@@ -358,6 +357,7 @@ const styles = StyleSheet.create({
     minWidth: 100,
   },
   healthCard: {
+    marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 16,
     overflow: "hidden",
@@ -366,21 +366,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
-    position: 'relative',
+    position: "relative",
   },
   cardContent: {
     padding: 16,
   },
   logoContainer: {
-    position: 'absolute',
-    
+    position: "absolute",
     top: 10,
     right: 10,
     zIndex: 1,
   },
   logoImage: {
-    width: 120,  // Increased from 100
-    height: 72,  // Increased from 60
+    width: 120,
+    height: 72,
   },
   userSection: {
     flexDirection: "row",
@@ -419,9 +418,9 @@ const styles = StyleSheet.create({
   qrHealthIdSection: {
     borderRadius: 8,
     padding: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   healthIdInfo: {
@@ -448,23 +447,14 @@ const styles = StyleSheet.create({
   qrCodeContainer: {
     marginLeft: 8,
   },
-  downloadButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 10,
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+  floatingButtonContainer: {
+    position: "absolute",
+    bottom: 16,
+    left: 16,
+    right: 16,
+    zIndex: 10,
   },
-  downloadButtonText: {
-    marginLeft: 8,
-    fontWeight: "600",
-  },
+
 });
 
 export default HealthCard;

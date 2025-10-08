@@ -445,6 +445,190 @@ export const equipmentData: EquipmentItem[] = [
   { label: "Spinal Board", value: "spinal_board", price: 800 }
 ];
 
+//medical record
+// data.tsx
+export const vitalsData = [
+  {
+    title: 'Blood Pressure',
+    value: '120/80',
+    unit: 'mmHg',
+    color: '#E53935',
+    bgColor: '#FFEBEE',
+    borderColor: '#E53935'
+  },
+  {
+    title: 'Heart Rate',
+    value: '75',
+    unit: 'bpm',
+    color: '#D32F2F',
+    bgColor: '#E3F2FD',
+    borderColor: '#D32F2F'
+  },
+  {
+    title: 'Temperature',
+    value: '98.6',
+    unit: '°F',
+    color: '#FFA726',
+    bgColor: '#FFF3E0',
+    borderColor: '#FFA726'
+  },
+  {
+    title: 'O₂ Saturation',
+    value: '98',
+    unit: '%',
+    color: '#4CAF50',
+    bgColor: '#E8F5E8',
+    borderColor: '#4CAF50'
+  },
+  {
+    title: 'Respiratory Rate',
+    value: '18',
+    unit: '/min',
+    color: '#7B1FA2',
+    bgColor: '#F3E5F5',
+    borderColor: '#7B1FA2'
+  },
+  {
+    title: 'Weight',
+    value: '65',
+    unit: 'kg',
+    color: '#FF9800',
+    bgColor: '#FFF8E1',
+    borderColor: '#FF9800'
+  },
+];
+
+export const prescriptionsData = [
+  {
+    recordId: '1',
+    medicineName: 'Paracetamol 500mg',
+    quantity: 15,
+    unitPrice: 2.5,
+    totalPrice: 37.5,
+    date: '02/07/2025',
+    dosage: '1 tablet twice daily'
+  },
+  {
+    recordId: '2',
+    medicineName: 'Ibuprofen 400mg',
+    quantity: 10,
+    unitPrice: 3.0,
+    totalPrice: 30.0,
+    date: '02/07/2025',
+    dosage: '1 tablet three times daily'
+  },
+  {
+    recordId: '3',
+    medicineName: 'Vitamin D3',
+    quantity: 30,
+    unitPrice: 1.2,
+    totalPrice: 36.0,
+    date: '02/07/2025',
+    dosage: '1 capsule daily'
+  }
+];
+
+export const testResultsData = [
+  {
+    recordId: '1',
+    date: '24/09/2025',
+    testName: 'Widal Test',
+    result: 'Pending',
+    normalRange: 'N/A',
+    status: 'Pending'
+  },
+  {
+    recordId: '2',
+    date: '24/09/2025',
+    testName: 'Urine Routine & Microscopy',
+    result: 'Pending',
+    normalRange: 'N/A',
+    status: 'Pending'
+  },
+  {
+    recordId: '3',
+    date: '24/09/2025',
+    testName: 'Complete Blood Count (CBC)',
+    result: 'Pending',
+    normalRange: 'N/A',
+    status: 'Pending'
+  },
+  {
+    recordId: '4',
+    date: '24/09/2025',
+    testName: 'Widal Test',
+    result: 'Pending',
+    normalRange: 'N/A',
+    status: 'Pending'
+  },
+  {
+    recordId: '5',
+    date: '24/09/2025',
+    testName: 'Liver Function Test',
+    result: 'Pending',
+    normalRange: 'N/A',
+    status: 'Pending'
+  }
+];
+
+export const billingItemsData = [
+  {
+    recordId: '1',
+    description: 'Consultation Fee',
+    date: '06/05/2024',
+    amount: 150.0,
+    status: 'Paid'
+  },
+  {
+    recordId: '2',
+    description: 'Lab Tests',
+    date: '06/05/2024',
+    amount: 280.0,
+    status: 'Paid'
+  },
+  {
+    recordId: '3',
+    description: 'Prescription Medicines',
+    date: '06/05/2024',
+    amount: 103.5,
+    status: 'Pending'
+  },
+  {
+    recordId: '4',
+    description: 'Follow-up Consultation',
+    date: '20/05/2024',
+    amount: 100.0,
+    status: 'Pending'
+  }
+];
+
+export const educationalVideos = [
+  {
+    id: '1',
+    title: 'Understanding Migraines: Causes and Prevention',
+    duration: '8:45',
+    category: 'Neurology'
+  },
+  {
+    id: '2',
+    title: 'Stress Management Techniques',
+    duration: '12:30',
+    category: 'Wellness'
+  },
+  {
+    id: '3',
+    title: 'Healthy Diet for Migraine Prevention',
+    duration: '6:20',
+    category: 'Nutrition'
+  },
+  {
+    id: '4',
+    title: 'Exercise and Migraine Relief',
+    duration: '10:15',
+    category: 'Fitness'
+  }
+];
+
 
 export const ROLES = {
   PATIENT: "PATIENT",

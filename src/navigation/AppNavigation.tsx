@@ -6,7 +6,8 @@ import { PAGES } from '../constants/pages';
 import CustomDrawer from './CustomDrawer';
 
 import { RootStackParamList } from '../types/navigation';
-import { AmbulanceBookingView, DrBookAppointmentComponent, PasswordResetPage, ForgotPassword, VerifyOTP, ResetPassword, ViewAllDoctor, SearchAmbulanceView, PaymentPage, PaymentScreen, InvoiceDetails, InvoicePrintPreview, DoctorRegister, Home, Login, PatientDashboard, PatientRegister, PharmacyFinderView, Register, SplashScreen } from '../screens';
+import { useDrawer } from './DrawerContext';
+import { AmbulanceBookingView, DrBookAppointmentComponent,PasswordResetPage,ForgotPassword,VerifyOTP,ResetPassword,ViewAllDoctor,SearchAmbulanceView,PaymentPage,PaymentScreen,InvoiceDetails,InvoicePrintPreview, DoctorRegister, Home, Login, PatientDashboard, PatientRegister, PharmacyFinderView, Register, SplashScreen, MedicalRecordsScreen, MedicalRecordDetails, } from '../screens';
 import PatientDashboardView from '../screens/AllDashboards/PtDashboard/Overview/PatientDashboardView';
 import PatientSettingsView from '../screens/AllDashboards/PtDashboard/PtSetting';
 import HealthCard from '../screens/AllDashboards/PtDashboard/HealthCard/HealthCard';
@@ -17,6 +18,7 @@ import LabBookingView from '../screens/AllDashboards/PtDashboard/LabBooking/LabB
 import PaymentGateway from '../elements/AvPayment';
 import Billing from '../screens/AllDashboards/PtDashboard/Billing';
 import NotificationsScreen from '../components/CommonComponents/Notification';
+import MedicalRecordsPreview from '../screens/AllDashboards/PtDashboard/MedicalRecord/SecondOpinion'
 import { useAppSelector } from '../store/hooks';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -61,8 +63,9 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name={PAGES.INVOICE_DETAILS} component={InvoiceDetails} />
         <Stack.Screen name={PAGES.SEARCH_AMBULANCE_VIEW} component={SearchAmbulanceView} />
         <Stack.Screen name={PAGES.DR_BOOKAPPOITMENT_COMPONENT} component={DrBookAppointmentComponent} />
-
-
+            <Stack.Screen name={PAGES.PATIENT_MEDICAL_RECORD} component={MedicalRecordsScreen} />
+            <Stack.Screen name={PAGES.PATIENT_MEDICAL_DETAILS} component={MedicalRecordDetails} />
+            <Stack.Screen name={PAGES.PATIENT_SECOND_OPINION} component={MedicalRecordsPreview} />
       </Stack.Navigator>
       <CustomDrawer userRole={userRole ?? ''} />
 

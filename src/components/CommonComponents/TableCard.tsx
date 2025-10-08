@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import AvText from '../../elements/AvText';
 import { COLORS } from '../../constants/colors';
 import { normalize } from '../../constants/platform';
 
 export interface DataRecord {
   recordId: string;
-  isHidden: boolean;
+  isHidden?: boolean;
   [key: string]: any;
 }
 
@@ -19,15 +19,21 @@ export interface Action {
 export interface DynamicCardTableProps {
   data: DataRecord[];
   headerFields?: string[];
+  bodyFields?: string[];
+  topRightFields?: string[];
   actions?: Action[];
   onCardPress?: (record: DataRecord) => void;
+  fieldRenderers?: Record<string, (record: DataRecord) => React.ReactNode>; // ✅ added
 }
 
 export function TableCard({
   data,
   headerFields = [],
+  bodyFields = [],
+  topRightFields = [],
   actions = [],
   onCardPress,
+  fieldRenderers = {}, // ✅ default empty
 }: DynamicCardTableProps) {
   if (!data || data.length === 0) {
     return (
@@ -43,85 +49,153 @@ export function TableCard({
     );
   }
 
-  const renderFieldValue = (key: string, value: any, isInTwoColumn: boolean = false) => {
-    if (key === 'recordId' || key === 'isHidden') {
-      return null;
-    }
-    const formatFieldLabel = (fieldKey: string) => {
-      return fieldKey
-        .replace(/([A-Z])/g, ' $1')
-        .replace(/^./, (str) => str.toUpperCase())
-        .trim();
-    };
-    const formatFieldValue = (val: any) => {
-      if (val === null || val === undefined) return '-';
-      if (typeof val === 'boolean') return val ? 'Yes' : 'No';
-      if (typeof val === 'number') {
-        if (key.toLowerCase().includes('price') || key.toLowerCase().includes('salary')) {
-          return `$${val.toLocaleString()}`;
-        }
-        return val.toLocaleString();
+  const formatFieldLabel = (fieldKey: string) =>
+    fieldKey
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (str) => str.toUpperCase())
+      .trim();
+
+  const formatFieldValue = (val: any, key: string) => {
+    if (val === null || val === undefined) return '-';
+    if (typeof val === 'boolean') return val ? 'yes' : 'no';
+    if (typeof val === 'number') {
+      if (
+        key.toLowerCase().includes('price') ||
+        key.toLowerCase().includes('salary') ||
+        key.toLowerCase().includes('total')
+      ) {
+        return `$${val.toLocaleString()}`;
       }
-      return val.toString();
-    };
+      return val.toLocaleString();
+    }
+    return val.toString();
+  };
+
+  // ✅ Centralized function to use fieldRenderers when available
+  const renderFieldValue = (record: DataRecord, key: string) => {
+    if (fieldRenderers[key]) {
+      return fieldRenderers[key](record); // custom render (colored status, etc.)
+    }
     return (
-      <View key={key} style={isInTwoColumn ? styles.fieldColumn : styles.fieldRow}>
-        <AvText type="caption" style={styles.fieldLabel}>{formatFieldLabel(key)}</AvText>
-        <AvText type="body" style={[styles.fieldValue, ...(isInTwoColumn ? [styles.fieldValueColumn] : [])]}>
-          {formatFieldValue(value)}
-        </AvText>
+      <AvText style={styles.fieldValue} numberOfLines={1} ellipsizeMode="tail">
+        {formatFieldValue(record[key], key)}
+      </AvText>
+    );
+  };
+
+  const getFieldWidth = (key: string, value: any) => {
+    const stringValue = formatFieldValue(value, key);
+    if (stringValue.length > 20) return 'full';
+    if (stringValue.length > 10) return 'medium';
+    return 'short';
+  };
+
+  const arrangeFieldsInRows = (fields: [string, any][]) => {
+    const rows: [string, any][][] = [];
+    let currentRow: [string, any][] = [];
+    let currentRowWidth = 0;
+
+    fields.forEach(([key, value]) => {
+      const fieldWidth = getFieldWidth(key, value);
+      let widthValue = fieldWidth === 'full' ? 2 : fieldWidth === 'medium' ? 1.5 : 1;
+
+      if (currentRowWidth + widthValue > 2 || (currentRow.length > 0 && fieldWidth === 'full')) {
+        rows.push([...currentRow]);
+        currentRow = [[key, value]];
+        currentRowWidth = widthValue;
+      } else {
+        currentRow.push([key, value]);
+        currentRowWidth += widthValue;
+      }
+    });
+
+    if (currentRow.length > 0) rows.push(currentRow);
+
+    return rows;
+  };
+
+  const renderHeaderContent = (record: DataRecord) => {
+    if (headerFields.length === 0) return null;
+    return (
+      <View style={styles.headerContent}>
+        {headerFields.map((field) => (
+          <View key={field} style={styles.headerField}>
+            {renderFieldValue(record, field)}
+          </View>
+        ))}
       </View>
     );
   };
 
-  const renderFieldsInColumns = (record: DataRecord) => {
-    // Filter out headerFields, recordId, isHidden, and id
-    const fields = Object.entries(record).filter(
-      ([key]) => !headerFields.includes(key) && key !== 'recordId' && key !== 'isHidden' && key !== 'id'
-    );
-    const columns = [];
-    for (let i = 0; i < fields.length; i += 2) {
-      const leftField = fields[i];
-      const rightField = fields[i + 1];
-      columns.push(
-        <View key={i} style={styles.twoColumnRow}>
-          <View style={styles.columnContainer}>
-            {renderFieldValue(leftField[0], leftField[1], true)}
+  const renderTopRightFields = (record: DataRecord) => {
+    if (!topRightFields || topRightFields.length === 0) return null;
+    return (
+      <View style={styles.topRightFieldsContainer}>
+        {topRightFields.map((field) => (
+          <View key={field} style={styles.topRightField}>
+            {renderFieldValue(record, field)}
           </View>
-          {rightField && (
-            <View style={styles.columnContainer}>
-              {renderFieldValue(rightField[0], rightField[1], true)}
-            </View>
-          )}
-        </View>
-      );
-    }
-    return columns;
+        ))}
+      </View>
+    );
   };
 
- const renderHeaderContent = (record: DataRecord) => {
-  return (
-    <View style={styles.headerContentContainer}>
-      {headerFields.map((field) => (
-        <View key={field} style={styles.headerFieldContainer}>
-          <AvText type="body" style={styles.headerFieldValue} numberOfLines={1} ellipsizeMode="tail">
-            {record[field] || '-'}
-          </AvText>
-        </View>
-      ))}
-    </View>
-  );
-};
-  const renderHeaderActions = (record: DataRecord) => {
+  const renderBodyFields = (record: DataRecord) => {
+    const allFields = Object.entries(record).filter(
+      ([key]) =>
+        !headerFields.includes(key) &&
+        key !== 'recordId' &&
+        key !== 'isHidden' &&
+        key !== 'id' &&
+        (!bodyFields.length || bodyFields.includes(key)) &&
+        !topRightFields.includes(key)
+    );
+    const fieldRows = arrangeFieldsInRows(allFields);
+
+    return (
+      <View style={styles.bodyContent}>
+        {fieldRows.map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.fieldRow}>
+            {row.map(([key, value]) => {
+              const fieldWidth = getFieldWidth(key, value);
+              const isFullWidth = fieldWidth === 'full' || row.length === 1;
+              return (
+                <View
+                  key={key}
+                  style={[
+                    styles.fieldContainer,
+                    isFullWidth ? styles.fullWidthField : styles.halfWidthField,
+                  ]}
+                >
+                  <AvText style={styles.fieldLabel}>{formatFieldLabel(key)}</AvText>
+                  {renderFieldValue(record, key)}
+                </View>
+              );
+            })}
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const renderActions = (record: DataRecord) => {
+    if (actions.length === 0) return null;
     return (
       <View style={styles.actionsContainer}>
         {actions.map((action) => (
           <TouchableOpacity
             key={action.key}
             style={styles.actionButton}
-            onPress={() => action.onPress(record)}
+            onPress={(e) => {
+              e.stopPropagation();
+              action.onPress(record);
+            }}
           >
-            {action.render ? action.render(record) : null}
+            {action.render ? (
+              action.render(record)
+            ) : (
+              <AvText style={styles.actionText}>{action.key.toLowerCase()}</AvText>
+            )}
           </TouchableOpacity>
         ))}
       </View>
@@ -129,200 +203,132 @@ export function TableCard({
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {data.map((record) => (
         <TouchableOpacity
           key={record.recordId}
-          style={[
-            styles.card,
-            record.isHidden && styles.hiddenCard,
-          ]}
-          activeOpacity={0.8}
+          style={[styles.card, record.isHidden && styles.hiddenCard]}
+          activeOpacity={0.95}
           onPress={() => onCardPress?.(record)}
         >
-          {/* Dynamic Header with Record ID, Content, and Actions */}
+          {/* Card Header */}
           <View style={styles.cardHeader}>
-            <View style={styles.recordIdContainer}>
-              <View style={styles.idBadge}>
-                <AvText type="heading_6" style={styles.recordIdLabel}>#{record.recordId}</AvText>
+            <View style={styles.headerLeft}>
+              <View style={styles.recordIdBadge}>
+                <AvText style={styles.recordIdText}>#{record.recordId}</AvText>
               </View>
+              {renderHeaderContent(record)}
             </View>
-            {renderHeaderContent(record)}
-            {renderHeaderActions(record)}
+            {actions.length > 0 && (
+              <View style={styles.headerActionsContainer}>{renderActions(record)}</View>
+            )}
           </View>
-          {/* Dynamic Fields in Two Columns (excluding header fields) */}
-          <View style={styles.fieldsContainer}>
-            {renderFieldsInColumns(record)}
-          </View>
+
+          {/* Top-Right Fields */}
+          {renderTopRightFields(record)}
+
+          {/* Card Body */}
+          {renderBodyFields(record)}
+
+          {/* Hidden overlay */}
+          {record.isHidden && (
+            <View style={styles.hiddenOverlay}>
+              <AvText style={styles.hiddenText}>hidden</AvText>
+            </View>
+          )}
         </TouchableOpacity>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 0,
-  },
+  container: { flex: 1, paddingHorizontal: normalize(4) },
   card: {
     backgroundColor: COLORS.WHITE,
-    borderRadius: 24,
-    padding: 14,
-    marginBottom: 6,
-    shadowColor: COLORS.OCEAN_BLUE,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: COLORS.LIGHT_GREY,
-    transform: [{ scale: 1 }],
+    borderRadius: normalize(20),
+    marginBottom: normalize(4),
+    shadowOpacity: 0.08,
+    shadowRadius: normalize(12),
+    elevation: 6,
+    borderWidth: 0,
+    borderTopWidth: normalize(4),
+    borderTopColor: COLORS.PRIMARY,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  hiddenCard: {
-    opacity: 0.5,
-    borderColor: COLORS.LIGHT_GREY,
-    backgroundColor: COLORS.OFFWHITE,
-    shadowOpacity: 0.06,
-  },
+  hiddenCard: { opacity: 0.7, shadowOpacity: 0.03 },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: normalize(12),
-    paddingBottom: normalize(12),
+    paddingTop: normalize(10),
+    paddingHorizontal: normalize(10),
+    paddingBottom: normalize(2),
     borderBottomWidth: 1,
     borderBottomColor: COLORS.LIGHT_GREY,
-  },
-  recordIdContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  idBadge: {
-    paddingHorizontal: normalize(16),
-    paddingVertical: normalize(8),
-    borderRadius: normalize(16),
-    borderWidth: 1,
-    borderColor: COLORS.SECONDARY,
-  },
-  recordIdLabel: {
-    fontSize: normalize(16),
-    fontWeight: '200',
-    color: COLORS.SECONDARY,
-    letterSpacing: -0.2,
-  },
-    headerContentContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start', // Align items to the start (top-left)
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'flex-start', // Align content to the start (left)
-  },
-  headerFieldContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 34,
-  },
-  headerFieldLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.GREY,
-    marginBottom: 2,
-  },
-  headerFieldValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.PRIMARY_TXT,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  actionButton: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-  },
-  fieldsContainer: {
-    gap: 16,
-  },
-  twoColumnRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  columnContainer: {
-    flex: 1,
-  },
-  fieldColumn: {
-    padding: 5,
-    paddingLeft: 15,
-  },
-  fieldRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 1,
+    alignItems: 'flex-start',
   },
-  fieldLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.GREY,
-    marginBottom: 2,
-    textTransform: 'uppercase',
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: normalize(2), flex: 1 },
+  recordIdBadge: {
+    paddingHorizontal: normalize(4),
+    paddingVertical: normalize(4),
+    borderRadius: normalize(6),
+    borderWidth: 2,
+    borderColor: COLORS.LIGHT_GREY,
   },
-  fieldValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.PRIMARY_TXT,
-    textAlign: 'right',
-    flex: 1,
-    letterSpacing: -0.2,
+  recordIdText: { fontSize: normalize(12), fontWeight: '700', letterSpacing: -0.3 },
+  headerContent: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: normalize(8), padding: normalize(6) },
+  headerField: { gap: normalize(2) },
+  headerActionsContainer: { flexDirection: 'row', gap: normalize(8) },
+  topRightFieldsContainer: {
+    position: 'absolute',
+    top: normalize(60),
+    right: normalize(8),
+    flexDirection: 'column',
+    gap: normalize(6),
+    zIndex: 1,
   },
-  fieldValueColumn: {
-    textAlign: 'left',
-    flex: 0,
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.PRIMARY,
-    borderLeftWidth: 1,
-    borderLeftColor: COLORS.LIGHT_GREY,
-    paddingLeft: 16,
+  topRightField: { paddingHorizontal: normalize(8), minWidth: normalize(80), alignItems: 'center' },
+  bodyContent: { padding: normalize(20), paddingTop: normalize(16), gap: normalize(14) },
+  fieldRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  fieldContainer: { gap: normalize(4) },
+  fullWidthField: { flex: 1 },
+  halfWidthField: { flex: 0.48 },
+  fieldLabel: { fontSize: normalize(12), fontWeight: '500', color: COLORS.GREY, marginBottom: normalize(2) },
+  fieldValue: { fontSize: normalize(15), fontWeight: '600', color: COLORS.PRIMARY_TXT, lineHeight: normalize(20) },
+  actionsContainer: { flexDirection: 'row', gap: normalize(8) },
+  actionButton: { paddingHorizontal: normalize(4), paddingVertical: normalize(2), alignItems: 'center', justifyContent: 'center' },
+  actionText: { fontSize: normalize(12), fontWeight: '500', color: COLORS.PRIMARY },
+  hiddenOverlay: {
+    position: 'absolute',
+    top: normalize(8),
+    right: normalize(12),
+    backgroundColor: COLORS.WARNING,
+    paddingHorizontal: normalize(8),
+    paddingVertical: normalize(4),
+    borderRadius: normalize(8),
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 48,
-    marginVertical: 64,
-  },
+  hiddenText: { color: COLORS.WHITE, fontSize: normalize(9), fontWeight: '600' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: normalize(48), marginVertical: normalize(64) },
   emptyIconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: normalize(96),
+    height: normalize(96),
+    borderRadius: normalize(48),
     backgroundColor: COLORS.PRIMARY_BACKGROND,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: normalize(24),
     borderWidth: 2,
     borderColor: COLORS.PRIMARY_BLUE,
   },
-  emptyIcon: {
-    fontSize: 40,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.PRIMARY,
-    marginBottom: 12,
-    textAlign: 'center',
-    letterSpacing: -0.3,
-  },
+  emptyIcon: { fontSize: normalize(40) },
+  emptyTitle: { fontSize: normalize(22), fontWeight: '800', color: COLORS.PRIMARY, marginBottom: normalize(12), textAlign: 'center', letterSpacing: -0.3 },
   emptySubtitle: {
-    fontSize: 16,
+    fontSize: normalize(16),
     color: COLORS.GREY,
     textAlign: 'center',
-    lineHeight: 24,
-    maxWidth: 300,
+    lineHeight: normalize(24),
+    maxWidth: normalize(300),
     letterSpacing: 0.1,
   },
 });

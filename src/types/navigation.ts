@@ -30,6 +30,9 @@ export type RootStackParamList = {
   [PAGES.VIEW_ALL_DOCTOR]:undefined;
   [PAGES.DR_BOOKAPPOITMENT_COMPONENT]:undefined;
 
+  [PAGES.PATIENT_MEDICAL_DETAILS]:undefined;
+  [PAGES.PATIENT_SECOND_OPINION]:undefined;
+  [PAGES.PATIENT_MEDICAL_RECORD]:undefined;
 };
 
 // This ensures type checking for navigation props

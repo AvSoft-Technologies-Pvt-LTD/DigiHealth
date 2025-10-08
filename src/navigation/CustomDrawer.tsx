@@ -102,14 +102,29 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
       { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
       { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
       { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
+         { title: 'Medical Record', icon: 'file-document', screen: PAGES.PATIENT_MEDICAL_RECORD },
     ] : [
       // Add other role-specific menu items here if needed
       { title: 'Home', icon: 'home', screen: PAGES.HOME },
       { title: 'Patient Dashboard', icon: 'account-details', screen: PAGES.PATIENT_OVERVIEW },
-      { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
+      // { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
       { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
       { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
     ]),
+    // { title: 'Home', icon: 'home', screen: PAGES.HOME },
+    // // { title: 'Patient Dashboard', icon: 'home', screen: PAGES.PATIENT_DASHBOARD },
+    // // { title: 'Home', icon: 'home', screen: PAGES.HOME },
+    // { title: 'Patient Dashboard', icon: 'home', screen: PAGES.PATIENT_OVERVIEW },
+    // // { title: 'Patient Register', icon: 'account-plus', screen: PAGES.PATIENT_REGISTER },
+    // // { title: 'Doctor Register', icon: 'stethoscope', screen: PAGES.DOCTOR_REGISTER },
+    // // { title: 'Hospital Register', icon: 'hospital-building', screen: PAGES.HOSPITAL_REGISTER },
+    // // { title: 'Labs & Scan', icon: 'microscope', screen: PAGES.LABS_SCAN_REGISTER },
+    //  { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
+ 
+        //  { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
+    // { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
+    // // { title: 'Settings', icon: 'setting', screen: PAGES.PATIENT_SETTINGS },
+   
     { title: 'Logout', icon: 'logout', action: handleLogout, isDestructive: true },
   ];
 

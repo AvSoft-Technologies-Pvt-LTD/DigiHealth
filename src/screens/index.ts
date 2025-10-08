@@ -26,7 +26,10 @@ import DrBookAppointmentComponent from './AllDashboards/PtDashboard/BookingCompo
 import ForgotPassword  from '../components/CommonComponents/form/ForgotPassword';
 import VerifyOTP from '../components/CommonComponents/form/VerifyOTP';
 import ResetPassword from '../components/CommonComponents/form/ResetPassword';
+import MedicalRecordsScreen from './AllDashboards/PtDashboard/MedicalRecord/PtMedicalRecord';
+import MedicalRecordDetails from './AllDashboards/PtDashboard/MedicalRecord/MedicalRecordDetails'
 import PasswordResetPage from './Auth/PasswordReset/PasswordResetPage';
+import MedicalRecordsPreview from './AllDashboards/PtDashboard/MedicalRecord/SecondOpinion'
 export {
   // Auth
   Login,
@@ -57,4 +60,8 @@ ViewAllDoctor,
  SearchAmbulanceView,
  PaymentScreen,
 InvoiceDetails,
-InvoicePrintPreview};
+ MedicalRecordsScreen,
+  MedicalRecordDetails,
+InvoicePrintPreview,
+MedicalRecordsPreview,
+};

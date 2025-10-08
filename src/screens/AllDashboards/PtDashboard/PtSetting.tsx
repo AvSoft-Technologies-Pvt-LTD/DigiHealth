@@ -1,6 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity, Animated, KeyboardAvoidingView, ActivityIndicator } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { useAppDispatch, useAppSelector } from "../../../store/hooks";
+import { RootState } from "../../../store/index";
+import {
+  updatePatientStart,
+  updatePatientSuccess,
+  updatePatientFailure,
+  resetUpdateState,
+} from "../../../store/slices/updatePatientSlice";
+import { API } from "../../../config/api";
+
 import AvText from "../../../elements/AvText";
 import AvTextInput from "../../../elements/AvTextInput";
 import AvButton from "../../../elements/AvButton";
@@ -10,11 +20,15 @@ import { PAGES } from "../../../constants/pages";
 import { isIos } from "../../../constants/platform";
 import AvImage from "../../../elements/AvImage";
 import { IMAGES } from "../../../assets";
-import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { fetchPatientPhoto } from "../../../store/thunks/patientThunks";
 
 const PatientSettingsView = () => {
+  const { loading, error, success } = useAppSelector(
+    (state: RootState) => state.updatePatient
+  );
+
   const [patient, setPatient] = useState({
+    id: "1", // temp hardcoded, replace with logged-in patient id
     firstName: "Trupti",
     middleName: "",
     lastName: "Chavan",
@@ -33,18 +47,45 @@ const PatientSettingsView = () => {
   const blinkAnim = useRef(new Animated.Value(0)).current;
   const dispatch = useAppDispatch();
 
-  const handleChange = (field, value) => {
+  const handleChange = (field: string, value: string) => {
     setPatient({ ...patient, [field]: value });
   };
 
-  const handleSave = () => {
-    setEditing(false);
-    console.log("Saved:", patient);
+  const handleSave = async () => {
+    dispatch(updatePatientStart());
+    try {
+      const response = await fetch(API.UPDATE_PATIENT_BY_ID(patient.id), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(patient),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update patient");
+      }
+
+      await response.json();
+      dispatch(updatePatientSuccess());
+      setEditing(false);
+    } catch (err: any) {
+      dispatch(updatePatientFailure(err.message));
+    }
   };
 
-  const toggleEditing = () => {
-    setEditing(!editing);
-  };
+  useEffect(() => {
+    if (success) {
+      Alert.alert("Success", "Patient details updated successfully", [
+        { text: "OK", onPress: () => dispatch(resetUpdateState()) },
+      ]);
+    }
+    if (error) {
+      Alert.alert("Error", error, [
+        { text: "OK", onPress: () => dispatch(resetUpdateState()) },
+      ]);
+    }
+  }, [success, error]);
 
   useEffect(() => {
     if (editing) {
@@ -71,15 +112,14 @@ const PatientSettingsView = () => {
     colors: {
       primary: COLORS.SECONDARY,
       outline: COLORS.LIGHT_GREY,
-    }
+    },
   };
 
-  // Format field names for display
-  const formatFieldName = (field) => {
+  const formatFieldName = (field: string) => {
     return field
-      .replace(/([A-Z])/g, ' $1')
+      .replace(/([A-Z])/g, " $1")
       .replace(/^./, (str) => str.toUpperCase())
-      .replace('Aadhaar', 'Aadhaar'); // Keep Aadhaar capitalized properly
+      .replace("Aadhaar", "Aadhaar");
   };
 
   // Get the current patient from Redux store
@@ -304,10 +344,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textAlign: "center",
   },
-  headerSubtitle: {
-    color: COLORS.SECONDARY,
-    textAlign: "center",
-  },
+  headerSubtitle: { color: COLORS.SECONDARY, textAlign: "center" },
   profileCard: {
     alignItems: "center",
     marginBottom: 20,
@@ -321,23 +358,10 @@ const styles = StyleSheet.create({
     elevation: 2,
     marginHorizontal: 10,
   },
-  profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 10,
-  },
-  profileName: {
-    color: COLORS.PRIMARY_TXT,
-    marginBottom: 4,
-  },
-  profileEmail: {
-    color: COLORS.GREEN,
-  },
-  tabsContainer: {
-    marginBottom: 20,
-    marginHorizontal: 10,
-  },
+  profileImage: { width: 80, height: 80, borderRadius: 40, marginBottom: 10 },
+  profileName: { color: COLORS.PRIMARY_TXT, marginBottom: 4 },
+  profileEmail: { color: COLORS.GREEN },
+  tabsContainer: { marginBottom: 20, marginHorizontal: 10 },
   tabs: {
     flexDirection: "row",
     backgroundColor: COLORS.WHITE,
@@ -357,9 +381,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: COLORS.BG_OFF_WHITE,
   },
-  activeTab: {
-    backgroundColor: COLORS.SECONDARY,
-  },
+  activeTab: { backgroundColor: COLORS.SECONDARY },
   formSection: {
     marginBottom: 10,
     backgroundColor: COLORS.WHITE,
@@ -408,19 +430,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 16,
   },
-  button: {
-    flex: 1,
-    marginHorizontal: 4,
-    borderRadius: 8,
-    height: 44,
-  },
+  button: { flex: 1, marginHorizontal: 4, borderRadius: 8, height: 44 },
   cancelButton: {
     backgroundColor: COLORS.WHITE,
     borderColor: COLORS.SECONDARY,
   },
-  saveButton: {
-    backgroundColor: COLORS.SECONDARY,
-  },
+  saveButton: { backgroundColor: COLORS.SECONDARY },
   savePasswordButton: {
     marginTop: 20,
     backgroundColor: COLORS.SECONDARY,

@@ -7,7 +7,16 @@ import { fetchPatientPersonalDataStart, fetchPatientPersonalDataSuccess, fetchPa
 import { fetchPatientBloodGroupDataStart, fetchPatientBloodGroupDataSuccess, fetchPatientBloodGroupDataFailure } from '../slices/patientBloodGroupSlice';
 import { fetchHealthConditionDataFailure, fetchHealthConditionDataStart, fetchHealthConditionDataSuccess } from '../slices/healthConditionSlice';
 import { fetchRelationDataFailure, fetchRelationDataStart, fetchRelationDataSuccess, saveFamilyHealthDataFailure, saveFamilyHealthDataStart, saveFamilyHealthDataSuccess } from '../slices/relationSlice';
-import { getPatientPhotoFailure, getPatientPhotoStart, getPatientPhotoSuccess } from '../slices/patientSettingSlice';
+import {fetchCoverageDataStart,fetchCoverageDataSuccess,fetchCoverageDataFailure,saveCoverageDataStart,saveCoverageDataSuccess, saveCoverageDataFailure,
+} from "../slices/coverage"; 
+import {
+  fetchPatientAdditionalDetailsStart,
+  fetchPatientAdditionalDetailsSuccess,
+  fetchPatientAdditionalDetailsFailure,
+  savePatientAdditionalDetailsStart,
+  savePatientAdditionalDetailsSuccess,
+  savePatientAdditionalDetailsFailure,
+} from "../slices/patientAdditionalDataSlice";import { getPatientPhotoFailure, getPatientPhotoStart, getPatientPhotoSuccess } from '../slices/patientSettingSlice';
 
 export const fetchAllPatients = () => async (dispatch: AppDispatch) => {
   try {
@@ -30,7 +39,6 @@ export const fetchPatientDashboardData = (id:string) => async (dispatch: AppDisp
       dispatch(fetchPatientDashboardDataFailure(errorMessage));
     }
   };
-
 
   export const fetchPatientPersonalHealthData = (id:string) => async (dispatch: AppDispatch) => {
     try {
@@ -76,8 +84,7 @@ export const fetchPatientDashboardData = (id:string) => async (dispatch: AppDisp
     }
   };
 
-   
-  export const fetchRelationData = () => async (dispatch: AppDispatch) => {
+     export const fetchRelationData = () => async (dispatch: AppDispatch) => {
     try {
       dispatch(fetchRelationDataStart());
       const response = await get(API.PATIENT_RELATION_API);
@@ -99,6 +106,49 @@ export const fetchPatientDashboardData = (id:string) => async (dispatch: AppDisp
       dispatch(saveFamilyHealthDataFailure(errorMessage));
     }
   };
+ export const fetchCoverageTypes = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchCoverageDataStart());
+    const response = await get(API.PATIENT_COVERAGE_API);
+    dispatch(fetchCoverageDataSuccess(response.data || response));
+  } catch (error: any) {
+    dispatch(fetchCoverageDataFailure(error.message || 'Failed to fetch coverage types'));
+  }
+};
+
+export const saveCoverageData = (data: any) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(saveCoverageDataStart());
+    const response = await post(API.PATIENT_COVERAGE_API, data);
+    dispatch(saveCoverageDataSuccess(response.data || response));
+  } catch (error: any) {
+    dispatch(saveCoverageDataFailure(error.message || 'Failed to save coverage data'));
+  }
+};
+
+export const fetchPatientAdditionalDetails = (patientId: string) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchPatientAdditionalDetailsStart());
+    const response = await get(API.PATIENT_ADDITIONAL_DETAILS_API(patientId));
+    dispatch(fetchPatientAdditionalDetailsSuccess(response.data || response));
+  } catch (error: any) {
+    dispatch(fetchPatientAdditionalDetailsFailure(error.message || 'Failed to fetch additional details'));
+  }
+};
+
+export const savePatientAdditionalDetails = (payload: any) => async (dispatch: AppDispatch) => {
+  console.log(payload,"updated payload")
+  try {
+    dispatch(savePatientAdditionalDetailsStart());
+    const { id, ...data } = payload;
+    const response = id
+      ? await put(API.PATIENT_ADDITIONAL_DETAILS_API(id), data)
+      : await post(API.PATIENT_ADDITIONAL_DETAILS_API(''), data);
+    dispatch(savePatientAdditionalDetailsSuccess(response.data || response));
+  } catch (error: any) {
+    dispatch(savePatientAdditionalDetailsFailure(error.message || 'Failed to save additional details'));
+  }
+};
 
 export const fetchPatientPhoto = (path: string) => async (dispatch: AppDispatch) => {
   try {
