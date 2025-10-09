@@ -111,6 +111,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
       { title: 'Patient Dashboard', icon: 'account-details', screen: PAGES.PATIENT_OVERVIEW },
       // { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
     { title: 'Medical Record', icon: 'receipt', screen: PAGES.PATIENT_MEDICAL_RECORD },
+      { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
 
       { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
       { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
