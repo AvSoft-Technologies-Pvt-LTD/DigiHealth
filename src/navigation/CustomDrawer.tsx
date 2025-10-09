@@ -101,6 +101,8 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
       { title: 'Patient Dashboard', icon: 'account-details', screen: PAGES.PATIENT_OVERVIEW },
       { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
       { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
+          { title: 'Medical Record', icon: 'receipt', screen: PAGES.PATIENT_MEDICAL_RECORD },
+
       { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
          { title: 'Medical Record', icon: 'file-document', screen: PAGES.PATIENT_MEDICAL_RECORD },
     ] : [
@@ -108,6 +110,8 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
       { title: 'Home', icon: 'home', screen: PAGES.HOME },
       { title: 'Patient Dashboard', icon: 'account-details', screen: PAGES.PATIENT_OVERVIEW },
       // { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
+    { title: 'Medical Record', icon: 'receipt', screen: PAGES.PATIENT_MEDICAL_RECORD },
+
       { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
       { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
     ]),

@@ -1,114 +1,110 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, TouchableOpacity, PermissionsAndroid, Platform } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, TextInput, ScrollView, Alert } from "react-native";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState, AppDispatch } from "../../../../store";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import AvText from "../../../../elements/AvText";
 import AvButton from "../../../../elements/AvButton";
 import AvCard from "../../../../elements/AvCards";
 import AvModal from "../../../../elements/AvModal";
-import { TextInput } from "react-native-paper";
 import { COLORS } from "../../../../constants/colors";
-import Voice, { SpeechResultsEvent, SpeechErrorEvent } from '@react-native-voice/voice';
+import {
+  healthSummaryData,
+  updatePatientVitals,
+  createPatientVitals,
+} from "../../../../store/thunks/patientThunks";
 
 interface Vital {
   id: string;
   type: string;
-  value: string;
+  value: number | string;
   unit: string;
   icon: string;
 }
 
-const HealthSummary = () => {
-  const [vitals, setVitals] = useState<Vital[]>([
-    { id: "1", type: "Temperature", value: "98.6", unit: "°F", icon: "thermometer" },
-    { id: "2", type: "SpO2", value: "98", unit: "%", icon: "waveform" },
-    { id: "3", type: "Blood Pressure", value: "120/80", unit: "mmHg", icon: "heart-pulse" },
-    { id: "4", type: "Heart Rate", value: "72", unit: "bpm", icon: "heart" },
-    { id: "5", type: "Respiratory Rate", value: "16", unit: "rpm", icon: "lungs" },
-    { id: "6", type: "Blood Sugar", value: "95", unit: "mg/dL", icon: "test-tube" },
-  ]);
+interface VitalData {
+  temperature?: number;
+  spo2?: number;
+  blood_pressure?: string;
+  heart_rate?: number;
+  respiratory_rate?: number;
+  blood_sugar?: number;
+}
 
+const HealthSummary = () => {
+  const dispatch: AppDispatch = useDispatch();
+  const { healthSummaryData: reduxVitals, loading, error: reduxError } = useSelector(
+    (state: RootState) => state.healthSummaryData
+  );
+  const patientId = useSelector((state: RootState) => state.user.userProfile.patientId);
+  const userId = useSelector((state: RootState) => state.user.userProfile.userId);
+  const userRole = useSelector((state: RootState) => state.user.userProfile.role);
+
+  const isPatient = userRole?.toLowerCase() === 'patient';
+  const effectivePatientId = patientId || (isPatient ? userId : null);
+
+  const [vitals, setVitals] = useState<Vital[]>([
+    { id: "1", type: "Temperature", value: "", unit: "°F", icon: "thermometer" },
+    { id: "2", type: "SpO2", value: "", unit: "%", icon: "waveform" },
+    { id: "3", type: "Blood Pressure", value: "", unit: "mmHg", icon: "heart-pulse" },
+    { id: "4", type: "Heart Rate", value: "", unit: "bpm", icon: "heart" },
+    { id: "5", type: "Respiratory Rate", value: "", unit: "rpm", icon: "lungs" },
+    { id: "6", type: "Blood Sugar", value: "", unit: "mg/dL", icon: "test-tube" },
+  ]);
   const [modalVisible, setModalVisible] = useState(false);
   const [vitalValues, setVitalValues] = useState<Record<string, string>>({});
-  const [isListening, setIsListening] = useState(false);
-  const [currentListeningField, setCurrentListeningField] = useState<string | null>(null);
-  const [recordedText, setRecordedText] = useState('');
+  const [isLoading, setIsLoading] = useState(loading);
+  const [error, setError] = useState<string | null>(reduxError || null);
+
+  const hasNoData = vitals.every(vital => !vital.value || vital.value === "N/A");
+
+  const transformVitalsData = (data: VitalData) => {
+    if (!data) {
+      console.log("No data to transform");
+      return [];
+    }
+    console.log("Transforming data:", data);
+    return [
+      { id: "1", type: "Temperature", value: data.temperature !== undefined ? data.temperature : "", unit: "°F", icon: "thermometer" },
+      { id: "2", type: "SpO2", value: data.spo2 !== undefined ? data.spo2 : "", unit: "%", icon: "waveform" },
+      { id: "3", type: "Blood Pressure", value: data.blood_pressure ? data.blood_pressure : "", unit: "mmHg", icon: "heart-pulse" },
+      { id: "4", type: "Heart Rate", value: data.heart_rate !== undefined ? data.heart_rate : "", unit: "bpm", icon: "heart" },
+      { id: "5", type: "Respiratory Rate", value: data.respiratory_rate !== undefined ? data.respiratory_rate : "", unit: "rpm", icon: "lungs" },
+      { id: "6", type: "Blood Sugar", value: data.blood_sugar !== undefined ? data.blood_sugar : "", unit: "mg/dL", icon: "test-tube" },
+    ];
+  };
 
   useEffect(() => {
-    // Set up voice recognition
-    Voice.onSpeechStart = onSpeechStart;
-    Voice.onSpeechEnd = onSpeechEnd;
-    Voice.onSpeechResults = onSpeechResults;
-    Voice.onSpeechError = onSpeechError;
-
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
+    if (!effectivePatientId || !isPatient) return;
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        await dispatch(healthSummaryData(effectivePatientId));
+      } catch (err) {
+        setError("Failed to load health data. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
     };
-  }, []);
+    fetchData();
+  }, [dispatch, effectivePatientId, isPatient]);
 
-  const onSpeechStart = () => {
-    setIsListening(true);
-  };
-
-  const onSpeechEnd = () => {
-    setIsListening(false);
-  };
-
-  const onSpeechResults = (event: SpeechResultsEvent) => {
-    const text = event.value?.[0] || '';
-    setRecordedText(text);
-
-    if (currentListeningField) {
-      // Extract numbers from speech
-      const numbers = text.match(/\d+(\.\d+)?(\/\d+(\.\d+)?)?/g) || [];
-      if (numbers.length > 0) {
-        handleValueChange(currentListeningField, numbers[0]);
-      }
+  useEffect(() => {
+    if (reduxVitals) {
+      const transformedVitals = transformVitalsData(reduxVitals);
+      setVitals(transformedVitals);
     }
-  };
+  }, [reduxVitals]);
 
-  const onSpeechError = (event: SpeechErrorEvent) => {
-    console.error('Speech error:', event.error);
-    setIsListening(false);
-  };
-
-  const startListening = async (fieldId: string) => {
-    try {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          {
-            title: 'Microphone Permission',
-            message: 'This app needs access to your microphone to record audio',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          }
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('Microphone permission denied');
-          return;
-        }
-      }
-
-      setCurrentListeningField(fieldId);
-      setRecordedText('');
-      await Voice.start('en-US');
-    } catch (error) {
-      console.error('Error starting voice recognition:', error);
-    }
-  };
-
-  const stopListening = async () => {
-    try {
-      await Voice.stop();
-    } catch (error) {
-      console.error('Error stopping voice recognition:', error);
-    }
-  };
+  useEffect(() => {
+    setIsLoading(loading);
+    if (reduxError) setError(reduxError);
+  }, [loading, reduxError]);
 
   const handleUpdateVitals = () => {
     const initialValues = vitals.reduce((acc, vital) => {
-      acc[vital.id] = vital.value;
+      acc[vital.id] = String(vital.value);
       return acc;
     }, {} as Record<string, string>);
     setVitalValues(initialValues);
@@ -116,20 +112,69 @@ const HealthSummary = () => {
   };
 
   const handleValueChange = (id: string, value: string) => {
-    setVitalValues((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
+    setVitalValues((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSaveVitals = () => {
-    const updatedVitals = vitals.map((vital) => ({
-      ...vital,
-      value: vitalValues[vital.id] || vital.value,
-    }));
-    setVitals(updatedVitals);
-    setModalVisible(false);
+  const handleSaveVitals = async () => {
+    const vitalsData: VitalData = {
+      patientId:"2",
+      temperature: vitalValues["1"] ? Number(vitalValues["1"]) : undefined,
+      spo2: vitalValues["2"] ? Number(vitalValues["2"]) : undefined,
+      blood_pressure: vitalValues["3"] || undefined,
+      heart_rate: vitalValues["4"] ? Number(vitalValues["4"]) : undefined,
+      respiratory_rate: vitalValues["5"] ? Number(vitalValues["5"]) : undefined,
+      blood_sugar: vitalValues["6"] ? Number(vitalValues["6"]) : undefined,
+    };
+    try {
+      setIsLoading(true);
+      if (effectivePatientId) {
+        if (hasNoData) {
+          await dispatch(createPatientVitals(effectivePatientId, vitalsData));
+        } else {
+          await dispatch(updatePatientVitals(effectivePatientId, vitalsData));
+        }
+        Alert.alert("Success", "Vitals saved successfully");
+      }
+      setModalVisible(false);
+    } catch (err) {
+      Alert.alert("Error", "Failed to save vitals. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (!effectivePatientId) {
+    return (
+      <View style={styles.noPatientContainer}>
+        <AvText type="title_6" style={{ color: COLORS.PRIMARY }}>No patient selected</AvText>
+      </View>
+    );
+  }
+
+  if (!isPatient) {
+    return (
+      <View style={styles.noPatientContainer}>
+        <AvText type="title_6" style={{ color: COLORS.PRIMARY }}>Not authorized to view this data</AvText>
+      </View>
+    );
+  }
+
+  if (isLoading && vitals.every(vital => !vital.value)) {
+    return (
+      <View style={styles.loadingContainer}>
+        <AvText type="title_6" style={{ color: COLORS.PRIMARY }}>Loading health data...</AvText>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <AvText type="title_6" style={{ color: COLORS.ERROR }}>{error}</AvText>
+        <AvButton mode="contained" onPress={() => setError(null)} style={styles.retryButton}>Try Again</AvButton>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.healthSummary, styles.cardShadow]}>
@@ -141,127 +186,65 @@ const HealthSummary = () => {
           mode="contained"
           style={styles.addVitalsButton}
           buttonColor={COLORS.SECONDARY}
-          icon={() => <Icon name="pencil" size={16} color={COLORS.WHITE} />}
+          icon={() => <Icon name={hasNoData ? "plus" : "pencil"} size={16} color={COLORS.WHITE} />}
           onPress={handleUpdateVitals}
+          disabled={isLoading}
         >
-          <AvText
-            type="buttonText"
-            style={{ color: COLORS.WHITE, fontSize: 14, fontWeight: "500" }}
-          >
-            Update Vitals
+          <AvText type="buttonText" style={{ color: COLORS.WHITE, fontSize: 16, fontWeight: "500" }}>
+            {isLoading ? "Loading..." : hasNoData ? "Add Vitals" : "Update Vitals"}
           </AvText>
         </AvButton>
       </View>
-
       <View style={styles.vitalsContainer}>
-        {vitals.map((vital) => (
-          <AvCard
-            key={vital.id}
-            title={
-              <AvText
-                type="body"
-                style={{ color: COLORS.PRIMARY_TXT, fontWeight: "500" }}
-              >
-                {vital.type}
+        {vitals.some(vital => vital.value) ? (
+          vitals.map((vital) => (
+            <AvCard
+              key={vital.id}
+              title={<AvText type="body" style={{ color: COLORS.PRIMARY_TXT, fontWeight: "500" }}>{vital.type}</AvText>}
+              icon={<Icon name={vital.icon} size={20} color={COLORS.PRIMARY} />}
+              cardStyle={[styles.vitalCard, { borderLeftColor: COLORS.PRIMARY, borderLeftWidth: 4 }]}
+            >
+              <AvText type="title_2" style={{ color: COLORS.PRIMARY, marginTop: 4 }}>
+                {vital.value || "N/A"} {vital.unit}
               </AvText>
-            }
-            icon={<Icon name={vital.icon} size={20} color={COLORS.PRIMARY} />}
-            cardStyle={[
-              styles.vitalCard,
-              { borderLeftColor: COLORS.PRIMARY, borderLeftWidth: 4 },
-            ]}
-          >
-            <View style={styles.valueUnitContainer}>
-              <AvText
-                type="title_2"
-                style={{ color: COLORS.PRIMARY }}
-              >
-                {vital.value}
-              </AvText>
-              <AvText
-                type="body"
-                style={{ color: COLORS.PRIMARY, marginLeft: 2 }}
-              >
-                {vital.unit}
-              </AvText>
-            </View>
-          </AvCard>
-        ))}
+            </AvCard>
+          ))
+        ) : (
+          <AvText type="body" style={{ color: COLORS.PRIMARY_TXT, textAlign: "center", width: "100%" }}>
+            No vitals data available. Tap "Add Vitals" to begin.
+          </AvText>
+        )}
       </View>
-
-      <AvModal
-        isModalVisible={modalVisible}
-        setModalVisible={setModalVisible}
-        title="Update Vitals"
-      >
+      <AvModal isModalVisible={modalVisible} setModalVisible={setModalVisible} title={hasNoData ? "Add Vitals" : "Update Vitals"}>
         <ScrollView style={styles.modalContent}>
           {vitals.map((vital) => (
             <View key={vital.id} style={styles.vitalInputContainer}>
-              <TextInput
-                mode="outlined"
-                label={vital.type}
-                value={vitalValues[vital.id]}
-                onChangeText={(text) => handleValueChange(vital.id, text)}
-                keyboardType="numeric"
-                style={styles.input}
-                theme={{
-                  colors: {
-                    primary: COLORS.SECONDARY,
-                    outline: COLORS.LIGHT_GREY,
-                  },
-                }}
-                left={
-                  <TextInput.Icon
-                    name={vital.icon}
-                    color={COLORS.PRIMARY}
-                  />
-                }
-                right={
-                  <>
-                    <TextInput.Affix
-                      text={vital.unit}
-                      textStyle={styles.unitText}
-                    />
-                    <TouchableOpacity
-                      onPress={() => isListening && currentListeningField === vital.id
-                        ? stopListening()
-                        : startListening(vital.id)}
-                      style={styles.micButton}
-                    >
-                      <Icon
-                        name={isListening && currentListeningField === vital.id ? "microphone" : "microphone-outline"}
-                        size={24}
-                        color={isListening && currentListeningField === vital.id ? COLORS.SECONDARY : COLORS.PRIMARY}
-                      />
-                    </TouchableOpacity>
-                  </>
-                }
-                contentStyle={styles.inputContent}
-              />
-              {isListening && currentListeningField === vital.id && (
-                <View style={styles.listeningIndicator}>
-                  <AvText type="caption" style={{ color: COLORS.SECONDARY }}>
-                    Listening... {recordedText}
-                  </AvText>
-                </View>
-              )}
+              <View style={styles.vitalInputHeader}>
+                <Icon name={vital.icon} size={20} color={COLORS.PRIMARY} style={styles.vitalIcon} />
+                <AvText type="body" style={styles.vitalInputLabel}>{vital.type}</AvText>
+              </View>
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={styles.input}
+                  value={vitalValues[vital.id] || ''}
+                  onChangeText={(text) => handleValueChange(vital.id, text)}
+                  keyboardType="numeric"
+                  placeholder={`Enter ${vital.type}`}
+                  editable={!isLoading}
+                />
+                <AvText type="body" style={styles.unitText}>{vital.unit}</AvText>
+              </View>
             </View>
           ))}
-
-          <View style={styles.voiceControlContainer}>
-            <AvText type="caption" style={styles.voiceInstruction}>
-              Tap the microphone to speak your values
-            </AvText>
-          </View>
-
           <AvButton
             mode="contained"
             style={styles.saveButton}
             buttonColor={COLORS.PRIMARY}
             onPress={handleSaveVitals}
+            disabled={isLoading}
           >
             <AvText type="buttonText" style={{ color: COLORS.WHITE }}>
-              Save All Changes
+              {isLoading ? "Saving..." : hasNoData ? "Add Vitals" : "Save All Changes"}
             </AvText>
           </AvButton>
         </ScrollView>
@@ -271,84 +254,25 @@ const HealthSummary = () => {
 };
 
 const styles = StyleSheet.create({
-  healthSummary: {
-    backgroundColor: COLORS.WHITE,
-    borderRadius: 12,
-    padding: 16,
-  },
-  cardShadow: {
-    shadowColor: COLORS.SECONDARY,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  healthSummaryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  addVitalsButton: {
-    borderRadius: 20,
-  },
-  vitalsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  vitalCard: {
-    width: "48%",
-    marginVertical: 4,
-  },
-  valueUnitContainer: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    marginTop: 4,
-  },
-  modalContent: {
-    width: "100%",
-    padding: 16,
-    maxHeight: "100%",
-  },
-  vitalInputContainer: {
-    marginBottom: 12,
-  },
-  input: {
-    backgroundColor: COLORS.WHITE,
-    marginBottom: 0,
-  },
-  inputContent: {
-    paddingRight: 0,
-  },
-  unitText: {
-    paddingLeft: 0,
-    paddingRight: 4,
-    marginLeft: 0,
-    marginRight: 0,
-  },
-  micButton: {
-    padding: 8,
-    marginLeft: 4,
-  },
-  listeningIndicator: {
-    marginTop: 4,
-    marginLeft: 8,
-  },
-  saveButton: {
-    marginTop: 20,
-    borderRadius: 8,
-    paddingVertical: 8,
-  },
-  voiceControlContainer: {
-    marginVertical: 12,
-    alignItems: 'center',
-  },
-  voiceInstruction: {
-    color: COLORS.PRIMARY_TXT,
-    fontStyle: 'italic',
-  },
+  healthSummary: { backgroundColor: COLORS.WHITE, borderRadius: 12, padding: 16 },
+  cardShadow: { shadowColor: COLORS.SECONDARY, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3 },
+  healthSummaryHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
+  addVitalsButton: { borderRadius: 20 },
+  vitalsContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 8 },
+  vitalCard: { width: "48%", marginVertical: 4 },
+  modalContent: { width: "100%", padding: 16, maxHeight: "100%" },
+  vitalInputContainer: { marginBottom: 16 },
+  vitalInputHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  vitalIcon: { marginRight: 8 },
+  vitalInputLabel: { color: COLORS.PRIMARY_TXT, fontWeight: "300" },
+  inputRow: { flexDirection: "row", alignItems: "center" },
+  input: { flex: 1, borderWidth: 1, borderColor: COLORS.LIGHT_GREY, borderRadius: 8, padding: 12, fontSize: 16 },
+  unitText: { color: COLORS.PRIMARY_TXT, marginLeft: 8, fontWeight: "500" },
+  saveButton: { marginTop: 20, borderRadius: 8, paddingVertical: 8 },
+  noPatientContainer: { backgroundColor: COLORS.WHITE, borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center', height: 100 },
+  loadingContainer: { backgroundColor: COLORS.WHITE, borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center', height: 100 },
+  errorContainer: { backgroundColor: COLORS.WHITE, borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center', height: 150 },
+  retryButton: { marginTop: 16, borderRadius: 8 },
 });
 
 export default HealthSummary;

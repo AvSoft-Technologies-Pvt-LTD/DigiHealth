@@ -95,9 +95,10 @@ const PatientOverview = () => {
   const { patientDashboardData, } = useAppSelector((state) => state.patientDashboardData);
   const { patientPersonalData, } = useAppSelector((state) => state.patientPersonalData);
   const userEmail = useAppSelector((state) => state.user.userProfile.email);
+  const userHealthSummary = useAppSelector((state) => state?.healthSummaryData?.healthSummaryData);
   const dispatch = useAppDispatch();
   // Fetch patient data on component mount
-
+  console.log("HEALTH DATA",userHealthSummary)
   useEffect(() => {
     // Initial data fetch
     dispatch(fetchAllPatients());

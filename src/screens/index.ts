@@ -52,7 +52,7 @@ export {
  PharmacyFinderView,
   PaymentGateway,
  Billing,
-DrBookAppointmentComponent,
+ DrBookAppointmentComponent,
 
 
 ViewAllDoctor,

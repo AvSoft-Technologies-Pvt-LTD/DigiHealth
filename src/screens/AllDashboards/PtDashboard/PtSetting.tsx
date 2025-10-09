@@ -47,6 +47,10 @@ const PatientSettingsView = () => {
   const blinkAnim = useRef(new Animated.Value(0)).current;
   const dispatch = useAppDispatch();
 
+  const toggleEditing = () => {
+    setEditing(!editing)
+  }
+
   const handleChange = (field: string, value: string) => {
     setPatient({ ...patient, [field]: value });
   };

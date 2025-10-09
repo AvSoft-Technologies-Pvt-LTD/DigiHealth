@@ -5,7 +5,7 @@ import { StatusBar } from 'react-native';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { Provider } from 'react-redux';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { store } from './src/store/index';
+import { store } from "./src/store/index"
 import AppNavigator from './src/navigation/AppNavigation';
 import { COLORS } from './src/constants/colors';
 import { getStatusBarStyle } from './src/utils/statusBar';

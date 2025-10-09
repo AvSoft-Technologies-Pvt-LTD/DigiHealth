@@ -7,7 +7,9 @@ import CustomDrawer from './CustomDrawer';
 
 import { RootStackParamList } from '../types/navigation';
 import { useDrawer } from './DrawerContext';
-import { AmbulanceBookingView, DrBookAppointmentComponent,PasswordResetPage,ForgotPassword,VerifyOTP,ResetPassword,ViewAllDoctor,SearchAmbulanceView,PaymentPage,PaymentScreen,InvoiceDetails,InvoicePrintPreview, DoctorRegister, Home, Login, PatientDashboard, PatientRegister, PharmacyFinderView, Register, SplashScreen, MedicalRecordsScreen, MedicalRecordDetails, } from '../screens';
+import { AmbulanceBookingView,
+  
+ DrBookAppointmentComponent,PasswordResetPage,ForgotPassword,VerifyOTP,ResetPassword,ViewAllDoctor,SearchAmbulanceView,PaymentPage,PaymentScreen,InvoiceDetails,InvoicePrintPreview, DoctorRegister, Home, Login, PatientDashboard, PatientRegister, PharmacyFinderView, Register, SplashScreen, MedicalRecordsScreen, MedicalRecordDetails, } from '../screens';
 import PatientDashboardView from '../screens/AllDashboards/PtDashboard/Overview/PatientDashboardView';
 import PatientSettingsView from '../screens/AllDashboards/PtDashboard/PtSetting';
 import HealthCard from '../screens/AllDashboards/PtDashboard/HealthCard/HealthCard';

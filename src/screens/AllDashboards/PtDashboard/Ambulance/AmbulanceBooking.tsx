@@ -385,3 +385,17 @@ const styles: Styles = StyleSheet.create({
 });
 
 export default AmbulanceBookingView;
+
+
+
+
+
+
+
+
+
+
+
+
+
+

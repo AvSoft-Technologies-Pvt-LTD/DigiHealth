@@ -1,10 +1,7 @@
 
 
-
-
-
 import React, { useState, useEffect } from "react";
-import { ScrollView, StyleSheet, ActivityIndicator, Platform } from "react-native";
+import { ScrollView, StyleSheet, ActivityIndicator, Platform, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import { debounce } from "lodash";
@@ -13,7 +10,16 @@ import DoctorList from "./DoctorList";
 import BookingModal from "./BookingModal";
 import LocationPickerModal from "./LocationPickerModal";
 import SpecialtyModal from "./SpecialtyModal";
-import { Doctor, PostOffice, PincodeApiResponse, CITIES_BY_STATE, INDIAN_STATES, HOSPITALS, DOCTOR_PANEL_OPTIONS, symptomSpecialtyMap } from "../../../../constants/data";
+import {
+  Doctor,
+  PostOffice,
+  PincodeApiResponse,
+  CITIES_BY_STATE,
+  INDIAN_STATES,
+  HOSPITALS,
+  DOCTOR_PANEL_OPTIONS,
+  symptomSpecialtyMap
+} from "../../../../constants/data";
 import { normalize } from "../../../../constants/platform";
 import { COLORS } from "../../../../constants/colors";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
@@ -53,7 +59,7 @@ const DrBookAppointmentComponent: React.FC = () => {
     dispatch(setError(null));
     try {
       const response = await axios.get<PincodeApiResponse[]>(`https://api.postalpincode.in/pincode/${pincode}`);
-      if (response.data && response.data[0]?.PostOffice && response.data[0].PostOffice.length > 0) {
+      if (response.data?.[0]?.PostOffice?.length) {
         if (response.data[0].PostOffice.length > 1) {
           setShowLocationPicker(true);
           setLocationOptions(response.data[0].PostOffice);
@@ -73,7 +79,7 @@ const DrBookAppointmentComponent: React.FC = () => {
     }
   };
 
- const fetchFilteredDoctors = async () => {
+  const fetchFilteredDoctors = async () => {
     if (!selectedSpecialty) {
       dispatch(setError("Please select a specialty"));
       return;
@@ -85,40 +91,42 @@ const DrBookAppointmentComponent: React.FC = () => {
       if (!response.data || !Array.isArray(response.data)) {
         throw new Error("Invalid data format from API");
       }
-      let filteredData = response.data.map((doc: any) => ({
-        id: doc.id?.toString() || Math.random().toString(36).substring(7),
-        name: doc.name || "Unknown Doctor",
-        specialty: doc.specialty || "General Physician",
-        fees: doc.fees || 0,
-        location: doc.location || "",
-        doctorType: doc.doctorType || "Consultant Doctor",
-        consultationType: doc.consultationType || "Physical",
-        hospital: doc.hospital || "",
-        image: doc.image || "https://images.pexels.com/photos/5452201/pexels-photo-5452201.jpeg",
-        qualification: doc.qualification || "",
-        experience: doc.experience || 0,
-        availability: doc.availability || [],
-      }));
-      filteredData = filteredData.filter((doc) => {
-        const matchesConsultationType = !consultationType || doc.consultationType?.toLowerCase() === consultationType.toLowerCase();
-        const matchesSpecialty = doc.specialty?.toLowerCase() === selectedSpecialty?.toLowerCase();
-        const docLocation = doc.location?.toLowerCase() || "";
-        const userCity = city?.toLowerCase() || "";
-        const matchesLocation = consultationType !== "Physical" || !userCity || docLocation.includes(userCity);
-        const matchesMinFees = !minFees || doc.fees >= parseInt(minFees);
-        const matchesMaxFees = !maxFees || doc.fees <= parseInt(maxFees);
-        const matchesHospital = !hospital || doc.hospital?.toLowerCase().includes(hospital.toLowerCase());
-        const matchesDoctorPanel = doctorPanel === "All" || doc.doctorType === doctorPanel;
-        return (
-          matchesConsultationType &&
-          matchesSpecialty &&
-          matchesLocation &&
-          matchesMinFees &&
-          matchesMaxFees &&
-          matchesHospital &&
-          matchesDoctorPanel
-        );
-      });
+      const filteredData = response.data
+        .map((doc: any) => ({
+          id: doc.id?.toString() || Math.random().toString(36).substring(7),
+          name: doc.name || "Unknown Doctor",
+          specialty: doc.specialty || "General Physician",
+          fees: doc.fees || 0,
+          location: doc.location || "",
+          doctorType: doc.doctorType || "Consultant Doctor",
+          consultationType: doc.consultationType || "Physical",
+          hospital: doc.hospital || "",
+          image: doc.image || "https://images.pexels.com/photos/5452201/pexels-photo-5452201.jpeg",
+          qualification: doc.qualification || "",
+          experience: doc.experience || 0,
+          availability: doc.availability || [],
+        }))
+        .filter((doc: Doctor) => {
+          const matchesConsultationType = doc.consultationType?.toLowerCase() === consultationType.toLowerCase();
+          const matchesSpecialty = doc.specialty?.toLowerCase() === selectedSpecialty?.toLowerCase();
+          const docLocation = doc.location?.toLowerCase() || "";
+          const userCity = city?.toLowerCase() || "";
+          const matchesLocation = consultationType !== "Physical" || !userCity || docLocation.includes(userCity);
+          const matchesMinFees = !minFees || doc.fees >= parseInt(minFees);
+          const matchesMaxFees = !maxFees || doc.fees <= parseInt(maxFees);
+          const matchesHospital = !hospital || doc.hospital?.toLowerCase().includes(hospital.toLowerCase());
+          const matchesDoctorPanel = doctorPanel === "All" || doc.doctorType === doctorPanel;
+          return (
+            matchesConsultationType &&
+            matchesSpecialty &&
+            matchesLocation &&
+            matchesMinFees &&
+            matchesMaxFees &&
+            matchesHospital &&
+            matchesDoctorPanel
+          );
+        });
+
       if (filteredData.length > 0) {
         dispatch(setFilteredDoctors(filteredData));
       } else {
@@ -132,6 +140,7 @@ const DrBookAppointmentComponent: React.FC = () => {
       dispatch(setLoading(false));
     }
   };
+
   // Handlers
   const handleSelectLocation = (postOffice: PostOffice) => {
     setState(postOffice.State || INDIAN_STATES[0].value);
@@ -144,7 +153,7 @@ const DrBookAppointmentComponent: React.FC = () => {
     setSearchQuery(specialty);
   };
 
-  const handleDateSelect = (event: any, selectedDate?: Date) => {
+  const handleDateSelect = (_: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === "ios");
     if (selectedDate) {
       setSelectedDate(selectedDate);
@@ -168,16 +177,13 @@ const DrBookAppointmentComponent: React.FC = () => {
   const getTimesForDate = (date: Date | null) => {
     if (!selectedDoctor?.availability || !date) return [];
     const dateString = date.toISOString().split("T")[0];
-    const availabilitySlot = selectedDoctor.availability.find(
-      (slot) => slot.date === dateString
-    );
+    const availabilitySlot = selectedDoctor.availability.find((slot) => slot.date === dateString);
     return availabilitySlot ? availabilitySlot.slots : [];
   };
 
   const handleBookDoctor = (doctor: Doctor) => {
     setSelectedDoctor(doctor);
     setIsBookingModalVisible(true);
-    console.log("Booking modal should open now"); // Debug log
   };
 
   const handleSubmit = () => {
@@ -196,6 +202,7 @@ const DrBookAppointmentComponent: React.FC = () => {
     if (pincode.length === 6) {
       debouncedFetchLocation(pincode);
     }
+    return () => debouncedFetchLocation.cancel();
   }, [pincode]);
 
   useEffect(() => {
@@ -211,6 +218,7 @@ const DrBookAppointmentComponent: React.FC = () => {
     if (selectedSpecialty) {
       debouncedFetchDoctors();
     }
+    return () => debouncedFetchDoctors.cancel();
   }, [consultationType, city, hospital, minFees, maxFees, doctorPanel, selectedSpecialty]);
 
   const mapSymptomsToSpecialization = (symptoms: string): string[] => {
@@ -219,46 +227,45 @@ const DrBookAppointmentComponent: React.FC = () => {
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContainer}
-      showsVerticalScrollIndicator={true}
-    >
-      <BookAppointmentForm
-        consultationType={consultationType}
-        setConsultationType={setConsultationType}
-        pincode={pincode}
-        setPincode={setPincode}
-        state={state}
-        setState={setState}
-        city={city}
-        setCity={setCity}
-        hospital={hospital}
-        setHospital={setHospital}
-        symptoms={symptoms}
-        setSymptoms={setSymptoms}
-        doctorPanel={doctorPanel}
-        setDoctorPanel={setDoctorPanel}
-        minFees={minFees}
-        setMinFees={setMinFees}
-        maxFees={maxFees}
-        setMaxFees={setMaxFees}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        suggestedSpecialties={suggestedSpecialties}
-        selectedSpecialty={selectedSpecialty}
-        handleSpecialtySelect={handleSpecialtySelect}
-        loading={loading}
-        error={error}
-        onSubmit={handleSubmit}
-        navigation={navigation}
-      />
-      <DoctorList
-        doctors={filteredDoctors}
-        loading={loading}
-        error={error}
-        city={city}
-        onBookDoctor={handleBookDoctor}
-      />
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.cardContainer}>
+        <BookAppointmentForm
+          consultationType={consultationType}
+          setConsultationType={setConsultationType}
+          pincode={pincode}
+          setPincode={setPincode}
+          state={state}
+          setState={setState}
+          city={city}
+          setCity={setCity}
+          hospital={hospital}
+          setHospital={setHospital}
+          symptoms={symptoms}
+          setSymptoms={setSymptoms}
+          doctorPanel={doctorPanel}
+          setDoctorPanel={setDoctorPanel}
+          minFees={minFees}
+          setMinFees={setMinFees}
+          maxFees={maxFees}
+          setMaxFees={setMaxFees}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          suggestedSpecialties={suggestedSpecialties}
+          selectedSpecialty={selectedSpecialty}
+          handleSpecialtySelect={handleSpecialtySelect}
+          loading={loading}
+          error={error}
+          onSubmit={handleSubmit}
+          navigation={navigation}
+        />
+        <DoctorList
+          doctors={filteredDoctors}
+          loading={loading}
+          error={error}
+          city={city}
+          onBookDoctor={handleBookDoctor}
+        />
+      </View>
       <BookingModal
         isVisible={isBookingModalVisible}
         onClose={() => {
@@ -295,6 +302,19 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     paddingVertical: normalize(10),
+  },
+  cardContainer: {
+    backgroundColor: COLORS.WHITE,
+    borderRadius: normalize(12),
+    padding: normalize(16),
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    margin: normalize(10),
+    paddingLeft: normalize(23),
+    paddingRight: normalize(23),
   },
 });
 

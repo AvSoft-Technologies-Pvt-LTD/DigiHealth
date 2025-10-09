@@ -42,8 +42,9 @@ DR_BOOKAPPOITMENT_COMPONENT:"DrBookAppointmentComponent",
     QUICK_ACTIONS_MODAL:"QuickActionsModal",
     PAYMENT_PAGE:"PaymentPage",
     SEARCH_AMBULANCE_VIEW:"SearchAmbulanceView",
-    PAYMENT_SCREEN:"PaymentScreen",
+     PAYMENT_SCREEN:"PaymentScreen",
       PATIENT_MEDICAL_RECORD:"MedicalRecord",
     PATIENT_MEDICAL_DETAILS:"MedicalRecordDetails",
     PATIENT_SECOND_OPINION:"SecondOpinion"
+
 } as const;
