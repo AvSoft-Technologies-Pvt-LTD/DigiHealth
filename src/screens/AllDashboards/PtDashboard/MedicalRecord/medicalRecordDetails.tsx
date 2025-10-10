@@ -39,7 +39,7 @@ interface MedicalRecord {
   };
 }
 
-const MedicalRecordsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+const MedicalRecordsDetails: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('medical-records');
 
   const sampleRecord: MedicalRecord = {
@@ -640,4 +640,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MedicalRecordsScreen;
+export default MedicalRecordsDetails;

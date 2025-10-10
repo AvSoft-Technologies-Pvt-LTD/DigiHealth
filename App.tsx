@@ -10,6 +10,8 @@ import AppNavigator from './src/navigation/AppNavigation';
 import { COLORS } from './src/constants/colors';
 import { getStatusBarStyle } from './src/utils/statusBar';
 import { DrawerProvider } from './src/navigation/DrawerContext';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+
 // import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';

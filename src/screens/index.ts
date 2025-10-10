@@ -23,13 +23,14 @@ import PaymentScreen from './AllDashboards/PtDashboard/Ambulance/PaymentScreen';
 import InvoiceDetails from './AllDashboards/PtDashboard/Invoice/InvoiceComponent';
 import InvoicePrintPreview from './AllDashboards/PtDashboard/Invoice/InvoicePrintPreview';
 import DrBookAppointmentComponent from './AllDashboards/PtDashboard/BookingComponent/DrBookAppointmentComponent';
-import ForgotPassword  from '../components/CommonComponents/form/ForgotPassword';
+import ForgotPassword from '../components/CommonComponents/form/ForgotPassword';
 import VerifyOTP from '../components/CommonComponents/form/VerifyOTP';
 import ResetPassword from '../components/CommonComponents/form/ResetPassword';
-import MedicalRecordsScreen from './AllDashboards/PtDashboard/MedicalRecord/PtMedicalRecord';
-import MedicalRecordDetails from './AllDashboards/PtDashboard/MedicalRecord/MedicalRecordDetails'
+
+import MedicalRecordDetails from './AllDashboards/PtDashboard/MedicalRecord/medicalRecordDetails'
 import PasswordResetPage from './Auth/PasswordReset/PasswordResetPage';
-import MedicalRecordsPreview from './AllDashboards/PtDashboard/MedicalRecord/SecondOpinion'
+import MedicalRecordsPreview from './AllDashboards/PtDashboard/MedicalRecord/secondOpinion'
+import MedicalRecordScreen from './AllDashboards/PtDashboard/MedicalRecord/ptMedicalRecord'
 export {
   // Auth
   Login,
@@ -37,9 +38,9 @@ export {
   PatientRegister,
   DoctorRegister,
   ForgotPassword,
- VerifyOTP,
- ResetPassword,
- PasswordResetPage,
+  VerifyOTP,
+  ResetPassword,
+  PasswordResetPage,
   // Main
   Home,
   SplashScreen,
@@ -48,20 +49,18 @@ export {
   PatientSetting,
   Appointments,
   LabBookingView,
- AmbulanceBookingView,
- PharmacyFinderView,
+  AmbulanceBookingView,
+  PharmacyFinderView,
   PaymentGateway,
- Billing,
- DrBookAppointmentComponent,
-
-
-ViewAllDoctor,
- PaymentPage,
- SearchAmbulanceView,
- PaymentScreen,
-InvoiceDetails,
- MedicalRecordsScreen,
+  Billing,
+  DrBookAppointmentComponent,
   MedicalRecordDetails,
-InvoicePrintPreview,
-MedicalRecordsPreview,
+  MedicalRecordsPreview,
+  MedicalRecordScreen,
+  ViewAllDoctor,
+  PaymentPage,
+  SearchAmbulanceView,
+  PaymentScreen,
+  InvoiceDetails,
+  InvoicePrintPreview,
 };

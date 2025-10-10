@@ -107,7 +107,7 @@ const BookingConfirmationScreen: React.FC<BookingConfirmationScreenProps> = ({
       <ScrollView style={styles.container}>
         <View style={styles.stepHeader}>
           <TouchableOpacity onPress={onBack}>
-            <Icon name="chevron-left" size={normalize(24)} color={COLORS.GREY} />
+            {/* <Icon name="chevron-left" size={normalize(24)} color={COLORS.GREY} /> */}
           </TouchableOpacity>
           <AvText type="Subtitle_1" style={[styles.stepText, styles.stepTextActive]}>
             Details
