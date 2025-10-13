@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
-import AvModal from "../../../../elements/AvModal";
-import AvTextInput from "../../../../elements/AvTextInput";
-import AvButton from "../../../../elements/AvButton";
-import AvText from "../../../../elements/AvText";
+import { View, StyleSheet, TouchableOpacity, Platform } from "react-native";
+import { AvModal, AvTextInput, AvButton, AvText, AvSelect } from "../../../../elements";
 import { COLORS } from "../../../../constants/colors";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { AvSelect } from "../../../../elements/AvSelect";
 import { useAppSelector, useAppDispatch } from "../../../../store/hooks";
 import {
   fetchCoverageTypes,
-  savePatientAdditionalDetails,
+  fetchPatientAdditionalData,
+  savePatientAdditionalData,
 } from "../../../../store/thunks/patientThunks";
 
 type Coverage = { id: string; coverageTypeName: string };
 
-type AdditionalDetailsModalProps = {
+interface AdditionalDetailsModalProps {
   modalVisible: boolean;
   closeModal: () => void;
   formData: {
@@ -25,13 +22,11 @@ type AdditionalDetailsModalProps = {
     coverageAmount: string;
     coverageType: string;
     isPrimaryHolder: boolean;
-    startDate?: Date;
-    endDate?: Date;
-    patientId?: string; // ✅ include patientId
-    [key: string]: any;
+    startDate?: Date | null;
+    endDate?: Date | null;
   };
-  handleInputChange: (field: string, value: string | boolean | Date) => void;
-};
+  handleInputChange: (field: string, value: any) => void;
+}
 
 const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
   modalVisible,
@@ -41,91 +36,162 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
 }) => {
   const [showDatePicker, setShowDatePicker] = useState<{ [key: string]: boolean }>({});
   const [coverageTypes, setCoverageTypes] = useState<Array<{ label: string; value: string }>>([]);
+  
   const dispatch = useAppDispatch();
-
-  // ✅ Fetch coverage types from Redux
-  const coverageData: Coverage[] = useAppSelector(
-    (state) => state?.coverageData?.coverageData || []
+  
+  const coverageData: Coverage[] = useAppSelector((state) => state?.coverageData?.coverageData || []);
+  const patientId = useAppSelector((state) => state.user.userProfile.patientId);
+  const patientAdditionalData = useAppSelector(
+    (state) => state?.patient?.patientAdditionalData
   );
 
-  // ✅ Fetch coverage data once on mount
   useEffect(() => {
-    dispatch(fetchCoverageTypes());
-  }, [dispatch]);
+    if (modalVisible) {
+      dispatch(fetchCoverageTypes());
+    }
+  }, [dispatch, modalVisible]);
+
+  useEffect(() => {
+    if (modalVisible && patientId) {
+      dispatch(fetchPatientAdditionalData(patientId));
+    }
+  }, [dispatch, patientId, modalVisible]);
+
+  // Map backend response to form fields
+  useEffect(() => {
+    if (patientAdditionalData) {
+      // Handle insuranceProviderName
+      if (patientAdditionalData.insuranceProviderName) {
+        handleInputChange("insuranceProvider", patientAdditionalData.insuranceProviderName);
+      }
+      
+      // Handle policyNum
+      if (patientAdditionalData.policyNum) {
+        handleInputChange("policyNumber", patientAdditionalData.policyNum);
+      }
+      
+      // Handle coverageAmount
+      if (patientAdditionalData.coverageAmount !== undefined) {
+        handleInputChange("coverageAmount", patientAdditionalData.coverageAmount.toString());
+      }
+      
+      // Handle coverageTypeId
+      if (patientAdditionalData.coverageTypeId) {
+        handleInputChange("coverageType", patientAdditionalData.coverageTypeId.toString());
+      }
+      
+      // Handle primaryHolder
+      if (patientAdditionalData.primaryHolder !== undefined) {
+        handleInputChange("isPrimaryHolder", patientAdditionalData.primaryHolder);
+      }
+      
+      // Handle policyStartDate (array format [year, month, day])
+      if (patientAdditionalData.policyStartDate && Array.isArray(patientAdditionalData.policyStartDate)) {
+        const [year, month, day] = patientAdditionalData.policyStartDate;
+        handleInputChange("startDate", new Date(year, month - 1, day));
+      }
+      
+      // Handle policyEndDate (array format [year, month, day])
+      if (patientAdditionalData.policyEndDate && Array.isArray(patientAdditionalData.policyEndDate)) {
+        const [year, month, day] = patientAdditionalData.policyEndDate;
+        handleInputChange("endDate", new Date(year, month - 1, day));
+      }
+    }
+  }, [patientAdditionalData]);
 
   useEffect(() => {
     if (coverageData && coverageData.length > 0) {
-      const formattedCoverage = coverageData.map((item) => ({
+      const formatted = coverageData.map((item) => ({
         label: item.coverageTypeName,
         value: item.id,
       }));
-      setCoverageTypes(formattedCoverage);
+      setCoverageTypes(formatted);
     }
   }, [coverageData]);
 
-  const handleDateChange = (field: string, event: any, selectedDate?: Date) => {
-    setShowDatePicker({ ...showDatePicker, [field]: false });
-    if (selectedDate) handleInputChange(field, selectedDate);
+  const handleDateChange = (field: "startDate" | "endDate", event: any, selectedDate?: Date) => {
+    if (Platform.OS === "android") {
+      setShowDatePicker((prev) => ({ ...prev, [field]: false }));
+    }
+    if (selectedDate) {
+      handleInputChange(field, selectedDate);
+    }
   };
 
+  const saveAdditionalDetails = async () => {
+    if (!patientId) {
+      console.error("❌ Missing patientId!");
+      return;
+    }
 
-  const onSave = async () => {
-    const payload = {
-      patientId: 2, // ✅ Make sure this is passed from parent
-      insuranceProvider: formData.insuranceProvider?.trim(),
-      policyNumber: formData.policyNumber?.trim(),
-      coverageAmount: parseFloat(formData.coverageAmount || "0"),
-      coverageType: formData.coverageType,
-      isPrimaryHolder: formData.isPrimaryHolder,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
+    // Format dates as array [year, month, day] to match backend format
+    const formatDateToArray = (date: Date | null | undefined): number[] | undefined => {
+      if (!date) return undefined;
+      return [date.getFullYear(), date.getMonth() + 1, date.getDate()];
     };
 
-    console.log("🔹 Saving Additional Details Payload:", payload);
+    const payload = {
+      insuranceProviderName: formData.insuranceProvider?.trim() || "",
+      policyNum: formData.policyNumber?.trim() || "",
+      coverageAmount: parseFloat(formData.coverageAmount || "0"),
+      coverageTypeId: parseInt(formData.coverageType) || null,
+      primaryHolder: !!formData.isPrimaryHolder,
+      policyStartDate: formatDateToArray(formData.startDate),
+      policyEndDate: formatDateToArray(formData.endDate),
+    };
+
+    console.log("📤 Saving Additional Details Payload:", payload);
 
     try {
-      await dispatch(savePatientAdditionalDetails(payload));
+      const response = await dispatch(savePatientAdditionalData(patientId, payload));
+      console.log("✅ Additional details saved successfully:", response);
       closeModal();
     } catch (error) {
-      console.error("❌ Error saving additional details:", error);
+      console.error("❌ Failed to save additional details:", error);
     }
   };
 
   return (
-    <AvModal isModalVisible={modalVisible} setModalVisible={closeModal} title="Additional Details">
+    <AvModal
+      isModalVisible={modalVisible}
+      setModalVisible={closeModal}
+      title="Additional Details"
+    >
       <View style={styles.modalContent}>
-        {/* Insurance Provider */}
-        <AvTextInput
-          label="Insurance Provider"
-          value={formData.insuranceProvider}
-          onChangeText={(text) => handleInputChange("insuranceProvider", text)}
-          style={styles.input}
-          mode="outlined"
-          theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
-        />
-
-        {/* Policy Number */}
-        <AvTextInput
-          label="Policy Number"
-          value={formData.policyNumber}
-          onChangeText={(text) => handleInputChange("policyNumber", text)}
-          style={styles.input}
-          mode="outlined"
-          theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
-        />
-
-        {/* Coverage Amount */}
-        <AvTextInput
-          label="Coverage Amount"
-          value={formData.coverageAmount}
-          onChangeText={(text) => handleInputChange("coverageAmount", text)}
-          style={styles.input}
-          mode="outlined"
-          keyboardType="numeric"
-          theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
-        />
-
-        {/* Coverage Type Dropdown */}
+        <View style={styles.inputRow}>
+          <AvTextInput
+            label="Insurance Provider"
+            value={formData.insuranceProvider}
+            onChangeText={(text) => handleInputChange("insuranceProvider", text)}
+            style={styles.input}
+            mode="outlined"
+            theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
+          />
+        </View>
+        
+        <View style={styles.inputRow}>
+          <AvTextInput
+            label="Policy Number"
+            value={formData.policyNumber}
+            onChangeText={(text) => handleInputChange("policyNumber", text)}
+            style={styles.input}
+            mode="outlined"
+            theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
+          />
+        </View>
+        
+        <View style={styles.inputRow}>
+          <AvTextInput
+            label="Coverage Amount"
+            value={formData.coverageAmount}
+            onChangeText={(text) => handleInputChange("coverageAmount", text)}
+            style={styles.input}
+            mode="outlined"
+            keyboardType="numeric"
+            theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
+          />
+        </View>
+        
         <AvSelect
           items={coverageTypes}
           selectedValue={formData.coverageType}
@@ -133,10 +199,9 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
           placeholder="Select coverage type"
           required
         />
-
-        {/* Primary Holder */}
-        <View style={{ marginTop: 10 }}>
-          <AvText type="caption" style={styles.label}>
+        
+        <View style={styles.toggleContainer}>
+          <AvText type="body" style={styles.toggleLabel}>
             Primary Holder
           </AvText>
           <View style={styles.radioGroup}>
@@ -144,88 +209,84 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
               <TouchableOpacity
                 key={val}
                 onPress={() => handleInputChange("isPrimaryHolder", val === "Yes")}
+                style={styles.radioContainer}
               >
-                <View style={styles.radioContainer}>
-                  <Icon
-                    name={
-                      (val === "Yes" && formData.isPrimaryHolder) ||
-                      (val === "No" && !formData.isPrimaryHolder)
-                        ? "radiobox-marked"
-                        : "radiobox-blank"
-                    }
-                    size={20}
-                    color={
-                      (val === "Yes" && formData.isPrimaryHolder) ||
-                      (val === "No" && !formData.isPrimaryHolder)
-                        ? COLORS.PRIMARY
-                        : COLORS.LIGHT_GREY
-                    }
-                  />
-                  <AvText type="body" style={styles.radioLabel}>
-                    {val}
-                  </AvText>
-                </View>
+                <Icon
+                  name={
+                    (val === "Yes" && formData.isPrimaryHolder) ||
+                    (val === "No" && !formData.isPrimaryHolder)
+                      ? "radiobox-marked"
+                      : "radiobox-blank"
+                  }
+                  size={20}
+                  color={
+                    (val === "Yes" && formData.isPrimaryHolder) ||
+                    (val === "No" && !formData.isPrimaryHolder)
+                      ? COLORS.PRIMARY
+                      : COLORS.LIGHT_GREY
+                  }
+                />
+                <AvText type="body" style={styles.radioLabel}>
+                  {val}
+                </AvText>
               </TouchableOpacity>
             ))}
           </View>
         </View>
-
-        {/* Start Date */}
+        
         <TouchableOpacity
-          onPress={() => setShowDatePicker({ ...showDatePicker, startDate: true })}
+          onPress={() => setShowDatePicker((prev) => ({ ...prev, startDate: true }))}
           style={styles.dateInputContainer}
         >
           <AvTextInput
             label="Start Date"
-            value={formData.startDate ? new Date(formData.startDate).toLocaleDateString() : ""}
+            value={formData.startDate ? formData.startDate.toLocaleDateString() : ""}
+            editable={false}
             style={styles.input}
             mode="outlined"
-            editable={false}
-            theme={{ colors: { primary: COLORS.PRIMARY, outline: COLORS.LIGHT_GREY } }}
+            theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
           />
           <Icon name="calendar" size={24} color={COLORS.PRIMARY} style={styles.calendarIcon} />
         </TouchableOpacity>
+        
         {showDatePicker.startDate && (
           <DateTimePicker
             value={formData.startDate || new Date()}
             mode="date"
             display="default"
             onChange={(e, date) => handleDateChange("startDate", e, date)}
-            accentColor={COLORS.PRIMARY}
           />
         )}
-
-        {/* End Date */}
+        
         <TouchableOpacity
-          onPress={() => setShowDatePicker({ ...showDatePicker, endDate: true })}
+          onPress={() => setShowDatePicker((prev) => ({ ...prev, endDate: true }))}
           style={styles.dateInputContainer}
         >
           <AvTextInput
             label="End Date"
-            value={formData.endDate ? new Date(formData.endDate).toLocaleDateString() : ""}
+            value={formData.endDate ? formData.endDate.toLocaleDateString() : ""}
+            editable={false}
             style={styles.input}
             mode="outlined"
-            editable={false}
-            theme={{ colors: { primary: COLORS.PRIMARY, outline: COLORS.LIGHT_GREY } }}
+            theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
           />
           <Icon name="calendar" size={24} color={COLORS.PRIMARY} style={styles.calendarIcon} />
         </TouchableOpacity>
+        
         {showDatePicker.endDate && (
           <DateTimePicker
             value={formData.endDate || new Date()}
             mode="date"
             display="default"
             onChange={(e, date) => handleDateChange("endDate", e, date)}
-            accentColor={COLORS.PRIMARY}
           />
         )}
-
-        {/* Save Button */}
+        
         <View style={styles.modalButtons}>
           <AvButton
             mode="contained"
             style={styles.saveButton}
-            onPress={onSave}
+            onPress={saveAdditionalDetails}
             buttonColor={COLORS.SUCCESS}
           >
             <AvText type="buttonText" style={{ color: COLORS.WHITE }}>
@@ -240,13 +301,19 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
 
 const styles = StyleSheet.create({
   modalContent: { padding: 16 },
-  input: { marginBottom: 8, backgroundColor: COLORS.WHITE, height: 50 },
-  label: { marginVertical: 10, fontSize: 15, color: COLORS.PRIMARY_TXT },
-  radioGroup: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  inputRow: { marginBottom: 12 },
+  input: {
+    marginBottom: 4,
+    backgroundColor: COLORS.WHITE,
+    height: 50,
+  },
+  toggleContainer: { marginBottom: 16 },
+  toggleLabel: { color: COLORS.PRIMARY_TXT, marginBottom: 8 },
+  radioGroup: { flexDirection: "row", alignItems: "center" },
   radioContainer: { flexDirection: "row", alignItems: "center", marginRight: 16 },
   radioLabel: { marginLeft: 8, color: COLORS.PRIMARY_TXT },
-  modalButtons: { flexDirection: "row", justifyContent: "flex-end", marginTop: 20 },
-  saveButton: { borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 },
+  modalButtons: { flexDirection: "row", justifyContent: "flex-end", marginTop: 16 },
+  saveButton: { borderRadius: 8 },
   dateInputContainer: { position: "relative" },
   calendarIcon: { position: "absolute", right: 18, top: 22, zIndex: 1 },
 });

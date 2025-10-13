@@ -83,5 +83,4 @@ export const {
   savePatientAdditionalDetailsFailure,
   resetPatientAdditionalDetails,
 } = patientAdditionalDataSlice.actions;
-
 export default patientAdditionalDataSlice.reducer;

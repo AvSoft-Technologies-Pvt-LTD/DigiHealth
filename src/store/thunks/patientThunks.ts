@@ -1,6 +1,6 @@
 import { fetchPatientsStart, fetchPatientsSuccess, fetchPatientsFailure } from '../slices/allPatientSlice';
 import { fetchPatientDashboardDataStart, fetchPatientDashboardDataSuccess, fetchPatientDashboardDataFailure } from '../slices/patientDashboardSlice';
-import { get, put, post, } from '../../services/apiServices';
+import { get, put, post } from '../../services/apiServices';
 import { API } from '../../config/api';
 import { AppDispatch } from '..';
 import {
@@ -18,7 +18,6 @@ import {
   fetchAmbulanceTypeSuccess,
   fetchAmbulanceTypeFailure,
 } from '../slices/ambulanceTypeSlice';
-
 import {
   fetchPharmacyListStart,
   fetchPharmacyListSuccess,
@@ -27,12 +26,11 @@ import {
   createPharmacySuccess,
   createPharmacyFailure,
 } from '../slices/pharmacySlice';
-// Fetch all patientsimport { fetchPatientPersonalDataStart, fetchPatientPersonalDataSuccess, fetchPatientPersonalDataFailure } from '../slices/patientPersonalDataSlice';
+import { fetchPatientPersonalDataStart, fetchPatientPersonalDataSuccess, fetchPatientPersonalDataFailure } from '../slices/patientPersonalDataSlice';
 import { fetchPatientBloodGroupDataStart, fetchPatientBloodGroupDataSuccess, fetchPatientBloodGroupDataFailure } from '../slices/patientBloodGroupSlice';
 import { fetchHealthConditionDataFailure, fetchHealthConditionDataStart, fetchHealthConditionDataSuccess } from '../slices/healthConditionSlice';
 import { fetchRelationDataFailure, fetchRelationDataStart, fetchRelationDataSuccess, saveFamilyHealthDataFailure, saveFamilyHealthDataStart, saveFamilyHealthDataSuccess } from '../slices/relationSlice';
-import {fetchCoverageDataStart,fetchCoverageDataSuccess,fetchCoverageDataFailure,saveCoverageDataStart,saveCoverageDataSuccess, saveCoverageDataFailure,
-} from "../slices/coverage"; 
+import { fetchCoverageDataStart, fetchCoverageDataSuccess, fetchCoverageDataFailure, saveCoverageDataStart, saveCoverageDataSuccess, saveCoverageDataFailure } from "../slices/coverage";
 import {
   fetchPatientAdditionalDetailsStart,
   fetchPatientAdditionalDetailsSuccess,
@@ -40,8 +38,16 @@ import {
   savePatientAdditionalDetailsStart,
   savePatientAdditionalDetailsSuccess,
   savePatientAdditionalDetailsFailure,
-} from "../slices/patientAdditionalDataSlice";import { getPatientPhotoFailure, getPatientPhotoStart, getPatientPhotoSuccess } from '../slices/patientSettingSlice';
+} from '../slices/patientAdditionalDataSlice';
+import {
+  fetchPlansStart,
+  fetchPlansSuccess,
+  fetchPlansFailure,
+} from "../slices/plansSlice.ts";
 
+// ====================== PATIENT THUNKS ======================
+
+// --- Patient List ---
 export const fetchAllPatients = () => async (dispatch: AppDispatch) => {
   try {
     dispatch(fetchPatientsStart());
@@ -53,30 +59,27 @@ export const fetchAllPatients = () => async (dispatch: AppDispatch) => {
   }
 };
 
-// Fetch patient dashboard data
+// --- Patient Dashboard ---
 export const fetchPatientDashboardData = (id: string) => async (dispatch: AppDispatch) => {
   try {
     dispatch(fetchPatientDashboardDataStart());
     const response = await get(API.PATIENT_DASHBOARD_API + id);
     dispatch(fetchPatientDashboardDataSuccess(response));
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient dashboard data dashboard data';
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient dashboard data';
     dispatch(fetchPatientDashboardDataFailure(errorMessage));
   }
 };
 
-
+// --- Patient Vitals ---
 export const healthSummaryData = (id: string) => async (dispatch: AppDispatch) => {
   try {
     dispatch(fetchHealthSummaryDataStart());
-    const response = await get(API.PATIENT_VITALS_API +"/"+id);
-    console.log("this is my vitals.......:", response);
+    const response = await get(API.PATIENT_VITALS_API + "/" + id);
     const responseData = response?.data || response;
-    console.log("Vitals data to be dispatched:", responseData);
     dispatch(fetchHealthSummaryDataSuccess(responseData));
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch health summary';
-    console.error("Error fetching vitals:", error);
     dispatch(fetchHealthSummaryDataFailure(errorMessage));
   }
 };
@@ -95,30 +98,25 @@ export const updatePatientVitals = (id: string, vitalsData: any) => async (dispa
   }
 };
 
-// Create vitals (POST)
 export const createPatientVitals = (id: string, vitalsData: any) => async (dispatch: AppDispatch) => {
   try {
     dispatch(fetchHealthSummaryDataStart());
     const response = await post(API.PATIENT_VITALS_API, vitalsData);
-    console.log("Create response:", response); // Log the response
     const responseData = response?.data || response;
     dispatch(fetchHealthSummaryDataSuccess(responseData));
     return responseData;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to create vitals';
-    console.error("Error creating vitals:", error); // Log the error
     dispatch(fetchHealthSummaryDataFailure(errorMessage));
     throw error;
   }
 };
 
-// hospitallist 
+// --- Hospital List ---
 export const fetchHospitalList = () => async (dispatch: AppDispatch) => {
-  console.log("this is hospitallist ",API.HOSPITAL_LIST_API);
   try {
     dispatch(fetchHospitalListStart());
     const response = await get(API.HOSPITAL_LIST_API);
-     console.log("Fetched Hospital List Data:", response);
     dispatch(fetchHospitalListSuccess(response));
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch hospitals';
@@ -126,79 +124,79 @@ export const fetchHospitalList = () => async (dispatch: AppDispatch) => {
   }
 };
 
+// --- Patient Personal Health Data ---
+export const fetchPatientPersonalHealthData = (id: string) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchPatientPersonalDataStart());
+    const response = await get(API.PATIENT_PERSONAL_HEALTH_API + id);
+    dispatch(fetchPatientPersonalDataSuccess(response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient personal health data';
+    dispatch(fetchPatientPersonalDataFailure(errorMessage));
+  }
+};
 
-  export const fetchPatientPersonalHealthData = (id:string) => async (dispatch: AppDispatch) => {
-    try {
-      dispatch(fetchPatientPersonalDataStart());
-      const response = await get(API.PATIENT_PERSONAL_HEALTH_API+id);
-      dispatch(fetchPatientPersonalDataSuccess(response));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patients personal health data';
-      dispatch(fetchPatientPersonalDataFailure(errorMessage));
-    }
-  };
-  export const updatePatientPersonalHealthData = (id:string,data:any) => async (dispatch: AppDispatch) => {
-    try {
-      dispatch(fetchPatientPersonalDataStart());
-      const response = await put(API.PATIENT_PERSONAL_HEALTH_API+id,data);
-      console.log("Updated response",response);
-      dispatch(fetchPatientPersonalDataSuccess(response));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update patients personal health data';
-      dispatch(fetchPatientPersonalDataFailure(errorMessage));
-    }
-  };
+export const updatePatientPersonalHealthData = (id: string, data: any) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchPatientPersonalDataStart());
+    const response = await put(API.PATIENT_PERSONAL_HEALTH_API + id, data);
+    dispatch(fetchPatientPersonalDataSuccess(response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update patient personal health data';
+    dispatch(fetchPatientPersonalDataFailure(errorMessage));
+  }
+};
 
-  export const fetchPatientBloodGroupData = () => async (dispatch: AppDispatch) => {
-    try {
-      dispatch(fetchPatientBloodGroupDataStart());
-      const response = await get(API.PATIENT_BLOOD_GROUP_API);
-      dispatch(fetchPatientBloodGroupDataSuccess(response));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patients blood group data';
-      dispatch(fetchPatientBloodGroupDataFailure(errorMessage));
-    }
-  };
+// --- Patient Blood Group Data ---
+export const fetchPatientBloodGroupData = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchPatientBloodGroupDataStart());
+    const response = await get(API.PATIENT_BLOOD_GROUP_API);
+    dispatch(fetchPatientBloodGroupDataSuccess(response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient blood group data';
+    dispatch(fetchPatientBloodGroupDataFailure(errorMessage));
+  }
+};
 
-  export const fetchHealthConditionData = () => async (dispatch: AppDispatch) => {
-    try {
-      dispatch(fetchHealthConditionDataStart());
-      const response = await get(API.PATIENT_HEALTH_CONDITION_API);
-      dispatch(fetchHealthConditionDataSuccess(response));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patients health condition data';
-      dispatch(fetchHealthConditionDataFailure(errorMessage));
-    }
-  };
+// --- Patient Health Condition Data ---
+export const fetchHealthConditionData = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchHealthConditionDataStart());
+    const response = await get(API.PATIENT_HEALTH_CONDITION_API);
+    dispatch(fetchHealthConditionDataSuccess(response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient health condition data';
+    dispatch(fetchHealthConditionDataFailure(errorMessage));
+  }
+};
 
-     export const fetchRelationData = () => async (dispatch: AppDispatch) => {
-    try {
-      dispatch(fetchRelationDataStart());
-      const response = await get(API.PATIENT_RELATION_API);
-      dispatch(fetchRelationDataSuccess(response));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patients health condition data';
-      dispatch(fetchRelationDataFailure(errorMessage));
-    }
-  };
+// --- Patient Relation Data ---
+export const fetchRelationData = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchRelationDataStart());
+    const response = await get(API.PATIENT_RELATION_API);
+    dispatch(fetchRelationDataSuccess(response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient relation data';
+    dispatch(fetchRelationDataFailure(errorMessage));
+  }
+};
 
-  export const saveFamilyHealthData = (data:any) => async (dispatch: AppDispatch) => {
-    console.log("Data",data,"url",API.PATIENT_FAMILY_HEALTH_API)
-    try {
-      dispatch(saveFamilyHealthDataStart());
-      const response = await post(API.PATIENT_FAMILY_HEALTH_API,data);
-      dispatch(saveFamilyHealthDataSuccess(response));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patients health condition data';
-      dispatch(saveFamilyHealthDataFailure(errorMessage));
-    }
-  };
+// --- Patient Family Health Data ---
+export const saveFamilyHealthData = (data: any) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(saveFamilyHealthDataStart());
+    const response = await post(API.PATIENT_FAMILY_HEALTH_API, data);
+    dispatch(saveFamilyHealthDataSuccess(response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to save family health data';
+    dispatch(saveFamilyHealthDataFailure(errorMessage));
+  }
+};
 
-
-
-
-
- export const fetchCoverageTypes = () => async (dispatch: AppDispatch) => {
+// --- Patient Coverage Data ---
+export const fetchCoverageTypes = () => async (dispatch: AppDispatch) => {
   try {
     dispatch(fetchCoverageDataStart());
     const response = await get(API.PATIENT_COVERAGE_API);
@@ -207,7 +205,6 @@ export const fetchHospitalList = () => async (dispatch: AppDispatch) => {
     dispatch(fetchCoverageDataFailure(error.message || 'Failed to fetch coverage types'));
   }
 };
-
 
 export const saveCoverageData = (data: any) => async (dispatch: AppDispatch) => {
   try {
@@ -219,31 +216,70 @@ export const saveCoverageData = (data: any) => async (dispatch: AppDispatch) => 
   }
 };
 
+export const fetchPatientAdditionalData =
+  (patientId: string) =>
+  async (dispatch: AppDispatch): Promise<void> => {
+    try {
+      dispatch(fetchPatientAdditionalDetailsStart());
+      const response = await get(`${API.PATIENT_ADDITIONAL_DETAILS_API}${patientId}`);
+      dispatch(fetchPatientAdditionalDetailsSuccess(response.data || response));
+    } catch (error: any) {
+      dispatch(
+        fetchPatientAdditionalDetailsFailure(
+          error.message || 'Failed to fetch patient additional data'
+        )
+      );
+    }
+  };
 
+// ✅ Save (Create or Update) Patient Additional Data Automatically
+export const savePatientAdditionalData =
+  (patientId: string, data: Record<string, any>) =>
+  async (dispatch: AppDispatch): Promise<any> => {
+    try {
+      dispatch(savePatientAdditionalDetailsStart());
 
-  // Fetch Ambulance Types
+      // 🔍 Step 1: Check if data exists for this patient
+      let existingData;
+      try {
+        const checkResponse = await get(`${API.PATIENT_ADDITIONAL_DETAILS_API}${patientId}`);
+        existingData = checkResponse?.data || checkResponse;
+      } catch {
+        existingData = null; // ignore fetch error, assume no data
+      }
+
+      // 🧭 Step 2: Choose HTTP method dynamically
+      const hasExisting = existingData && Object.keys(existingData).length > 0;
+      const apiUrl = `${API.PATIENT_ADDITIONAL_DETAILS_API}${patientId}`;
+      const response = hasExisting
+        ? await put(apiUrl, data) // update existing
+        : await post(apiUrl, data); // create new
+
+      dispatch(savePatientAdditionalDetailsSuccess(response.data || response));
+      return response.data || response;
+    } catch (error: any) {
+      dispatch(
+        savePatientAdditionalDetailsFailure(
+          error.message || 'Failed to save patient additional data'
+        )
+      );
+      throw error;
+    }
+  };
+
+// --- Ambulance Types ---
 export const fetchAmbulanceTypes = () => async (dispatch: AppDispatch) => {
-  console.log("Fetching ambulance types from:", API.AMBULANCE_TYPE);
   try {
     dispatch(fetchAmbulanceTypeStart());
     const response = await get(API.AMBULANCE_TYPE);
-    console.log("Fetched Ambulance Types:", response);
     dispatch(fetchAmbulanceTypeSuccess(response));
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to fetch ambulance types';
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch ambulance types';
     dispatch(fetchAmbulanceTypeFailure(errorMessage));
   }
 };
 
-
-
-
-
-
-
-
-// patientThunks.ts
+// --- Pharmacy List ---
 export const fetchPharmacyList = (city?: string) => async (dispatch: AppDispatch) => {
   try {
     dispatch(fetchPharmacyListStart());
@@ -259,17 +295,25 @@ export const fetchPharmacyList = (city?: string) => async (dispatch: AppDispatch
   }
 };
 
-// POST - Create new pharmacy
+// --- Create Pharmacy ---
 export const createPharmacy = (pharmacyData: any) => async (dispatch: AppDispatch) => {
-  console.log("post pharmacies");
   try {
     dispatch(createPharmacyStart());
     const response = await post(API.PHARMACY_LIST_API, pharmacyData);
     dispatch(createPharmacySuccess(response));
-    return response; // Return response for potential redirect or notification
+    return response;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to create pharmacy';
     dispatch(createPharmacyFailure(errorMessage));
-    throw error; // Re-throw error for handling in component
+    throw error;
+  }
+};
+export const fetchPlans = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchPlansStart());
+    const response = await get(API.PLANS);
+    dispatch(fetchPlansSuccess(response.data || response));
+  } catch (error: any) {
+    dispatch(fetchPlansFailure(error.message || "Failed to fetch plans"));
   }
 };

@@ -4,7 +4,7 @@ const getBaseUrl = () => {
   if (__DEV__) {
     // Uncomment the appropriate line based on your setup
     // return 'http://10.0.2.2:8080/api/'; // For Android emulator
-    return 'http://192.168.0.121:8080/api/'; // For physical device (replace YOUR_LOCAL_IP with your computer's local IP)
+    return 'http://192.168.0.169:8080/api/'; // For physical device (replace YOUR_LOCAL_IP with your computer's local IP)
   }
   return 'http://your-production-url.com/api/'; // For production
 };
@@ -19,7 +19,6 @@ export const API = {
   BLOOD_GROUP_API: `${BASE_URL}auth/patient/blood-group`,
   PATIENT_PERSONAL_HEALTH_API: `${BASE_URL}patient-dashboard/personal-health/`,
   PATIENT_FAMILY_API: `${BASE_URL}auth/patient/family`,
-  PATIENT_ADDITIONAL_DETAILS_API: `${BASE_URL}auth/patient/additional-details`,
   PATIENT_BLOOD_GROUP_API: `${BASE_URL}master/blood-group`,
   PATIENT_HEALTH_CONDITION_API: `${BASE_URL}master/healthConditions`,
   PATIENT_RELATION_API: `${BASE_URL}master/relation`,
@@ -27,13 +26,14 @@ export const API = {
  PATIENT_VITALS_API: `${BASE_URL}patient/vitals`,
   HOSPITAL_LIST_API: `${BASE_URL}hospitals/`, 
   AMBULANCE_TYPE: `${BASE_URL}ambulance-types/`,
+  PLANS: `${BASE_URL}plans/`,
    PHARMACY_LIST_API: `${BASE_URL}pharmacies`,
   PATIENT_COVERAGE_API:`${BASE_URL}master/coverage-type`,
-  PATIENT_ADDITIONAL_DETAILS_API: (patientId: string) =>
-    `${BASE_URL}auth/patient/additional-details/${patientId}`,  
+  PATIENT_ADDITIONAL_DETAILS_API:`${BASE_URL}auth/patient/additional-details/`,  
 // GET_PATIENT_BY_ID: (id: string) => `${BASE_URL}auth/patient/${id}`,  // GET
 //   UPDATE_PATIENT_BY_ID: (id: string) => `${BASE_URL}auth/patient/${id}`, // PUT
   PATIENT_PHOTO: `${BASE_URL}auth/patient/photo?path=`,
+  
 };
 
   

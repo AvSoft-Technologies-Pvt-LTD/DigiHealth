@@ -72,10 +72,6 @@ export const get = async (
     throw error;
   }
 };
-
-
-
-
 export const post = async <T = any>(url: string, data: object): Promise<T> => {
   console.log("url",url,"data",data)
   try {
@@ -129,7 +125,6 @@ export const postFormData = async (url: string, formData: FormData) => {
       baseURL: BASE_URL,
       timeout: 30000, // Increased timeout for file uploads
     });
-
     // Add auth token if available
     const token = await getAccessJwtToken();
     const headers: Record<string, string> = {
@@ -140,7 +135,6 @@ export const postFormData = async (url: string, formData: FormData) => {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-
     const response = await instance.post(url, formData, { headers });
     return response.data;
   } catch (error: any) {
@@ -160,7 +154,6 @@ export const postFormData = async (url: string, formData: FormData) => {
     throw error;
   }
 };
-
 export const mediaUpload = async (url: string, file: File) => {
   const formData = new FormData();
   formData.append("file", file);

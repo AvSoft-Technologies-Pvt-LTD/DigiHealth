@@ -73,9 +73,9 @@ export const AvSelect: React.FC<AvSelectProps> = ({
   };
 
   const handleClose = () => {
-    if (multiselect) {
+    // if (multiselect) {
       setModalVisible(false);
-    }
+    // }
   };
 
   const getDisplayText = () => {
