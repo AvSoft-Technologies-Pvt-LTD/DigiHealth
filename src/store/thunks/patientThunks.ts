@@ -26,6 +26,37 @@ import {
   createPharmacySuccess,
   createPharmacyFailure,
 } from '../slices/pharmacySlice';
+import {
+  fetchLabScanStart,
+  fetchLabScanSuccess,
+  fetchLabScanFailure,
+} from '../slices/labScanSlice';
+import {
+  fetchMedicalInfoStart,
+  fetchMedicalInfoSuccess,
+  fetchMedicalInfoFailure,
+} from '../slices/medicalInfoSlice.ts';
+
+import {
+  fetchPrescriptionStart,
+  fetchPrescriptionSuccess,
+  fetchPrescriptionFailure,
+} from './../slices/prescriptionSlice.ts';
+import {
+  fetchPharmacyBillingStart,
+  fetchPharmacyBillingSuccess,
+  fetchPharmacyBillingFailure,
+} from '../slices/pharmacyBillingSlice';
+import {
+  fetchLabBillingStart,
+  fetchLabBillingSuccess,
+  fetchLabBillingFailure,
+} from '../slices/labBillingSlice.ts';
+import {
+  fetchHospitalBillingStart,
+  fetchHospitalBillingSuccess,
+  fetchHospitalBillingFailure,
+} from '../slices/hospitalBillingSlice';
 import { fetchPatientPersonalDataStart, fetchPatientPersonalDataSuccess, fetchPatientPersonalDataFailure } from '../slices/patientPersonalDataSlice';
 import { fetchPatientBloodGroupDataStart, fetchPatientBloodGroupDataSuccess, fetchPatientBloodGroupDataFailure } from '../slices/patientBloodGroupSlice';
 import { fetchHealthConditionDataFailure, fetchHealthConditionDataStart, fetchHealthConditionDataSuccess } from '../slices/healthConditionSlice';
@@ -315,5 +346,100 @@ export const fetchPlans = () => async (dispatch: AppDispatch) => {
     dispatch(fetchPlansSuccess(response.data || response));
   } catch (error: any) {
     dispatch(fetchPlansFailure(error.message || "Failed to fetch plans"));
+  }
+};
+
+
+
+// medicalrecord informtion 
+
+
+
+export const fetchMedicalInfo = (patientId: string) => async (dispatch: AppDispatch) => {
+  console.log("this is medical record..............",API.PATIENT_MEDICAL_INFO_API)
+  try {
+    dispatch(fetchMedicalInfoStart());
+    const response = await get(API.PATIENT_MEDICAL_INFO_API(patientId));
+    console.log("Fetched Medical Info:", response);
+    dispatch(fetchMedicalInfoSuccess(response.data || response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch medical info';
+    dispatch(fetchMedicalInfoFailure(errorMessage));
+  }
+};
+
+
+
+export const fetchPrescriptions = (patientId: string) => async (dispatch: AppDispatch) => {
+  console.log("Fetching prescriptions for patient:", patientId);
+  try {
+    dispatch(fetchPrescriptionStart());
+    const response = await get(API.PATIENT_PRESCRIPTION_API(patientId));
+    console.log("API Response:", response);
+
+   
+
+    dispatch(fetchPrescriptionSuccess(response.data || response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch prescriptions';
+    console.error("Error fetching prescriptions:", error);
+    dispatch(fetchPrescriptionFailure(errorMessage));
+  }
+};
+
+
+// Fetch Lab Scans
+export const fetchLabScans = (patientId: string) => async (dispatch: AppDispatch) => {
+  console.log("Fetching lab scans for patient:", API.PATIENT_LAB_SCAN_API(patientId));
+  try {
+    dispatch(fetchLabScanStart());
+    const response = await get(API.PATIENT_LAB_SCAN_API(patientId));
+    console.log("API Response for Lab Scans==============:", response);
+    dispatch(fetchLabScanSuccess(response.data || response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch lab scans';
+    dispatch(fetchLabScanFailure(errorMessage));
+  }
+};
+
+
+// Billing api medical record details in patient
+
+
+
+// Pharmacy Billing
+export const fetchPharmacyBilling = (patientId: string) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchPharmacyBillingStart());
+    const response = await get(API.PHARMACY_BILLING_API(patientId));
+    console.log("Pharmacy Billing Response:", response);
+    dispatch(fetchPharmacyBillingSuccess(response.data || response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch pharmacy bills';
+    dispatch(fetchPharmacyBillingFailure(errorMessage));
+  }
+};
+
+// Lab Billing
+export const fetchLabBilling = (patientId: string) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchLabBillingStart());
+    const response = await get(API.LAB_BILLING_API(patientId));
+    dispatch(fetchLabBillingSuccess(response.data || response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch lab bills';
+    dispatch(fetchLabBillingFailure(errorMessage));
+  }
+};
+
+// Hospital Billing
+export const fetchHospitalBilling = (patientId: string) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchHospitalBillingStart());
+    const response = await get(API.HOSPITAL_BILLING_API(patientId));
+    dispatch(fetchHospitalBillingSuccess(response.data || response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch hospital bills';
+    dispatch(fetchHospitalBillingFailure(errorMessage));
   }
 };

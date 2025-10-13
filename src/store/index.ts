@@ -15,7 +15,17 @@ import healthSummaryData from "./slices/healthSummary"
 import hospitalListReducer from './slices/hospitalList';
 import coverageReducer from './slices/coverage'
 import patientAdditionalDataReducer from './slices/patientAdditionalDataSlice';
-import pharmacyReducer from './slices/pharmacySlice';import ambulanceTypeReducer from './slices/ambulanceTypeSlice';export const store = configureStore({
+import pharmacyReducer from './slices/pharmacySlice';import ambulanceTypeReducer from './slices/ambulanceTypeSlice';
+import medicalInfoReducer from './slices/medicalInfoSlice';
+import prescriptionReducer from './slices/prescriptionSlice';
+import labScanReducer from './slices/labScanSlice';
+import pharmacyBillingReducer from './slices/pharmacyBillingSlice';
+import labBillingReducer from './slices/labBillingSlice';
+import hospitalBillingReducer from './slices/hospitalBillingSlice';
+
+
+
+export const store = configureStore({
   reducer: {
     updatePatient: updatePatientReducer,
     user: userReducer,
@@ -33,6 +43,12 @@ import pharmacyReducer from './slices/pharmacySlice';import ambulanceTypeReducer
     ambulanceType: ambulanceTypeReducer,
     pharmacy: pharmacyReducer,
     patientAdditionalData: patientAdditionalDataReducer,
+     prescription: prescriptionReducer,       labScan: labScanReducer,
+ medicalInfo: medicalInfoReducer,
+ currentPatient: currentPatientReducer,
+ pharmacyBilling: pharmacyBillingReducer,
+    labBilling: labBillingReducer,
+    hospitalBilling: hospitalBillingReducer,
      
         
   },

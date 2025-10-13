@@ -4,7 +4,7 @@ const getBaseUrl = () => {
   if (__DEV__) {
     // Uncomment the appropriate line based on your setup
     // return 'http://10.0.2.2:8080/api/'; // For Android emulator
-    return 'http://192.168.0.169:8080/api/'; // For physical device (replace YOUR_LOCAL_IP with your computer's local IP)
+    return 'http://192.168.0.100:8080/api/'; // For physical device (replace YOUR_LOCAL_IP with your computer's local IP)
   }
   return 'http://your-production-url.com/api/'; // For production
 };
@@ -33,6 +33,17 @@ export const API = {
 // GET_PATIENT_BY_ID: (id: string) => `${BASE_URL}auth/patient/${id}`,  // GET
 //   UPDATE_PATIENT_BY_ID: (id: string) => `${BASE_URL}auth/patient/${id}`, // PUT
   PATIENT_PHOTO: `${BASE_URL}auth/patient/photo?path=`,
+
+
+
+  PATIENT_PRESCRIPTION_API: (patientId: string) => `${BASE_URL}patient/prescriptions/${patientId}`,
+ 
+  PATIENT_LAB_SCAN_API: (patientId: string) => `${BASE_URL}medical-record-lab-scan/${patientId}`,
+ PATIENT_MEDICAL_INFO_API: (userId: string) => `${BASE_URL}patient/medical-info/${userId}`,// GET_PATIENT_BY_ID: (id: string) => `${BASE_URL}auth/patient/${id}`,  // GET
+
+  PHARMACY_BILLING_API: (patientId: string) => `${BASE_URL}medical-record-billing/pharmacy/${patientId}`,
+  LAB_BILLING_API: (patientId: string) => `${BASE_URL}medical-record-billing/labs/${patientId}`,
+  HOSPITAL_BILLING_API: (patientId: string) => `${BASE_URL}medical-record-billing/hospitals/${patientId}`,
   
 };
 
