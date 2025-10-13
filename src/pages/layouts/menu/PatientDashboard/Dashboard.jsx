@@ -10,9 +10,9 @@ import Healthcard from '../../../../components/Healthcard';
 import {
   getFamilyMembersByPatient, createFamily, updateFamily, deleteFamily,
   createPersonalHealth, updatePersonalHealth, getPersonalHealthByPatientId,
-
+  getAdditionalDetailsByPatientId, createAdditionalDetails, updateAdditionalDetails,getAllPatients, getPatientPhoto
 } from '../../../../utils/CrudService';
-import { getHealthConditions, getCoverageTypes, getRelations, getBloodGroups, getAllPatients,getPatientPhoto } from '../../../../utils/masterService';
+import { getHealthConditions, getCoverageTypes, getRelations, getBloodGroups,  } from '../../../../utils/masterService';
 
 const initialUserData = {
   name: '', email: '', gender: '', phone: '', dob: '', bloodGroup: '', height: '', weight: '',
@@ -58,7 +58,7 @@ function Dashboard() {
   const [editFamilyMember, setEditFamilyMember] = useState(null);
   const [profileData, setProfileData] = useState({
     name: '', firstName: '', lastName: '', gender: '', dob: '', phone: '', photo: '',
-    email: '', address: '', city: '', state: '', pincode: '', emergencyContact: '', registrationDate: ''
+    email: '',
   });
   const [loading, setLoading] = useState(true);
   const [coverageTypes, setCoverageTypes] = useState([]);
@@ -68,6 +68,15 @@ function Dashboard() {
   const [hasPersonalHealthData, setHasPersonalHealthData] = useState(false);
   const [patientData, setPatientData] = useState(null);
   const [allPatients, setAllPatients] = useState([]);
+  const [additionalDetails, setAdditionalDetails] = useState({
+    insuranceProviderName: '',
+    policyNum: '',
+    coverageTypeId: '',
+    coverageAmount: '',
+    policyStartDate: '',
+    policyEndDate: '',
+    primaryHolder: false,
+  });
 
   const basePersonalFields = useMemo(() => [
     { name: 'height', label: 'Height (cm)', type: 'number', colSpan: 1 },
@@ -155,7 +164,6 @@ function Dashboard() {
     };
   };
 
-  // Updated useEffect for fetching data
   useEffect(() => {
     const fetchAllData = async () => {
       if (!user?.email && !user?.phone) return;
@@ -198,15 +206,15 @@ function Dashboard() {
         setCoverageTypes(
           coverageRes.data?.map((item) => ({
             label: item.coverageTypeName || 'Unknown',
-            value: item.coverageTypeName,
+            value: item.id, // ✅ use numeric ID
           })) || []
         );
-
         const patientId = currentPatient?.id || user?.id;
         if (patientId) {
-          const [familyRes, healthRes] = await Promise.all([
+          const [familyRes, healthRes, additionalRes] = await Promise.all([
             getFamilyMembersByPatient(patientId).catch(() => ({ data: [] })),
             getPersonalHealthByPatientId(patientId).catch(() => ({ data: null })),
+            getAdditionalDetailsByPatientId(patientId).catch(() => ({ data: null })),
           ]);
           const mappedFamilyMembers = familyRes.data?.map((member) => ({
             id: member.id,
@@ -239,33 +247,37 @@ function Dashboard() {
             setHasPersonalHealthData(true);
           }
           setUserData(prev => ({ ...prev, ...personalHealthData, familyMembers: mappedFamilyMembers }));
+          if (additionalRes.data) {
+            setAdditionalDetails({
+              insuranceProviderName: additionalRes.data.insuranceProviderName || '',
+              policyNum: additionalRes.data.policyNum || '',
+              coverageTypeId: additionalRes.data.coverageTypeId || '',
+              coverageAmount: additionalRes.data.coverageAmount || '',
+              policyStartDate: additionalRes.data.policyStartDate || '',
+              policyEndDate: additionalRes.data.policyEndDate || '',
+              primaryHolder: additionalRes.data.primaryHolder || false,
+            });
+          }
+          let photoUrl = null;
+          if (currentPatient?.photoPath) {
+            try {
+              const photoResponse = await getPatientPhoto(currentPatient.photoPath);
+              photoUrl = URL.createObjectURL(photoResponse.data);
+            } catch (err) {
+              console.error('Failed to fetch photo:', err);
+            }
+          }
+          const profileSource = currentPatient || user;
+          setProfileData({
+            firstName: profileSource?.firstName || '',
+            lastName: profileSource?.lastName || '',
+            dob: profileSource?.dob || '',
+            gender: profileSource?.gender || '',
+            phone: profileSource?.phone || '',
+            email: profileSource?.email || '',
+            photo: photoUrl,
+          });
         }
-        let photoUrl = null;
-      if (currentPatient?.photoPath) {
-        try {
-          const photoResponse = await getPatientPhoto(currentPatient.photoPath);
-          photoUrl = URL.createObjectURL(photoResponse.data);
-        } catch (err) {
-          console.error('Failed to fetch photo:', err);
-        }
-      }
-        const profileSource = currentPatient || user;
-        setProfileData({
-          name: `${profileSource?.firstName || 'Guest'} ${profileSource?.lastName || ''}`.trim(),
-          firstName: profileSource?.firstName || '',
-          lastName: profileSource?.lastName || '',
-          dob: profileSource?.dob || '',
-          gender: profileSource?.gender || '',
-          phone: profileSource?.phone || '',
-          email: profileSource?.email || '',
-          photo: photoUrl,
-          address: profileSource?.address || '',
-          city: profileSource?.city || '',
-          state: profileSource?.state || '',
-          pincode: profileSource?.pincode || '',
-          emergencyContact: profileSource?.emergencyContact || '',
-          registrationDate: profileSource?.createdAt || profileSource?.registrationDate || ''
-        });
       } catch (err) {
         console.error('Failed to fetch data:', err);
         showFeedback('Failed to load data. Some features may be limited.', 'warning');
@@ -336,7 +348,7 @@ function Dashboard() {
   const openModal = (section, data = null) => {
     setActiveSection(section);
     setShowModal(true);
-    setModalMode(data && section === 'family' ? 'edit' : 'edit');
+    setModalMode(data ? 'edit' : 'add');
     if (section === 'personal') {
       setModalFields(
         basePersonalFields.map((field) =>
@@ -388,14 +400,20 @@ function Dashboard() {
         setEditFamilyMember(null);
       }
     } else if (section === 'additional') {
-      setModalFields(
-        additionalFields.map((field) =>
-          field.name === 'coverageType'
-            ? { ...field, options: coverageTypes }
-            : field
-        )
-      );
-      setModalData(userData.additionalDetails || {});
+      setModalFields(additionalFields);
+      setModalData({
+        provider: additionalDetails.insuranceProviderName || '',
+        policyNumber: additionalDetails.policyNum || '',
+        coverageType: additionalDetails.coverageTypeId || '',
+        coverageAmount: additionalDetails.coverageAmount || '',
+        startDate: additionalDetails.policyStartDate
+          ? new Date(additionalDetails.policyStartDate).toISOString().split('T')[0]
+          : '',
+        endDate: additionalDetails.policyEndDate
+          ? new Date(additionalDetails.policyEndDate).toISOString().split('T')[0]
+          : '',
+        primaryHolder: additionalDetails.primaryHolder ? 'Yes' : 'No',
+      });
     }
     setModalTitle(
       section === 'personal'
@@ -455,8 +473,29 @@ function Dashboard() {
       }
       setEditFamilyMember(null);
     } else if (activeSection === 'additional') {
-      setUserData(prev => ({ ...prev, additionalDetails: formValues }));
-      showFeedback('Additional details saved successfully');
+      try {
+        if (!patientId) return showFeedback('Patient ID is required', 'error');
+        const payload = {
+          insuranceProviderName: formValues.provider,
+          policyNum: formValues.policyNumber,
+          coverageTypeId: Number(formValues.coverageType?.value || formValues.coverageType),
+          coverageAmount: Number(formValues.coverageAmount),
+          policyStartDate: new Date(formValues.startDate).toISOString(),
+          policyEndDate: new Date(formValues.endDate).toISOString(),
+          primaryHolder: formValues.primaryHolder === 'Yes',
+        };
+        let response;
+        if (additionalDetails.insuranceProviderName) {
+          response = await updateAdditionalDetails(patientId, payload);
+        } else {
+          response = await createAdditionalDetails(patientId, payload);
+        }
+        setAdditionalDetails(response.data);
+        showFeedback('Additional details saved successfully');
+      } catch (error) {
+        console.error("Error saving additional details:", error);
+        showFeedback('Failed to save additional details', 'error');
+      }
     }
     setShowModal(false);
     setModalData({});
@@ -492,13 +531,12 @@ function Dashboard() {
   };
 
   const completionStatus = getSectionCompletionStatus();
-
   useEffect(() => {
     const completedSections = Object.values(completionStatus).filter(Boolean).length;
     const totalSections = Object.keys(completionStatus).length;
     const completion = Math.round((completedSections / totalSections) * 100);
     setProfileCompletion(completion);
-  }, [userData, user, completionStatus]);
+  }, [userData, user, completionStatus, additionalDetails]);
 
   if (loading) {
     return (
@@ -509,11 +547,18 @@ function Dashboard() {
   }
 
   const profileDetails = [
-    { icon: profileData.gender?.toLowerCase() === 'female' ? GiFemale : GiMale, label: 'Gender', value: profileData.gender },
-    { icon: Phone, label: 'Phone No.', value: profileData.phone },
-    { icon: Calendar, label: 'Date Of Birth', value: profileData.dob },
-    { icon: Droplet, label: 'Blood Group', value: userData.bloodGroupName }
-  ];
+  { icon: profileData.gender?.toLowerCase() === 'female' ? GiFemale : GiMale, label: 'Gender', value: profileData.gender },
+  { icon: Phone, label: 'Phone No.', value: profileData.phone },
+  { 
+    icon: Calendar, 
+    label: 'Date Of Birth', 
+    value: profileData.dob 
+      ? new Date(profileData.dob).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) 
+      : 'NA' 
+  },
+  { icon: Droplet, label: 'Blood Group', value: userData.bloodGroupName }
+];
+
 
   const modalConfig = {
     mode: modalMode,
@@ -523,7 +568,7 @@ function Dashboard() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="p-2 sm:p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <h1 className="text-l sm:text-2xl lg:text-2xl font-bold text-gray-900 m-0">Patient Information</h1>
@@ -548,7 +593,7 @@ function Dashboard() {
           {/* Profile Image and Name */}
           <div className="flex-shrink-0 flex flex-col items-center md:items-start text-center md:text-left">
             <div className="w-24 h-24 md:w-24 md:h-24 rounded-full overflow-hidden mb-3">
-                {profileData?.photo ? (
+              {profileData?.photo ? (
                 <img
                   src={profileData.photo}
                   alt="Profile"
@@ -587,15 +632,14 @@ function Dashboard() {
         </div>
       </div>
       {/* Section Tabs */}
-      <div className="overflow-x-auto custom-scrollbar pb-2 mb-6">
+      <div className="overflow-x-auto custom-scrollbar">
         <div className="flex gap-2 sm:gap-4 min-w-max">
           {SECTIONS.map(({ id, name, icon: Icon }) => (
             <button
               key={id}
               onClick={() => id !== 'basic' && openModal(id)}
-              className={`px-2 py-1 sm:px-3 sm:py-2 rounded-lg flex items-center gap-1 text-white text-xs sm:text-sm whitespace-nowrap ${
-                activeSection === id ? 'bg-[#0e1630]' : 'bg-[#1f2a4d] hover:bg-[#1b264a]'
-              } transition-all duration-300`}
+              className={`px-2 py-1 sm:px-3 sm:py-2 rounded-lg flex items-center gap-1 text-white text-xs sm:text-sm whitespace-nowrap ${activeSection === id ? 'bg-[#0e1630]' : 'bg-[#1f2a4d] hover:bg-[#1b264a]'
+                } transition-all duration-300`}
             >
               <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="truncate">{name}</span>
@@ -606,10 +650,9 @@ function Dashboard() {
       </div>
       {/* Feedback Message */}
       {feedbackMessage.show && (
-        <div className={`fixed top-4 right-4 z-50 p-3 sm:p-4 rounded-lg shadow-lg ${
-          feedbackMessage.type === 'success' ? 'bg-green-100 text-green-800' :
-          feedbackMessage.type === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-        } transition-all duration-300`}>
+        <div className={`fixed top-4 right-4 z-50 p-3 sm:p-4 rounded-lg shadow-lg ${feedbackMessage.type === 'success' ? 'bg-green-100 text-green-800' :
+            feedbackMessage.type === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+          } transition-all duration-300`}>
           {feedbackMessage.message}
         </div>
       )}
@@ -625,8 +668,17 @@ function Dashboard() {
         onChange={(updated) => setModalData(updated)}
         onDelete={handleModalDelete}
         saveLabel={
-          activeSection === 'personal' ? (hasPersonalHealthData ? 'Update' : 'Save') :
-          (activeSection === 'family' && editFamilyMember?.id ? 'Update' : 'Save')
+          activeSection === 'personal'
+            ? hasPersonalHealthData
+              ? 'Update'
+              : 'Save'
+            : activeSection === 'family'
+              ? editFamilyMember?.id
+                ? 'Update'
+                : 'Save'
+              : additionalDetails.insuranceProviderName
+                ? 'Update'
+                : 'Save'
         }
         cancelLabel="Cancel"
         deleteLabel="Delete"

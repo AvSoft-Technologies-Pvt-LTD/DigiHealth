@@ -56,18 +56,14 @@ import InitialAssessmentForm from "./components/InitialAssesment";
 const PrivateRoute = ({ allowedTypes }) => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   
-  console.log('PrivateRoute - Auth state:', { isAuthenticated, user, allowedTypes });
-  
   if (!isAuthenticated || !user) {
-    console.log('PrivateRoute - Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
   const userType = user.userType?.toLowerCase();
-  console.log('PrivateRoute - User type:', userType);
   
   if (allowedTypes && !allowedTypes.includes(userType)) {
-    console.log('PrivateRoute - User type not allowed, redirecting to appropriate dashboard');
+
     // Redirect to appropriate dashboard based on user type
     const redirectRoutes = {
       patient: '/patientdashboard',
@@ -87,16 +83,11 @@ const PrivateRoute = ({ allowedTypes }) => {
 const RoleRedirect = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   
-  console.log('RoleRedirect - Auth state:', { isAuthenticated, user });
-  
   if (!isAuthenticated || !user) {
-    console.log('RoleRedirect - Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
   const userType = user.userType?.toLowerCase();
-  console.log('RoleRedirect - Redirecting based on user type:', userType);
-
   switch (userType) {
     case "doctor":
       return <Navigate to="/doctordashboard" replace />;
@@ -129,14 +120,11 @@ const App = () => {
   const [appLoading, setAppLoading] = useState(true);
 
   useEffect(() => {
-    console.log('App - Initializing auth');
-    // ✅ On app load, restore user from localStorage
     dispatch(initializeAuth());
     setAppLoading(false);
   }, [dispatch]);
 
   useEffect(() => {
-    console.log('App - Auth state changed:', { isAuthenticated, user });
   }, [isAuthenticated, user]);
 
   if (appLoading) {

@@ -7,6 +7,7 @@ import PaymentGateway from "../../../../components/microcomponents/PaymentGatway
 
 const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = false, data }) => {
   const navigate = useNavigate();
+  
   const initialType = displayType || localStorage.getItem("appointmentTab") || "doctor";
   const [state, setState] = useState({
     t: initialType,
@@ -202,7 +203,7 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
   };
 
   const overviewData = isOverview
-    ? (state.t === "doctor" ? state.d : state.l).slice(0, 4)
+    ? (state.t === "doctor" ? state.d : state.l).slice(0, 3)
     : (state.t === "doctor" ? state.d : state.l);
 
   const tabs = displayType === "doctor" ? [] : [

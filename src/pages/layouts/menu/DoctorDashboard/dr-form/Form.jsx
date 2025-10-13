@@ -202,7 +202,8 @@ const Form = () => {
     if (activeForm === "all") {
       return (
         <div className="space-y-8 animate-slideIn">
-          <VitalsForm data={formsData.vitals} {...commonProps} hospitalName="AV Hospital" ptemail={patient.email} />
+          <VitalsForm data={formsData.vitals} {...commonProps} hospitalName="AV Hospital" ptemail={patient.email}  doctorId={patient.doctorId || 1} // Ensure doctorId is passed
+  patientId={patient.id || 1} />
           <PrescriptionForm data={formsData.prescription} {...commonProps} setShowShareModal={setShowShareModal} doctorName="Dr. Kavya Patil" />
           <ClinicalNotesForm data={formsData.clinical} {...commonProps} ptemail={patient.email} hospitalname="AV Hospital" drEmail="dr.sheetal@example.com" drname="Dr. Sheetal S. Shelke" patientname={getPatientName()} diagnosis={patient.diagnosis} type={patient.type} />
           <LabTestsForm data={formsData.lab} {...commonProps} hospitalName="AV Hospital" ptemail={patient.email} />

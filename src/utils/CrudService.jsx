@@ -1,5 +1,18 @@
 import axiosInstance from "./axiosInstance";
 
+
+
+
+// Fetch all patients
+export const getAllPatients = () => axiosInstance.get('/auth/patient/all');
+
+// Get patient by ID (if needed)
+export const getPatientPhoto = (path) =>
+  axiosInstance.get('/auth/patient/photo', { params: { path }, responseType: 'blob',});
+export const getPatientById = (id) => axiosInstance.get(`/auth/patient/${id}`);
+
+// Update patient by ID
+export const updatePatient = (id, data) => axiosInstance.put(`/auth/patient/${id}`, data);
 /* -----------------------------
    FAMILY MEMBERS (CRUD)
 ------------------------------ */
@@ -27,6 +40,54 @@ export const updateFamily = (id, data) =>
 export const deleteFamily = (id) => 
   axiosInstance.delete(`/patient-dashboard/family-members/${id}`);
 
+/* -----------------------------
+   ADDITIONAL DETAILS (CRUD)
+------------------------------ */
+export const getAdditionalDetailsByPatientId = (patientId) =>
+  axiosInstance.get(`/auth/patient/additional-details/${patientId}`);
+export const createAdditionalDetails = (patientId, data) =>
+  axiosInstance.post(`/auth/patient/additional-details/${patientId}`, data);
+export const updateAdditionalDetails = (patientId, data) =>
+  axiosInstance.put(`/auth/patient/additional-details/${patientId}`, data);
+export const deleteAdditionalDetails = (patientId) =>
+  axiosInstance.delete(`/auth/patient/additional-details/${patientId}`);
+/* -----------------------------
+   IPD VITALS (CRUD)
+------------------------------ */
+// Get vitals by doctorId, patientId, and context
+export const getIpdVitals = (doctorId, patientId, context) =>
+  axiosInstance.get(`/ipd-vitals/doctor/${doctorId}/patient/${patientId}/context/${context}`);
+
+// Create new IPD vitals
+export const createIpdVitals = (data) =>
+  axiosInstance.post("/ipd-vitals", data);
+
+// Update IPD vitals by ID
+export const updateIpdVitals = (id, data) =>
+  axiosInstance.put(`/ipd-vitals/${id}`, data);
+
+// Delete IPD vitals by ID
+export const deleteIpdVitals = (id) =>
+  axiosInstance.delete(`/ipd-vitals/${id}`);
+
+/* -----------------------------
+   PATIENT VITALS (CRUD)
+------------------------------ */
+
+// Get all vitals
+export const getAllVitals = () => axiosInstance.get("/patient/vitals");
+
+// Get vitals by ID
+export const getVitalsById = (patientId) => axiosInstance.get(`/patient/vitals/${patientId}`);
+
+// Create new vitals
+export const createVitals = (data) => axiosInstance.post("/patient/vitals", data);
+
+// Update vitals by ID
+export const updateVitals = (patientId, data) => axiosInstance.put(`/patient/vitals/${patientId}`, data);
+
+// Delete vitals by ID
+export const deleteVitals = (patientId) => axiosInstance.delete(`/patient/vitals/${patientId}`);
 /* -----------------------------
    PERSONAL HEALTH (CRUD)
 ------------------------------ */

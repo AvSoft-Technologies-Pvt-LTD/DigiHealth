@@ -15,7 +15,7 @@ const AvailableLabs = () => {
   const totalPrice = cart.reduce((sum, test) => sum + test.price, 0);
 
   useEffect(() => {
-    axios.get("https://mocki.io/v1/af807925-eef5-457a-8fec-5be5bc163549")
+    axios.get("https://mocki.io/v1/2f914b6d-3a1d-4fe4-b075-219bef09ca4a")
       .then((res) => {
         setLabs(res.data);
         setFilteredLabs(res.data);

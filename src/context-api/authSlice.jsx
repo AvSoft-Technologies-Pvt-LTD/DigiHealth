@@ -2,12 +2,8 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '../utils/axiosInstance';
 
 const BASE_URL = 'http://localhost:8080/api/auth';
-const MOCK_OTP = "123456";
 
-// Helper function to simulate API delay
-const mockApiDelay = () => new Promise(resolve => setTimeout(resolve, 1000));
-
-// Register User (unchanged)
+// ✅ Register User
 export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async (formData, { rejectWithValue }) => {
@@ -16,12 +12,14 @@ export const registerUser = createAsyncThunk(
       if (!userType) {
         return rejectWithValue('User type is required');
       }
+
       const endpoint = `${BASE_URL}/${userType}/register`;
       const response = await axiosInstance.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+
       return {
         ...response.data,
         userType,
@@ -39,7 +37,7 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-// Login with Identifier & Password (unchanged)
+// ✅ Login with Identifier & Password
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ identifier, password }, { rejectWithValue }) => {
@@ -48,22 +46,20 @@ export const loginUser = createAsyncThunk(
         identifier,
         password
       });
-
       const userData = response.data;
       const normalizedUserType = userData.role ? userData.role.toLowerCase() : null;
-
       const userWithToken = {
         ...userData,
+        id: userData.id || userData.userId, // ✅ Ensure id is included
         userType: normalizedUserType,
         role: userData.role,
         identifier: userData.identifier || identifier,
         isAuthenticated: true
       };
-
       localStorage.setItem('user', JSON.stringify(userWithToken));
       localStorage.setItem('token', userWithToken.token);
       localStorage.setItem('identifier', identifier);
-
+      console.log('Login successful:', userWithToken);
       return userWithToken;
     } catch (error) {
       return rejectWithValue(
@@ -76,14 +72,13 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-// Mock Send Registration OTP
+// ✅ Send OTP (for registration or login)
 export const sendOTP = createAsyncThunk(
   'auth/sendOTP',
   async (identifier, { rejectWithValue }) => {
     try {
-      await mockApiDelay();
-      console.log(`[MOCK] OTP sent to ${identifier}. Use "${MOCK_OTP}" for verification.`);
-
+      // TODO: Replace with actual backend call when OTP service is implemented
+      console.log(`OTP would be sent to ${identifier}`);
       return {
         success: true,
         message: "OTP sent successfully",
@@ -99,14 +94,13 @@ export const sendOTP = createAsyncThunk(
   }
 );
 
-// Mock Send Login OTP
+// ✅ Send Login OTP
 export const sendLoginOTP = createAsyncThunk(
   'auth/sendLoginOTP',
   async (identifier, { rejectWithValue }) => {
     try {
-      await mockApiDelay();
-      console.log(`[MOCK] Login OTP sent to ${identifier}. Use "${MOCK_OTP}" for verification.`);
-
+      // TODO: Replace with actual backend call when OTP service is implemented
+      console.log(`Login OTP would be sent to ${identifier}`);
       return {
         success: true,
         message: "Login OTP sent successfully",
@@ -122,38 +116,32 @@ export const sendLoginOTP = createAsyncThunk(
   }
 );
 
-// Mock Verify OTP
+// ✅ Verify OTP
 export const verifyOTP = createAsyncThunk(
   'auth/verifyOTP',
   async ({ identifier, otp, type, registrationData }, { rejectWithValue }) => {
     try {
-      await mockApiDelay();
-
-      if (otp !== MOCK_OTP) {
-        return rejectWithValue(`Invalid OTP. Please use "${MOCK_OTP}" for testing.`);
-      }
-
-      // Create mock user data based on registration data
-      const isEmail = identifier.includes('@');
+      // TODO: Replace with actual backend verification
+      console.warn('OTP verification is mocked. Implement actual backend call.');
+      
+      // For now, accept any OTP for testing
+      // In production, this should call your backend
       const mockUser = {
-        id: `mock-${Math.random().toString(36).substring(2, 9)}`,
-        name: registrationData?.get('name') || "Test User",
-        email: isEmail ? identifier : registrationData?.get('email'),
-        phone: !isEmail ? identifier : registrationData?.get('phone'),
-        role: registrationData?.get('userType')?.toUpperCase() || "USER",
-        userType: registrationData?.get('userType')?.toLowerCase() || "user",
-        token: `mock-token-${Math.random().toString(36).substring(2, 15)}`,
-        isVerified: true,
-        isAuthenticated: true,
-        identifier: identifier
+        id: Math.floor(Math.random() * 1000),
+        email: identifier.includes('@') ? identifier : registrationData?.get('email'),
+        phone: !identifier.includes('@') ? identifier : registrationData?.get('phone'),
+        firstName: registrationData?.get('name') || "User",
+        lastName: "",
+        userType: registrationData?.get('userType')?.toLowerCase() || "patient",
+        role: registrationData?.get('userType')?.toUpperCase() || "PATIENT",
+        token: `mock-token-${Date.now()}`,
+        isAuthenticated: true
       };
 
-      // Store in localStorage
       localStorage.setItem('user', JSON.stringify(mockUser));
       localStorage.setItem('token', mockUser.token);
       localStorage.setItem('identifier', identifier);
 
-      console.log('[MOCK] OTP verification successful. User data:', mockUser);
       return mockUser;
     } catch (error) {
       return rejectWithValue(
@@ -163,7 +151,7 @@ export const verifyOTP = createAsyncThunk(
   }
 );
 
-// Get user profile (unchanged)
+// ✅ Get user profile
 export const getUserProfile = createAsyncThunk(
   'auth/getUserProfile',
   async (_, { rejectWithValue }) => {
@@ -192,7 +180,6 @@ const authSlice = createSlice({
     userType: JSON.parse(localStorage.getItem('user'))?.userType || null,
     registrationData: null,
     token: localStorage.getItem('token') || null,
-    mockOTP: MOCK_OTP // Store mock OTP in state for reference
   },
   reducers: {
     resetAuthState: (state) => {
@@ -211,6 +198,8 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.userType = action.payload.userType;
       state.token = action.payload.token;
+      localStorage.setItem('user', JSON.stringify(action.payload));
+      localStorage.setItem('token', action.payload.token);
     },
     setUserType: (state, action) => {
       state.userType = action.payload;
@@ -233,13 +222,24 @@ const authSlice = createSlice({
     initializeAuth: (state) => {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = localStorage.getItem('token');
+      
+      console.log('initializeAuth - User from localStorage:', user);
+      
       if (user && token) {
         const normalizedUserType = user.role ? user.role.toLowerCase() : user.userType;
-        state.user = { ...user, userType: normalizedUserType };
+        state.user = { ...user, userType: normalizedUserType, id: user.userId || user.id, };
         state.token = token;
         state.userType = normalizedUserType;
         state.isAuthenticated = true;
         state.isVerified = true;
+        
+        console.log('initializeAuth - Auth restored:', {
+          userId: user.userId || user.id,
+          userType: normalizedUserType,
+          isAuthenticated: true
+        });
+      } else {
+        console.log('initializeAuth - No auth data found');
       }
     },
   },

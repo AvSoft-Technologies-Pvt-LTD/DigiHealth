@@ -873,12 +873,7 @@ const RegisterForm = () => {
             state: {
               userType,
               phone: formData.phone,
-              registrationData: {
-                ...formData,
-                photoUrl: photoPreview, // Include photo preview URL
-                userId: resultAction.payload?.userId || resultAction.payload?.id,
-                ...resultAction.payload
-              }
+              registrationData: formData,
             }
           });
         } else {
