@@ -42,6 +42,7 @@ export const menuItemsMap = {
     },
     { icon: ShoppingBag, label: "Patients", path: "/doctordashboard/patients" },
     { icon: ShieldCheck, label: "Payments", path: "/doctordashboard/billing" },
+      { icon: CalendarCheck, label: "Scheduler", path: "/doctordashboard/scheduler" },
     { icon: Settings, label: "Settings", path: "/doctordashboard/settings" },
   ],
   freelancer: [

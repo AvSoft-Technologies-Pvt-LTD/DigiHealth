@@ -1,4 +1,3 @@
-// RoomAmenitiesStep.jsx
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,7 +14,11 @@ import {
   Monitor,
   ShowerHead,
   Loader,
-  AlertCircle
+  AlertCircle,
+  Utensils,
+  Armchair,
+  Tv,
+  Box
 } from "lucide-react";
 import { getAllRoomAmenities } from "../../../../../utils/CrudService";
 import { toast } from "react-toastify";
@@ -36,10 +39,8 @@ const RoomAmenitiesStep = ({
   const [loadingAmenities, setLoadingAmenities] = useState(false);
   const [amenitiesError, setAmenitiesError] = useState(null);
 
-  // Derive localWardTypes safely from bedMasterData (fallback to empty array)
   const localWardTypes = bedMasterData?.localWardTypes || bedMasterData?.wardTypes || [];
 
-  // Helper: resolve a friendly ward type name (prefer ward.typeName, then lookup in localWardTypes)
   const getWardTypeName = (ward) => {
     if (!ward) return "Unknown";
     if (ward.typeName) return ward.typeName;
@@ -59,11 +60,9 @@ const RoomAmenitiesStep = ({
     }
   };
 
-  // compute display label (same heuristics as WardStep)
   const computeDisplayLabel = (ward) => {
     if (!ward) return "Unknown";
     const isGenericBackendName = ward?.name && /^ward\s*\d+$/i.test(String(ward.name).trim());
-
     const resolvedType = (localWardTypes || []).find((t) => {
       try {
         return (
@@ -77,28 +76,29 @@ const RoomAmenitiesStep = ({
         return false;
       }
     });
-
     if (ward?.name && !isGenericBackendName) return ward.name;
     if (ward?.typeName) return ward.typeName;
     if (resolvedType) return resolvedType.typeName || resolvedType.name;
     return ward?.name || `Ward ${ward?.id ?? ""}`;
   };
 
-  // Icon mapping for room amenities (fallback icons based on name)
-  const getIconComponent = (amenityName) => {
-    if (!amenityName) return Monitor;
-    const name = String(amenityName).toLowerCase();
-    if (name.includes("air") || name.includes("conditioning") || name.includes("ac")) return Snowflake;
-    if (name.includes("oxygen") || name.includes("supply")) return Activity;
-    if (name.includes("heating") || name.includes("temperature")) return Thermometer;
-    if (name.includes("wifi") || name.includes("internet")) return Wifi;
-    if (name.includes("phone") || name.includes("call")) return Phone;
-    if (name.includes("tv") || name.includes("television") || name.includes("monitor")) return Monitor;
-    if (name.includes("bathroom") || name.includes("shower")) return ShowerHead;
-    return Monitor; // default icon
-  };
+const getIconComponent = (amenityName) => {
+  if (!amenityName) return Monitor;
+  const name = String(amenityName).toLowerCase();
+  if (name.includes("air") || name.includes("conditioning") || name.includes("ac")) return Snowflake;
+  if (name.includes("oxygen") || name.includes("supply")) return Activity;
+  if (name.includes("heating") || name.includes("temperature")) return Thermometer;
+  if (name.includes("wifi") || name.includes("internet")) return Wifi;
+  if (name.includes("phone") || name.includes("call")) return Phone;
+  if (name.includes("tv") || name.includes("television") || name.includes("smart tv")) return Tv;
+  if (name.includes("bathroom") || name.includes("shower")) return ShowerHead;
+  if (name.includes("recliner") || name.includes("chair")) return Armchair;
+  if (name.includes("refrigerator") || name.includes("fridge")) return Box;
+  if (name.includes("meal") || name.includes("service")) return Utensils;
+  if (name.includes("string")) return Monitor;
+  return Monitor;
+};
 
-  // Get color based on amenity name
   const getAmenityColor = (amenityName) => {
     if (!amenityName) return "text-gray-500";
     const name = String(amenityName).toLowerCase();
@@ -107,49 +107,41 @@ const RoomAmenitiesStep = ({
     if (name.includes("heating")) return "text-orange-500";
     if (name.includes("wifi")) return "text-purple-500";
     if (name.includes("phone")) return "text-indigo-500";
-    if (name.includes("tv") || name.includes("television")) return "text-gray-500";
+    if (name.includes("tv") || name.includes("television") || name.includes("smart tv")) return "text-gray-500";
     if (name.includes("bathroom")) return "text-cyan-500";
+    if (name.includes("recliner") || name.includes("chair")) return "text-yellow-500";
+    if (name.includes("refrigerator") || name.includes("fridge")) return "text-blue-500";
+    if (name.includes("meal") || name.includes("service")) return "text-red-500";
+    if (name.includes("string")) return "text-gray-500";
     return "text-gray-500";
   };
 
-  // Fetch room amenities from API (robust handling for either top-level array or { List: [...] })
   const fetchRoomAmenities = async () => {
     setLoadingAmenities(true);
     setAmenitiesError(null);
     try {
       const response = await getAllRoomAmenities();
-
-      // response.data might be:
-      // 1) top-level array -> response.data === [ ... ]
-      // 2) object with List -> response.data.List === [ ... ]
       let amenitiesData = [];
       if (Array.isArray(response?.data)) {
         amenitiesData = response.data;
       } else if (Array.isArray(response?.data?.List)) {
         amenitiesData = response.data.List;
       } else {
-        // sometimes backend wraps in { data: [...] } or similar
         const maybe = response?.data?.data;
         if (Array.isArray(maybe)) amenitiesData = maybe;
       }
-
-      // If still empty, treat as empty list
       if (!Array.isArray(amenitiesData)) amenitiesData = [];
-
       const transformedAmenities = amenitiesData.map((amenity) => ({
-        id: String(amenity.id ?? amenity.roomAmenityId ?? amenity._id ?? ""), // normalize to string
+        id: String(amenity.id ?? amenity.roomAmenityId ?? amenity._id ?? ""),
         name: amenity.roomAmenityName ?? amenity.name ?? amenity.roomAmenity ?? "Unnamed",
         icon: getIconComponent(amenity.roomAmenityName ?? amenity.name),
         color: getAmenityColor(amenity.roomAmenityName ?? amenity.name),
       }));
-
       setRoomAmenities(transformedAmenities);
     } catch (error) {
       console.error("Failed to fetch room amenities:", error);
       setAmenitiesError("Failed to load room amenities. Please try again.");
       toast.error("Failed to load room amenities");
-
-      // fallback sample set so UI still usable
       setRoomAmenities([
         { id: "1", name: "Air Conditioning", icon: Snowflake, color: "text-blue-500" },
         { id: "2", name: "Oxygen Supply", icon: Activity, color: "text-green-500" },
@@ -162,7 +154,6 @@ const RoomAmenitiesStep = ({
 
   useEffect(() => {
     fetchRoomAmenities();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -171,16 +162,12 @@ const RoomAmenitiesStep = ({
         <Door className="text-[var(--accent-color)]" size={20} />
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Room & Amenities Setup</h2>
       </div>
-
-      {/* Loading state for amenities */}
       {loadingAmenities && (
         <div className="flex items-center justify-center py-4">
           <Loader className="animate-spin mr-2" size={20} />
           <span className="text-gray-600">Loading room amenities...</span>
         </div>
       )}
-
-      {/* Error state for amenities */}
       {amenitiesError && (
         <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
           <AlertCircle className="text-red-500" size={20} />
@@ -196,7 +183,6 @@ const RoomAmenitiesStep = ({
           </div>
         </div>
       )}
-
       {!(Array.isArray(bedMasterData?.wards) && bedMasterData.wards.length > 0) ? (
         <div className="text-center py-8 sm:py-12 bg-gray-50 rounded-lg">
           <Building2 className="mx-auto mb-4 text-gray-400" size={40} />
@@ -209,14 +195,10 @@ const RoomAmenitiesStep = ({
           const isActiveWard = String(bedMasterData.selectedWard?.id) === String(ward.id);
           const isAddingRoom = String(bedMasterData.activeWardId) === String(ward.id);
           const wardAmenities = bedMasterData.roomAmenitiesByWard?.[ward.id] || [];
-
-          // prefer a human-friendly ward typeName using computeDisplayLabel
           const wardLabel = computeDisplayLabel(ward);
           const prefix = `${department?.name || "Dept"} - ${wardLabel} - `;
           const fullStored = newRoomNameByWard?.[ward.id] || prefix;
           const inputRoomNo = fullStored.split("-").pop().trim();
-
-          // helper to build a selected ward object enriched with resolved typeName
           const resolvedWardForState = () => {
             const resolvedType = (localWardTypes || []).find((t) => {
               try {
@@ -233,7 +215,6 @@ const RoomAmenitiesStep = ({
             });
             return { ...ward, typeName: ward.typeName || resolvedType?.typeName || resolvedType?.name };
           };
-
           return (
             <div
               key={ward.id}
@@ -268,7 +249,6 @@ const RoomAmenitiesStep = ({
                   <Trash2 size={14} />
                 </button>
               </div>
-
               <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Room No:</label>
                 <div className="flex items-center gap-3">
@@ -306,12 +286,10 @@ const RoomAmenitiesStep = ({
                   </button>
                 </div>
                 {roomAddErrors[ward.id] && <div className="mt-2 text-xs text-red-600">{roomAddErrors[ward.id]}</div>}
-
                 <div className="mt-3">
                   <div className="text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
                     <Settings size={14} /> Amenities
                   </div>
-
                   <div className="flex flex-wrap gap-2">
                     {roomAmenities.length === 0 ? (
                       <div className="text-sm text-gray-500">No amenities available</div>
@@ -348,7 +326,6 @@ const RoomAmenitiesStep = ({
                   </div>
                 </div>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <AnimatePresence>
                   {Array.isArray(bedMasterData.rooms) && bedMasterData.rooms.filter((r) => String(r.wardId) === String(ward.id)).map((room) => {

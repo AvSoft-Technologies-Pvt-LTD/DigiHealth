@@ -152,9 +152,9 @@ const Billing = () => {
   const getStatusText = useCallback((status) => (status === "paid" ? "Paid" : "Pending"), []);
 
   const handleView = useCallback(
-    (record) => {
+    (row) => {
       setSelectedInvoice({
-        ...record,
+        ...row,
         patientName: `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "---",
         patientEmail: user?.email || "---",
         patientPhone: user?.phone || "---",
@@ -165,9 +165,9 @@ const Billing = () => {
   );
 
   const handleDownload = useCallback(
-    (record) => {
+    (row) => {
       const invoice = {
-        ...record,
+        ...row,
         patientName: `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "---",
         patientEmail: user?.email || "---",
         patientPhone: user?.phone || "---",
@@ -177,12 +177,12 @@ const Billing = () => {
       setTimeout(() => {
         const invoiceElement = document.getElementById("invoice-print-template");
         if (invoiceElement) {
-          const content = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Invoice ${record.invoiceNo}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>${getInvoiceCSS()}</style></head><body>${invoiceElement.outerHTML}</body></html>`;
+          const content = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Invoice ${row.invoiceNo}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>${getInvoiceCSS()}</style></head><body>${invoiceElement.outerHTML}</body></html>`;
           const blob = new Blob([content], { type: "text/html" });
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = `Invoice_${record.invoiceNo}.html`;
+          a.download = `Invoice_${row.invoiceNo}.html`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
@@ -195,9 +195,9 @@ const Billing = () => {
   );
 
   const handlePrint = useCallback(
-    (record) => {
+    (row) => {
       const invoice = {
-        ...record,
+        ...row,
         patientName: `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "---",
         patientEmail: user?.email || "---",
         patientPhone: user?.phone || "---",
@@ -208,7 +208,7 @@ const Billing = () => {
         const printContent = document.getElementById("invoice-print-template").innerHTML;
         const WinPrint = window.open("", "", "width=900,height=650");
         WinPrint.document.write(
-          `<html><head><title>Invoice ${record.invoiceNo}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>${getInvoiceCSS()}@media print { body { margin: 0; padding: 0; } .invoice-container { margin: 0; padding: 15px; box-shadow: none; border: none; } .no-print { display: none !important; } }</style></head><body>${printContent}</body></html>`
+          `<html><head><title>Invoice ${row.invoiceNo}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>${getInvoiceCSS()}@media print { body { margin: 0; padding: 0; } .invoice-container { margin: 0; padding: 15px; box-shadow: none; border: none; } .no-print { display: none !important; } }</style></head><body>${printContent}</body></html>`
         );
         WinPrint.document.close();
         WinPrint.focus();
@@ -223,9 +223,9 @@ const Billing = () => {
   );
 
   const handlePay = useCallback(
-    (record) => {
+    (row) => {
       const invoice = {
-        ...record,
+        ...row,
         patientName: `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "---",
         patientEmail: user?.email || "---",
         patientPhone: user?.phone || "---",
@@ -237,17 +237,20 @@ const Billing = () => {
     [user]
   );
 
-  const handleShare = useCallback((record) => {
-    const invoice = {
-      ...record,
-      patientName: `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "---",
-      patientEmail: user?.email || "---",
-      patientPhone: user?.phone || "---",
-      patientAddress: user?.address || "---",
-    };
-    setShareInvoice(invoice);
-    setShowShareModal(true);
-  }, [user]);
+  const handleShare = useCallback(
+    (row) => {
+      const invoice = {
+        ...row,
+        patientName: `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "---",
+        patientEmail: user?.email || "---",
+        patientPhone: user?.phone || "---",
+        patientAddress: user?.address || "---",
+      };
+      setShareInvoice(invoice);
+      setShowShareModal(true);
+    },
+    [user]
+  );
 
   const handlePaymentSuccess = useCallback(() => {
     setShowPaymentGateway(false);
@@ -276,10 +279,7 @@ const Billing = () => {
     try {
       const messageContent = generateMessageContent();
       const whatsappMessage = `${messageContent.subject}\n\n${messageContent.body}`;
-      
-      // Simulate WhatsApp API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
       alert(`WhatsApp message sent successfully to +91${contactForm.phone}!`);
       setContactForm({ email: "", phone: "" });
       setShowShareModal(false);
@@ -303,10 +303,7 @@ const Billing = () => {
     setIsSending(prev => ({ ...prev, email: true }));
     try {
       const messageContent = generateMessageContent();
-      
-      // Simulate email API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
       alert(`Email sent successfully to ${contactForm.email}!`);
       setContactForm({ email: "", phone: "" });
       setShowShareModal(false);
@@ -354,73 +351,91 @@ const Billing = () => {
     @media print { body { margin: 0; padding: 0; } .invoice-container { margin: 0; padding: 15px; box-shadow: none; border: none; } .no-print { display: none !important; } }
   `, []);
 
-  const tableColumns = [
-    {
-      header: "Invoice ID",
-      accessor: "invoiceNo",
-      clickable: true,
-    },
-    {
-      header: "Date",
-      accessor: "date",
-    },
-    {
-      header: "Doctor/Provider",
-      accessor: "doctorName",
-    },
-    {
-      header: "Service",
-      accessor: "serviceType",
-    },
-    {
-      header: "Billed Amount",
-      accessor: "billedAmount",
-      cell: (row) => `₹${row.billedAmount}`,
-    },
-    {
-      header: "Paid Amount",
-      accessor: "paidAmount",
-      cell: (row) => `₹${row.paidAmount}`,
-    },
-    {
-      header: "Status",
-      accessor: "status",
-      cell: (row) => (
-        <span className={getStatusBadgeClass(row.status)}>
-          {getStatusText(row.status)}
-        </span>
-      ),
-    },
-    {
-      header: "Actions",
-      accessor: "actions",
-      cell: (row) => (
-        <div className="flex items-center gap-2 justify-end">
-          {row.balance > 0 && (
-            <button
-              onClick={() => handlePay(row)}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-white bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 rounded-lg transition-colors"
-              title="Pay Now"
-            >
-              <span>Pay</span>
-            </button>
-          )}
+const tableColumns = [
+  {
+    header: "Invoice ID",
+    accessor: "invoiceNo",
+    clickable: true,
+    cell: (row) => (
+      <button
+        type="button"
+        className="underline font-semibold text-xs sm:text-sm"
+        onClick={() => handleView(row)}
+      >
+        {row.invoiceNo}
+      </button>
+    ),
+  },
+  {
+    header: "Date",
+    accessor: "date",
+  },
+  {
+    header: "Doctor/Provider",
+    accessor: "doctorName",
+    cell: (row) => (
+      <button
+        type="button"
+       
+      >
+        {row.doctorName}
+      </button>
+    ),
+  },
+  {
+    header: "Service",
+    accessor: "serviceType",
+  },
+  {
+    header: "Billed Amount",
+    accessor: "billedAmount",
+    cell: (row) => `₹${row.billedAmount}`,
+  },
+  {
+    header: "Paid Amount",
+    accessor: "paidAmount",
+    cell: (row) => `₹${row.paidAmount}`,
+  },
+  {
+    header: "Status",
+    accessor: "status",
+    cell: (row) => (
+      <span className={getStatusBadgeClass(row.status)}>
+        {getStatusText(row.status)}
+      </span>
+    ),
+  },
+  {
+    header: "Actions",
+    accessor: "actions",
+    cell: (row) => (
+      <div className="flex items-center gap-2 justify-end">
+        {row.balance > 0 && (
           <button
-            onClick={() => handleShare(row)}
-            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-            title="Share"
+            onClick={() => handlePay(row)}
+            className="flex items-center gap-1 px-2 py-1 text-xs text-white bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 rounded-lg transition-colors"
+            title="Pay Now"
           >
-            <Share2 className="w-4 h-4" />
+            <span>Pay</span>
           </button>
-        </div>
-      ),
-    },
-  ];
+        )}
+        <button
+          onClick={() => handleShare(row)}
+          className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+          title="Share"
+        >
+          <Share2 className="w-4 h-4" />
+        </button>
+      </div>
+    ),
+  },
+];
+
 
   const filters = [
     {
       key: "status",
-      label: "Status",
+      title: "Status",
       options: [
         { value: "paid", label: "Paid" },
         { value: "pending", label: "Pending" },
@@ -430,22 +445,19 @@ const Billing = () => {
 
   return (
     <div className="p-4 sm:p-6">
-      {/* Billing Table */}
-      <div>
-        <DynamicTable
-          columns={tableColumns}
-          data={records}
-          onCellClick={(row, column) => {
-            if (column.accessor === "invoiceNo") {
-              handleView(row);
-            }
-          }}
-          filters={filters}
-          showSearchBar={true}
-          showPagination={true}
-        />
-      </div>
-
+      <DynamicTable
+        title="Billing Invoices"
+        columns={tableColumns}
+        data={records}
+        filters={filters}
+        onCellClick={(row, column) => {
+          if (column.accessor === "invoiceNo") {
+            handleView(row);
+          }
+        }}
+        noDataMessage="No invoices found."
+        itemsPerPage={9}
+      />
       {/* Payment Gateway Modal */}
       {showPaymentGateway && paymentInvoice && (
         <PaymentGateway
@@ -484,7 +496,6 @@ const Billing = () => {
           currency="₹"
         />
       )}
-
       {/* Share Modal with Scrolling */}
       {showShareModal && shareInvoice && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -594,7 +605,6 @@ const Billing = () => {
           </div>
         </div>
       )}
-
       {/* Invoice Detail Modal with Scrolling */}
       {selectedInvoice && !showPaymentGateway && !showShareModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-fadeIn">
@@ -665,7 +675,6 @@ const InvoiceTemplate = React.memo(({ invoice, showActions, onPrint, onPay }) =>
             </div>
           </div>
         </div>
-
         {/* Invoice and Patient Details */}
         <div className="grid grid-cols-2 gap-8 mb-6">
           <div>
@@ -714,7 +723,6 @@ const InvoiceTemplate = React.memo(({ invoice, showActions, onPrint, onPay }) =>
             </div>
           </div>
         </div>
-
         {/* Invoice Items Table */}
         <div className="mb-6">
           <table className="w-full border-collapse border border-gray-200 text-sm">
@@ -752,7 +760,6 @@ const InvoiceTemplate = React.memo(({ invoice, showActions, onPrint, onPay }) =>
             </tbody>
           </table>
         </div>
-
         {/* Invoice Totals */}
         <div className="flex justify-end mb-6">
           <div className="w-72">
@@ -778,7 +785,6 @@ const InvoiceTemplate = React.memo(({ invoice, showActions, onPrint, onPay }) =>
             </div>
           </div>
         </div>
-
         {/* Footer */}
         <div className="pt-4 border-t border-gray-200">
           <div className="mb-4">
@@ -798,7 +804,6 @@ const InvoiceTemplate = React.memo(({ invoice, showActions, onPrint, onPay }) =>
             </p>
           </div>
         </div>
-
         {/* Actions */}
         {showActions && (
           <div className="no-print mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-3 justify-center">

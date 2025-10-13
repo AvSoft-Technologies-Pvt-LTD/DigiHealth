@@ -50,6 +50,10 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import InitialAssessmentForm from "./components/InitialAssesment";
 
+// ---------------------- NEW Scheduler Imports ----------------------
+import Scheduler from "./pages/layouts/menu/DoctorDashboard/scheduler/Scheduler";
+ import Today from "./pages/layouts/menu/DoctorDashboard/scheduler/Today";
+import AvailabilityModal from "./pages/layouts/menu/DoctorDashboard/scheduler/AvailabilityModal";
 // ---------------------- Helpers ----------------------
 
 // ✅ PrivateRoute with allowed userType
@@ -208,6 +212,11 @@ const App = () => {
             {sharedRoutes}
             <Route path="template" element={<ImageAnnotationCanvas />} />
             <Route path="bedroommanagement/bedmaster" element={<BedMaster />} />
+     {/* ---------- NEW: Scheduler Routes ---------- */}
+            <Route path="scheduler" element={<Scheduler />} />
+            <Route path="scheduler/availability" element={<AvailabilityModal />} />
+            <Route path="scheduler/today" element={<Today />} />    
+            {/* ------------------------------------------- */}
 
             <Route path="*" element={<DrRoutes />} />
           </Route>
