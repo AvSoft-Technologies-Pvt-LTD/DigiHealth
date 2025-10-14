@@ -75,6 +75,14 @@ import {
   fetchPlansSuccess,
   fetchPlansFailure,
 } from "../slices/plansSlice.ts";
+import {
+  fetchLabTestsStart,
+  fetchLabTestsSuccess,
+  fetchLabTestsFailure,
+  fetchLabScansStart,
+  fetchLabScansSuccess,
+  fetchLabScansFailure,
+} from "../slices/labSlice.ts";
 import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice.ts';
 import { getPatientPhotoFailure, getPatientPhotoStart, getPatientPhotoSuccess } from '../slices/patientSettingSlice.ts';
 import { fetchFamilyMemberDataFailure, fetchFamilyMemberDataStart, fetchFamilyMemberDataSuccess } from '../slices/familyMemberSlice.ts';
@@ -540,5 +548,44 @@ export const fetchHospitalBilling = (patientId: string) => async (dispatch: AppD
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch hospital bills';
     dispatch(fetchHospitalBillingFailure(errorMessage));
+  }
+};
+
+export const fetchLabTests = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchLabTestsStart());
+    const response = await get(API.LABS_TESTS_API);
+    const data = response?.data || response;
+    dispatch(fetchLabTestsSuccess(data));
+    return data;
+  } catch (error: any) {
+    const errorMessage = error?.message || "Failed to fetch lab tests";
+    dispatch(fetchLabTestsFailure(errorMessage));
+    throw error;
+  }
+};
+
+export const fetchLabScans = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchLabScansStart());
+    const response = await get(API.LABS_SCANS_API);
+    const data = response?.data || response;
+    dispatch(fetchLabScansSuccess(data));
+    return data;
+  } catch (error: any) {
+    const errorMessage = error?.message || "Failed to fetch lab scans";
+    dispatch(fetchLabScansFailure(errorMessage));
+    throw error;
+  }
+};
+
+export const fetchAllLabData = () => async (dispatch: AppDispatch) => {
+  try {
+    await Promise.all([
+      dispatch(fetchLabTests()),
+      dispatch(fetchLabScans()),
+    ]);
+  } catch (error) {
+    console.error("Failed to fetch all lab data:", error);
   }
 };

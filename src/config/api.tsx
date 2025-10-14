@@ -30,6 +30,8 @@ export const API = {
   PLANS: `${BASE_URL}plans/`,
    PHARMACY_LIST_API: `${BASE_URL}pharmacies`,
   PATIENT_COVERAGE_API:`${BASE_URL}master/coverage-type`,
+  LABS_TESTS_API:`${BASE_URL}lab-tests`,
+  LABS_SCANS_API:`${BASE_URL}lab/scans`,
   PATIENT_ADDITIONAL_DETAILS_API:`${BASE_URL}auth/patient/additional-details/`,  
 // GET_PATIENT_BY_ID: (id: string) => `${BASE_URL}auth/patient/${id}`,  // GET
   UPDATE_PATIENT_BY_ID: `${BASE_URL}auth/patient/`, 
