@@ -166,8 +166,8 @@ const PatientOverview = () => {
       .toUpperCase()
       .substring(0, 2);
   };
-
-  const userInitials = getInitials(formData.name);
+console.log("userInitials", formData);
+  const userInitials = getInitials(formData.firstName+" "+formData.lastName);
 
   useEffect(() => {
     if (id) {

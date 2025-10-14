@@ -109,7 +109,7 @@ const AvModal: React.FC<AvModalProps> = ({
       )}
       
       <View style={styles.scrollWrapper}>
-        <ScrollView contentContainerStyle={{ paddingBottom: normalize(10),maxHeight:"90%" }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: normalize(10), }}>
           {children}
         </ScrollView>
       </View>

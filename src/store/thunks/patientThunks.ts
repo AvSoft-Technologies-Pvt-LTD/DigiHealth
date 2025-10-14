@@ -509,6 +509,20 @@ export const fetchLabScans = (patientId: string) => async (dispatch: AppDispatch
   }
 };
 
+export const getLabScans = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchLabScansStart());
+    const response = await get(API.LABS_SCANS_API);
+    const data = response?.data || response;
+    dispatch(fetchLabScansSuccess(data));
+    return data;
+  } catch (error: any) {
+    const errorMessage = error?.message || "Failed to fetch lab scans";
+    dispatch(fetchLabScansFailure(errorMessage));
+    throw error;
+  }
+};
+
 
 // Billing api medical record details in patient
 
@@ -565,25 +579,13 @@ export const fetchLabTests = () => async (dispatch: AppDispatch) => {
   }
 };
 
-export const fetchLabScans = () => async (dispatch: AppDispatch) => {
-  try {
-    dispatch(fetchLabScansStart());
-    const response = await get(API.LABS_SCANS_API);
-    const data = response?.data || response;
-    dispatch(fetchLabScansSuccess(data));
-    return data;
-  } catch (error: any) {
-    const errorMessage = error?.message || "Failed to fetch lab scans";
-    dispatch(fetchLabScansFailure(errorMessage));
-    throw error;
-  }
-};
+
 
 export const fetchAllLabData = () => async (dispatch: AppDispatch) => {
   try {
     await Promise.all([
       dispatch(fetchLabTests()),
-      dispatch(fetchLabScans()),
+      dispatch(getLabScans()),
     ]);
   } catch (error) {
     console.error("Failed to fetch all lab data:", error);

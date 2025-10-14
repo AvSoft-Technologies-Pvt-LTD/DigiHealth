@@ -104,7 +104,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
           { title: 'Medical Record', icon: 'receipt', screen: PAGES.PATIENT_MEDICAL_RECORD },
 
       { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
-         { title: 'Medical Record', icon: 'file-document', screen: PAGES.PATIENT_MEDICAL_RECORD },
+
     ] : [
       // Add other role-specific menu items here if needed
       { title: 'Home', icon: 'home', screen: PAGES.HOME },
