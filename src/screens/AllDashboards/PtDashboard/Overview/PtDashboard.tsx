@@ -71,7 +71,6 @@ const PatientOverview = () => {
     family: false,
     additionalDetails: false,
   });
-  const dispatch = useAppDispatch();
 
   const openModal = (modalName: keyof typeof modalVisible) => {
     if (modalName === "personalHealth") {
@@ -105,7 +104,8 @@ const PatientOverview = () => {
   const { patientDashboardData } = useAppSelector((state) => state.patientDashboardData);
   const { patientPersonalData } = useAppSelector((state) => state.patientPersonalData);
   const userEmail = useAppSelector((state) => state.user.userProfile.email);
-
+  const userHealthSummary = useAppSelector((state) => state?.healthSummaryData?.healthSummaryData);
+  const dispatch = useAppDispatch();
   // Fetch patient data on component mount
   useEffect(() => {
     dispatch(fetchAllPatients());
@@ -126,7 +126,7 @@ const PatientOverview = () => {
 
   useEffect(() => {
     if (patientDashboardData) {
-      const newData = Array.isArray(patientDashboardData)
+      const newData = Array.isArray(patientDashboardData) 
         ? patientDashboardData[0] || {}
         : patientDashboardData;
 

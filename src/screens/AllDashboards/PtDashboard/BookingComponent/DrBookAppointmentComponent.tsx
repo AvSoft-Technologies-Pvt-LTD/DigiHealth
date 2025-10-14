@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import { ScrollView, StyleSheet, ActivityIndicator, Platform, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -87,7 +85,7 @@ const DrBookAppointmentComponent: React.FC = () => {
     dispatch(setLoading(true));
     dispatch(setError(null));
     try {
-      const response = await axios.get("https://mocki.io/v1/98995b39-a191-4514-b9e4-33a35aa19aee");
+      const response = await axios.get("https://mocki.io/v1/0ba26356-436b-4757-b4be-cb971af50fd9");
       if (!response.data || !Array.isArray(response.data)) {
         throw new Error("Invalid data format from API");
       }

@@ -41,6 +41,7 @@ const PatientModals: React.FC<PatientModalsProps> = ({
         modalVisible={modalVisible.family}
         closeModal={() => closeModal("family")}
         dispatch={dispatch}
+        formData={formData}
         handleInputChange={handleInputChange}
         handleSave={() => handleSave("family")}
       />
