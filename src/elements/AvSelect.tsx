@@ -3,7 +3,6 @@ import { View, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback, Pl
 import AvText from './AvText';
 import { COLORS } from '../constants/colors';
 import { isIos, normalize } from '../constants/platform';
-
 interface SelectItem {
   label: string;
   value: any;
@@ -20,6 +19,7 @@ interface AvSelectProps {
   label?: string;
   required?: boolean;
   multiselect?: boolean;
+  disabled?: boolean;
 }
 
 export const AvSelect: React.FC<AvSelectProps> = ({
@@ -33,6 +33,7 @@ export const AvSelect: React.FC<AvSelectProps> = ({
   errorText = '',
   label = '',
   required = false,
+  disabled = false,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -112,6 +113,7 @@ export const AvSelect: React.FC<AvSelectProps> = ({
           error && styles.inputError,
         ]}
         onPress={handlePress}
+        disabled={disabled}
         activeOpacity={0.7}
       >
         <AvText 

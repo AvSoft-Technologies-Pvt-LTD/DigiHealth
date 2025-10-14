@@ -6,4 +6,5 @@ export const IMAGES = {
     LOGO: logo,
     LOGO_CROPPED: logoCropped,
     PROFILE: profile,
+    avatar: profile,
 };

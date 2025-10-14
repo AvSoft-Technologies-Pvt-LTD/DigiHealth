@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
 } from "react-native";
+import { Avatar } from 'react-native-paper';
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import AvText from "../../../../elements/AvText";
 import AvButton from "../../../../elements/AvButton";
@@ -15,9 +16,17 @@ import PatientModals from "./index";
 import AvImage from "../../../../elements/AvImage";
 import { IMAGES } from "../../../../assets";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
-import { fetchAllPatients, fetchPatientBloodGroupData, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchPatientPhoto, fetchPatientPersonalHealthData as personalHealthData, } from "../../../../store/thunks/patientThunks";
+import { fetchAllPatients, fetchPatientBloodGroupData, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchPatientPhoto } from "../../../../store/thunks/patientThunks";
 import { setUserProfile } from "../../../../store/slices/userSlice";
 import { setCurrentPatient } from "../../../../store/slices/allPatientSlice";
+
+interface ActionButtonProps {
+  id: string;
+  icon: string;
+  label: string;
+  onPress: () => void;
+  completed: boolean;
+}
 
 const PatientOverview = () => {
   const navigation = useNavigation();
@@ -62,6 +71,7 @@ const PatientOverview = () => {
     family: false,
     additionalDetails: false,
   });
+  const dispatch = useAppDispatch();
 
   const openModal = (modalName: keyof typeof modalVisible) => {
     if (modalName === "personalHealth") {
@@ -91,22 +101,18 @@ const PatientOverview = () => {
 
   const completedSections = Object.values(completion).filter(Boolean).length;
   const progress = (completedSections / 4) * 100;
-  const { allPatients, loading, error, } = useAppSelector((state) => state.patient);
-  const { patientDashboardData, } = useAppSelector((state) => state.patientDashboardData);
-  const { patientPersonalData, } = useAppSelector((state) => state.patientPersonalData);
+  const { allPatients } = useAppSelector((state) => state.patient);
+  const { patientDashboardData } = useAppSelector((state) => state.patientDashboardData);
+  const { patientPersonalData } = useAppSelector((state) => state.patientPersonalData);
   const userEmail = useAppSelector((state) => state.user.userProfile.email);
-  const userHealthSummary = useAppSelector((state) => state?.healthSummaryData?.healthSummaryData);
-  const dispatch = useAppDispatch();
+
   // Fetch patient data on component mount
-  console.log("HEALTH DATA",userHealthSummary)
   useEffect(() => {
-    // Initial data fetch
     dispatch(fetchAllPatients());
   }, [dispatch]);
 
   // Handle patient data once it's loaded
   useEffect(() => {
-
     if (allPatients?.length > 0) {
       const currentPatient = allPatients.find((item: any) => userEmail === item.email);
 
@@ -114,72 +120,60 @@ const PatientOverview = () => {
         dispatch(setCurrentPatient(currentPatient));
         dispatch(fetchPatientDashboardData(currentPatient.id));
         dispatch(setUserProfile({ patientId: currentPatient.id }));
-      } else {
-        console.log('No patient found with email:', userEmail);
       }
-    } else {
-      console.log('No patients loaded yet or empty patients array');
     }
   }, [allPatients, userEmail, dispatch]);
 
   useEffect(() => {
-    if (patientDashboardData && !Array.isArray(patientDashboardData)) {
-      setFormData(prev => ({
-        ...prev,
-        ...patientDashboardData
-      }));
-    } else if (Array.isArray(patientDashboardData) && patientDashboardData.length > 0) {
-      setFormData(prev => ({
-        ...prev,
-        ...patientDashboardData[0]
-      }));
-    }
-  }, [patientDashboardData]);
-
-  // At the top of your component, add a ref to track initial load
-  const initialLoad = useRef(true);
-
-  // Then in your last useEffect
-  useEffect(() => {
-    if (initialLoad.current) {
-      initialLoad.current = false;
-      return;
-    }
-
     if (patientDashboardData) {
       const newData = Array.isArray(patientDashboardData)
         ? patientDashboardData[0] || {}
         : patientDashboardData;
 
-      setFormData(prev => {
-        // Only update if there are actual changes
-        const hasChanges = Object.keys(newData).some(
-          key => JSON.stringify(prev[key]) !== JSON.stringify(newData[key])
-        );
-        return hasChanges ? { ...prev, ...newData } : prev;
-      });
+      setFormData(prev => ({
+        ...prev,
+        ...newData
+      }));
     }
   }, [patientDashboardData]);
-  const id = useAppSelector((state) => state.user.userProfile.patientId);
 
+  const id = useAppSelector((state) => state.user.userProfile.patientId);
   const { currentPatient } = useAppSelector((state) => state.currentPatient || {});
   const fetchPtImage = async () => {
     try {
-      await dispatch(fetchPatientPhoto(currentPatient?.photo));
+      if (currentPatient?.photo) {
+        await dispatch(fetchPatientPhoto(currentPatient.photo));
+      }
     } catch (error) {
       console.log("Error fetching photo", error);
     }
-  }
+  };
   useEffect(() => {
     fetchPtImage();
-  }, []);
-  const { photo } = useAppSelector((state) => state.patientSettingData || {});
+  }, []); // Add empty dependency array to prevent rerendering
 
+  const { photo } = useAppSelector((state) => state.patientSettingData || { photo: null, loading: true });
+  const [profileImage, setProfileImage] = useState<string>(photo || '');
 
-  // Fetch personal health data
+  // Generate initials from name
+  const getInitials = (name: string) => {
+    if (!name) return 'US';
+    return name
+      .split(' ')
+      .filter(part => part.length > 0) // Filter out any empty strings
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
+  const userInitials = getInitials(formData.name);
+
   useEffect(() => {
-    dispatch(fetchPatientPersonalHealthData(id as string));
-  }, [dispatch]);
+    if (id) {
+      dispatch(fetchPatientPersonalHealthData(id));
+    }
+  }, [dispatch, id]);
 
   // Update formData when patientPersonalData is available
   useEffect(() => {
@@ -199,7 +193,63 @@ const PatientOverview = () => {
         tobaccoSinceYears: patientPersonalData?.yearsTobacco?.toString() || ""
       }));
     }
+    setProfileImage(photo || '');
   }, [patientPersonalData]);
+
+  const actionButtons: ActionButtonProps[] = [
+    {
+      id: 'basic',
+      icon: 'account-details',
+      label: 'Basic Details',
+      onPress: () => { },
+      completed: completion.basicDetails
+    },
+    {
+      id: 'health',
+      icon: 'heart-pulse',
+      label: 'Personal Health',
+      onPress: () => openModal('personalHealth'),
+      completed: completion.personalHealth
+    },
+    {
+      id: 'family',
+      icon: 'account-group',
+      label: 'Family',
+      onPress: () => openModal('family'),
+      completed: completion.family
+    },
+    {
+      id: 'additional',
+      icon: 'file-document-edit',
+      label: 'Additional Details',
+      onPress: () => openModal('additionalDetails'),
+      completed: completion.additionalDetails
+    }
+  ];
+
+  const renderActionButton = ({ item }: { item: ActionButtonProps }) => (
+    <AvButton
+      mode="contained"
+      style={styles.actionButton}
+      buttonColor={COLORS.PRIMARY}
+      onPress={item.onPress}
+    >
+      <View style={styles.buttonContent}>
+        <Icon name={item.icon} size={16} color={COLORS.WHITE} />
+        <AvText type="buttonText" style={styles.buttonText}>
+          {item.label}
+        </AvText>
+        {item.completed && (
+          <Icon
+            name="check-circle"
+            size={16}
+            color={COLORS.SECONDARY}
+            style={{ marginLeft: 8 }}
+          />
+        )}
+      </View>
+    </AvButton>
+  );
   return (
     <View style={[styles.card, styles.cardShadow]}>
       {/* Header */}
@@ -218,7 +268,7 @@ const PatientOverview = () => {
               View Health Card
             </AvText>
           </AvButton>
-          <TouchableOpacity onPress={() => navigation.navigate(PAGES.PATIENT_SETTINGS)}>
+          <TouchableOpacity onPress={() => navigation.navigate(PAGES.PATIENT_SETTINGS as never)}>
             <Icon name="pencil" size={20} color={COLORS.PRIMARY} />
           </TouchableOpacity>
         </View>
@@ -226,11 +276,25 @@ const PatientOverview = () => {
 
       {/* Profile Section */}
       <View style={styles.profileSection}>
-        <AvImage
-          source={{ uri: photo || IMAGES.PROFILE }}
-          style={styles.profileImage}
-        />
-        <AvText type="title_6" style={{ color: COLORS.PRIMARY }}>
+        <View style={styles.avatarContainer}>
+          {(photo === null) && (
+            <Avatar.Text
+              size={80}
+              label={userInitials}
+              style={{ backgroundColor: COLORS.PRIMARY }}
+              color={COLORS.WHITE}
+              labelStyle={{ fontSize: 32, fontWeight: 'bold' }}
+            />
+          )}
+          {photo && (
+            <AvImage
+              source={{ uri: profileImage }}
+              style={{ width: 80, height: 80, borderRadius: 100 }}
+            />
+
+          )}
+        </View>
+        <AvText type="title_6" style={{ color: COLORS.PRIMARY, marginTop: 8 }}>
           {formData.email || formData.name}
         </AvText>
       </View>
@@ -281,7 +345,7 @@ const PatientOverview = () => {
               </AvText>
             </View>
             <AvText type="body" style={styles.detailValue}>
-              {formData.bloodGroup}
+              {formData.bloodGroup || "N/A"}
             </AvText>
           </View>
         </View>
@@ -298,81 +362,26 @@ const PatientOverview = () => {
       </View>
 
       {/* Action Buttons */}
-<ScrollView
-  horizontal
-  showsHorizontalScrollIndicator={true} // 👈 force ON
-  persistentScrollbar={true}            // 👈 makes it always visible (Android only)
-contentContainerStyle={{
-  flexDirection: "row",
-  alignItems: "center",
-  paddingBottom: 10,   // 👈 gives room for scrollbar
-}}  style={{  height: 70 }}                // 👈 ensures scrollbar has space to render
->        <AvButton
-          mode="contained"
-          style={styles.actionButton}
-          buttonColor={COLORS.PRIMARY}
-          onPress={() => { }}
-        >
-          <View style={styles.buttonContent}>
-            <Icon name="account-details" size={16} color={COLORS.WHITE} />
-            <AvText type="buttonText" style={styles.buttonText}>
-              Basic Details
-            </AvText>
-            {completion.basicDetails && <Icon name="check-circle" size={16} color={COLORS.SECONDARY} style={{ marginLeft: 8 }} />}
-          </View>
-        </AvButton>
-        <AvButton
-          mode="contained"
-          style={styles.actionButton}
-          buttonColor={COLORS.PRIMARY}
-          onPress={() => openModal("personalHealth")}
-        >
-          <View style={styles.buttonContent}>
-            <Icon name="heart-pulse" size={16} color={COLORS.WHITE} />
-            <AvText type="buttonText" style={styles.buttonText}>
-              Personal Health
-            </AvText>
-            {completion.personalHealth && <Icon name="check-circle" size={16} color={COLORS.SECONDARY} style={{ marginLeft: 8 }} />}
-          </View>
-        </AvButton>
-        <AvButton
-          mode="contained"
-          style={styles.actionButton}
-          buttonColor={COLORS.PRIMARY}
-          onPress={() => openModal("family")}
-        >
-          <View style={styles.buttonContent}>
-            <Icon name="account-group" size={16} color={COLORS.WHITE} />
-            <AvText type="buttonText" style={styles.buttonText}>
-              Family
-            </AvText>
-            {completion.family && <Icon name="check-circle" size={16} color={COLORS.SECONDARY} style={{ marginLeft: 8 }} />}
-          </View>
-        </AvButton>
-        <AvButton
-          mode="contained"
-          style={styles.actionButton}
-          buttonColor={COLORS.PRIMARY}
-          onPress={() => openModal("additionalDetails")}
-        >
-          <View style={styles.buttonContent}>
-            <Icon name="file-document-edit" size={16} color={COLORS.WHITE} />
-            <AvText type="buttonText" style={styles.buttonText}>
-              Additional Details
-            </AvText>
-            {completion.additionalDetails && <Icon name="check-circle" size={16} color={COLORS.SECONDARY} style={{ marginLeft: 8 }} />}
-          </View>
-        </AvButton>
-      </ScrollView>
+      <FlatList
+        data={actionButtons}
+        horizontal
+        showsHorizontalScrollIndicator={true}
+        indicatorStyle="black" // or "white" for dark backgrounds
+        contentContainerStyle={[styles.buttonsContainer, { paddingBottom: 10 }]} // Add some padding
+        keyExtractor={(item) => item.id}
+        renderItem={renderActionButton}
+        style={{ height: 'auto' }} // Ensure height is properly set
+      />
 
       {/* Modals */}
       <PatientModals
         modalVisible={modalVisible}
         closeModal={closeModal}
-        handleSave={handleSave}
+        dispatch={dispatch}
         formData={formData}
         handleInputChange={handleInputChange}
         handleToggleChange={handleToggleChange}
+        handleSave={handleSave}
       />
     </View>
   );
@@ -410,12 +419,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  profileImage: {
+  avatarContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginBottom: 8,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  profileImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
+  },
+
   detailsSection: {
     marginBottom: 20,
   },
@@ -461,19 +479,18 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   buttonsContainer: {
-    flexDirection: "row",
-    paddingVertical: 8,
-    gap: 8,
+    paddingVertical: 6,
+    paddingRight: 5,
   },
   actionButton: {
     borderRadius: 20,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    marginRight: 8,
   },
   buttonContent: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   buttonText: {
     color: COLORS.WHITE,

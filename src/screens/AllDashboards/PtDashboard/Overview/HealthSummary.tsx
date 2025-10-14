@@ -63,7 +63,6 @@ const HealthSummary = () => {
       console.log("No data to transform");
       return [];
     }
-    console.log("Transforming data:", data);
     return [
       { id: "1", type: "Temperature", value: data.temperature !== undefined ? data.temperature : "", unit: "°F", icon: "thermometer" },
       { id: "2", type: "SpO2", value: data.spo2 !== undefined ? data.spo2 : "", unit: "%", icon: "waveform" },

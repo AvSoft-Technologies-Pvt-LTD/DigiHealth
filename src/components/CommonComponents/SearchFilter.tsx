@@ -15,6 +15,7 @@ import AvText from '../../elements/AvText';
 import { COLORS } from '../../constants/colors';
 import { normalize } from '../../constants/platform';
 import AvIcons from '../../elements/AvIcons';
+import { AvTextInput } from '../../elements';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -93,7 +94,7 @@ export function SearchFilterBar<T extends FilterOption>({
           size={normalize(18)}
           color={COLORS.GREY}
         />
-        <TextInput
+        <AvTextInput
           style={styles.searchInput}
           value={searchValue}
           onChangeText={onSearchChange}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, ScrollView, StyleSheet, TouchableOpacity, Animated, KeyboardAvoidingView, ActivityIndicator } from "react-native";
+import { View, ScrollView, StyleSheet, TouchableOpacity, Animated, KeyboardAvoidingView, ActivityIndicator, Alert } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { RootState } from "../../../store/index";
@@ -19,28 +19,53 @@ import Header from "../../../components/Header";
 import { PAGES } from "../../../constants/pages";
 import { isIos } from "../../../constants/platform";
 import AvImage from "../../../elements/AvImage";
-import { IMAGES } from "../../../assets";
-import { fetchPatientPhoto } from "../../../store/thunks/patientThunks";
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns';
+import { AvSelect } from "../../../elements";
+import { fetchPatientDashboardData, updatePatientById } from "../../../store/thunks/patientThunks";
 
 const PatientSettingsView = () => {
   const { loading, error, success } = useAppSelector(
     (state: RootState) => state.updatePatient
   );
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [formData, setFormData] = useState({
+    // ... other form fields ...
+    genderId: 1, // Default to Male
+    dob: new Date(), // Default to today
+  });
+  const [errors, setErrors] = useState({});
+
+  // Update form data
+  const updateFormData = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Handle date change
+  const handleDateChange = (selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      updateFormData('dob', selectedDate);
+    }
+  };
+
   const [patient, setPatient] = useState({
-    id: "1", // temp hardcoded, replace with logged-in patient id
     firstName: "Trupti",
     middleName: "",
     lastName: "Chavan",
-    aadhaarNumber: "5785-4549-8879",
-    dateOfBirth: "2002-12-03",
-    gender: "female",
+    aadhaar: "5785-4549-8879",
+    dob: "2002-12-03",
+    genderId: "female",
     email: "trupti@gmail.com",
-    phoneNumber: "9901341783",
-    alternatePhoneNumber: "",
+    phone: "9901341783",
     occupation: "Software Developer",
-    permanentAddress: "",
-    temporaryAddress: "",
+    district: "",
+    city: "",
+    state: "",
   });
   const [editing, setEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
@@ -55,42 +80,103 @@ const PatientSettingsView = () => {
     setPatient({ ...patient, [field]: value });
   };
 
+  useEffect(() => {
+    if (currentPatient) {
+      // Format DOB from [year, month, day] to 'YYYY-MM-DD' format
+      const formatDob = (dobArray: number[]) => {
+        if (!Array.isArray(dobArray) || dobArray.length < 3) return '';
+        const [year, month, day] = dobArray;
+        // Months are 0-indexed in JavaScript Date, so we need to subtract 1
+        const date = new Date(year, month - 1, day);
+        // Format as YYYY-MM-DD
+        return date.toISOString().split('T')[0];
+      };
+
+      setPatient({
+        ...patient,
+        firstName: currentPatient.firstName,
+        middleName: currentPatient.middleName,
+        lastName: currentPatient.lastName,
+        aadhaar: currentPatient.aadhaar,
+        dob: formatDob(currentPatient.dob),
+        genderId: currentPatient.gender,
+        email: currentPatient.email,
+        phone: currentPatient.phone,
+        occupation: currentPatient.occupation,
+        district: currentPatient.district,
+        city:currentPatient.city,
+        state:currentPatient.state,
+      });
+    }
+  }, [currentPatient]);
+  // const handleSave = async () => {
+  //   dispatch(updatePatientStart());
+  //   const url = API.UPDATE_PATIENT_BY_ID + currentPatient?.id;
+  //   console.log("API URL", url);
+  //   console.log("PAYLOAD", patient);
+  //   const payload = {
+  //    id:currentPatient?.id,
+  //   ...patient 
+  //   }
+  //   dispatch(updatePatientById(currentPatient?.id,payload));
+  // }
   const handleSave = async () => {
     dispatch(updatePatientStart());
+    const url = `${API.UPDATE_PATIENT_BY_ID}${currentPatient?.id}`;
+  
     try {
-      const response = await fetch(API.UPDATE_PATIENT_BY_ID(patient.id), {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(patient),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update patient");
+      // ✅ Prepare FormData for sending multipart data
+      const formDataToSend = new FormData();
+  
+      // Append all text fields safely
+      formDataToSend.append('id', String(currentPatient?.id || ''));
+      formDataToSend.append('firstName', patient.firstName || '');
+      formDataToSend.append('middleName', patient.middleName || '');
+      formDataToSend.append('lastName', patient.lastName || '');
+      formDataToSend.append('phone', patient.phone || '');
+      formDataToSend.append('email', patient.email || '');
+      formDataToSend.append('password', patient.password || '');
+      formDataToSend.append('aadhaar', patient.aadhaar || '');
+      formDataToSend.append('genderId', String(patient.genderId || ''));
+      formDataToSend.append('dob', patient.dob || '');
+      formDataToSend.append('occupation', patient.occupation || '');
+      formDataToSend.append('pinCode', patient.pinCode || '');
+      formDataToSend.append('city', patient.city || '');
+      formDataToSend.append('district', patient.district || '');
+      formDataToSend.append('state', patient.state || '');
+      formDataToSend.append('agreeDeclaration', true || '');
+  
+      // ✅ Append photo only if it’s a new local file (has a URI)
+      if (patient.photo?.uri) {
+        const photo = {
+          uri: patient.photo.uri,
+          type: patient.photo.type || 'image/jpeg',
+          name: patient.photo.fileName || `photo_${Date.now()}.jpg`,
+        };
+        formDataToSend.append('photo', photo as any);
       }
-
-      await response.json();
-      dispatch(updatePatientSuccess());
-      setEditing(false);
-    } catch (err: any) {
-      dispatch(updatePatientFailure(err.message));
+  
+      console.log("🧾 Update Payload Prepared:", {
+        url,
+        formDataKeys:formDataToSend,
+      });
+  
+      // ✅ Call update API
+      // await dispatch(updatePatientById(currentPatient?.id, formDataToSend));
+      // dispatch(updatePatientSuccess());
+  
+      // ✅ Optionally refresh patient dashboard
+      // if (currentPatient?.id) {
+      //   dispatch(fetchPatientDashboardData(currentPatient.id));
+      // }
+  
+    } catch (error) {
+      console.error("❌ Update failed:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update patient';
+      dispatch(updatePatientFailure(errorMessage));
     }
   };
-
-  useEffect(() => {
-    if (success) {
-      Alert.alert("Success", "Patient details updated successfully", [
-        { text: "OK", onPress: () => dispatch(resetUpdateState()) },
-      ]);
-    }
-    if (error) {
-      Alert.alert("Error", error, [
-        { text: "OK", onPress: () => dispatch(resetUpdateState()) },
-      ]);
-    }
-  }, [success, error]);
-
+  
   useEffect(() => {
     if (editing) {
       Animated.loop(
@@ -128,7 +214,7 @@ const PatientSettingsView = () => {
 
   // Get the current patient from Redux store
   const { photo } = useAppSelector((state) => state.patientSettingData || {});
-
+  const { currentPatient } = useAppSelector((state) => state.currentPatient || {});
   return (
     <>
       <KeyboardAvoidingView
@@ -227,28 +313,90 @@ const PatientSettingsView = () => {
 
               {/* Form Fields - Only inputs with labels inside */}
               <View style={styles.formFields}>
-                {Object.entries(patient).map(([field, value]) => (
-                  <AvTextInput
-                    key={field}
-                    label={formatFieldName(field)}
-                    value={value}
-                    onChangeText={(text) => handleChange(field, text)}
-                    editable={editing}
-                    mode="outlined"
-                    style={styles.input}
-                    placeholder={!value ? "Not provided" : ""}
-                    keyboardType={
-                      field.includes("Phone") || field.includes("Number") || field === "aadhaarNumber"
-                        ? "phone-pad"
-                        : field.includes("Email")
-                          ? "email-address"
-                          : field === "dateOfBirth"
-                            ? "numbers-and-punctuation"
-                            : "default"
-                    }
-                    theme={inputTheme}
-                  />
-                ))}
+                {Object.entries(patient).map(([field, value]) => {
+                  return (
+
+                    field === "genderId" ? (
+                      <View style={styles.inputContainer}>
+                        <AvSelect
+                          disabled={!editing}
+                          label="Gender *"
+                          required
+                          items={[
+                            { label: 'Male', value: 1 },
+                            { label: 'Female', value: 2 },
+                            { label: 'Other', value: 3 },
+                          ]}
+                          selectedValue={formData.genderId}
+                          onValueChange={(value) => updateFormData('genderId', value)}
+                          placeholder="Select Gender"
+                          error={!!errors.genderId}
+                          errorText={errors.genderId}
+                          mode="outlined"
+                          theme={{
+                            colors: {
+                              primary: COLORS.SECONDARY,
+                              outline: errors.genderId ? COLORS.ERROR : COLORS.LIGHT_GREY,
+                            }
+                          }}
+                        />
+                      </View>
+                    ) : field === "dob" ? (
+                      <View style={styles.inputContainer}>
+                        <TouchableOpacity
+                          disabled={!editing}
+                          onPress={() => setShowDatePicker(true)}
+                          style={styles.dateInputContainer}
+                        >
+                          <AvText style={[styles.label, errors.dob && { color: COLORS.ERROR }]}>
+                            Date of Birth *
+                          </AvText>
+                          <View style={[
+                            styles.dateInput,
+                            { borderColor: errors.dob ? COLORS.ERROR : COLORS.LIGHT_GREY }
+                          ]}>
+                            <AvText>{format(formData.dob, 'dd/MM/yyyy')}</AvText>
+                            <Icon name="calendar" size={20} color={COLORS.GREY} />
+                          </View>
+                          {errors.dob && (
+                            <AvText style={styles.errorText}>{errors.dob}</AvText>
+                          )}
+                        </TouchableOpacity>
+                        {showDatePicker && (
+                          <DateTimePicker
+                            value={formData.dob}
+                            mode="date"
+                            display={isIos() ? 'spinner' : 'default'}
+                            onChange={(event, date) => handleDateChange(date)}
+                            maximumDate={new Date()}
+                          />
+                        )}
+                      </View>) : (
+                      <View key={field}>
+                        <AvTextInput
+                          key={field}
+                          label={formatFieldName(field)}
+                          value={value}
+                          onChangeText={(text) => handleChange(field, text)}
+                          editable={editing}
+                          mode="outlined"
+                          style={styles.input}
+                          placeholder={!value ? "Not provided" : ""}
+                          keyboardType={
+                            field.includes("Phone") || field.includes("Number") || field === "aadhaar"
+                              ? "phone-pad"
+                              : field.includes("Email")
+                                ? "email-address"
+                                : field === "dob"
+                                  ? "numbers-and-punctuation"
+                                  : "default"
+                          }
+                          theme={inputTheme}
+                        />
+                      </View>
+                    )
+                  );
+                })}
               </View>
 
               {/* Action Buttons - Only show when editing */}
@@ -451,6 +599,31 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: COLORS.SECONDARY,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  input: {
+    marginBottom: 16,
+  },
+  dateInputContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+    color: COLORS.BLACK,
+  },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.LIGHT_GREY,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: COLORS.WHITE,
   },
 });
 

@@ -15,6 +15,7 @@ type PatientModalsProps = {
   formData: any;
   handleInputChange: (field: string, value: string | boolean | Date) => void;
   handleToggleChange: (field: string) => void;
+  dispatch: any;
 };
 
 const PatientModals: React.FC<PatientModalsProps> = ({
@@ -24,6 +25,7 @@ const PatientModals: React.FC<PatientModalsProps> = ({
   formData,
   handleInputChange,
   handleToggleChange,
+  dispatch,
 }) => {
   return (
     <>
@@ -38,7 +40,7 @@ const PatientModals: React.FC<PatientModalsProps> = ({
       <FamilyModal
         modalVisible={modalVisible.family}
         closeModal={() => closeModal("family")}
-        formData={formData}
+        dispatch={dispatch}
         handleInputChange={handleInputChange}
         handleSave={() => handleSave("family")}
       />

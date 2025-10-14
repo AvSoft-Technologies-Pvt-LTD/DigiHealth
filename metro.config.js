@@ -23,7 +23,8 @@ const config = {
     // Include source extensions from defaults and custom ones
     sourceExts: [...defaultConfig.resolver.sourceExts, 'jsx', 'ts', 'tsx', 'json', 'blob'],
     // Ensure asset extensions handle images and fonts
-    assetExts: [...defaultConfig.resolver.assetExts, 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'ttf', 'otf'],
+    // assetExts: [...defaultConfig.resolver.assetExts, 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'ttf', 'otf'],
+    assetExts: ['png', 'jpg', 'jpeg', 'svg', 'gif', 'webp', 'bmp', 'tiff'],
     // Force Metro to resolve react-native correctly
     extraNodeModules: {
       'react-native': require.resolve('react-native'),

@@ -1,6 +1,6 @@
 import { fetchPatientsStart, fetchPatientsSuccess, fetchPatientsFailure } from '../slices/allPatientSlice';
 import { fetchPatientDashboardDataStart, fetchPatientDashboardDataSuccess, fetchPatientDashboardDataFailure } from '../slices/patientDashboardSlice';
-import { get, put, post } from '../../services/apiServices';
+import { get, put, post, plainDelete } from '../../services/apiServices';
 import { API } from '../../config/api';
 import { AppDispatch } from '..';
 import {
@@ -75,10 +75,14 @@ import {
   fetchPlansSuccess,
   fetchPlansFailure,
 } from "../slices/plansSlice.ts";
+import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice.ts';
+import { getPatientPhotoFailure, getPatientPhotoStart, getPatientPhotoSuccess } from '../slices/patientSettingSlice.ts';
+import { fetchFamilyMemberDataFailure, fetchFamilyMemberDataStart, fetchFamilyMemberDataSuccess } from '../slices/familyMemberSlice.ts';
 
 // ====================== PATIENT THUNKS ======================
 
-// --- Patient List ---
+// --- Patient List ---import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice';
+
 export const fetchAllPatients = () => async (dispatch: AppDispatch) => {
   try {
     dispatch(fetchPatientsStart());
@@ -215,19 +219,95 @@ export const fetchRelationData = () => async (dispatch: AppDispatch) => {
 };
 
 // --- Patient Family Health Data ---
-export const saveFamilyHealthData = (data: any) => async (dispatch: AppDispatch) => {
+export const saveFamilyHealthData = (data: any, isEditing?: boolean) => async (dispatch: AppDispatch) => {
+  const method = isEditing ? put : post;
+  const apiUrl = isEditing ? `${API.PATIENT_FAMILY_HEALTH_API}/${data.id}` : API.PATIENT_FAMILY_HEALTH_API;
+  console.log("API URL",apiUrl)
+  console.log("DATA",data)
+  console.log("isEditing",isEditing)
   try {
     dispatch(saveFamilyHealthDataStart());
-    const response = await post(API.PATIENT_FAMILY_HEALTH_API, data);
+    const response = await method(apiUrl, data);
+    if(response){
+      dispatch(fetchFamilyHealthData(response.patientId));
+    }
     dispatch(saveFamilyHealthDataSuccess(response));
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to save family health data';
     dispatch(saveFamilyHealthDataFailure(errorMessage));
   }
 };
+export const deleteFamilyMember = (item: any) => async (dispatch: AppDispatch) => {
+  try {
+    await plainDelete(API.PATIENT_FAMILY_HEALTH_API +"/"+ item.id);
+    dispatch(fetchFamilyHealthData(item.patientId));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to delete family member';
+    console.log("DELETE ERROR",errorMessage)
+  }
+};
+// --- Patient Family Health Data ---
+export const fetchFamilyHealthData = (patientId: string) => async (dispatch: AppDispatch) => {
+
+  try {
+    dispatch(fetchFamilyMemberDataStart());
+    const response = await get(API.PATIENT_FAMILY_MEMBERS_API + patientId);
+    dispatch(fetchFamilyMemberDataSuccess(response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to save family health data';
+    dispatch(fetchFamilyMemberDataFailure(errorMessage));
+  }
+};
 
 // --- Patient Coverage Data ---
-export const fetchCoverageTypes = () => async (dispatch: AppDispatch) => {
+
+  // export const fetchPatientPhoto = (photo:string) => async (dispatch: AppDispatch) => {
+  //   try {
+  //     dispatch(getPatientPhotoStart());
+  //     const response = await get(API.PATIENT_PHOTO + photo);
+  //     console.log("this is my photo",response)
+  //     dispatch(getPatientPhotoSuccess(response));
+  //   } catch (error) {
+  //     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patients photo';
+  //     dispatch(getPatientPhotoFailure(errorMessage));
+  //   }
+  // };
+
+  export const fetchPatientPhoto = (path: string) => async (dispatch: AppDispatch) => {
+    try {
+      dispatch(getPatientPhotoStart());
+  
+      // Get binary data
+      const response = await get(API.PATIENT_PHOTO + path, {}, 'arraybuffer');
+  
+      // Convert binary -> base64 (React Native safe)
+      const base64 = arrayBufferToBase64(response);
+      const imageUri = `data:image/jpeg;base64,${base64}`;
+  
+      dispatch(getPatientPhotoSuccess(imageUri));
+    } catch (error) {
+      console.error('Error in fetchPatientPhoto:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient photo';
+      dispatch(getPatientPhotoFailure(errorMessage));
+      return Promise.reject(error);
+    }
+  };
+  
+  // Utility function to convert ArrayBuffer -> base64
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 8192; // for large images
+  
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+  
+    return global.btoa(binary); // btoa is safe in React Native
+  };
+
+ export const fetchCoverageTypes = () => async (dispatch: AppDispatch) => {
   try {
     dispatch(fetchCoverageDataStart());
     const response = await get(API.PATIENT_COVERAGE_API);
@@ -311,6 +391,25 @@ export const fetchAmbulanceTypes = () => async (dispatch: AppDispatch) => {
 };
 
 // --- Pharmacy List ---
+
+export const updatePatientById = (id:string,data:any) => async (dispatch: AppDispatch) => {
+  console.log("Update patient by id",id,data)
+  try {
+    dispatch(updatePatientStart());
+    const response = await put(API.UPDATE_PATIENT_BY_ID + id, data);
+    console.log("Updated response",response)
+    dispatch(updatePatientSuccess(response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update patient';
+    dispatch(updatePatientFailure(errorMessage));
+  }
+};
+
+
+
+
+
+// patientThunks.ts
 export const fetchPharmacyList = (city?: string) => async (dispatch: AppDispatch) => {
   try {
     dispatch(fetchPharmacyListStart());
