@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import AvModal from '../../../../elements/AvModal';
 import AvText from '../../../../elements/AvText';
 import AvButton from '../../../../elements/AvButton';
@@ -12,8 +13,16 @@ import { AvSelect } from '../../../../elements/AvSelect';
 import AvTextInput from '../../../../elements/AvTextInput';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
-import {PAGES} from '../../../../constants/pages'
+import { PAGES } from '../../../../constants/pages';
 import Header from '../../../../components/Header';
+import { fetchUrgencyLevels } from '../../../../store/thunks/patientThunks';
+import { fetchMedicalInfo } from '../../../../store/thunks/patientThunks';
+import { fetchPrescriptions } from '../../../../store/thunks/patientThunks';
+import { fetchLabScans } from '../../../../store/thunks/patientThunks';
+import { RootState } from '../../../../store';
+import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
+import { setCurrentPatient } from "../../../../store/slices/allPatientSlice";
+import { fetchAllPatients } from "../../../../store/thunks/patientThunks";
 
 interface MedicalRecord {
   patientName: string;
@@ -55,6 +64,15 @@ interface SecondOpinionForm {
 }
 
 const MedicalRecordsPreview: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const { currentPatient } = useAppSelector((state) => state.currentPatient || {});
+  const userEmail = useAppSelector((state) => state.user.userProfile.email);
+  const { allPatients } = useAppSelector((state) => state.patient);
+  const { urgencyLevels, loading: urgencyLoading, error: urgencyError } = useSelector((state: RootState) => state.urgencyLevel);
+  const { medicalInfoData, loading: medicalInfoLoading, error: medicalInfoError } = useSelector((state: RootState) => state.medicalInfo);
+  const { prescriptionData, loading: prescriptionLoading, error: prescriptionError } = useSelector((state: RootState) => state.prescription);
+  const { labScanData, loading: labScanLoading, error: labScanError } = useSelector((state: RootState) => state.labScan);
+
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [showSecondOpinionForm, setShowSecondOpinionForm] = useState(true);
   const [secondOpinionForm, setSecondOpinionForm] = useState<SecondOpinionForm>({
@@ -64,60 +82,84 @@ const MedicalRecordsPreview: React.FC = () => {
     attachedReports: '',
   });
 
+  useEffect(() => {
+    if (allPatients?.length > 0 && userEmail) {
+      const currentPatient = allPatients.find((item: any) => userEmail === item.email);
+      if (currentPatient) {
+        dispatch(setCurrentPatient(currentPatient));
+      }
+    }
+  }, [allPatients, userEmail, dispatch]);
+
+  useEffect(() => {
+    if (currentPatient?.id) {
+      dispatch(fetchUrgencyLevels());
+      dispatch(fetchMedicalInfo(currentPatient.id));
+      dispatch(fetchPrescriptions(currentPatient.id));
+      dispatch(fetchLabScans(currentPatient.id));
+    }
+  }, [dispatch, currentPatient?.id]);
+
+  useEffect(() => {
+    dispatch(fetchAllPatients());
+  }, [dispatch]);
+
+  if (medicalInfoLoading || prescriptionLoading || labScanLoading) {
+    return <AvText>Loading...</AvText>;
+  }
+
+  if (medicalInfoError || prescriptionError || labScanError) {
+    return <AvText>Error loading data. Please try again later.</AvText>;
+  }
+
+  const medicalRecord: MedicalRecord = {
+    patientName: medicalInfoData?.patientName || currentPatient?.name || 'N/A',
+    age: medicalInfoData?.age || currentPatient?.age || '---',
+    gender: medicalInfoData?.gender || currentPatient?.gender || '---',
+    hospital: medicalInfoData?.hospital || 'AV Hospital',
+    visitDate: medicalInfoData?.visitDate || 'dateOfVisit 1',
+    diagnosis: medicalInfoData?.diagnosis || 'diagnosis 12',
+    chiefComplaint: medicalInfoData?.chiefComplaint || 'High fever with chills, body ache, and headache for 3 days',
+    pastHistory: medicalInfoData?.pastHistory || 'No significant past medical or surgical history, No known allergies',
+    socialHistory: medicalInfoData?.socialHistory || 'Denies Fever Confirmatory IgG antigen and IgM positivity',
+    familyHistory: medicalInfoData?.familyHistory || 'No family history of fever, complains have over affected',
+    systemicExamination: medicalInfoData?.systemicExamination || 'Mild hepatomegaly, no signs of liver or bleeding',
+    investigations: medicalInfoData?.investigations || 'CBC, Dengue IgG Antigen, Platelet count, Platelet Count',
+    treatmentAdvice: medicalInfoData?.treatmentAdvice || 'Maintain hydration, avoid NSAIDs, and monitor platelet count daily',
+    dischargeSummary: medicalInfoData?.dischargeSummary || 'Patient admitted with dengue fever, treated with supportive care, Patient is stable and ready for discharge',
+  };
+
+  const prescriptions: Prescription[] = prescriptionData?.map(p => ({
+    date: Array.isArray(p.date) ? new Date(p.date[0], p.date[1] - 1, p.date[2]).toISOString().split('T')[0] : p.date,
+    doctorName: p.doctorName,
+    medicines: p.medicines,
+    instructions: p.instructions,
+  })) || [];
+
+  const labTests: LabTest[] = labScanData?.map(l => ({
+    date: Array.isArray(l.date) ? new Date(l.date[0], l.date[1] - 1, l.date[2]).toISOString().split('T')[0] : l.date,
+    testName: l.testName,
+    result: l.result,
+    normalRange: l.normalRange,
+    status: l.status,
+  })) || [];
+
   const doctors = [
     { label: 'Dr. Smith', value: 'dr_smith' },
     { label: 'Dr. Johnson', value: 'dr_johnson' },
     { label: 'Dr. Williams', value: 'dr_williams' },
   ];
 
-  const urgencyLevels = [
-    { label: 'Low', value: 'low' },
-    { label: 'Medium', value: 'medium' },
-    { label: 'High', value: 'high' },
-    { label: 'Critical', value: 'critical' },
-  ];
+  const mappedUrgencyLevels = urgencyLevels.map((level) => ({
+    label: level.description,
+    value: level.urgencyTiming,
+  }));
 
   const consultationModes = [
     { label: 'Video Call', value: 'video' },
     { label: 'Audio Call', value: 'audio' },
     { label: 'Chat', value: 'chat' },
     { label: 'In-Person', value: 'in_person' },
-  ];
-
-  const medicalRecord: MedicalRecord = {
-    patientName: 'N/A',
-    age: '---',
-    gender: '---',
-    hospital: 'AV Hospital',
-    visitDate: 'dateOfVisit 1',
-    diagnosis: 'diagnosis 12',
-    chiefComplaint: 'High fever with chills, body ache, and headache for 3 days',
-    pastHistory: 'No significant past medical or surgical history, No known allergies',
-    socialHistory: 'Denies Fever Confirmatory IgG antigen and IgM positivity',
-    familyHistory: 'No family history of fever, complains have over affected',
-    systemicExamination: 'Mild hepatomegaly, no signs of liver or bleeding',
-    investigations: 'CBC, Dengue IgG Antigen, Platelet count, Platelet Count',
-    treatmentAdvice: 'Maintain hydration, avoid NSAIDs, and monitor platelet count daily',
-    dischargeSummary: 'Patient admitted with dengue fever, treated with supportive care, Patient is stable and ready for discharge',
-  };
-
-  const prescriptions: Prescription[] = [
-    {
-      date: '2024-01-15',
-      doctorName: 'Dr. Smith',
-      medicines: 'Paracetamol 500mg',
-      instructions: 'Take twice daily after meals',
-    },
-  ];
-
-  const labTests: LabTest[] = [
-    {
-      date: '2024-01-15',
-      testName: 'Complete Blood Count',
-      result: '12.5',
-      normalRange: '12-16 g/dL',
-      status: 'Normal',
-    },
   ];
 
   const handlePreviewMedicalRecords = () => {
@@ -277,11 +319,12 @@ const MedicalRecordsPreview: React.FC = () => {
             <AvSelect
               label="Urgency Level"
               required
-              items={urgencyLevels}
+              items={mappedUrgencyLevels}
               selectedValue={secondOpinionForm.urgencyLevel}
               onValueChange={(value) => setSecondOpinionForm({...secondOpinionForm, urgencyLevel: value})}
-              placeholder="Select urgency level"
+              placeholder={urgencyLoading ? "Loading..." : urgencyError ? "Failed to load urgency levels" : "Select urgency level"}
               style={styles.formField}
+              disabled={urgencyLoading}
             />
             <AvSelect
               label="Preferred Consultation Mode"
@@ -297,9 +340,6 @@ const MedicalRecordsPreview: React.FC = () => {
               <TouchableOpacity style={styles.attachButton}>
                 <AvText type="body" style={styles.attachButtonText}>Attach Document</AvText>
               </TouchableOpacity>
-            </View>
-            <View style={styles.formField}>
-            
             </View>
           </View>
           <View style={styles.formActions}>
@@ -464,7 +504,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.LIGHT_GREY,
     borderRadius: normalize(8),
     padding: normalize(12),
-    height: normalize(100), // Fixed height
+    height: normalize(100),
     textAlignVertical: 'top',
     backgroundColor: COLORS.WHITE,
   },

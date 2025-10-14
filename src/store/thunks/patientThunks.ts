@@ -4,6 +4,16 @@ import { get, put, post, plainDelete } from '../../services/apiServices';
 import { API } from '../../config/api';
 import { AppDispatch } from '..';
 import {
+  fetchMedicalConditionsStart,
+  fetchMedicalConditionsSuccess,
+  fetchMedicalConditionsFailure,
+  
+} from '../slices/medicalConditionStatusSlice';
+import{  fetchMedicalStatusStart,
+  fetchMedicalStatusSuccess,
+  fetchMedicalStatusFailure,
+  clearMedicalStatus}from "../slices/medicalStatusSlice";
+import {
   fetchHealthSummaryDataStart,
   fetchHealthSummaryDataSuccess,
   fetchHealthSummaryDataFailure,
@@ -496,18 +506,18 @@ export const fetchPrescriptions = (patientId: string) => async (dispatch: AppDis
 
 
 // Fetch Lab Scans
-export const fetchLabScans = (patientId: string) => async (dispatch: AppDispatch) => {
-  console.log("Fetching lab scans for patient:", API.PATIENT_LAB_SCAN_API(patientId));
-  try {
-    dispatch(fetchLabScanStart());
-    const response = await get(API.PATIENT_LAB_SCAN_API(patientId));
-    console.log("API Response for Lab Scans==============:", response);
-    dispatch(fetchLabScanSuccess(response.data || response));
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch lab scans';
-    dispatch(fetchLabScanFailure(errorMessage));
-  }
-};
+// export const fetchLabScans = (patientId: string) => async (dispatch: AppDispatch) => {
+//   console.log("Fetching lab scans for patient:", API.PATIENT_LAB_SCAN_API(patientId));
+//   try {
+//     dispatch(fetchLabScanStart());
+//     const response = await get(API.PATIENT_LAB_SCAN_API(patientId));
+//     console.log("API Response for Lab Scans==============:", response);
+//     dispatch(fetchLabScanSuccess(response.data || response));
+//   } catch (error) {
+//     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch lab scans';
+//     dispatch(fetchLabScanFailure(errorMessage));
+//   }
+// };
 
 
 // Billing api medical record details in patient
@@ -587,5 +597,32 @@ export const fetchAllLabData = () => async (dispatch: AppDispatch) => {
     ]);
   } catch (error) {
     console.error("Failed to fetch all lab data:", error);
+  }
+};
+// Example thunk
+// src/store/thunks/patientThunks.ts
+export const fetchMedicalConditions = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchMedicalConditionsStart());
+    const response = await fetch(API.PATIENT_MEDICAL_CONDITIONS_API);
+    if (!response.ok) throw new Error('Failed to fetch');
+    const data = await response.json();
+    dispatch(fetchMedicalConditionsSuccess(data));
+  } catch (error: any) {
+    dispatch(fetchMedicalConditionsFailure(error.message));
+    dispatch(fetchMedicalConditionsSuccess([])); // Fallback to empty array
+  }
+};
+
+
+// --- Medical Record Status ---
+export const fetchMedicalStatuses = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchMedicalStatusStart());
+    const response = await get(API.MEDICAL_STATUS_API);
+    dispatch(fetchMedicalStatusSuccess(response.data || response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch medical statuses';
+    dispatch(fetchMedicalStatusFailure(errorMessage));
   }
 };

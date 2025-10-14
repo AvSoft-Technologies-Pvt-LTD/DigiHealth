@@ -4,7 +4,7 @@ const getBaseUrl = () => {
   if (__DEV__) {
     // Uncomment the appropriate line based on your setup
     // return 'http://10.0.2.2:8080/api/'; // For Android emulator
-    return 'http://192.168.0.121:8080/api/'; // For physical device (replace YOUR_LOCAL_IP with your computer's local IP)
+    return 'http://192.168.0.100:8080/api/'; // For physical device (replace YOUR_LOCAL_IP with your computer's local IP)
   }
   return 'http://your-production-url.com/api/'; // For production
 };
@@ -37,8 +37,8 @@ export const API = {
   UPDATE_PATIENT_BY_ID: `${BASE_URL}auth/patient/`, 
   PATIENT_PHOTO: `${BASE_URL}auth/patient/photo?path=`,
 
-
-
+PATIENT_MEDICAL_CONDITIONS_API: `${BASE_URL}master/medicalConditions`,
+ MEDICAL_STATUS_API: '${BASE_URL}master/medicalStatus',
   PATIENT_PRESCRIPTION_API: (patientId: string) => `${BASE_URL}patient/prescriptions/${patientId}`,
  
   PATIENT_LAB_SCAN_API: (patientId: string) => `${BASE_URL}medical-record-lab-scan/${patientId}`,

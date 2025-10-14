@@ -54,11 +54,11 @@ const LabScan: React.FC = () => {
         <AvCard key={index} cardStyle={styles.labReportCard}>
           {/* Header: Test Name and Status */}
           <View style={styles.header}>
-            <AvText type="subtitle" style={styles.testName}>{report.testName}</AvText>
+            <AvText style={styles.testName}>{report.testName}</AvText>
             <View
               style={[
                 styles.statusContainer,
-                { backgroundColor: report.status === 'Pending' ? COLORS.LIGHT_YELLOW : COLORS.LIGHT_GREEN },
+                { backgroundColor: report.status === 'Pending' ? COLORS.LIGHT_GREY : COLORS.LIGHT_GREEN },
               ]}
             >
               <AvText
@@ -72,30 +72,40 @@ const LabScan: React.FC = () => {
               </AvText>
             </View>
           </View>
+
           {/* Details Section */}
           <View style={styles.detailsContainer}>
             {/* Date and Result */}
             <View style={styles.detailRow}>
               <View style={styles.leftColumn}>
-                <AvText type="body" style={styles.detailLabel}>Date</AvText>
-                <AvText type="body" style={styles.detailValue}>{formatDate(report.date)}</AvText>
+                <View style={styles.detailItem}>
+                  <AvText type="body" style={styles.detailLabel}>Date: </AvText>
+                  <AvText type="body" style={styles.detailValue}>{formatDate(report.date)}</AvText>
+                </View>
               </View>
               <View style={styles.rightColumn}>
-                <AvText type="body" style={styles.detailLabel}>Result</AvText>
-                <AvText type="body" style={styles.detailValue}>{report.result}</AvText>
+                <View style={styles.detailItem}>
+                  <AvText type="body" style={styles.detailLabel}>Result: </AvText>
+                  <AvText type="body" style={styles.detailValue}>{report.result}</AvText>
+                </View>
               </View>
             </View>
+
             {/* Normal Range and Print */}
             <View style={styles.detailRow}>
               <View style={styles.leftColumn}>
-                <AvText type="body" style={styles.detailLabel}>Normal range</AvText>
-                <AvText type="body" style={styles.detailValue}>{report.normalRange}</AvText>
+                <View style={styles.detailItem}>
+                  <AvText type="body" style={styles.detailLabel}>Normal range: </AvText>
+                  <AvText type="body" style={styles.detailValue}>{report.normalRange}</AvText>
+                </View>
               </View>
               <View style={styles.rightColumn}>
-                <AvText type="body" style={styles.detailLabel}>Print</AvText>
-                <TouchableOpacity style={styles.printButton}>
-                  <AvIcons type="MaterialIcons" name="print" size={20} color={COLORS.BLACK} />
-                </TouchableOpacity>
+                <View style={styles.detailItem}>
+                  <AvText type="body" style={styles.detailLabel}>Print: </AvText>
+                  <TouchableOpacity style={styles.printButton}>
+                    <AvIcons type="MaterialIcons" name="print" size={20} color={COLORS.BLACK} />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>
@@ -145,9 +155,10 @@ const styles = StyleSheet.create({
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: normalize(8),
   },
   leftColumn: {
-    flex: 1,
+    flex: 2,
   },
   rightColumn: {
     flex: 1,
@@ -160,7 +171,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: normalize(12),
     color: COLORS.BLACK,
-    marginTop: normalize(2),
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   printButton: {
     padding: normalize(4),
@@ -169,3 +183,17 @@ const styles = StyleSheet.create({
 });
 
 export default LabScan;
+
+
+
+
+
+
+
+
+
+
+
+
+
+

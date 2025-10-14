@@ -1,4 +1,3 @@
-// store/index.ts
 import { configureStore } from '@reduxjs/toolkit';
 import userReducer from './slices/userSlice';
 import homeReducer from './slices/homeSlice';
@@ -11,11 +10,22 @@ import patientBloodGroupReducer from './slices/patientBloodGroupSlice';
 import patientPersonalDataReducer from './slices/patientPersonalDataSlice';
 import healthConditionReducer from './slices/healthConditionSlice';
 import relationReducer from './slices/relationSlice';
-import healthSummaryData from "./slices/healthSummary"
+import healthSummaryData from "./slices/healthSummary";
 import hospitalListReducer from './slices/hospitalList';
-import coverageReducer from './slices/coverage'
+import coverageReducer from './slices/coverage';
+import medicalInfoSlice from './slices/medicalInfoSlice';
 import patientAdditionalDataReducer from './slices/patientAdditionalDataSlice';
-import pharmacyReducer from './slices/pharmacySlice';import ambulanceTypeReducer from './slices/ambulanceTypeSlice';export const store = configureStore({
+import pharmacyReducer from './slices/pharmacySlice';
+import medicalConditionStatusReducer from './slices/medicalConditionStatusSlice';
+import medicalRecordStatusReducer from './slices/medicalStatusSlice';
+import ambulanceTypeReducer from './slices/ambulanceTypeSlice';
+import prescriptionReducer from './slices/prescriptionSlice';
+import labScanReducer from './slices/labScanSlice';
+import pharmacyBillingReducer from './slices/pharmacyBillingSlice';
+import labBillingReducer from './slices/labBillingSlice';
+import hospitalBillingReducer from './slices/hospitalBillingSlice';
+
+export const store = configureStore({
   reducer: {
     updatePatient: updatePatientReducer,
     user: userReducer,
@@ -23,7 +33,7 @@ import pharmacyReducer from './slices/pharmacySlice';import ambulanceTypeReducer
     doctor: doctorReducer,
     patient: allPatientReducer,
     patientDashboardData: patientDashboardReducer,
-    healthSummaryData:healthSummaryData,
+    healthSummaryData: healthSummaryData,
     hospitalList: hospitalListReducer,
     patientBloodGroupData: patientBloodGroupReducer,
     patientPersonalData: patientPersonalDataReducer,
@@ -33,8 +43,15 @@ import pharmacyReducer from './slices/pharmacySlice';import ambulanceTypeReducer
     ambulanceType: ambulanceTypeReducer,
     pharmacy: pharmacyReducer,
     patientAdditionalData: patientAdditionalDataReducer,
-     
-        
+    medicalInfo: medicalInfoSlice,
+    medicalConditionStatus: medicalConditionStatusReducer,
+    medicalRecordStatus: medicalRecordStatusReducer,
+    prescription: prescriptionReducer,
+    labScan: labScanReducer,
+    pharmacyBilling: pharmacyBillingReducer,
+    currentPatient: currentPatientReducer,
+    labBilling: labBillingReducer,
+    hospitalBilling: hospitalBillingReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

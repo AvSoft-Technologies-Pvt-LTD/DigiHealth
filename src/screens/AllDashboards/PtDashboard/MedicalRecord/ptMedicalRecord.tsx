@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
   Alert,
-  ScrollView,
   Switch,
   ActivityIndicator,
   TouchableOpacity,
@@ -20,7 +19,6 @@ import { SearchFilterBar, FilterOption } from '../../../../components/CommonComp
 import { Tabs } from '../../../../components/CommonComponents/Tabs';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -30,42 +28,23 @@ import {
   StatusBarHeight,
 } from '../../../../constants/platform';
 import { AvSelect } from '../../../../elements/AvSelect';
-import { MultiSelectDropdown } from '../../../../elements/MultiSelectDropdown';
+import { FlatList } from 'react-native';
+import AvDatePicker from '../../../../elements/AvDatePicker';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMedicalConditions } from '../../../../store/thunks/patientThunks';
+import { RootState } from '../../../store';
 
-// Chip Components
+// --- Types and Interfaces ---
 interface ChipProps {
   label: string;
   onRemove: () => void;
 }
-
-const Chip: React.FC<ChipProps> = ({ label, onRemove }) => (
-  <View style={styles.chip}>
-    <AvText style={styles.chipText}>{label}</AvText>
-    <TouchableOpacity onPress={onRemove} style={styles.closeButton}>
-      <Icon name="close" size={16} color={COLORS.WHITE} />
-    </TouchableOpacity>
-  </View>
-);
 
 interface ChipsProps {
   items: { id: string; label: string }[];
   selectedIds: string[];
   onRemove: (id: string) => void;
 }
-
-const Chips: React.FC<ChipsProps> = ({ items, selectedIds, onRemove }) => (
-  <View style={styles.chipsContainer}>
-    {items
-      .filter((item) => selectedIds.includes(item.id))
-      .map((item) => (
-        <Chip
-          key={item.id}
-          label={item.label}
-          onRemove={() => onRemove(item.id)}
-        />
-      ))}
-  </View>
-);
 
 interface MedicalRecord extends DataRecord {
   recordId: string;
@@ -77,8 +56,35 @@ interface MedicalRecord extends DataRecord {
   status: 'Active' | 'Discharged' | 'Pending';
   medicalConditions?: string;
   isHidden?: boolean;
+  chiefComplaint?: string;
+  dischargeSummary?: string;
 }
 
+// --- Components ---
+const Chip: React.FC<ChipProps> = React.memo(({ label, onRemove }) => (
+  <View style={styles.chip}>
+    <AvText style={styles.chipText}>{label}</AvText>
+    <TouchableOpacity onPress={onRemove} style={styles.closeButton}>
+      <Icon name="close" size={16} color={COLORS.WHITE} />
+    </TouchableOpacity>
+  </View>
+));
+
+const Chips: React.FC<ChipsProps> = React.memo(({ items, selectedIds, onRemove }) => (
+  <View style={styles.chipsContainer}>
+    {items
+      .filter((item: any) => selectedIds.includes(item.id))
+      .map((item: any) => (
+        <Chip
+          key={item.id}
+          label={item.label}
+          onRemove={() => onRemove(item.id)}
+        />
+      ))}
+  </View>
+));
+
+// --- Constants ---
 const filterOptions: FilterOption[] = [
   { id: 'Active', displayName: 'Active' },
   { id: 'Discharged', displayName: 'Discharged' },
@@ -99,13 +105,6 @@ const hospitalList = [
   { label: 'AIIMS', value: 'AIIMS' },
 ];
 
-const medicalConditionsOptions = [
-  { id: 'asthma', label: 'Asthma Disease' },
-  { id: 'bp', label: 'BP (Blood Pressure)' },
-  { id: 'diabetes', label: 'Diabetic Disease' },
-  { id: 'heart', label: 'Heart Disease' },
-];
-
 const statusOptions = [
   { label: 'All', value: 'All' },
   { label: 'Active', value: 'Active' },
@@ -113,9 +112,10 @@ const statusOptions = [
   { label: 'Pending', value: 'Pending' },
 ];
 
-const MedicalRecordsScreen = () => {
+// --- Main Component ---
+const MedicalRecordsScreen: React.FC = () => {
+  // --- State ---
   const [records, setRecords] = useState<MedicalRecord[]>([]);
-  const [filteredRecords, setFilteredRecords] = useState<MedicalRecord[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<'OPD' | 'IPD' | 'VIRTUAL'>('OPD');
@@ -123,47 +123,46 @@ const MedicalRecordsScreen = () => {
   const [pressedHospitalId, setPressedHospitalId] = useState<string | null>(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [hospitalName, setHospitalName] = useState('');
-  const [recordType, setRecordType] = useState<'OPD' | 'IPD' | 'VIRTUAL' | null>(null);
-  const [dateOfVisit, setDateOfVisit] = useState(new Date());
+  const [dateOfVisit, setDateOfVisit] = useState<Date>(new Date());
   const [dischargedDate, setDischargedDate] = useState<Date | null>(null);
   const [chiefComplaint, setChiefComplaint] = useState('');
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
-  const [showConditionsModal, setShowConditionsModal] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showDischargedDatePicker, setShowDischargedDatePicker] = useState(false);
-  const [datePickerType, setDatePickerType] = useState<'visit' | 'discharged'>('visit');
   const [status, setStatus] = useState<'Active' | 'Discharged' | 'Pending' | 'All'>('All');
   const navigation = useNavigation();
 
-  // Format date for display
-  const formatDate = (dateString: string | undefined) => {
+  // --- Redux ---
+  const dispatch = useDispatch();
+  const { conditions = [], loading: conditionsLoading, error: conditionsError } = useSelector(
+    (state: RootState) => state.healthConditionData
+  );
+
+  const medicalConditionsOptions = conditions.map(condition => ({
+    id: condition.id || condition.conditionName.toLowerCase().replace(/\s+/g, '-'),
+    label: condition.conditionName,
+  }));
+
+  useEffect(() => {
+    dispatch(fetchMedicalConditions());
+  }, [dispatch]);
+
+  // --- Callbacks ---
+  const formatDate = useCallback((dateString: string | undefined): string => {
     if (!dateString) return 'N/A';
     try {
       return new Date(dateString).toLocaleDateString();
     } catch {
       return dateString;
     }
-  };
-
-  useEffect(() => {
-    fetchRecords();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [records, searchValue, selectedFilters, activeTab, status]);
-
-  const fetchRecords = async () => {
+  const fetchRecords = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec');
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
       const data = await response.json();
-      console.log('API Response:', data); // Debug log
-
       const formattedData = Array.isArray(data)
-        ? data.map((item) => ({
+        ? data.map((item: any) => ({
             recordId: item.id?.toString() || Date.now().toString(),
             hospitalName: item.hospitalName || 'Unknown Hospital',
             type: item.type || 'OPD',
@@ -173,39 +172,51 @@ const MedicalRecordsScreen = () => {
             status: item.status || 'Active',
             medicalConditions: item.medicalConditions,
             isHidden: false,
+            chiefComplaint: item.chiefComplaint,
+            dischargeSummary: item.dischargeSummary,
           }))
         : [];
-
       setRecords(formattedData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fetch error:', error);
       Alert.alert('Error', `Failed to fetch records: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const applyFilters = () => {
-    let filtered = [...records];
+  const opdRecords = useMemo(
+    () => records.filter((r: any) => r.type === 'OPD'),
+    [records]
+  );
 
-    // Search filter
+  const ipdRecords = useMemo(
+    () => records.filter((r: any) => r.type === 'IPD'),
+    [records]
+  );
+
+  const virtualRecords = useMemo(
+    () => records.filter((r: any) => r.type === 'VIRTUAL'),
+    [records]
+  );
+
+  const filteredRecords = useMemo(() => {
+    let filtered: MedicalRecord[] = [];
+    if (activeTab === 'OPD') filtered = [...opdRecords];
+    if (activeTab === 'IPD') filtered = [...ipdRecords];
+    if (activeTab === 'VIRTUAL') filtered = [...virtualRecords];
     if (searchValue.trim()) {
       const searchTerm = searchValue.toLowerCase();
       filtered = filtered.filter(
         (r) =>
           r.hospitalName?.toLowerCase().includes(searchTerm) ||
           r.diagnosis?.toLowerCase().includes(searchTerm) ||
-          r.status?.toLowerCase().includes(searchTerm) ||
-          r.type?.toLowerCase().includes(searchTerm)
+          r.status?.toLowerCase().includes(searchTerm)
       );
     }
-
-    // Status filter
     if (status && status !== 'All') {
       filtered = filtered.filter((r) => r.status === status);
     }
-
-    // Selected filters (from chips)
     if (Object.values(selectedFilters).some(Boolean)) {
       filtered = filtered.filter((r) =>
         Object.entries(selectedFilters).some(
@@ -213,71 +224,59 @@ const MedicalRecordsScreen = () => {
         )
       );
     }
+    return filtered;
+  }, [activeTab, opdRecords, ipdRecords, virtualRecords, searchValue, status, selectedFilters]);
 
-    // Tab filter
-    filtered = filtered.filter((r) =>
-      r.type?.toLowerCase() === activeTab.toLowerCase()
+  const toggleCardBlur = useCallback((recordId: string) => {
+    setRecords((prev: any) =>
+      prev.map((r: any) => (r.recordId === recordId ? { ...r, isHidden: !r.isHidden } : r))
     );
+  }, []);
 
-    setFilteredRecords(filtered);
-  };
+  const handleHospitalPress = useCallback((record: MedicalRecord) => {
+    navigation.navigate(PAGES.PATIENT_MEDICAL_DETAILS, {
+      record,
+      recordType: record.type,
+    });
+  }, [navigation]);
 
-  const toggleCardBlur = (recordId: string) => {
-    setRecords((prev) =>
-      prev.map((r) => (r.recordId === recordId ? { ...r, isHidden: !r.isHidden } : r))
-    );
-  };
-
-  const handleHospitalPress = (record: MedicalRecord) => {
-    navigation.navigate(PAGES.PATIENT_MEDICAL_DETAILS, { hospital: record.hospitalName });
-  };
-
-  const handleFieldPress = (fieldKey: string, value: any, record: DataRecord) => {
+  const handleFieldPress = useCallback((fieldKey: string, value: any, record: DataRecord) => {
     if (fieldKey === 'hospitalName') {
       handleHospitalPress(record as MedicalRecord);
     }
-  };
+  }, [handleHospitalPress]);
 
-  const handleAddRecord = () => {
+  const handleAddRecord = useCallback(() => {
     setIsAddModalVisible(true);
-  };
+  }, []);
 
-  const closeAddModal = () => {
+  const closeAddModal = useCallback(() => {
     setIsAddModalVisible(false);
     setHospitalName('');
-    setRecordType(null);
     setDateOfVisit(new Date());
     setDischargedDate(null);
     setChiefComplaint('');
     setSelectedConditions([]);
     setStatus('Active');
-  };
+  }, []);
 
-  const toggleCondition = (conditionId: string) => {
-    setSelectedConditions((prev) =>
-      prev.includes(conditionId)
-        ? prev.filter((id) => id !== conditionId)
-        : [...prev, conditionId]
-    );
-  };
-
-  const handleSubmitRecord = async () => {
+  const handleSubmitRecord = useCallback(async () => {
     if (!hospitalName) {
       Alert.alert('Error', 'Please select a hospital');
       return;
     }
-
     const recordData = {
       hospitalName,
-      type: activeTab === 'IPD' ? recordType || 'IPD' : activeTab,
+      type: activeTab,
       diagnosis: chiefComplaint,
       dateOfVisit: dateOfVisit.toISOString(),
       dischargedDate: activeTab === 'IPD' && dischargedDate ? dischargedDate.toISOString() : undefined,
       status: status === 'All' ? 'Active' : status,
       medicalConditions: selectedConditions.join(', '),
       recordId: Date.now().toString(),
+      chiefComplaint,
+      dischargeSummary: activeTab === 'IPD' ? 'Patient discharged with medications and advice for follow-up.' : undefined,
     };
-
     try {
       const response = await fetch('https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec', {
         method: 'POST',
@@ -286,52 +285,17 @@ const MedicalRecordsScreen = () => {
         },
         body: JSON.stringify(recordData),
       });
-
       if (!response.ok) throw new Error('Failed to add record');
-
-      // Refresh records after adding new one
-      fetchRecords();
+      await fetchRecords();
       Alert.alert('Success', 'Record added successfully');
       closeAddModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submit error:', error);
       Alert.alert('Error', `Failed to add record: ${error.message}`);
     }
-  };
+  }, [hospitalName, activeTab, dateOfVisit, dischargedDate, chiefComplaint, selectedConditions, status, fetchRecords, closeAddModal]);
 
-  const onDateChange = (event: any, selectedDate?: Date) => {
-    if (event.type === 'dismissed') {
-      if (datePickerType === 'visit') {
-        setShowDatePicker(false);
-      } else {
-        setShowDischargedDatePicker(false);
-      }
-      return;
-    }
-
-    if (datePickerType === 'visit') {
-      setShowDatePicker(false);
-      if (selectedDate) {
-        setDateOfVisit(selectedDate);
-      }
-    } else {
-      setShowDischargedDatePicker(false);
-      if (selectedDate) {
-        setDischargedDate(selectedDate);
-      }
-    }
-  };
-
-  const showDatepicker = (type: 'visit' | 'discharged') => {
-    setDatePickerType(type);
-    if (type === 'visit') {
-      setShowDatePicker(true);
-    } else {
-      setShowDischargedDatePicker(true);
-    }
-  };
-
-  const renderHospitalName = (record: MedicalRecord) => {
+  const renderHospitalName = useCallback((record: MedicalRecord) => {
     const isPressed = pressedHospitalId === record.recordId;
     return (
       <TouchableOpacity
@@ -353,15 +317,15 @@ const MedicalRecordsScreen = () => {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [pressedHospitalId, handleHospitalPress]);
 
-  const renderHiddenHeader = () => (
+  const renderHiddenHeader = useCallback(() => (
     <View style={styles.hiddenHeaderContainer}>
       <AvText style={styles.hiddenHeaderText}>Data Hidden</AvText>
     </View>
-  );
+  ), []);
 
-  const renderEmptyState = () => (
+  const renderEmptyState = useCallback(() => (
     <View style={styles.emptyContainer}>
       <Icon name="medical-services" size={60} color={COLORS.GREY} />
       <AvText style={styles.emptyText}>No medical records found</AvText>
@@ -369,8 +333,60 @@ const MedicalRecordsScreen = () => {
         {loading ? 'Loading records...' : 'Try adjusting your filters or add a new record'}
       </AvText>
     </View>
-  );
+  ), [loading]);
 
+  const renderRecordItem = useCallback(({ item }: { item: MedicalRecord }) => {
+    const isHidden = !!item.isHidden;
+    const actions: Action[] = [
+      {
+        key: 'blurSwitch',
+        render: () => (
+          <Switch
+            value={isHidden}
+            onValueChange={() => toggleCardBlur(item.recordId)}
+            trackColor={{ false: COLORS.LIGHT_GREY, true: COLORS.GREEN }}
+            thumbColor={COLORS.WHITE}
+            style={styles.cardToggle}
+          />
+        ),
+        onPress: () => {},
+      },
+    ];
+    const cardData = {
+      ...item,
+      dateOfVisit: formatDate(item.dateOfVisit),
+      dischargedDate: formatDate(item.dischargedDate),
+    };
+    return (
+      <View style={styles.recordWrapper}>
+        <View style={[
+          styles.cardContainer,
+          isHidden && styles.cardContainerWithHeader
+        ]}>
+          {isHidden && renderHiddenHeader()}
+          <TableCard
+            data={[cardData]}
+            headerFields={['status', 'type']}
+            bodyFields={['hospitalName', 'dischargedDate', 'diagnosis']}
+            topRightFields={['dateOfVisit']}
+            actions={actions}
+            onCardPress={() => navigation.navigate(PAGES.PATIENT_MEDICAL_DETAILS, { record: item, recordType: item.type })}
+            onFieldPress={handleFieldPress}
+            customRenderers={{
+              hospitalName: (value: any, record: DataRecord) => renderHospitalName(record as MedicalRecord)
+            }}
+          />
+        </View>
+      </View>
+    );
+  }, [toggleCardBlur, formatDate, renderHiddenHeader, navigation, handleFieldPress, renderHospitalName]);
+
+  // --- Effects ---
+  useEffect(() => {
+    fetchRecords();
+  }, [fetchRecords]);
+
+  // --- Render ---
   return (
     <View style={styles.container}>
       <Header
@@ -379,13 +395,11 @@ const MedicalRecordsScreen = () => {
         backgroundColor={COLORS.WHITE}
         titleColor={COLORS.BLACK}
       />
-
       <Tabs
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={(tabKey) => setActiveTab(tabKey as 'OPD' | 'IPD' | 'VIRTUAL')}
       />
-
       <View style={styles.filterContainer}>
         <SearchFilterBar
           searchValue={searchValue}
@@ -396,73 +410,33 @@ const MedicalRecordsScreen = () => {
         <AvSelect
           items={statusOptions}
           selectedValue={status}
-          onValueChange={(value) => setStatus(value as 'Active' | 'Discharged' | 'Pending' | 'All')}
+          onValueChange={(value: any) => setStatus(value as 'Active' | 'Discharged' | 'Pending' | 'All')}
           placeholder="Filter by Status"
           style={styles.statusFilter}
         />
       </View>
-
+      {conditionsLoading && <ActivityIndicator size="small" color={COLORS.PRIMARY} />}
+      {conditionsError && (
+        <AvText style={styles.errorText}>{conditionsError}</AvText>
+      )}
       {loading && records.length === 0 ? (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color={COLORS.PRIMARY} />
         </View>
       ) : (
-        <>
+        <View style={styles.listWrapper}>
           {filteredRecords.length === 0 ? (
             renderEmptyState()
           ) : (
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-              {filteredRecords.map((record) => {
-                const isHidden = !!record.isHidden;
-                const actions: Action[] = [
-                  {
-                    key: 'blurSwitch',
-                    render: () => (
-                      <Switch
-                        value={isHidden}
-                        onValueChange={() => toggleCardBlur(record.recordId)}
-                        trackColor={{ false: COLORS.GREY_LIGHT, true: COLORS.GREEN }}
-                        thumbColor={COLORS.WHITE}
-                        style={styles.cardToggle}
-                      />
-                    ),
-                    onPress: () => {},
-                  },
-                ];
-
-                // Prepare data for TableCard with formatted dates
-                const cardData = {
-                  ...record,
-                  dateOfVisit: formatDate(record.dateOfVisit),
-                  dischargedDate: formatDate(record.dischargedDate),
-                };
-
-                return (
-                  <View key={record.recordId} style={styles.recordWrapper}>
-                    <View style={styles.cardContainer}>
-                      {isHidden && renderHiddenHeader()}
-                      <TableCard
-                        data={[cardData]}
-                        headerFields={['status', 'type']}
-                        bodyFields={['hospitalName', 'dischargedDate', 'diagnosis']}
-                        topRightFields={['dateOfVisit']}
-                        actions={actions}
-                        onCardPress={(record) => navigation.navigate(PAGES.PATIENT_MEDICAL_DETAILS, { record })}
-                        onFieldPress={handleFieldPress}
-                        customRenderers={{
-                          hospitalName: (value, record) => renderHospitalName(record as MedicalRecord)
-                        }}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
-            </ScrollView>
+            <FlatList
+              data={filteredRecords}
+              keyExtractor={(item) => item.recordId}
+              renderItem={renderRecordItem}
+              contentContainerStyle={styles.listContent}
+            />
           )}
-        </>
+        </View>
       )}
-
-      {/* Add Record Modal */}
       <AvModal
         isModalVisible={isAddModalVisible}
         setModalVisible={setIsAddModalVisible}
@@ -479,54 +453,39 @@ const MedicalRecordsScreen = () => {
             style={styles.input}
             required
           />
-
-          {activeTab === 'IPD' && (
-            <>
-              <AvSelect
-                label="Record Type"
-                items={tabs}
-                selectedValue={recordType || ''}
-                onValueChange={(value) => setRecordType(value as 'OPD' | 'IPD' | 'VIRTUAL')}
-                placeholder="Select Record Type"
-                style={styles.input}
-                required
+          <View style={styles.datePickerContainer}>
+            <AvText style={styles.datePickerLabel}>Date of Visit</AvText>
+            <View style={styles.datePickerWrapper}>
+              <AvDatePicker
+                value={dateOfVisit}
+                onDateChange={(date) => setDateOfVisit(date)}
+                mode="date"
+                maximumDate={new Date()}
+                style={styles.datePickerInput}
+                textStyle={styles.dateText}
+                placeholder="Select Date of Visit"
               />
-              <View >
-                <AvTextInput
-                  label="Discharged Date"
-                  value={dischargedDate ? dischargedDate.toLocaleDateString() : ''}
-                  style={styles.input}
-                  editable={false}
-                  right={
-                    <AvTextInput.Icon
-                      icon="calendar"
-                      color={COLORS.BLACK}
-                      onPress={() => showDatepicker('discharged')}
-                    />
-                  }
-                />
-              </View>
-            </>
-          )}
-
-          <View >
-            <AvTextInput
-              label="Date of Visit"
-               mode='outlined'
-              value={dateOfVisit.toLocaleDateString()}
-              style={styles.input}
-              editable={false}
-              right={
-                <AvTextInput.Icon
-                  icon="calendar"
-                  color={COLORS.BLACK}
-                  onPress={() => showDatepicker('visit')}
-                />
-              }
-            />
+              <Icon name="date-range" size={24} color={COLORS.GREY} style={styles.dateIcon} />
+            </View>
           </View>
-
-          <View >
+          {activeTab === 'IPD' && (
+            <View style={styles.datePickerContainer}>
+              <AvText style={styles.datePickerLabel}>Discharged Date</AvText>
+              <View style={styles.datePickerWrapper}>
+                <AvDatePicker
+                  value={dischargedDate}
+                  onDateChange={(date) => setDischargedDate(date)}
+                  mode="date"
+                  maximumDate={new Date()}
+                  style={styles.datePickerInput}
+                  textStyle={styles.dateText}
+                  placeholder="Select Discharged Date"
+                />
+                <Icon name="date-range" size={24} color={COLORS.GREY} style={styles.dateIcon} />
+              </View>
+            </View>
+          )}
+          <View>
             <AvTextInput
               mode='outlined'
               label="Chief Complaint"
@@ -536,33 +495,27 @@ const MedicalRecordsScreen = () => {
               placeholder="Describe the main complaint"
             />
           </View>
-
           <AvSelect
             label="Status"
             items={statusOptions.filter(option => option.value !== 'All')}
             selectedValue={status === 'All' ? 'Active' : status}
-            onValueChange={(value) => setStatus(value as 'Active' | 'Discharged' | 'Pending')}
+            onValueChange={(value: any) => setStatus(value as 'Active' | 'Discharged' | 'Pending')}
             placeholder="Select Status"
             style={styles.input}
             required
           />
-
           <View style={styles.conditionsContainer}>
             <AvText style={styles.label}>Medical Conditions</AvText>
-            <MultiSelectDropdown
-              items={medicalConditionsOptions}
-              selectedIds={selectedConditions}
-              onSelect={toggleCondition}
-              placeholder="Select Conditions"
+            <AvSelect
               label=""
-            />
-            <Chips
               items={medicalConditionsOptions}
-              selectedIds={selectedConditions}
-              onRemove={(id) => toggleCondition(id)}
+              selectedValue={selectedConditions}
+              onValueChange={setSelectedConditions}
+              placeholder="Select Conditions"
+              multiselect={true}
+              style={styles.input}
             />
           </View>
-
           <View style={styles.modalActions}>
             <AvButton
               mode="outlined"
@@ -583,33 +536,6 @@ const MedicalRecordsScreen = () => {
           </View>
         </View>
       </AvModal>
-
-      {/* Date Pickers */}
-      {showDatePicker && (
-        <DateTimePicker
-          testID="dateTimePicker"
-          value={dateOfVisit}
-          mode="date"
-          is24Hour={true}
-          display="default"
-          onChange={onDateChange}
-          maximumDate={new Date()}
-        />
-      )}
-
-      {showDischargedDatePicker && (
-        <DateTimePicker
-          testID="dischargedDateTimePicker"
-          value={dischargedDate || new Date()}
-          mode="date"
-          is24Hour={true}
-          display="default"
-          onChange={onDateChange}
-          maximumDate={new Date()}
-        />
-      )}
-
-      {/* Add Record Button */}
       <AvButton
         mode="contained"
         onPress={handleAddRecord}
@@ -622,6 +548,7 @@ const MedicalRecordsScreen = () => {
   );
 };
 
+// --- Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -632,7 +559,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: wp('4%'),
-    marginBottom: hp('1%'),
+    marginBottom: hp('0.5%'),
   },
   statusFilter: {
     marginLeft: wp('2%'),
@@ -640,8 +567,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.WHITE,
     padding: wp('2%'),
   },
-  scrollContainer: {
-    padding: wp('4%'),
+  listWrapper: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: wp('4%'),
     paddingBottom: hp('12%'),
   },
   addButton: {
@@ -664,9 +594,10 @@ const styles = StyleSheet.create({
   cardContainer: {
     position: 'relative',
   },
+  cardContainerWithHeader: {},
   hiddenHeaderContainer: {
     position: 'absolute',
-    top: hp('1%'),
+    top: 0,
     right: wp('4%'),
     zIndex: 1,
     backgroundColor: COLORS.WHITE,
@@ -709,7 +640,6 @@ const styles = StyleSheet.create({
     borderRadius: normalize(8),
     marginBottom: hp('2%'),
   },
- 
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -733,7 +663,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.PRIMARY,
     borderRadius: normalize(12),
     paddingHorizontal: normalize(10),
-    paddingVertical: normalize(6),
     marginRight: normalize(6),
     marginBottom: normalize(6),
   },
@@ -761,7 +690,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: normalize(18),
-    color: COLORS.GREY_DARK,
+    color: COLORS.LIGHT_GREY,
     marginTop: hp('2%'),
     fontWeight: '600',
   },
@@ -771,6 +700,46 @@ const styles = StyleSheet.create({
     marginTop: hp('1%'),
     textAlign: 'center',
   },
+  datePickerContainer: {
+    width: '100%',
+    marginBottom: hp('2%'),
+  },
+  datePickerLabel: {
+    fontSize: normalize(14),
+    color: COLORS.BLACK,
+    marginBottom: normalize(6),
+  },
+  datePickerWrapper: {
+    position: 'relative',
+  },
+  datePickerInput: {
+    borderWidth: 1,
+    borderColor: COLORS.GREY,
+    borderRadius: 4,
+    paddingRight: 40,
+    justifyContent: 'center',
+    backgroundColor: COLORS.WHITE,
+  },
+  dateIcon: {
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    marginTop: -12,
+  },
+  dateText: {
+    fontSize: 16,
+    color: COLORS.PRIMARY_TXT,
+  },
+  placeholderText: {
+    color: COLORS.GREY,
+  },
+  errorText: {
+    color: COLORS.RED,
+    fontSize: normalize(14),
+    marginBottom: hp('2%'),
+    textAlign: 'center',
+  },
 });
 
 export default MedicalRecordsScreen;
+
