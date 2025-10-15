@@ -238,12 +238,13 @@ const MedicalRecords = () => {
         newRecord
       );
       setMedicalData((prev) => {
-        const updated = {
-          ...prev,
-          [recordType]: [...(Array.isArray(prev[recordType]) ? prev[recordType] : []), response.data]
-        };
-        return updated;
-      });
+  const updated = {
+    ...prev,
+    [recordType]: [newRecord, ...(Array.isArray(prev[recordType]) ? prev[recordType] : [])],
+  };
+  return updated;
+});
+
       updateState({ showAddModal: false });
     } catch (error) {
       console.error("Error adding record:", error);
