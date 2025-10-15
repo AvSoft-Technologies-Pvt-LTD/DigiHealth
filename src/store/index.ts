@@ -16,7 +16,6 @@ import coverageReducer from './slices/coverage';
 import medicalInfoSlice from './slices/medicalInfoSlice';
 import patientAdditionalDataReducer from './slices/patientAdditionalDataSlice';
 import pharmacyReducer from './slices/pharmacySlice';
-<<<<<<< HEAD
 import medicalConditionStatusReducer from './slices/medicalConditionStatusSlice';
 import medicalRecordStatusReducer from './slices/medicalStatusSlice';
 import ambulanceTypeReducer from './slices/ambulanceTypeSlice';
@@ -25,11 +24,7 @@ import labScanReducer from './slices/labScanSlice';
 import pharmacyBillingReducer from './slices/pharmacyBillingSlice';
 import labBillingReducer from './slices/labBillingSlice';
 import hospitalBillingReducer from './slices/hospitalBillingSlice';
-=======
-import ambulanceTypeReducer from './slices/ambulanceTypeSlice';
-import familyMemberDataReducer from './slices/familyMemberSlice';
-import patientSettingReducer from './slices/patientSettingSlice';
->>>>>>> 6c4a9a52c5df149463269873e25212680d39bbcf
+import urgencyLevelReducer from './slices/urgencyLevelSlice';
 
 export const store = configureStore({
   reducer: {
@@ -49,7 +44,6 @@ export const store = configureStore({
     ambulanceType: ambulanceTypeReducer,
     pharmacy: pharmacyReducer,
     patientAdditionalData: patientAdditionalDataReducer,
-<<<<<<< HEAD
     medicalInfo: medicalInfoSlice,
     medicalConditionStatus: medicalConditionStatusReducer,
     medicalRecordStatus: medicalRecordStatusReducer,
@@ -58,15 +52,8 @@ export const store = configureStore({
     pharmacyBilling: pharmacyBillingReducer,
     currentPatient: currentPatientReducer,
     labBilling: labBillingReducer,
-    hospitalBilling: hospitalBillingReducer,
-=======
-    familyMemberData: familyMemberDataReducer,
-     
-        
-    patientSettingData: patientSettingReducer,
-    currentPatient: currentPatientReducer,
->>>>>>> 6c4a9a52c5df149463269873e25212680d39bbcf
-  },
+     hospitalBilling: hospitalBillingReducer,
+   urgencyLevel: urgencyLevelReducer,  },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {

@@ -28,23 +28,43 @@ import {
   StatusBarHeight,
 } from '../../../../constants/platform';
 import { AvSelect } from '../../../../elements/AvSelect';
+import { MultiSelectDropdown } from '../../../../elements/MultiSelectDropdown';
 import { FlatList } from 'react-native';
 import AvDatePicker from '../../../../elements/AvDatePicker';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchMedicalConditions } from '../../../../store/thunks/patientThunks';
-import { RootState } from '../../../store';
 
-// --- Types and Interfaces ---
 interface ChipProps {
   label: string;
   onRemove: () => void;
 }
+
+const Chip: React.FC<ChipProps> = React.memo(({ label, onRemove }) => (
+  <View style={styles.chip}>
+    <AvText style={styles.chipText}>{label}</AvText>
+    <TouchableOpacity onPress={onRemove} style={styles.closeButton}>
+      <Icon name="close" size={16} color={COLORS.WHITE} />
+    </TouchableOpacity>
+  </View>
+));
 
 interface ChipsProps {
   items: { id: string; label: string }[];
   selectedIds: string[];
   onRemove: (id: string) => void;
 }
+
+const Chips: React.FC<ChipsProps> = React.memo(({ items, selectedIds, onRemove }) => (
+  <View style={styles.chipsContainer}>
+    {items
+      .filter((item) => selectedIds.includes(item.id))
+      .map((item) => (
+        <Chip
+          key={item.id}
+          label={item.label}
+          onRemove={() => onRemove(item.id)}
+        />
+      ))}
+  </View>
+));
 
 interface MedicalRecord extends DataRecord {
   recordId: string;
@@ -60,31 +80,6 @@ interface MedicalRecord extends DataRecord {
   dischargeSummary?: string;
 }
 
-// --- Components ---
-const Chip: React.FC<ChipProps> = React.memo(({ label, onRemove }) => (
-  <View style={styles.chip}>
-    <AvText style={styles.chipText}>{label}</AvText>
-    <TouchableOpacity onPress={onRemove} style={styles.closeButton}>
-      <Icon name="close" size={16} color={COLORS.WHITE} />
-    </TouchableOpacity>
-  </View>
-));
-
-const Chips: React.FC<ChipsProps> = React.memo(({ items, selectedIds, onRemove }) => (
-  <View style={styles.chipsContainer}>
-    {items
-      .filter((item: any) => selectedIds.includes(item.id))
-      .map((item: any) => (
-        <Chip
-          key={item.id}
-          label={item.label}
-          onRemove={() => onRemove(item.id)}
-        />
-      ))}
-  </View>
-));
-
-// --- Constants ---
 const filterOptions: FilterOption[] = [
   { id: 'Active', displayName: 'Active' },
   { id: 'Discharged', displayName: 'Discharged' },
@@ -105,6 +100,13 @@ const hospitalList = [
   { label: 'AIIMS', value: 'AIIMS' },
 ];
 
+const medicalConditionsOptions = [
+  { id: 'asthma', label: 'Asthma Disease' },
+  { id: 'bp', label: 'BP (Blood Pressure)' },
+  { id: 'diabetes', label: 'Diabetic Disease' },
+  { id: 'heart', label: 'Heart Disease' },
+];
+
 const statusOptions = [
   { label: 'All', value: 'All' },
   { label: 'Active', value: 'Active' },
@@ -112,9 +114,7 @@ const statusOptions = [
   { label: 'Pending', value: 'Pending' },
 ];
 
-// --- Main Component ---
-const MedicalRecordsScreen: React.FC = () => {
-  // --- State ---
+const MedicalRecordsScreen = () => {
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<Record<string, boolean>>({});
@@ -130,23 +130,7 @@ const MedicalRecordsScreen: React.FC = () => {
   const [status, setStatus] = useState<'Active' | 'Discharged' | 'Pending' | 'All'>('All');
   const navigation = useNavigation();
 
-  // --- Redux ---
-  const dispatch = useDispatch();
-  const { conditions = [], loading: conditionsLoading, error: conditionsError } = useSelector(
-    (state: RootState) => state.healthConditionData
-  );
-
-  const medicalConditionsOptions = conditions.map(condition => ({
-    id: condition.id || condition.conditionName.toLowerCase().replace(/\s+/g, '-'),
-    label: condition.conditionName,
-  }));
-
-  useEffect(() => {
-    dispatch(fetchMedicalConditions());
-  }, [dispatch]);
-
-  // --- Callbacks ---
-  const formatDate = useCallback((dateString: string | undefined): string => {
+  const formatDate = useCallback((dateString: string | undefined) => {
     if (!dateString) return 'N/A';
     try {
       return new Date(dateString).toLocaleDateString();
@@ -162,7 +146,7 @@ const MedicalRecordsScreen: React.FC = () => {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       const formattedData = Array.isArray(data)
-        ? data.map((item: any) => ({
+        ? data.map((item) => ({
             recordId: item.id?.toString() || Date.now().toString(),
             hospitalName: item.hospitalName || 'Unknown Hospital',
             type: item.type || 'OPD',
@@ -177,7 +161,7 @@ const MedicalRecordsScreen: React.FC = () => {
           }))
         : [];
       setRecords(formattedData);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Fetch error:', error);
       Alert.alert('Error', `Failed to fetch records: ${error.message}`);
     } finally {
@@ -186,22 +170,22 @@ const MedicalRecordsScreen: React.FC = () => {
   }, []);
 
   const opdRecords = useMemo(
-    () => records.filter((r: any) => r.type === 'OPD'),
+    () => records.filter((r) => r.type === 'OPD'),
     [records]
   );
 
   const ipdRecords = useMemo(
-    () => records.filter((r: any) => r.type === 'IPD'),
+    () => records.filter((r) => r.type === 'IPD'),
     [records]
   );
 
   const virtualRecords = useMemo(
-    () => records.filter((r: any) => r.type === 'VIRTUAL'),
+    () => records.filter((r) => r.type === 'VIRTUAL'),
     [records]
   );
 
   const filteredRecords = useMemo(() => {
-    let filtered: MedicalRecord[] = [];
+    let filtered = [];
     if (activeTab === 'OPD') filtered = [...opdRecords];
     if (activeTab === 'IPD') filtered = [...ipdRecords];
     if (activeTab === 'VIRTUAL') filtered = [...virtualRecords];
@@ -228,8 +212,8 @@ const MedicalRecordsScreen: React.FC = () => {
   }, [activeTab, opdRecords, ipdRecords, virtualRecords, searchValue, status, selectedFilters]);
 
   const toggleCardBlur = useCallback((recordId: string) => {
-    setRecords((prev: any) =>
-      prev.map((r: any) => (r.recordId === recordId ? { ...r, isHidden: !r.isHidden } : r))
+    setRecords((prev) =>
+      prev.map((r) => (r.recordId === recordId ? { ...r, isHidden: !r.isHidden } : r))
     );
   }, []);
 
@@ -258,6 +242,14 @@ const MedicalRecordsScreen: React.FC = () => {
     setChiefComplaint('');
     setSelectedConditions([]);
     setStatus('Active');
+  }, []);
+
+  const toggleCondition = useCallback((conditionId: string) => {
+    setSelectedConditions((prev) =>
+      prev.includes(conditionId)
+        ? prev.filter((id) => id !== conditionId)
+        : [...prev, conditionId]
+    );
   }, []);
 
   const handleSubmitRecord = useCallback(async () => {
@@ -289,7 +281,7 @@ const MedicalRecordsScreen: React.FC = () => {
       await fetchRecords();
       Alert.alert('Success', 'Record added successfully');
       closeAddModal();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Submit error:', error);
       Alert.alert('Error', `Failed to add record: ${error.message}`);
     }
@@ -344,7 +336,7 @@ const MedicalRecordsScreen: React.FC = () => {
           <Switch
             value={isHidden}
             onValueChange={() => toggleCardBlur(item.recordId)}
-            trackColor={{ false: COLORS.LIGHT_GREY, true: COLORS.GREEN }}
+            trackColor={{ false: COLORS.GREY_LIGHT, true: COLORS.GREEN }}
             thumbColor={COLORS.WHITE}
             style={styles.cardToggle}
           />
@@ -373,7 +365,7 @@ const MedicalRecordsScreen: React.FC = () => {
             onCardPress={() => navigation.navigate(PAGES.PATIENT_MEDICAL_DETAILS, { record: item, recordType: item.type })}
             onFieldPress={handleFieldPress}
             customRenderers={{
-              hospitalName: (value: any, record: DataRecord) => renderHospitalName(record as MedicalRecord)
+              hospitalName: (value, record) => renderHospitalName(record as MedicalRecord)
             }}
           />
         </View>
@@ -381,12 +373,10 @@ const MedicalRecordsScreen: React.FC = () => {
     );
   }, [toggleCardBlur, formatDate, renderHiddenHeader, navigation, handleFieldPress, renderHospitalName]);
 
-  // --- Effects ---
   useEffect(() => {
     fetchRecords();
   }, [fetchRecords]);
 
-  // --- Render ---
   return (
     <View style={styles.container}>
       <Header
@@ -410,21 +400,17 @@ const MedicalRecordsScreen: React.FC = () => {
         <AvSelect
           items={statusOptions}
           selectedValue={status}
-          onValueChange={(value: any) => setStatus(value as 'Active' | 'Discharged' | 'Pending' | 'All')}
+          onValueChange={(value) => setStatus(value as 'Active' | 'Discharged' | 'Pending' | 'All')}
           placeholder="Filter by Status"
           style={styles.statusFilter}
         />
       </View>
-      {conditionsLoading && <ActivityIndicator size="small" color={COLORS.PRIMARY} />}
-      {conditionsError && (
-        <AvText style={styles.errorText}>{conditionsError}</AvText>
-      )}
       {loading && records.length === 0 ? (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color={COLORS.PRIMARY} />
         </View>
       ) : (
-        <View style={styles.listWrapper}>
+        <>
           {filteredRecords.length === 0 ? (
             renderEmptyState()
           ) : (
@@ -432,10 +418,15 @@ const MedicalRecordsScreen: React.FC = () => {
               data={filteredRecords}
               keyExtractor={(item) => item.recordId}
               renderItem={renderRecordItem}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={styles.scrollContainer}
+              getItemLayout={(data, index) => ({
+                length: hp('20%'),
+                offset: hp('20%') * index,
+                index,
+              })}
             />
           )}
-        </View>
+        </>
       )}
       <AvModal
         isModalVisible={isAddModalVisible}
@@ -499,21 +490,24 @@ const MedicalRecordsScreen: React.FC = () => {
             label="Status"
             items={statusOptions.filter(option => option.value !== 'All')}
             selectedValue={status === 'All' ? 'Active' : status}
-            onValueChange={(value: any) => setStatus(value as 'Active' | 'Discharged' | 'Pending')}
+            onValueChange={(value) => setStatus(value as 'Active' | 'Discharged' | 'Pending')}
             placeholder="Select Status"
             style={styles.input}
             required
           />
           <View style={styles.conditionsContainer}>
             <AvText style={styles.label}>Medical Conditions</AvText>
-            <AvSelect
-              label=""
+            <MultiSelectDropdown
               items={medicalConditionsOptions}
-              selectedValue={selectedConditions}
-              onValueChange={setSelectedConditions}
+              selectedIds={selectedConditions}
+              onSelect={toggleCondition}
               placeholder="Select Conditions"
-              multiselect={true}
-              style={styles.input}
+              label=""
+            />
+            <Chips
+              items={medicalConditionsOptions}
+              selectedIds={selectedConditions}
+              onRemove={(id) => toggleCondition(id)}
             />
           </View>
           <View style={styles.modalActions}>
@@ -548,7 +542,6 @@ const MedicalRecordsScreen: React.FC = () => {
   );
 };
 
-// --- Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -559,7 +552,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: wp('4%'),
-    marginBottom: hp('0.5%'),
+    marginBottom: hp('1%'),
   },
   statusFilter: {
     marginLeft: wp('2%'),
@@ -567,11 +560,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.WHITE,
     padding: wp('2%'),
   },
-  listWrapper: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: wp('4%'),
+  scrollContainer: {
+    padding: wp('4%'),
     paddingBottom: hp('12%'),
   },
   addButton: {
@@ -594,7 +584,9 @@ const styles = StyleSheet.create({
   cardContainer: {
     position: 'relative',
   },
-  cardContainerWithHeader: {},
+  cardContainerWithHeader: {
+    paddingTop: hp('4%'),
+  },
   hiddenHeaderContainer: {
     position: 'absolute',
     top: 0,
@@ -663,6 +655,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.PRIMARY,
     borderRadius: normalize(12),
     paddingHorizontal: normalize(10),
+    
     marginRight: normalize(6),
     marginBottom: normalize(6),
   },
@@ -690,7 +683,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: normalize(18),
-    color: COLORS.LIGHT_GREY,
+    color: COLORS.GREY_DARK,
     marginTop: hp('2%'),
     fontWeight: '600',
   },
@@ -716,7 +709,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.GREY,
     borderRadius: 4,
-    paddingRight: 40,
+    
+    paddingRight: 40, // Space for the icon
     justifyContent: 'center',
     backgroundColor: COLORS.WHITE,
   },
@@ -724,7 +718,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 12,
     top: '50%',
-    marginTop: -12,
+    marginTop: -12, // Half of icon size
   },
   dateText: {
     fontSize: 16,
@@ -733,13 +727,6 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: COLORS.GREY,
   },
-  errorText: {
-    color: COLORS.RED,
-    fontSize: normalize(14),
-    marginBottom: hp('2%'),
-    textAlign: 'center',
-  },
 });
 
 export default MedicalRecordsScreen;
-

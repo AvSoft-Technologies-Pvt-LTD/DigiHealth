@@ -9,6 +9,11 @@ import {
   fetchMedicalConditionsFailure,
   
 } from '../slices/medicalConditionStatusSlice';
+import {
+  fetchUrgencyLevelsStart,
+  fetchUrgencyLevelsSuccess,
+  fetchUrgencyLevelsFailure,
+} from '../slices/urgencyLevelSlice';
 import{  fetchMedicalStatusStart,
   fetchMedicalStatusSuccess,
   fetchMedicalStatusFailure,
@@ -659,5 +664,19 @@ export const fetchMedicalStatuses = () => async (dispatch: AppDispatch) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch medical statuses';
     dispatch(fetchMedicalStatusFailure(errorMessage));
+  }
+};
+
+
+// urgancy levels api
+export const fetchUrgencyLevels = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchUrgencyLevelsStart());
+    const response = await get(API.URGENCY_LEVELS_API);
+    console.log("Urgency Levels Response:", response);
+    dispatch(fetchUrgencyLevelsSuccess(response.data || response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch urgency levels';
+    dispatch(fetchUrgencyLevelsFailure(errorMessage));
   }
 };

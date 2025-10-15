@@ -47,7 +47,8 @@ PATIENT_MEDICAL_CONDITIONS_API: `${BASE_URL}master/medicalConditions`,
   PHARMACY_BILLING_API: (patientId: string) => `${BASE_URL}medical-record-billing/pharmacy/${patientId}`,
   LAB_BILLING_API: (patientId: string) => `${BASE_URL}medical-record-billing/labs/${patientId}`,
   HOSPITAL_BILLING_API: (patientId: string) => `${BASE_URL}medical-record-billing/hospitals/${patientId}`,
-  
+    URGENCY_LEVELS_API: `${BASE_URL}master/urgency-levels`,
+
 };
 
   
