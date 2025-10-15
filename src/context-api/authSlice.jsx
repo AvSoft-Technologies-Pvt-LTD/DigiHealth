@@ -2,8 +2,21 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '../utils/axiosInstance';
 
 const BASE_URL = 'http://localhost:8080/api/auth';
+const MOCK_OTP = "123456";
 
-// ✅ Register User
+// Helper function to simulate API delay
+const mockApiDelay = () => new Promise(resolve => setTimeout(resolve, 1000));
+
+// Helper to set/remove Bearer token globally
+const setAuthToken = (token) => {
+  if (token) {
+    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete axiosInstance.defaults.headers.common['Authorization'];
+  }
+};
+
+// Register User
 export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async (formData, { rejectWithValue }) => {
@@ -12,19 +25,22 @@ export const registerUser = createAsyncThunk(
       if (!userType) {
         return rejectWithValue('User type is required');
       }
-
       const endpoint = `${BASE_URL}/${userType}/register`;
       const response = await axiosInstance.post(endpoint, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-
       return {
         ...response.data,
         userType,
         phone: formData.get('phone'),
-        email: formData.get('email')
+        email: formData.get('email'),
+        name: formData.get('name'),
+        number: formData.get('number'),
+        address: formData.get('address'),
+        gender: formData.get('gender'),
+        dob: formData.get('dob'),
+        patientId: response.data.patientId || null,
+        userId: response.data.userId || null,
       };
     } catch (error) {
       return rejectWithValue(
@@ -37,7 +53,7 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-// ✅ Login with Identifier & Password
+// Login User
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ identifier, password }, { rejectWithValue }) => {
@@ -50,16 +66,25 @@ export const loginUser = createAsyncThunk(
       const normalizedUserType = userData.role ? userData.role.toLowerCase() : null;
       const userWithToken = {
         ...userData,
-        id: userData.id || userData.userId, // ✅ Ensure id is included
         userType: normalizedUserType,
         role: userData.role,
         identifier: userData.identifier || identifier,
-        isAuthenticated: true
+        isAuthenticated: true,
+        patientId: userData.patientId,
+        userId: userData.userId,
+        permissions: userData.permissions,
+        name: userData.name,
+        number: userData.number,
+        address: userData.address,
+        gender: userData.gender,
+        dob: userData.dob,
       };
+      // Save in localStorage
       localStorage.setItem('user', JSON.stringify(userWithToken));
       localStorage.setItem('token', userWithToken.token);
       localStorage.setItem('identifier', identifier);
-      console.log('Login successful:', userWithToken);
+      // Set Bearer token globally
+      setAuthToken(userWithToken.token);
       return userWithToken;
     } catch (error) {
       return rejectWithValue(
@@ -72,86 +97,85 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-// ✅ Send OTP (for registration or login)
+// Mock Send Registration OTP
 export const sendOTP = createAsyncThunk(
   'auth/sendOTP',
   async (identifier, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual backend call when OTP service is implemented
-      console.log(`OTP would be sent to ${identifier}`);
+      await mockApiDelay();
+      console.log(`[MOCK] OTP sent to ${identifier}. Use "${MOCK_OTP}" for verification.`);
       return {
         success: true,
         message: "OTP sent successfully",
-        data: {
-          sent: true,
-          identifier: identifier,
-          otpSentAt: new Date().toISOString()
-        }
+        data: { sent: true, identifier, otpSentAt: new Date().toISOString() }
       };
-    } catch (error) {
+    } catch {
       return rejectWithValue('Failed to send OTP');
     }
   }
 );
 
-// ✅ Send Login OTP
+// Mock Send Login OTP
 export const sendLoginOTP = createAsyncThunk(
   'auth/sendLoginOTP',
   async (identifier, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual backend call when OTP service is implemented
-      console.log(`Login OTP would be sent to ${identifier}`);
+      await mockApiDelay();
+      console.log(`[MOCK] Login OTP sent to ${identifier}. Use "${MOCK_OTP}" for verification.`);
       return {
         success: true,
         message: "Login OTP sent successfully",
-        data: {
-          sent: true,
-          identifier: identifier,
-          otpSentAt: new Date().toISOString()
-        }
+        data: { sent: true, identifier, otpSentAt: new Date().toISOString() }
       };
-    } catch (error) {
+    } catch {
       return rejectWithValue('Failed to send login OTP');
     }
   }
 );
 
-// ✅ Verify OTP
+// Mock Verify OTP
 export const verifyOTP = createAsyncThunk(
   'auth/verifyOTP',
   async ({ identifier, otp, type, registrationData }, { rejectWithValue }) => {
     try {
-      // TODO: Replace with actual backend verification
-      console.warn('OTP verification is mocked. Implement actual backend call.');
-      
-      // For now, accept any OTP for testing
-      // In production, this should call your backend
+      await mockApiDelay();
+      if (otp !== MOCK_OTP) {
+        return rejectWithValue(`Invalid OTP. Please use "${MOCK_OTP}" for testing.`);
+      }
+      const isEmail = identifier.includes('@');
       const mockUser = {
-        id: Math.floor(Math.random() * 1000),
-        email: identifier.includes('@') ? identifier : registrationData?.get('email'),
-        phone: !identifier.includes('@') ? identifier : registrationData?.get('phone'),
-        firstName: registrationData?.get('name') || "User",
-        lastName: "",
-        userType: registrationData?.get('userType')?.toLowerCase() || "patient",
-        role: registrationData?.get('userType')?.toUpperCase() || "PATIENT",
-        token: `mock-token-${Date.now()}`,
-        isAuthenticated: true
+        id: `mock-${Math.random().toString(36).substring(2, 9)}`,
+        name: registrationData?.get('name') || "Test User",
+        email: isEmail ? identifier : registrationData?.get('email'),
+        phone: !isEmail ? identifier : registrationData?.get('phone'),
+        number: registrationData?.get('number') || "1234567890",
+        address: registrationData?.get('address') || "Test Address",
+        gender: registrationData?.get('gender') || "Male",
+        dob: registrationData?.get('dob') || "2000-01-01",
+        role: registrationData?.get('userType')?.toUpperCase() || "USER",
+        userType: registrationData?.get('userType')?.toLowerCase() || "user",
+        token: `mock-token-${Math.random().toString(36).substring(2, 15)}`,
+        isVerified: true,
+        isAuthenticated: true,
+        identifier,
+        patientId: registrationData?.get('userType')?.toLowerCase() === 'patient' ? 2 : null,
+        userId: 4,
+        permissions: [],
       };
-
+      // Save & Set token
       localStorage.setItem('user', JSON.stringify(mockUser));
       localStorage.setItem('token', mockUser.token);
       localStorage.setItem('identifier', identifier);
-
+      setAuthToken(mockUser.token);
+      console.log('[MOCK] OTP verification successful. User data:', mockUser);
       return mockUser;
     } catch (error) {
-      return rejectWithValue(
-        error.message || 'OTP verification failed'
-      );
+      return rejectWithValue(error.message || 'OTP verification failed');
     }
   }
 );
 
-// ✅ Get user profile
+// Get User Profile
 export const getUserProfile = createAsyncThunk(
   'auth/getUserProfile',
   async (_, { rejectWithValue }) => {
@@ -180,6 +204,15 @@ const authSlice = createSlice({
     userType: JSON.parse(localStorage.getItem('user'))?.userType || null,
     registrationData: null,
     token: localStorage.getItem('token') || null,
+    mockOTP: MOCK_OTP,
+    patientId: JSON.parse(localStorage.getItem('user'))?.patientId || null,
+    userId: JSON.parse(localStorage.getItem('user'))?.userId || null,
+    permissions: JSON.parse(localStorage.getItem('user'))?.permissions || [],
+    name: JSON.parse(localStorage.getItem('user'))?.name || null,
+    number: JSON.parse(localStorage.getItem('user'))?.number || null,
+    address: JSON.parse(localStorage.getItem('user'))?.address || null,
+    gender: JSON.parse(localStorage.getItem('user'))?.gender || null,
+    dob: JSON.parse(localStorage.getItem('user'))?.dob || null,
   },
   reducers: {
     resetAuthState: (state) => {
@@ -192,14 +225,30 @@ const authSlice = createSlice({
       state.registrationData = null;
       state.token = null;
       state.userType = null;
+      state.patientId = null;
+      state.userId = null;
+      state.permissions = [];
+      state.name = null;
+      state.number = null;
+      state.address = null;
+      state.gender = null;
+      state.dob = null;
+      setAuthToken(null);
     },
     setUser: (state, action) => {
       state.user = action.payload;
       state.isAuthenticated = true;
       state.userType = action.payload.userType;
       state.token = action.payload.token;
-      localStorage.setItem('user', JSON.stringify(action.payload));
-      localStorage.setItem('token', action.payload.token);
+      state.patientId = action.payload.patientId;
+      state.userId = action.payload.userId;
+      state.permissions = action.payload.permissions;
+      state.name = action.payload.name;
+      state.number = action.payload.number;
+      state.address = action.payload.address;
+      state.gender = action.payload.gender;
+      state.dob = action.payload.dob;
+      setAuthToken(action.payload.token);
     },
     setUserType: (state, action) => {
       state.userType = action.payload;
@@ -212,9 +261,19 @@ const authSlice = createSlice({
       state.token = null;
       state.isVerified = false;
       state.isOTPSent = false;
+      state.patientId = null;
+      state.userId = null;
+      state.permissions = [];
+      state.name = null;
+      state.number = null;
+      state.address = null;
+      state.gender = null;
+      state.dob = null;
+      // Clear all from localStorage
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('identifier');
+      setAuthToken(null);
     },
     clearError: (state) => {
       state.error = null;
@@ -222,37 +281,47 @@ const authSlice = createSlice({
     initializeAuth: (state) => {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = localStorage.getItem('token');
-      
-      console.log('initializeAuth - User from localStorage:', user);
-      
       if (user && token) {
         const normalizedUserType = user.role ? user.role.toLowerCase() : user.userType;
-        state.user = { ...user, userType: normalizedUserType, id: user.userId || user.id, };
+        state.user = { ...user, userType: normalizedUserType };
         state.token = token;
         state.userType = normalizedUserType;
         state.isAuthenticated = true;
         state.isVerified = true;
-        
-        console.log('initializeAuth - Auth restored:', {
-          userId: user.userId || user.id,
-          userType: normalizedUserType,
-          isAuthenticated: true
-        });
-      } else {
-        console.log('initializeAuth - No auth data found');
+        state.patientId = user.patientId;
+        state.userId = user.userId;
+        state.permissions = user.permissions;
+        state.name = user.name;
+        state.number = user.number;
+        state.address = user.address;
+        state.gender = user.gender;
+        state.dob = user.dob;
+        setAuthToken(token);
       }
     },
   },
   extraReducers: (builder) => {
     builder
-      // Register cases
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.registrationData = action.payload;
+        state.registrationData = {
+          name: action.payload.name,
+          email: action.payload.email,
+          phone: action.payload.phone,
+          number: action.payload.number,
+          address: action.payload.address,
+          gender: action.payload.gender,
+          dob: action.payload.dob,
+          userType: action.payload.userType,
+          patientId: action.payload.patientId,
+          userId: action.payload.userId,
+        };
+        state.patientId = action.payload.patientId;
+        state.userId = action.payload.userId;
         state.userType = action.payload.userType;
         state.isOTPSent = false;
       })
@@ -260,7 +329,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Login cases
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -272,12 +340,19 @@ const authSlice = createSlice({
         state.isVerified = true;
         state.isAuthenticated = true;
         state.token = action.payload.token;
+        state.patientId = action.payload.patientId;
+        state.userId = action.payload.userId;
+        state.permissions = action.payload.permissions;
+        state.name = action.payload.name;
+        state.number = action.payload.number;
+        state.address = action.payload.address;
+        state.gender = action.payload.gender;
+        state.dob = action.payload.dob;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // Send OTP cases
       .addCase(sendOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -285,14 +360,12 @@ const authSlice = createSlice({
       .addCase(sendOTP.fulfilled, (state) => {
         state.loading = false;
         state.isOTPSent = true;
-        state.error = null;
       })
       .addCase(sendOTP.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
         state.isOTPSent = false;
       })
-      // Send Login OTP cases
       .addCase(sendLoginOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -300,14 +373,12 @@ const authSlice = createSlice({
       .addCase(sendLoginOTP.fulfilled, (state) => {
         state.loading = false;
         state.isOTPSent = true;
-        state.error = null;
       })
       .addCase(sendLoginOTP.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
         state.isOTPSent = false;
       })
-      // Verify OTP cases
       .addCase(verifyOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -320,21 +391,31 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.registrationData = null;
         state.token = action.payload.token;
-        state.error = null;
+        state.patientId = action.payload.patientId;
+        state.userId = action.payload.userId;
+        state.permissions = action.payload.permissions;
+        state.name = action.payload.name;
+        state.number = action.payload.number;
+        state.address = action.payload.address;
+        state.gender = action.payload.gender;
+        state.dob = action.payload.dob;
       })
       .addCase(verifyOTP.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
         state.isVerified = false;
       })
-      // Get User Profile cases
       .addCase(getUserProfile.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
       .addCase(getUserProfile.fulfilled, (state, action) => {
         state.loading = false;
         state.user = { ...state.user, ...action.payload };
+        state.name = action.payload.name;
+        state.number = action.payload.number;
+        state.address = action.payload.address;
+        state.gender = action.payload.gender;
+        state.dob = action.payload.dob;
       })
       .addCase(getUserProfile.rejected, (state, action) => {
         state.loading = false;

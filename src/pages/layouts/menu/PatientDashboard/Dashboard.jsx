@@ -10,9 +10,9 @@ import Healthcard from '../../../../components/Healthcard';
 import {
   getFamilyMembersByPatient, createFamily, updateFamily, deleteFamily,
   createPersonalHealth, updatePersonalHealth, getPersonalHealthByPatientId,
-  getAdditionalDetailsByPatientId, createAdditionalDetails, updateAdditionalDetails,getAllPatients, getPatientPhoto
+  getAdditionalDetailsByPatientId, createAdditionalDetails, updateAdditionalDetails,
 } from '../../../../utils/CrudService';
-import { getHealthConditions, getCoverageTypes, getRelations, getBloodGroups,  } from '../../../../utils/masterService';
+import { getHealthConditions, getCoverageTypes, getRelations, getBloodGroups, getAllPatients, getPatientPhoto } from '../../../../utils/masterService';
 
 const initialUserData = {
   name: '', email: '', gender: '', phone: '', dob: '', bloodGroup: '', height: '', weight: '',
@@ -20,7 +20,6 @@ const initialUserData = {
   familyHistory: { diabetes: false, cancer: false, heartDisease: false, mentalHealth: false, disability: false },
   familyMembers: [], additionalDetails: { provider: '', policyNumber: '', coverageType: '', startDate: '', endDate: '', coverageAmount: '', primaryHolder: false }
 };
-
 const defaultFamilyMember = { name: '', relation: '', number: '', diseases: [], email: '' };
 
 const ProfileDetail = ({ icon: Icon, label, value, className = "" }) => (
@@ -43,7 +42,7 @@ const SECTIONS = [
 ];
 
 function Dashboard() {
-  const user = useSelector((state) => state.auth.user);
+  const { user, patientId: reduxPatientId } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const [userData, setUserData] = useState(initialUserData);
   const [activeSection, setActiveSection] = useState('basic');
@@ -58,7 +57,7 @@ function Dashboard() {
   const [editFamilyMember, setEditFamilyMember] = useState(null);
   const [profileData, setProfileData] = useState({
     name: '', firstName: '', lastName: '', gender: '', dob: '', phone: '', photo: '',
-    email: '',
+    email: '', address: '', city: '', state: '', pincode: '', emergencyContact: '', registrationDate: ''
   });
   const [loading, setLoading] = useState(true);
   const [coverageTypes, setCoverageTypes] = useState([]);
@@ -78,6 +77,7 @@ function Dashboard() {
     primaryHolder: false,
   });
 
+  // Memoized fields
   const basePersonalFields = useMemo(() => [
     { name: 'height', label: 'Height (cm)', type: 'number', colSpan: 1 },
     { name: 'weight', label: 'Weight (kg)', type: 'number', colSpan: 1 },
@@ -164,136 +164,154 @@ function Dashboard() {
     };
   };
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-      if (!user?.email && !user?.phone) return;
-      setLoading(true);
-      try {
-        const [patientsRes, coverageRes, healthConditionsRes, familyRelationsRes, bloodGroupsRes] = await Promise.all([
-          getAllPatients().catch(() => ({ data: [] })),
-          getCoverageTypes().catch(() => ({ data: [] })),
-          getHealthConditions().catch(() => ({ data: [] })),
-          getRelations().catch(() => ({ data: [] })),
-          getBloodGroups().catch(() => ({ data: [] })),
+  const fetchAllData = async () => {
+    if (!user?.email && !user?.phone && !reduxPatientId) return;
+    setLoading(true);
+    try {
+      const [patientsRes, coverageRes, healthConditionsRes, familyRelationsRes, bloodGroupsRes] = await Promise.all([
+        getAllPatients().catch(() => ({ data: [] })),
+        getCoverageTypes().catch(() => ({ data: [] })),
+        getHealthConditions().catch(() => ({ data: [] })),
+        getRelations().catch(() => ({ data: [] })),
+        getBloodGroups().catch(() => ({ data: [] })),
+      ]);
+
+      setAllPatients(patientsRes.data || []);
+      const currentPatient = patientsRes.data?.find(patient =>
+        patient.email === user.email ||
+        patient.phone === user.phone ||
+        patient.id === reduxPatientId
+      );
+      if (currentPatient) {
+        setPatientData(currentPatient);
+      }
+
+      setBloodGroups(
+        bloodGroupsRes.data?.map((item) => ({
+          label: item.bloodGroupName || 'Unknown',
+          value: item.id,
+        })) || []
+      );
+      setFamilyRelations(
+        familyRelationsRes.data?.map((item) => ({
+          label: item.relationName || 'Unknown',
+          value: item.id,
+        })) || []
+      );
+      setHealthConditions(
+        healthConditionsRes.data?.map((item) => ({
+          label: item.healthConditionName || 'Unknown',
+          value: item.id,
+        })) || []
+      );
+      setCoverageTypes(
+        coverageRes.data?.map((item) => ({
+          label: item.coverageTypeName || 'Unknown',
+          value: item.id,
+        })) || []
+      );
+
+      const patientId = currentPatient?.id || reduxPatientId;
+      if (patientId) {
+        const [familyRes, healthRes, additionalRes] = await Promise.all([
+          getFamilyMembersByPatient(patientId).catch(() => ({ data: [] })),
+          getPersonalHealthByPatientId(patientId).catch(() => ({ data: null })),
+          getAdditionalDetailsByPatientId(patientId).catch(() => ({ data: null })),
         ]);
-        setAllPatients(patientsRes.data || []);
-        const currentPatient = patientsRes.data?.find(patient =>
-          patient.email === user.email ||
-          patient.phone === user.phone ||
-          patient.id === user.id
-        );
-        if (currentPatient) {
-          setPatientData(currentPatient);
+
+        const mappedFamilyMembers = familyRes.data?.map((member) => ({
+          id: member.id,
+          name: member.memberName || 'Unknown',
+          relation: member.relationName || 'Unknown',
+          relationId: member.relationId,
+          number: member.phoneNumber || '',
+          diseases: member.healthConditions?.map((hc) => hc.healthConditionName) || [],
+          healthConditionIds: member.healthConditions?.map((hc) => hc.id) || [],
+        })) || [];
+
+        let personalHealthData = {};
+        if (healthRes.data) {
+          personalHealthData = {
+            id: healthRes.data.id,
+            height: healthRes.data.height || '',
+            weight: healthRes.data.weight || '',
+            bloodGroupId: healthRes.data.bloodGroupId,
+            bloodGroupName: healthRes.data.bloodGroupName || '',
+            surgeries: healthRes.data.surgeries || '',
+            allergies: healthRes.data.allergies || '',
+            surgeryDuration: healthRes.data.surgeryDuration || '',
+            allergyDuration: healthRes.data.allergyDuration || '',
+            isSmokerUser: healthRes.data.isSmoker || false,
+            smokingDuration: healthRes.data.yearsSmoking || '',
+            isAlcoholicUser: healthRes.data.isAlcoholic || false,
+            alcoholDuration: healthRes.data.yearsAlcoholic || '',
+            isTobaccoUser: healthRes.data.isTobacco || false,
+            tobaccoDuration: healthRes.data.yearsTobacco || '',
+          };
+          setHasPersonalHealthData(true);
         }
-        setBloodGroups(
-          bloodGroupsRes.data?.map((item) => ({
-            label: item.bloodGroupName || 'Unknown',
-            value: item.id,
-          })) || []
-        );
-        setFamilyRelations(
-          familyRelationsRes.data?.map((item) => ({
-            label: item.relationName || 'Unknown',
-            value: item.id,
-          })) || []
-        );
-        setHealthConditions(
-          healthConditionsRes.data?.map((item) => ({
-            label: item.healthConditionName || 'Unknown',
-            value: item.id,
-          })) || []
-        );
-        setCoverageTypes(
-          coverageRes.data?.map((item) => ({
-            label: item.coverageTypeName || 'Unknown',
-            value: item.id, // ✅ use numeric ID
-          })) || []
-        );
-        const patientId = currentPatient?.id || user?.id;
-        if (patientId) {
-          const [familyRes, healthRes, additionalRes] = await Promise.all([
-            getFamilyMembersByPatient(patientId).catch(() => ({ data: [] })),
-            getPersonalHealthByPatientId(patientId).catch(() => ({ data: null })),
-            getAdditionalDetailsByPatientId(patientId).catch(() => ({ data: null })),
-          ]);
-          const mappedFamilyMembers = familyRes.data?.map((member) => ({
-            id: member.id,
-            name: member.memberName || 'Unknown',
-            relation: member.relationName || 'Unknown',
-            relationId: member.relationId,
-            number: member.phoneNumber || '',
-            diseases: member.healthConditions?.map((hc) => hc.healthConditionName) || [],
-            healthConditionIds: member.healthConditions?.map((hc) => hc.id) || [],
-          })) || [];
-          let personalHealthData = {};
-          if (healthRes.data) {
-            personalHealthData = {
-              id: healthRes.data.id,
-              height: healthRes.data.height || '',
-              weight: healthRes.data.weight || '',
-              bloodGroupId: healthRes.data.bloodGroupId,
-              bloodGroupName: healthRes.data.bloodGroupName || '',
-              surgeries: healthRes.data.surgeries || '',
-              allergies: healthRes.data.allergies || '',
-              surgeryDuration: healthRes.data.surgeryDuration || '',
-              allergyDuration: healthRes.data.allergyDuration || '',
-              isSmokerUser: healthRes.data.isSmoker || false,
-              smokingDuration: healthRes.data.yearsSmoking || '',
-              isAlcoholicUser: healthRes.data.isAlcoholic || false,
-              alcoholDuration: healthRes.data.yearsAlcoholic || '',
-              isTobaccoUser: healthRes.data.isTobacco || false,
-              tobaccoDuration: healthRes.data.yearsTobacco || '',
-            };
-            setHasPersonalHealthData(true);
-          }
-          setUserData(prev => ({ ...prev, ...personalHealthData, familyMembers: mappedFamilyMembers }));
-          if (additionalRes.data) {
-            setAdditionalDetails({
-              insuranceProviderName: additionalRes.data.insuranceProviderName || '',
-              policyNum: additionalRes.data.policyNum || '',
-              coverageTypeId: additionalRes.data.coverageTypeId || '',
-              coverageAmount: additionalRes.data.coverageAmount || '',
-              policyStartDate: additionalRes.data.policyStartDate || '',
-              policyEndDate: additionalRes.data.policyEndDate || '',
-              primaryHolder: additionalRes.data.primaryHolder || false,
-            });
-          }
-          let photoUrl = null;
-          if (currentPatient?.photoPath) {
-            try {
-              const photoResponse = await getPatientPhoto(currentPatient.photoPath);
-              photoUrl = URL.createObjectURL(photoResponse.data);
-            } catch (err) {
-              console.error('Failed to fetch photo:', err);
-            }
-          }
-          const profileSource = currentPatient || user;
-          setProfileData({
-            firstName: profileSource?.firstName || '',
-            lastName: profileSource?.lastName || '',
-            dob: profileSource?.dob || '',
-            gender: profileSource?.gender || '',
-            phone: profileSource?.phone || '',
-            email: profileSource?.email || '',
-            photo: photoUrl,
+
+        setUserData(prev => ({ ...prev, ...personalHealthData, familyMembers: mappedFamilyMembers }));
+
+        if (additionalRes.data) {
+          setAdditionalDetails({
+            insuranceProviderName: additionalRes.data.insuranceProviderName || '',
+            policyNum: additionalRes.data.policyNum || '',
+            coverageTypeId: additionalRes.data.coverageTypeId || '',
+            coverageAmount: additionalRes.data.coverageAmount || '',
+            policyStartDate: additionalRes.data.policyStartDate || '',
+            policyEndDate: additionalRes.data.policyEndDate || '',
+            primaryHolder: additionalRes.data.primaryHolder || false,
           });
         }
-      } catch (err) {
-        console.error('Failed to fetch data:', err);
-        showFeedback('Failed to load data. Some features may be limited.', 'warning');
-      } finally {
-        setLoading(false);
+
+        let photoUrl = null;
+        if (currentPatient?.photoPath) {
+          try {
+            const photoResponse = await getPatientPhoto(currentPatient.photoPath);
+            photoUrl = URL.createObjectURL(photoResponse.data);
+          } catch (err) {
+            console.error('Failed to fetch photo:', err);
+          }
+        }
+
+        const profileSource = currentPatient || user;
+        setProfileData({
+          name: `${profileSource?.firstName || 'Guest'} ${profileSource?.lastName || ''}`.trim(),
+          firstName: profileSource?.firstName || '',
+          lastName: profileSource?.lastName || '',
+          dob: profileSource?.dob || '',
+          gender: profileSource?.gender || '',
+          phone: profileSource?.phone || '',
+          email: profileSource?.email || '',
+          photo: photoUrl,
+          address: profileSource?.address || '',
+          city: profileSource?.city || '',
+          state: profileSource?.state || '',
+          pincode: profileSource?.pincode || '',
+          emergencyContact: profileSource?.emergencyContact || '',
+          registrationDate: profileSource?.createdAt || profileSource?.registrationDate || ''
+        });
       }
-    };
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+      showFeedback('Failed to load data. Some features may be limited.', 'warning');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchAllData();
-  }, [user]);
+  }, [user, reduxPatientId]);
 
   const saveUserData = async (updatedData) => {
-    const patientId = patientData?.id || user?.id;
+    const patientId = patientData?.id || reduxPatientId;
     if (!patientId) return showFeedback('Please login to save data', 'error');
     if (!updatedData.height || !updatedData.weight) return showFeedback('Height and weight are required', 'error');
     const bloodGroupId = Number(updatedData.bloodGroup?.value || updatedData.bloodGroup || updatedData.bloodGroupId);
     if (!bloodGroupId || isNaN(bloodGroupId)) return showFeedback('Please select a blood group', 'error');
+
     try {
       const personalHealthData = {
         height: Number(updatedData.height) || 0,
@@ -311,6 +329,7 @@ function Dashboard() {
         yearsTobacco: updatedData.isTobaccoUser ? Number(updatedData.tobaccoDuration) || 0 : 0,
         patientId: Number(patientId),
       };
+
       let savedData;
       try {
         if (hasPersonalHealthData) {
@@ -331,6 +350,7 @@ function Dashboard() {
           showFeedback('Personal health data updated successfully');
         } else throw createErr;
       }
+
       setUserData(prev => ({
         ...prev,
         id: savedData?.id || prev.id,
@@ -349,6 +369,7 @@ function Dashboard() {
     setActiveSection(section);
     setShowModal(true);
     setModalMode(data ? 'edit' : 'add');
+
     if (section === 'personal') {
       setModalFields(
         basePersonalFields.map((field) =>
@@ -415,6 +436,7 @@ function Dashboard() {
         primaryHolder: additionalDetails.primaryHolder ? 'Yes' : 'No',
       });
     }
+
     setModalTitle(
       section === 'personal'
         ? 'Personal Health Details'
@@ -427,7 +449,7 @@ function Dashboard() {
   };
 
   const handleModalSave = async (formValues) => {
-    const patientId = patientData?.id || user?.id;
+    const patientId = patientData?.id || reduxPatientId;
     if (activeSection === 'personal') {
       const cleanedValues = { ...formValues };
       if (!formValues.isSmokerUser) cleanedValues.smokingDuration = '';
@@ -441,6 +463,7 @@ function Dashboard() {
         const found = healthConditions.find(hc => hc.label === disease || hc.value === disease);
         return found ? Number(found.value) : null;
       }).filter(id => id !== null) || [];
+
       const memberData = {
         patientId: Number(patientId),
         relationId: Number(formValues.relation),
@@ -448,6 +471,7 @@ function Dashboard() {
         phoneNumber: formValues.number || '',
         healthConditionIds,
       };
+
       try {
         if (editFamilyMember?.id) {
           await updateFamily(editFamilyMember.id, memberData);
@@ -502,7 +526,7 @@ function Dashboard() {
   };
 
   const handleModalDelete = async (formValues) => {
-    const patientId = patientData?.id || user?.id;
+    const patientId = patientData?.id || reduxPatientId;
     if (activeSection === 'family' && (formValues?.id || editFamilyMember?.id)) {
       const deleteId = formValues?.id || editFamilyMember?.id;
       try {
@@ -547,18 +571,17 @@ function Dashboard() {
   }
 
   const profileDetails = [
-  { icon: profileData.gender?.toLowerCase() === 'female' ? GiFemale : GiMale, label: 'Gender', value: profileData.gender },
-  { icon: Phone, label: 'Phone No.', value: profileData.phone },
-  { 
-    icon: Calendar, 
-    label: 'Date Of Birth', 
-    value: profileData.dob 
-      ? new Date(profileData.dob).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) 
-      : 'NA' 
-  },
-  { icon: Droplet, label: 'Blood Group', value: userData.bloodGroupName }
-];
-
+    { icon: profileData.gender?.toLowerCase() === 'female' ? GiFemale : GiMale, label: 'Gender', value: profileData.gender },
+    { icon: Phone, label: 'Phone No.', value: profileData.phone },
+    {
+      icon: Calendar,
+      label: 'Date Of Birth',
+      value: profileData.dob
+        ? new Date(profileData.dob).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+        : 'NA'
+    },
+    { icon: Droplet, label: 'Blood Group', value: userData.bloodGroupName }
+  ];
 
   const modalConfig = {
     mode: modalMode,
@@ -587,6 +610,7 @@ function Dashboard() {
           </button>
         </div>
       </div>
+
       {/* Unified Profile Card - Responsive */}
       <div className="bg-white rounded-lg shadow-sm p-2 md:p-4 mb-6">
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
@@ -631,6 +655,7 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
       {/* Section Tabs */}
       <div className="overflow-x-auto custom-scrollbar">
         <div className="flex gap-2 sm:gap-4 min-w-max">
@@ -648,6 +673,7 @@ function Dashboard() {
           ))}
         </div>
       </div>
+
       {/* Feedback Message */}
       {feedbackMessage.show && (
         <div className={`fixed top-4 right-4 z-50 p-3 sm:p-4 rounded-lg shadow-lg ${feedbackMessage.type === 'success' ? 'bg-green-100 text-green-800' :
@@ -656,6 +682,7 @@ function Dashboard() {
           {feedbackMessage.message}
         </div>
       )}
+
       {/* Modals */}
       <ReusableModal
         isOpen={showModal}
@@ -705,6 +732,7 @@ function Dashboard() {
           )
         }
       />
+
       {/* Health Card Modal */}
       {showHealthCardModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
@@ -721,6 +749,7 @@ function Dashboard() {
           </div>
         </div>
       )}
+
       <div className="mt-6 sm:mt-8">
         <DashboardOverview />
       </div>

@@ -163,6 +163,14 @@ const PatientMedicalRecordDetails = () => {
     detailsActiveTab: "medical-records",
     billingActiveTab: "pharmacy",
   });
+  // Add this constant here
+const isDoctorUploaded = Boolean(
+  selectedRecord?.isVerified ||
+  selectedRecord?.hasDischargeSummary ||
+  (selectedRecord?.createdBy && String(selectedRecord.createdBy).toLowerCase() === "doctor") ||
+  (selectedRecord?.uploadedBy && String(selectedRecord.uploadedBy).toLowerCase().includes("doctor"))
+);
+
   const [clinicalNotes, setClinicalNotes] = useState(null);
   const [prescriptionData, setPrescriptionData] = useState([]);
   const [labTestsData, setLabTestsData] = useState([]);
@@ -949,71 +957,76 @@ const PatientMedicalRecordDetails = () => {
         />
 
         {/* Vitals Summary: Responsive Grid */}
-        <div className="space-y-4 md:space-y-6">
-          {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Activity size={20} className="text-green-600" />
-              <h3 className="text-lg md:text-xl font-semibold">Vitals Summary</h3>
-            </div>
-            {/* Update Vitals Button */}
-            <button
-              onClick={() => setShowUpdateModal(true)}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm md:text-base rounded-lg shadow-sm transition duration-200 flex items-center gap-2 self-start md:self-auto"
-            >
-              <Pencil size={16} />
-              Update Vitals
-            </button>
+    <div className="space-y-4 md:space-y-6">
+  {/* Header Section */}
+  <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+    <div className="flex items-center gap-2">
+      <Activity size={20} className="text-green-600" />
+      <h3 className="text-lg md:text-xl font-semibold">Vitals Summary</h3>
+    </div>
+
+    {/* Update Vitals Button: only show when NOT doctor-uploaded */}
+    {!isDoctorUploaded && (
+      <button
+        onClick={() => setShowUpdateModal(true)}
+        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm md:text-base rounded-lg shadow-sm transition duration-200 flex items-center gap-2 self-start md:self-auto"
+        aria-label="Update vitals"
+      >
+        <Pencil size={16} />
+        Update Vitals
+      </button>
+    )}
+  </div>
+
+  {/* Vitals Grid */}
+  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 p-2">
+    {[
+      { key: "bloodPressure", icon: Heart, color: "red", label: "Blood Pressure", value: vitalsData?.bloodPressure || "--" },
+      { key: "heartRate", icon: Activity, color: "blue", label: "Heart Rate", value: vitalsData?.heartRate || "--" },
+      { key: "temperature", icon: Thermometer, color: "orange", label: "Temperature", value: vitalsData?.temperature || "--" },
+      { key: "spO2", icon: Activity, color: "emerald", label: "SpO2", value: vitalsData?.spO2 || "--" },
+      { key: "respiratoryRate", icon: Activity, color: "violet", label: "Respiratory Rate", value: vitalsData?.respiratoryRate || "--" },
+      { key: "height", icon: Activity, color: "cyan", label: "Height", value: vitalsData?.height || "--" },
+      { key: "weight", icon: Activity, color: "amber", label: "Weight", value: vitalsData?.weight || "--" },
+    ].map(({ key, icon: Icon, color, label, value }) => {
+      const colorMap = {
+        red: "red",
+        blue: "blue",
+        orange: "orange",
+        emerald: "emerald",
+        violet: "violet",
+        cyan: "cyan",
+        amber: "amber",
+      };
+      const c = colorMap[color];
+
+      // Check for warnings
+      let warning = null;
+      if (vitalsData?.warnings?.[key]) {
+        warning = vitalsData.warnings[key];
+      }
+
+      return (
+        <div
+          key={key}
+          className={`bg-${c}-50 border-l-4 border-${c}-500 p-3 rounded-lg shadow-sm flex flex-col justify-between hover:shadow-md transition relative`}
+          title={warning || ""}
+          aria-label={`${label}: ${value}${warning ? ` — ${warning}` : ""}`}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            {Icon && <Icon size={16} className={`text-${c}-500`} />}
+            <span className={`text-xs md:text-sm font-medium text-${c}-700 truncate`}>
+              {label}
+            </span>
           </div>
-
-          {/* Vitals Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 p-2">
-            {[
-              { key: "bloodPressure", icon: Heart, color: "red", label: "Blood Pressure", value: vitalsData?.bloodPressure || "--" },
-              { key: "heartRate", icon: Activity, color: "blue", label: "Heart Rate", value: vitalsData?.heartRate || "--" },
-              { key: "temperature", icon: Thermometer, color: "orange", label: "Temperature", value: vitalsData?.temperature || "--" },
-              { key: "spO2", icon: Activity, color: "emerald", label: "SpO2", value: vitalsData?.spO2 || "--" },
-              { key: "respiratoryRate", icon: Activity, color: "violet", label: "Respiratory Rate", value: vitalsData?.respiratoryRate || "--" },
-              { key: "height", icon: Activity, color: "cyan", label: "Height", value: vitalsData?.height || "--" },
-              { key: "weight", icon: Activity, color: "amber", label: "Weight", value: vitalsData?.weight || "--" },
-            ].map(({ key, icon: Icon, color, label, value }) => {
-              const colorMap = {
-                red: "red",
-                blue: "blue",
-                orange: "orange",
-                emerald: "emerald",
-                violet: "violet",
-                cyan: "cyan",
-                amber: "amber",
-              };
-              const c = colorMap[color];
-
-              // Check for warnings
-              let warning = null;
-              if (vitalsData?.warnings?.[key]) {
-                warning = vitalsData.warnings[key];
-              }
-
-              return (
-                <div
-                  key={key}
-                  className={`bg-${c}-50 border-l-4 border-${c}-500 p-3 rounded-lg shadow-sm flex flex-col justify-between hover:shadow-md transition relative`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    {Icon && <Icon size={16} className={`text-${c}-500`} />}
-                    <span className={`text-xs md:text-sm font-medium text-${c}-700 truncate`}>
-                      {label}
-                    </span>
-                  </div>
-                  <div className={`text-sm md:text-base font-semibold text-${c}-800 truncate`}>
-                    {value}
-                  </div>
-              
-                </div>
-              );
-            })}
+          <div className={`text-sm md:text-base font-semibold text-${c}-800 truncate`}>
+            {value}
           </div>
         </div>
+      );
+    })}
+  </div>
+</div>
 
         {/* Tabs: Responsive */}
         <div className="w-full border-b border-gray-200">

@@ -131,6 +131,7 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
     { header: "Speciality", accessor: "specialty" },
     { header: "Date", accessor: "date" },
     { header: "Time", accessor: "time" },
+    { header: "Consultation Type", accessor: "consultationType" },
     { header: "Status", accessor: "status", cell: (row) => getStatusBadge(row.status, row) },
   ];
   const doctorFilters = [

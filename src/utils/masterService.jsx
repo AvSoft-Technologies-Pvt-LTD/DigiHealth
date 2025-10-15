@@ -1,9 +1,22 @@
 import axiosInstance from "./axiosInstance";
 
+
+
+
+// Fetch all patients
+export const getAllPatients = () => axiosInstance.get('/auth/patient/all');
+
+// Get patient by ID (if needed)
+export const getPatientPhoto = (path) =>
+  axiosInstance.get('/auth/patient/photo', { params: { path }, responseType: 'blob',});
+export const getPatientById = (id) => axiosInstance.get(`/auth/patient/${id}`);
+
+// Update patient by ID
+export const updatePatient = (id, data) => axiosInstance.put(`/auth/patient/${id}`, data);
 /* -----------------------------
    MASTER DATA APIs (Dropdowns for all users)
 ------------------------------ */
-
+export const getSubscriptionPlans = () => axiosInstance.get('/plans');
 export const getCoverageTypes = () => axiosInstance.get('/master/coverage-type');
 export const getHealthConditions = () => axiosInstance.get('/master/healthConditions');
 export const getGenders = () => axiosInstance.get('/master/gender');
