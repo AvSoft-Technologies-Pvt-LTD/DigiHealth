@@ -27,10 +27,10 @@ import ForgotPassword from '../components/CommonComponents/form/ForgotPassword';
 import VerifyOTP from '../components/CommonComponents/form/VerifyOTP';
 import ResetPassword from '../components/CommonComponents/form/ResetPassword';
 
-import MedicalRecordDetails from './AllDashboards/PtDashboard/MedicalRecord/medicalRecordDetails'
 import PasswordResetPage from './Auth/PasswordReset/PasswordResetPage';
-import MedicalRecordsPreview from './AllDashboards/PtDashboard/MedicalRecord/secondOpinion'
-import MedicalRecordScreen from './AllDashboards/PtDashboard/MedicalRecord/ptMedicalRecord'
+import MedicalRecordsPreview from './AllDashboards/PtDashboard/MedicalRecord/SecondOpinion'
+import MedicalRecordScreen from './AllDashboards/PtDashboard/MedicalRecord/PtMedicalRecord'
+import MedicalRecordDetails from './AllDashboards/PtDashboard/MedicalRecord/MedicalRecordDetails';
 export {
   // Auth
   Login,

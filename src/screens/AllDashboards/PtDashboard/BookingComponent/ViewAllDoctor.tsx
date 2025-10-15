@@ -43,9 +43,10 @@ const ViewAllDoctor = () => {
 
   // Handle search and filter logic
   useEffect(() => {
-      // Initial data fetch
-      dispatch(fetchAllPatients());
-    }, [dispatch]);
+    // You can dispatch an action here to filter doctors based on searchValue and selectedFilters
+    // For example:
+    // dispatch(filterDoctors({ searchValue, filters: selectedFilters }));
+  }, [searchValue, selectedFilters]);
 
   const handleBookPress = (doctor: Doctor) => {
     setSelectedDoctor(doctor);

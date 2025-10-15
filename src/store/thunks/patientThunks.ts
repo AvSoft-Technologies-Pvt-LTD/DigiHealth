@@ -93,13 +93,13 @@ import {
   fetchLabScansSuccess,
   fetchLabScansFailure,
 } from "../slices/labSlice.ts";
-import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice.ts';
 import { getPatientPhotoFailure, getPatientPhotoStart, getPatientPhotoSuccess } from '../slices/patientSettingSlice.ts';
 import { fetchFamilyMemberDataFailure, fetchFamilyMemberDataStart, fetchFamilyMemberDataSuccess } from '../slices/familyMemberSlice.ts';
 
 // ====================== PATIENT THUNKS ======================
 
 // --- Patient List ---import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice';
+import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice';
 
 export const fetchAllPatients = () => async (dispatch: AppDispatch) => {
   try {
@@ -278,6 +278,39 @@ export const fetchFamilyHealthData = (patientId: string) => async (dispatch: App
 };
 
 // --- Patient Coverage Data ---
+
+  // export const fetchPatientPhoto = (photo:string) => async (dispatch: AppDispatch) => {
+  //   try {
+  //     dispatch(getPatientPhotoStart());
+  //     const response = await get(API.PATIENT_PHOTO + photo);
+  //     console.log("this is my photo",response)
+  //     dispatch(getPatientPhotoSuccess(response));
+  //   } catch (error) {
+  //     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patients photo';
+  //     dispatch(getPatientPhotoFailure(errorMessage));
+  //   }
+  // };
+
+  // export const fetchPatientPhoto = (path: string) => async (dispatch: AppDispatch) => {
+  //   try {
+  //     dispatch(getPatientPhotoStart());
+  
+  //     // Get binary data
+  //     const response = await get(API.PATIENT_PHOTO + path, {}, 'arraybuffer');
+  
+  //     // Convert binary -> base64 (React Native safe)
+  //     const base64 = arrayBufferToBase64(response);
+  //     const imageUri = `data:image/jpeg;base64,${base64}`;
+  
+  //     dispatch(getPatientPhotoSuccess(imageUri));
+  //   } catch (error) {
+  //     console.error('Error in fetchPatientPhoto:', error);
+  //     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient photo';
+  //     dispatch(getPatientPhotoFailure(errorMessage));
+  //     return Promise.reject(error);
+  //   }
+  // };
+
 
   // export const fetchPatientPhoto = (photo:string) => async (dispatch: AppDispatch) => {
   //   try {
@@ -519,6 +552,20 @@ export const fetchPrescriptions = (patientId: string) => async (dispatch: AppDis
 //   }
 // };
 
+export const getLabScans = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchLabScansStart());
+    const response = await get(API.LABS_SCANS_API);
+    const data = response?.data || response;
+    dispatch(fetchLabScansSuccess(data));
+    return data;
+  } catch (error: any) {
+    const errorMessage = error?.message || "Failed to fetch lab scans";
+    dispatch(fetchLabScansFailure(errorMessage));
+    throw error;
+  }
+};
+
 
 // Billing api medical record details in patient
 
@@ -575,25 +622,13 @@ export const fetchLabTests = () => async (dispatch: AppDispatch) => {
   }
 };
 
-export const fetchLabScans = () => async (dispatch: AppDispatch) => {
-  try {
-    dispatch(fetchLabScansStart());
-    const response = await get(API.LABS_SCANS_API);
-    const data = response?.data || response;
-    dispatch(fetchLabScansSuccess(data));
-    return data;
-  } catch (error: any) {
-    const errorMessage = error?.message || "Failed to fetch lab scans";
-    dispatch(fetchLabScansFailure(errorMessage));
-    throw error;
-  }
-};
+
 
 export const fetchAllLabData = () => async (dispatch: AppDispatch) => {
   try {
     await Promise.all([
       dispatch(fetchLabTests()),
-      dispatch(fetchLabScans()),
+      dispatch(getLabScans()),
     ]);
   } catch (error) {
     console.error("Failed to fetch all lab data:", error);

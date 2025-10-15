@@ -11,6 +11,8 @@ import {
   AmbulanceBookingView,
 
   DrBookAppointmentComponent, PasswordResetPage, ForgotPassword, VerifyOTP, ResetPassword, ViewAllDoctor, SearchAmbulanceView, PaymentPage, PaymentScreen, InvoiceDetails, InvoicePrintPreview, DoctorRegister, Home, Login, PatientDashboard, PatientRegister, PharmacyFinderView, Register, SplashScreen,MedicalRecordScreen,
+  
+  MedicalRecordsPreview,
   MedicalRecordDetails,
 } from '../screens';
 import PatientDashboardView from '../screens/AllDashboards/PtDashboard/Overview/PatientDashboardView';
@@ -23,7 +25,7 @@ import LabBookingView from '../screens/AllDashboards/PtDashboard/LabBooking/LabB
 import PaymentGateway from '../elements/AvPayment';
 import Billing from '../screens/AllDashboards/PtDashboard/Billing';
 import NotificationsScreen from '../components/CommonComponents/Notification';
-import MedicalRecordsPreview from '../screens/AllDashboards/PtDashboard/MedicalRecord/secondOpinion'
+
 import { useAppSelector } from '../store/hooks';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
