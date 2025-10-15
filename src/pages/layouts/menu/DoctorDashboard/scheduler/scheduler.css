@@ -32,7 +32,7 @@
 
 .scheduler-layout {
   display: grid;
-  grid-template-columns: 1fr 300px; /* narrower sidebar */
+  grid-template-columns: 1fr 340px;
   gap: 24px;
   height: calc(100vh - 48px);
 }
@@ -57,6 +57,7 @@
   padding-bottom: 20px;
   border-bottom: 1px solid #f1f5f9;
   position: relative;
+  z-index: 100;
 }
 
 .toolbar-left {
@@ -97,7 +98,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  z-index: 100;
+  z-index: 3000;
   max-height: 300px;
   overflow-y: auto;
   animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -236,9 +237,8 @@
   letter-spacing: 0.5px;
 }
 
-/* tightened date cell padding so pills sit closer to date number */
 .rbc-date-cell {
-  padding: 6px 8px; /* top/bottom tightened */
+  padding: 6px 8px;
   text-align: center;
   font-weight: 500;
   color: #475569;
@@ -265,7 +265,7 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* default custom event container for single events or grouped renderer */
+/* Custom event styling */
 .custom-event {
   display: flex;
   flex-direction: column;
@@ -283,12 +283,155 @@
   font-size: 13px;
 }
 
+/* Date count badge */
+.date-count-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 24px;
+  height: 24px;
+  borderRadius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  fontSize: 12px;
+  font-weight: 700;
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  padding: 0 6px;
+  z-index: 5;
+}
+
+/* Time pill for month view */
+.time-pill {
+  display: inline-block;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  white-space: nowrap;
+}
+
+.month-grouped {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Duration Options */
+.duration-options {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.duration-options h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.duration-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.duration-option-btn {
+  padding: 8px 16px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.duration-option-btn:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  transform: translateY(-1px);
+}
+
+.duration-option-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
 /* Sidebar Section */
 .sidebar-section {
   display: flex;
   flex-direction: column;
   gap: 20px;
   overflow-y: auto;
+}
+
+/* Google Meet Card */
+.google-meet-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  padding: 20px;
+}
+
+.meet-link-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #f0fdf4;
+  border: 1px solid #d1fae5;
+  border-radius: 10px;
+}
+
+.meet-link-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.meet-link {
+  color: #10b981;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meet-link:hover {
+  text-decoration: underline;
+}
+
+.copy-btn {
+  padding: 8px;
+  background: white;
+  border: 1px solid #d1fae5;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10b981;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: #10b981;
+  color: white;
+  transform: scale(1.05);
 }
 
 /* Stats & Upcoming cards */
@@ -306,11 +449,10 @@
   background: white;
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  padding: 16px;         /* reduced padding */
-  max-width: 320px;      /* keeps the card narrow */
+  padding: 16px;
+  max-width: 340px;
 }
 
-/* Card header */
 .card-header {
   display: flex;
   align-items: center;
@@ -325,7 +467,6 @@
   font-weight: 700;
 }
 
-/* Upcoming list */
 .upcoming-list {
   display: flex;
   flex-direction: column;
@@ -348,11 +489,11 @@
   opacity: 0.4;
 }
 
-/* Appointment item (compact) */
+/* Appointment item */
 .appointment-item {
   display: flex;
   gap: 12px;
-  padding: 10px;                      /* reduced padding */
+  padding: 10px;
   border-radius: 10px;
   border: 1px solid #e6edf6;
   transition: all 0.18s ease;
@@ -367,38 +508,21 @@
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 }
 
-/* Avatar / initial circle (reduced) */
-.appointment-item > div:first-child,
-.appt-date {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
+.patient-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 50%;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  padding: 6px 8px;
-  border-radius: 12px;
+  font-weight: 800;
+  color: #fff;
+  font-size: 14;
+  flex-shrink: 0;
 }
 
-.date-day {
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.date-month {
-  font-size: 11px;
-  text-transform: uppercase;
-  font-weight: 600;
-  margin-top: 2px;
-  opacity: 0.9;
-}
-
-/* Details compact */
 .appt-details {
   flex: 1;
   display: flex;
@@ -406,7 +530,6 @@
   gap: 4px;
 }
 
-/* Patient name and inline type badge (on same line) */
 .appt-patient {
   display: flex;
   align-items: center;
@@ -416,7 +539,13 @@
   font-size: 13px;
 }
 
-/* Inline small badge next to patient name */
+.patient-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inline type badge */
 .type-inline {
   display: inline-flex;
   align-items: center;
@@ -427,23 +556,21 @@
   border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  margin-left: 4px;
   border: 1px solid transparent;
 }
 
 .type-inline.physical {
-  background: #e0f2fe; /* light blue */
+  background: #e0f2fe;
   color: #1e3a8a;
   border-color: rgba(30,58,138,0.06);
 }
 
 .type-inline.virtual {
-  background: #ecfdf5; /* light green */
+  background: #ecfdf5;
   color: #065f46;
   border-color: rgba(6,95,70,0.06);
 }
 
-/* Time */
 .appt-time {
   display: flex;
   align-items: center;
@@ -452,9 +579,7 @@
   font-size: 12px;
 }
 
-/* legacy type-badge (kept for backward compatibility) */
-.appt-type { margin-top: 2px; }
-
+/* Type badge */
 .type-badge {
   display: inline-flex;
   padding: 4px 10px;
@@ -475,7 +600,7 @@
   color: #065f46;
 }
 
-/* Stat styles continued (kept layout) */
+/* Stat styles */
 .stat-item {
   text-align: center;
   padding: 18px;
@@ -515,7 +640,8 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; } to { opacity: 1; }
+  from { opacity: 0; } 
+  to { opacity: 1; }
 }
 
 /* Availability Modal */
@@ -532,7 +658,8 @@
 }
 
 @keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; }
+  from { transform: translateY(20px); opacity: 0; } 
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .modal-header {
@@ -563,7 +690,9 @@
   font-weight: 500;
 }
 
-.header-icon { color: #10b981; }
+.header-icon { 
+  color: #10b981; 
+}
 
 .close-btn {
   padding: 8px;
@@ -602,7 +731,9 @@
   font-weight: 500;
 }
 
-.stepper-item.active { color: #3b82f6; }
+.stepper-item.active { 
+  color: #3b82f6; 
+}
 
 .stepper-circle {
   width: 40px;
@@ -641,9 +772,17 @@
   padding: 28px;
 }
 
-.step-content { display: flex; flex-direction: column; gap: 24px; }
+.step-content { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 24px; 
+}
 
-.form-section { display: flex; flex-direction: column; gap: 12px; }
+.form-section { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px; 
+}
 
 .field-label {
   display: block;
@@ -654,7 +793,7 @@
   letter-spacing: 0.5px;
 }
 
-/* Days grid and buttons */
+/* Days grid */
 .days-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
@@ -677,10 +816,21 @@
   gap: 4px;
 }
 
-.day-short { font-size: 15px; font-weight: 700; }
-.day-full { font-size: 11px; opacity: 0.7; }
+.day-short { 
+  font-size: 15px; 
+  font-weight: 700; 
+}
 
-.day-btn:hover { border-color: #10b981; background: #f0fdf4; transform: translateY(-2px); }
+.day-full { 
+  font-size: 11px; 
+  opacity: 0.7; 
+}
+
+.day-btn:hover { 
+  border-color: #10b981; 
+  background: #f0fdf4; 
+  transform: translateY(-2px); 
+}
 
 .day-btn.active {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -689,8 +839,11 @@
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-.day-btn.active .day-full { opacity: 0.9; }
+.day-btn.active .day-full { 
+  opacity: 0.9; 
+}
 
+/* Time range */
 .time-range {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -705,9 +858,17 @@
   padding-bottom: 12px;
 }
 
-.time-field { display: flex; flex-direction: column; gap: 8px; }
+.time-field { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+}
 
-.time-field label { font-size: 13px; font-weight: 600; color: #64748b; }
+.time-field label { 
+  font-size: 13px; 
+  font-weight: 600; 
+  color: #64748b; 
+}
 
 .time-input-wrapper {
   display: flex;
@@ -725,7 +886,9 @@
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
-.time-input-wrapper svg { color: #94a3b8; }
+.time-input-wrapper svg { 
+  color: #94a3b8; 
+}
 
 .time-input {
   border: none;
@@ -737,7 +900,11 @@
 }
 
 /* Duration selector */
-.duration-selector { display: flex; gap: 10px; flex-wrap: wrap; }
+.duration-selector { 
+  display: flex; 
+  gap: 10px; 
+  flex-wrap: wrap; 
+}
 
 .duration-btn {
   padding: 12px 20px;
@@ -751,7 +918,11 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.duration-btn:hover { border-color: #10b981; background: #f0fdf4; transform: translateY(-1px); }
+.duration-btn:hover { 
+  border-color: #10b981; 
+  background: #f0fdf4; 
+  transform: translateY(-1px); 
+}
 
 .duration-btn.active {
   background: #10b981;
@@ -779,7 +950,11 @@
   margin-bottom: 10px;
 }
 
-.slots-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.slots-list { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 8px; 
+}
 
 .slot-chip {
   padding: 6px 12px;
@@ -791,7 +966,7 @@
   color: #475569;
 }
 
-/* Modal footer and buttons */
+/* Modal footer */
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -896,7 +1071,9 @@
   border: 1px solid #e2e8f0;
 }
 
-.detail-item.full-width { grid-column: 1 / -1; }
+.detail-item.full-width { 
+  grid-column: 1 / -1; 
+}
 
 .detail-icon {
   width: 36px;
@@ -910,7 +1087,9 @@
   flex-shrink: 0;
 }
 
-.detail-content { flex: 1; }
+.detail-content { 
+  flex: 1; 
+}
 
 .detail-content label {
   display: block;
@@ -928,7 +1107,53 @@
   color: #1e293b;
 }
 
-.color-picker-wrapper { position: relative; }
+/* Google Meet link inline */
+.meet-link-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border: 1px solid #d1fae5;
+  border-radius: 8px;
+}
+
+.meet-link-text {
+  flex: 1;
+  color: #10b981;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meet-link-text:hover {
+  text-decoration: underline;
+}
+
+.copy-icon-btn {
+  padding: 6px;
+  background: white;
+  border: 1px solid #d1fae5;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10b981;
+  transition: all 0.2s;
+}
+
+.copy-icon-btn:hover {
+  background: #10b981;
+  color: white;
+}
+
+.color-picker-wrapper { 
+  position: relative; 
+}
 
 .color-preview-btn {
   padding: 10px 18px;
@@ -1029,7 +1254,11 @@
   animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.day-appointments-list { display: flex; flex-direction: column; gap: 14px; }
+.day-appointments-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 14px; 
+}
 
 .day-appointment-card {
   display: flex;
@@ -1047,9 +1276,15 @@
   transform: translateX(4px);
 }
 
-.appointment-color-bar { width: 5px; flex-shrink: 0; }
+.appointment-color-bar { 
+  width: 5px; 
+  flex-shrink: 0; 
+}
 
-.appointment-content { padding: 16px; flex: 1; }
+.appointment-content { 
+  padding: 16px; 
+  flex: 1; 
+}
 
 .appointment-header {
   display: flex;
@@ -1075,7 +1310,10 @@
   margin-bottom: 6px;
 }
 
-.appointment-reason { font-size: 13px; color: #94a3b8; }
+.appointment-reason { 
+  font-size: 13px; 
+  color: #94a3b8; 
+}
 
 .close-modal-btn {
   padding: 12px 24px;
@@ -1088,11 +1326,24 @@
   transition: all 0.2s;
 }
 
-.close-modal-btn:hover { background: #e2e8f0; }
+.close-modal-btn:hover { 
+  background: #e2e8f0; 
+}
+
+/* Today view event card */
+.today-event-card {
+  cursor: pointer;
+}
+
+.today-event-card:hover {
+  background: #f8fafc !important;
+}
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-  .scheduler-layout { grid-template-columns: 1fr; }
+  .scheduler-layout { 
+    grid-template-columns: 1fr; 
+  }
 
   .sidebar-section {
     display: grid;
@@ -1100,14 +1351,19 @@
     gap: 20px;
   }
 
-  /* revert upcoming card width on smaller screens */
-  .upcoming-card { max-width: 100%; }
+  .upcoming-card { 
+    max-width: 100%; 
+  }
 }
 
 @media (max-width: 768px) {
-  .scheduler-container { padding: 16px; }
+  .scheduler-container { 
+    padding: 16px; 
+  }
 
-  .calendar-section { padding: 16px; }
+  .calendar-section { 
+    padding: 16px; 
+  }
 
   .scheduler-toolbar {
     flex-direction: column;
@@ -1117,9 +1373,13 @@
 
   .toolbar-left,
   .toolbar-center,
-  .toolbar-right { justify-content: center; }
+  .toolbar-right { 
+    justify-content: center; 
+  }
 
-  .month-year-selector { justify-content: center; }
+  .month-year-selector { 
+    justify-content: center; 
+  }
 
   .availability-modal,
   .appointment-detail-modal,
@@ -1128,93 +1388,46 @@
     max-height: 95vh;
   }
 
-  .days-grid { grid-template-columns: repeat(2, 1fr); }
+  .days-grid { 
+    grid-template-columns: repeat(2, 1fr); 
+  }
 
-  .time-range { grid-template-columns: 1fr; }
+  .time-range { 
+    grid-template-columns: 1fr; 
+  }
 
-  .time-separator { display: none; }
+  .time-separator { 
+    display: none; 
+  }
 
-  .detail-grid { grid-template-columns: 1fr; }
+  .detail-grid { 
+    grid-template-columns: 1fr; 
+  }
 }
 
-/* EXTRA CSS - ADD BELOW */
-
-/* Ensure month/year pickers float above everything (prevents going under controls) */
-.picker-dropdown {
-  z-index: 3000 !important; /* raised to ensure picker is above calendar controls */
-}
-
-/* Remove inner scrollbars inside react-big-calendar month grid */
+/* Month view optimizations */
 .no-inner-scroll .rbc-month-view,
 .no-inner-scroll .rbc-month-row,
 .no-inner-scroll .rbc-row-content {
   overflow: visible !important;
 }
 
-/* Ensure month cells do not introduce their own vertical scrollbars */
-.rbc-month-row, .rbc-row, .rbc-month-view {
+.rbc-month-row, 
+.rbc-row, 
+.rbc-month-view {
   -webkit-overflow-scrolling: touch;
   overflow: visible !important;
 }
 
-/* Slightly reduce the height/padding of appointment items in the sidebar (compact) */
-.appointment-item {
-  padding: 10px !important;
-  gap: 10px !important;
-  align-items: center;
-}
-
-/* Compact upcoming list type badge moved to the right visually when space allows */
-.appointment-item .appt-details {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* Make month-cell event pills smaller and compact */
-.rbc-event > div, .custom-event {
-  padding: 4px 6px !important;
-  font-size: 12px !important;
-}
-
-/* Compact month cell time pill styling hint (applies to inline classes used by JSX) */
-.rbc-day-slot .time-pill {
-  padding: 4px 8px;
-  font-size: 11px;
-  border-radius: 8px;
-}
-
-/* For keyboard accessibility: make picker options focusable outlines visible */
-.picker-option:focus {
-  outline: 3px solid rgba(59, 130, 246, 0.16);
-  outline-offset: 2px;
-}
-
-/* Ensure the Today route's calendar (day) displays compact event cards */
-.today-event-card {
-  padding: 8px !important;
-  font-size: 13px !important;
-}
-
-/* If you need to override z-index for top-level modals/pickers */
-.modal-overlay, .picker-dropdown, .Toastify__toast-container {
-  z-index: 4000 !important;
-}
-
-/* ===== ADDED: ensure month pills stay inside cells and sit close to the date ===== */
-
-/* make month rows tighter so pills appear near the date number */
 .rbc-month-view .rbc-row-content {
-  min-height: 56px; /* tightened - adjust if you need more/less space */
+  min-height: 56px;
   overflow: visible !important;
 }
 
-/* allow individual month row to be a bit tighter */
 .rbc-month-view .rbc-row {
   min-height: 60px;
 }
 
-/* ensure events in month cells are positioned relatively and near the top */
 .rbc-month-view .rbc-event {
   position: relative !important;
   transform: none !important;
@@ -1224,49 +1437,22 @@
   overflow: visible !important;
 }
 
-/* custom grouped event container behaves predictably */
-.custom-event {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  pointer-events: auto;
-}
-
-/* time-pill style used by JSX (keeps it inside the cell and small) */
-.time-pill,
-.rbc-day-slot .time-pill {
-  display: inline-block;
-  padding: 6px 8px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 700;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-  white-space: nowrap;
-}
-
-/* limit width of month-cell pills so they wrap/truncate gracefully */
 .rbc-month-view .custom-event .time-pill {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* small +N badge sits under the pill */
-.rbc-month-view .custom-event > .more-pill {
-  margin-top: 4px;
-}
-
-/* keep date numbers properly spaced from pills (reduced padding) */
 .rbc-month-view .rbc-date-cell {
   padding-top: 6px;
   padding-bottom: 6px;
 }
 
-/* small screens: slightly increase to avoid overlap */
 @media (max-width: 900px) {
-  .rbc-month-view .rbc-row-content { min-height: 70px; }
-  .rbc-month-view .rbc-row { min-height: 76px; }
+  .rbc-month-view .rbc-row-content { 
+    min-height: 70px; 
+  }
+  .rbc-month-view .rbc-row { 
+    min-height: 76px; 
+  }
 }
-
-/* ===== end added styles ===== */

@@ -1,21 +1,36 @@
-import React, { useState } from 'react';
-import { X, User, Phone, Mail, Clock, FileText, Edit2, Trash2, Palette } from 'lucide-react';
-import { format } from 'date-fns';
+import React, { useState } from "react";
+import {
+  X,
+  User,
+  Phone,
+  Mail,
+  Clock,
+  FileText,
+  Edit2,
+  Trash2,
+  Palette,
+} from "lucide-react";
+import { format } from "date-fns";
 import "./scheduler.css";
 
 const PRESET_COLORS = [
-  '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444',
-  '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+  "#3b82f6",
+  "#10b981",
+  "#8b5cf6",
+  "#f59e0b",
+  "#ef4444",
+  "#ec4899",
+  "#06b6d4",
+  "#84cc16",
+  "#f97316",
+  "#6366f1",
 ];
 
-const AppointmentDetailModal = ({
-  isOpen,
-  onClose,
-  event,
-  onUpdateColor,
-}) => {
+const AppointmentDetailModal = ({ isOpen, onClose, event, onUpdateColor }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [selectedColor, setSelectedColor] = useState(event.resource.color || '#3b82f6');
+  const [selectedColor, setSelectedColor] = useState(
+    event.resource.color || "#3b82f6"
+  );
 
   if (!isOpen) return null;
 
@@ -27,8 +42,14 @@ const AppointmentDetailModal = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="appointment-detail-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header" style={{ borderLeftColor: selectedColor }}>
+      <div
+        className="appointment-detail-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="modal-header"
+          style={{ borderLeftColor: selectedColor }}
+        >
           <div className="header-content">
             <div
               className="appointment-color-indicator"
@@ -37,7 +58,7 @@ const AppointmentDetailModal = ({
             <div>
               <h2>{event.resource.patient}</h2>
               <p className="modal-subtitle">
-                {format(event.start, 'EEEE, MMMM d, yyyy')}
+                {format(event.start, "EEEE, MMMM d, yyyy")}
               </p>
             </div>
           </div>
@@ -54,7 +75,10 @@ const AppointmentDetailModal = ({
               </div>
               <div className="detail-content">
                 <label>Time</label>
-                <p>{format(event.start, 'h:mm a')} - {format(event.end, 'h:mm a')}</p>
+                <p>
+                  {format(event.start, "h:mm a")} -{" "}
+                  {format(event.end, "h:mm a")}
+                </p>
               </div>
             </div>
 
@@ -95,7 +119,9 @@ const AppointmentDetailModal = ({
               <div className="detail-content">
                 <label>Consultation Type</label>
                 <p>
-                  <span className={`type-badge ${event.resource.type?.toLowerCase()}`}>
+                  <span
+                    className={`type-badge ${event.resource.type?.toLowerCase()}`}
+                  >
                     {event.resource.type}
                   </span>
                 </p>
@@ -128,10 +154,12 @@ const AppointmentDetailModal = ({
                   </button>
                   {showColorPicker && (
                     <div className="color-palette">
-                      {PRESET_COLORS.map(color => (
+                      {PRESET_COLORS.map((color) => (
                         <button
                           key={color}
-                          className={`color-swatch ${selectedColor === color ? 'selected' : ''}`}
+                          className={`color-swatch ${
+                            selectedColor === color ? "selected" : ""
+                          }`}
                           style={{ backgroundColor: color }}
                           onClick={() => handleColorChange(color)}
                         />

@@ -1,28 +1,43 @@
-import React, { useState } from 'react';
-import { X, Clock, Calendar, ChevronRight, ChevronLeft, Save } from 'lucide-react';
-import { toast } from 'react-toastify';
+import React, { useState } from "react";
+import {
+  X,
+  Clock,
+  Calendar,
+  ChevronRight,
+  ChevronLeft,
+  Save,
+} from "lucide-react";
+import { toast } from "react-toastify";
 import "./scheduler.css";
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 const AvailabilityModal = ({ isOpen, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedDays, setSelectedDays] = useState([]);
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('17:00');
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("17:00");
   const [duration, setDuration] = useState(30);
   const [generatedSlots, setGeneratedSlots] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const toggleDay = (day) => {
-    setSelectedDays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
   };
 
   const generateSlots = () => {
     if (selectedDays.length === 0) {
-      toast.error('Please select at least one day');
+      toast.error("Please select at least one day");
       return;
     }
 
@@ -30,7 +45,7 @@ const AvailabilityModal = ({ isOpen, onClose }) => {
     const start = new Date(`2000-01-01 ${startTime}`);
     const end = new Date(`2000-01-01 ${endTime}`);
 
-    selectedDays.forEach(day => {
+    selectedDays.forEach((day) => {
       let current = new Date(start);
       while (current < end) {
         const timeStr = current.toTimeString().substring(0, 5);
@@ -46,7 +61,7 @@ const AvailabilityModal = ({ isOpen, onClose }) => {
   const handleSave = () => {
     setLoading(true);
     setTimeout(() => {
-      toast.success('Availability saved successfully!');
+      toast.success("Availability saved successfully!");
       setLoading(false);
       onClose();
       resetForm();
@@ -56,8 +71,8 @@ const AvailabilityModal = ({ isOpen, onClose }) => {
   const resetForm = () => {
     setCurrentStep(1);
     setSelectedDays([]);
-    setStartTime('09:00');
-    setEndTime('17:00');
+    setStartTime("09:00");
+    setEndTime("17:00");
     setDuration(30);
     setGeneratedSlots([]);
   };
@@ -85,12 +100,16 @@ const AvailabilityModal = ({ isOpen, onClose }) => {
         </div>
 
         <div className="stepper">
-          <div className={`stepper-item ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
+          <div
+            className={`stepper-item ${currentStep >= 1 ? "active" : ""} ${
+              currentStep > 1 ? "completed" : ""
+            }`}
+          >
             <div className="stepper-circle">1</div>
             <span>Schedule</span>
           </div>
           <div className="stepper-line"></div>
-          <div className={`stepper-item ${currentStep >= 2 ? 'active' : ''}`}>
+          <div className={`stepper-item ${currentStep >= 2 ? "active" : ""}`}>
             <div className="stepper-circle">2</div>
             <span>Preview & Save</span>
           </div>
@@ -102,11 +121,13 @@ const AvailabilityModal = ({ isOpen, onClose }) => {
               <div className="form-section">
                 <label className="field-label">Select Working Days</label>
                 <div className="days-grid">
-                  {DAYS.map(day => (
+                  {DAYS.map((day) => (
                     <button
                       key={day}
                       onClick={() => toggleDay(day)}
-                      className={`day-btn ${selectedDays.includes(day) ? 'active' : ''}`}
+                      className={`day-btn ${
+                        selectedDays.includes(day) ? "active" : ""
+                      }`}
                     >
                       <span className="day-short">{day.substring(0, 3)}</span>
                       <span className="day-full">{day}</span>
@@ -149,16 +170,20 @@ const AvailabilityModal = ({ isOpen, onClose }) => {
           ) : (
             <div className="step-content">
               <div className="form-section">
-                <label className="field-label">Appointment Duration (minutes)</label>
+                <label className="field-label">
+                  Appointment Duration (minutes)
+                </label>
                 <div className="duration-selector">
-                  {[15, 20, 30, 45, 60].map(mins => (
+                  {[15, 20, 30, 45, 60].map((mins) => (
                     <button
                       key={mins}
                       onClick={() => {
                         setDuration(mins);
                         generateSlots();
                       }}
-                      className={`duration-btn ${duration === mins ? 'active' : ''}`}
+                      className={`duration-btn ${
+                        duration === mins ? "active" : ""
+                      }`}
                     >
                       {mins} min
                     </button>
@@ -171,20 +196,22 @@ const AvailabilityModal = ({ isOpen, onClose }) => {
                   Generated Slots Preview ({generatedSlots.length} slots)
                 </label>
                 <div className="slots-preview">
-                  {DAYS.filter(day => selectedDays.includes(day)).map(day => (
-                    <div key={day} className="day-slots">
-                      <h4>{day}</h4>
-                      <div className="slots-list">
-                        {generatedSlots
-                          .filter(slot => slot.day === day)
-                          .map((slot, idx) => (
-                            <div key={idx} className="slot-chip">
-                              {slot.time}
-                            </div>
-                          ))}
+                  {DAYS.filter((day) => selectedDays.includes(day)).map(
+                    (day) => (
+                      <div key={day} className="day-slots">
+                        <h4>{day}</h4>
+                        <div className="slots-list">
+                          {generatedSlots
+                            .filter((slot) => slot.day === day)
+                            .map((slot, idx) => (
+                              <div key={idx} className="slot-chip">
+                                {slot.time}
+                              </div>
+                            ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
             </div>
