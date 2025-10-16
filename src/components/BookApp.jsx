@@ -1,86 +1,26 @@
-//book app in components
 import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight, FaMapMarkerAlt, FaStethoscope, FaCalendarAlt, FaClock, FaUser, FaHospital } from 'react-icons/fa';
-import { getHospitalDropdown } from '../utils/masterService';
+import { getHospitalDropdown, getSpecializationsBySymptoms } from '../utils/masterService';
 import { ArrowLeft, ChevronDown } from "lucide-react";
-
-
-const symptomSpecialtyMap = {
-  fever: ["General Physician", "Pediatrics", "Pathology", "Psychiatry", "Oncology"],
-  cough: ["General Physician", "Pulmonology", "ENT", "Oncology", "Pathology"],
-  chestpain: ["Cardiology", "Pulmonology", "Gastroenterology", "General Medicine", "Orthopedics"],
-  acne: ["Dermatology", "Endocrinology", "Psychiatry", "Pathology"],
-  skinrash: ["Dermatology", "Pediatrics", "Pathology", "Oncology"],
-  headache: ["Neurology", "General Medicine", "Psychiatry", "ENT"],
-  stomachache: ["Gastroenterology", "General Medicine", "Pediatrics", "Endocrinology"],
-  toothache: ["Dentistry", "Pediatrics", "General Medicine"],
-  pregnancy: ["Gynecology", "Pediatrics", "Nephrology"],
-  anxiety: ["Psychiatry", "Endocrinology", "General Medicine"],
-  bloodinurine: ["Nephrology", "Hematology", "Urology"],
-  fatigue: ["General Medicine", "Endocrinology", "Oncology", "Psychiatry"],
-  jointpain: ["Orthopedics", "General Medicine", "Endocrinology"]
-};
-
-const stateCityMap = {
-  "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Aurangabad", "Solapur", "Amravati", "Kolhapur"],
-  "Delhi": ["New Delhi", "Delhi"],
-  "Karnataka": ["Bangalore", "Mysore", "Hubli", "Mangalore", "Belgaum", "Gulbarga", "Dharwad"],
-  "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar"],
-  "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar"],
-  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli"],
-  "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri"],
-  "Rajasthan": ["Jaipur", "Jodhpur", "Kota", "Bikaner", "Ajmer", "Udaipur"],
-  "Uttar Pradesh": ["Lucknow", "Kanpur", "Ghaziabad", "Agra", "Meerut", "Varanasi", "Allahabad", "Bareilly"],
-  "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain"],
-  "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda"],
-  "Haryana": ["Faridabad", "Gurgaon", "Panipat", "Ambala", "Yamunanagar"],
-  "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia"],
-  "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Brahmapur"],
-  "Kerala": ["Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam"],
-  "Assam": ["Guwahati", "Silchar", "Dibrugarh", "Jorhat"],
-  "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro"],
-  "Uttarakhand": ["Dehradun", "Haridwar", "Roorkee", "Haldwani"],
-  "Himachal Pradesh": ["Shimla", "Dharamshala", "Solan", "Mandi"],
-  "Jammu and Kashmir": ["Srinagar", "Jammu", "Anantnag"],
-  "Goa": ["Panaji", "Margao", "Vasco da Gama"],
-  "Tripura": ["Agartala"],
-  "Meghalaya": ["Shillong"],
-  "Manipur": ["Imphal"],
-  "Nagaland": ["Kohima", "Dimapur"],
-  "Mizoram": ["Aizawl"],
-  "Arunachal Pradesh": ["Itanagar"],
-  "Sikkim": ["Gangtok"],
-  "Andaman and Nicobar Islands": ["Port Blair"],
-  "Chandigarh": ["Chandigarh"],
-  "Dadra and Nagar Haveli": ["Silvassa"],
-  "Daman and Diu": ["Daman"],
-  "Lakshadweep": ["Kavaratti"],
-  "Puducherry": ["Puducherry"]
-};
 
 const MultiStepForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth?.user);
 
-  // Get preserved state from navigation or session storage
   const getInitialState = () => {
-    // First check if state was passed from navigation (when coming back from doctor list)
     if (location.state?.preservedFormState) {
       return location.state.preservedFormState;
     }
-    
-    // Otherwise, get from session storage or use suggested values
     const suggestedValues = {
       location: sessionStorage.getItem('suggestedLocation') || "",
       specialty: sessionStorage.getItem('suggestedSpecialty') || "",
       doctorType: sessionStorage.getItem('suggestedDoctorType') || "All",
       symptoms: sessionStorage.getItem('suggestedSymptoms') || ""
     };
-
     return {
       consultationType: sessionStorage.getItem('formState_consultationType') || "Physical",
       symptoms: sessionStorage.getItem('formState_symptoms') || suggestedValues.symptoms,
@@ -89,7 +29,7 @@ const MultiStepForm = () => {
       selectedDoctor: null,
       doctors: [],
       filteredDoctors: [],
-      states: Object.keys(stateCityMap),
+      states: [],
       selectedState: sessionStorage.getItem('formState_selectedState') || "",
       cities: [],
       location: sessionStorage.getItem('formState_location') || suggestedValues.location,
@@ -98,8 +38,8 @@ const MultiStepForm = () => {
       pincodeError: "",
       doctorType: sessionStorage.getItem('formState_doctorType') || suggestedValues.doctorType,
       hospitalName: sessionStorage.getItem('formState_hospitalName') || "",
-      hospitals: [], // New state for hospitals list
-      hospitalsLoading: false, // New state for loading status
+      hospitalsOptions: [],
+      hospitalsLoading: false,
       minPrice: sessionStorage.getItem('formState_minPrice') || "",
       maxPrice: sessionStorage.getItem('formState_maxPrice') || "",
       selectedDate: "",
@@ -119,99 +59,81 @@ const MultiStepForm = () => {
   const updateState = (updates) => {
     setState(prev => {
       const newState = { ...prev, ...updates };
-      
-      // Save important form state to session storage
       const formStateKeys = [
-        'consultationType', 'symptoms', 'specialty', 'selectedState', 
+        'consultationType', 'symptoms', 'specialty', 'selectedState',
         'location', 'pincode', 'doctorType', 'hospitalName', 'minPrice', 'maxPrice',
         'fullAddress', 'isCurrentLocation'
       ];
-      
       formStateKeys.forEach(key => {
         if (newState[key] !== undefined && newState[key] !== null) {
           sessionStorage.setItem(`formState_${key}`, newState[key].toString());
         }
       });
-      
       return newState;
     });
   };
 
-  // Function to fetch hospitals
- const fetchHospitals = async () => {
-  const collator = new Intl.Collator(undefined, { sensitivity: "base" });
-  const byLabelAsc = (a, b) => collator.compare(String(a.label || ""), String(b.label || ""));
-
-  try {
-    updateState({ hospitalsLoading: true });
-    const response = await getHospitalDropdown();
-
-    const options = (response?.data ?? [])
-      .map(h => {
-        const label = h?.name || h?.hospitalName || h?.label || "";
-        const value = h?.id ?? label; // prefer stable id
-        return { label, value };
-      })
-      .filter(o => o.label)
-      .sort(byLabelAsc);
-
-    updateState({
-      hospitalsOptions: options,     // ✅ store options for the UI
-      hospitalsLoading: false
-    });
-  } catch (error) {
-    console.error("Failed to fetch hospitals:", error);
-    updateState({
-      hospitalsOptions: [],
-      hospitalsLoading: false
-    });
-  }
-};
-
+  const fetchHospitals = async () => {
+    const collator = new Intl.Collator(undefined, { sensitivity: "base" });
+    const byLabelAsc = (a, b) => collator.compare(String(a.label || ""), String(b.label || ""));
+    try {
+      updateState({ hospitalsLoading: true });
+      const response = await getHospitalDropdown();
+      const options = (response?.data ?? [])
+        .map(h => {
+          const label = h?.name || h?.hospitalName || h?.label || "";
+          const value = h?.id ?? label;
+          return { label, value };
+        })
+        .filter(o => o.label)
+        .sort(byLabelAsc);
+      updateState({
+        hospitalsOptions: options,
+        hospitalsLoading: false
+      });
+    } catch (error) {
+      console.error("Failed to fetch hospitals:", error);
+      updateState({
+        hospitalsOptions: [],
+        hospitalsLoading: false
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch hospitals
         await fetchHospitals();
-        
         const doctorsRes = await axios.get("https://mocki.io/v1/2524ace5-ef9b-474f-a365-b5a4037ca247");
         updateState({ doctors: doctorsRes.data || [], loadingCities: false });
-        
-        // Restore cities if selectedState exists
         if (state.selectedState) {
-          const cities = stateCityMap[state.selectedState] || [];
-          updateState({ cities });
+          const response = await fetch(`https://api.postalpincode.in/state/${state.selectedState}`);
+          const data = await response.json();
+          if (data && data[0] && data[0].Status === "Success") {
+            const cities = data[0].PostOffice.map((office) => office.Name);
+            updateState({ cities });
+          }
         }
-        
         if (state.specialty && state.doctorType === "AV Swasthya") {
-          const filtered = (doctorsRes.data || []).filter(d => 
-            d.specialty === state.specialty && 
-            d.doctorType === "AV Swasthya" && 
+          const filtered = (doctorsRes.data || []).filter(d =>
+            d.specialty === state.specialty &&
+            d.doctorType === "AV Swasthya" &&
             (state.location ? d.location === state.location : true)
           );
           updateState({ filteredDoctors: filtered });
-        }
-        
-        if (state.symptoms) {
-          const val = state.symptoms.toLowerCase().replace(/\s/g, "");
-          updateState({ specialties: symptomSpecialtyMap[val] || [] });
         }
       } catch (err) {
         console.error("Failed to fetch data:", err);
         updateState({ doctors: [], filteredDoctors: [] });
       }
     };
-    
     fetchData();
   }, []);
 
   useEffect(() => {
-    // Ensure we have doctors array before filtering
     if (!state.doctors || !Array.isArray(state.doctors)) {
       return;
     }
-
     const filtered = state.doctors.filter(d =>
       d.consultationType?.toLowerCase() === state.consultationType.toLowerCase() &&
       d.specialty === state.specialty &&
@@ -238,195 +160,85 @@ const MultiStepForm = () => {
     }
   }, [state.consultationType]);
 
-  // Function to fetch location data by pincode
   const fetchLocationByPincode = async (pincode) => {
     if (!pincode || pincode.length !== 6) {
       updateState({ pincodeError: "Please enter a valid 6-digit pincode" });
       return;
     }
-
     updateState({ pincodeLoading: true, pincodeError: "" });
-
     try {
-      // Using India Post API for pincode lookup
-      const response = await axios.get(`https://api.postalpincode.in/pincode/${pincode}`);
-      
-      if (response.data && response.data[0] && response.data[0].Status === "Success") {
-        const postOfficeData = response.data[0].PostOffice[0];
-        const detectedState = postOfficeData.State;
-        const detectedDistrict = postOfficeData.District;
-        const detectedCity = postOfficeData.Name;
-        
-        // Find matching state in our stateCityMap
-        let matchedState = "";
-        let matchedCity = "";
-        
-        // First try to find exact state match
-        for (const [stateName, cities] of Object.entries(stateCityMap)) {
-          if (stateName.toLowerCase() === detectedState.toLowerCase()) {
-            matchedState = stateName;
-            
-            // Try to find matching city
-            const cityMatch = cities.find(city => 
-              city.toLowerCase().includes(detectedDistrict.toLowerCase()) ||
-              city.toLowerCase().includes(detectedCity.toLowerCase()) ||
-              detectedDistrict.toLowerCase().includes(city.toLowerCase())
-            );
-            
-            if (cityMatch) {
-              matchedCity = cityMatch;
-            } else {
-              // If no exact city match, use the first city of the state
-              matchedCity = cities[0] || "";
-            }
-            break;
-          }
-        }
-        
-      
-        if (!matchedState) {
-          for (const [stateName, cities] of Object.entries(stateCityMap)) {
-            if (stateName.toLowerCase().includes(detectedState.toLowerCase()) ||
-                detectedState.toLowerCase().includes(stateName.toLowerCase())) {
-              matchedState = stateName;
-              matchedCity = cities[0] || "";
-              break;
-            }
-          }
-        }
-        
-        if (matchedState) {
-          updateState({
-            selectedState: matchedState,
-            cities: stateCityMap[matchedState] || [],
-            location: matchedCity,
-            fullAddress: `${postOfficeData.Name}, ${postOfficeData.District}, ${postOfficeData.State} - ${pincode}`,
-            pincodeLoading: false,
-            pincodeError: "",
-            isCurrentLocation: false
-          });
-        } else {
-          updateState({
-            pincodeLoading: false,
-            pincodeError: `Location found: ${detectedCity}, ${detectedState}, but not available in our service area`
-          });
-        }
+      const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+      const data = await response.json();
+      if (data && data[0] && data[0].Status === "Success") {
+        const postOffices = data[0].PostOffice;
+        const detectedState = postOffices[0]?.State;
+        const detectedDistrict = postOffices[0]?.District;
+        const cities = postOffices.map((office) => office.Name);
+        updateState({
+          selectedState: detectedState || "",
+          cities,
+          location: cities[0] || "",
+          fullAddress: `${detectedDistrict}, ${detectedState} - ${pincode}`,
+          pincodeLoading: false,
+          pincodeError: "",
+          isCurrentLocation: false,
+        });
       } else {
         updateState({
           pincodeLoading: false,
-          pincodeError: "Invalid pincode or location not found"
+          pincodeError: "Invalid pincode or location not found",
         });
       }
     } catch (error) {
       console.error("Pincode lookup error:", error);
       updateState({
         pincodeLoading: false,
-        pincodeError: "Failed to fetch location. Please try again."
+        pincodeError: "Failed to fetch location. Please try again.",
       });
     }
   };
 
-  // Handle pincode input change
   const handlePincodeChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+    const value = e.target.value.replace(/\D/g, "");
     if (value.length <= 6) {
-      updateState({ 
+      updateState({
         pincode: value,
-        pincodeError: ""
+        pincodeError: "",
       });
-      
-      // Auto-fetch when 6 digits are entered
       if (value.length === 6) {
         fetchLocationByPincode(value);
       }
     }
   };
 
-  const handleStateChange = e => {
+  const handleStateChange = (e) => {
     const selectedState = e.target.value;
-    const cities = selectedState ? stateCityMap[selectedState] || [] : [];
     updateState({
       selectedState,
-      cities,
+      cities: [],
       location: "",
       pincode: "",
       pincodeError: "",
-      isCurrentLocation: false
+      isCurrentLocation: false,
     });
   };
 
-  const handleLocationChange = e => {
-    if (e.target.value === "current-location") {
-      if (!navigator.geolocation) return alert("Geolocation not supported");
-      updateState({ isCurrentLocation: true });
-      navigator.geolocation.getCurrentPosition(async position => {
-        try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`);
-          const data = await response.json();
-          const detectedCity = data.address?.city || data.address?.town || data.address?.village || "";
-          const detectedState = data.address?.state || "";
-          let matchedState = "";
-          for (const [stateName, cities] of Object.entries(stateCityMap)) {
-            if (cities.some(city => city.toLowerCase().includes(detectedCity.toLowerCase()))) {
-              matchedState = stateName;
-              break;
-            }
-          }
-          if (!matchedState && detectedState) {
-            for (const stateName of Object.keys(stateCityMap)) {
-              if (stateName.toLowerCase().includes(detectedState.toLowerCase()) || detectedState.toLowerCase().includes(stateName.toLowerCase())) {
-                matchedState = stateName;
-                break;
-              }
-            }
-          }
-          updateState({
-            selectedState: matchedState,
-            cities: matchedState ? stateCityMap[matchedState] : [],
-            location: detectedCity,
-            fullAddress: data.display_name || "",
-            states: matchedState ? [matchedState] : Object.keys(stateCityMap),
-            pincode: "",
-            pincodeError: "",
-            isCurrentLocation: true
-          });
-        } catch (error) {
-          console.error("Location error:", error);
-          alert("Failed to fetch location");
-          updateState({ isCurrentLocation: false });
-        }
-      }, error => {
-        console.error("Geolocation error:", error);
-        alert("Failed to get your location");
-        updateState({ isCurrentLocation: false });
-      });
-    } else {
-      updateState({
-        location: e.target.value,
-        fullAddress: "",
-        pincode: "",
-        pincodeError: "",
-        isCurrentLocation: false
-      });
-    }
-  };
-
-  const handleManualStateChange = e => {
-    if (!state.isCurrentLocation) {
-      updateState({ states: Object.keys(stateCityMap) });
-    }
-    handleStateChange(e);
+  const handleLocationChange = (e) => {
+    updateState({
+      location: e.target.value,
+      fullAddress: "",
+      pincode: "",
+      pincodeError: "",
+      isCurrentLocation: false,
+    });
   };
 
   const scrollRef = useRef(null);
   const [currentGroup, setCurrentGroup] = useState(0);
-
   const cardWidth = 300;
   const visibleCards = 3;
-  
-  // Safe calculation with null check
-  const totalGroups = state.filteredDoctors && Array.isArray(state.filteredDoctors) 
-    ? Math.ceil(state.filteredDoctors.length / visibleCards) 
+  const totalGroups = state.filteredDoctors && Array.isArray(state.filteredDoctors)
+    ? Math.ceil(state.filteredDoctors.length / visibleCards)
     : 0;
 
   const scrollToGroup = groupIndex => {
@@ -461,13 +273,25 @@ const MultiStepForm = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSymptomsChange = e => {
-    const val = e.target.value.toLowerCase().replace(/\s/g, "");
+  const handleSymptomsChange = async (e) => {
+    const val = e.target.value;
     updateState({
-      symptoms: e.target.value,
-      specialties: symptomSpecialtyMap[val] || [],
+      symptoms: val,
+      specialties: [],
       specialty: ""
     });
+    if (val.trim()) {
+      try {
+        const response = await getSpecializationsBySymptoms({ q: val });
+        const specialties = Array.isArray(response.data)
+          ? response.data.map(item => item.name || item.label || item)
+          : [];
+        updateState({ specialties });
+      } catch (error) {
+        console.error("Failed to fetch specializations:", error);
+        updateState({ specialties: [] });
+      }
+    }
   };
 
   const handlePayment = async () => {
@@ -492,39 +316,30 @@ const MultiStepForm = () => {
         message: `New appointment with ${user?.firstName || "a patient"} on ${state.selectedDate} at ${state.selectedTime}. Symptoms: ${state.symptoms || "None"}. ${state.consultationType === "Virtual" ? "Virtual consultation" : `Location: ${state.location || "Not specified"}`}.`
       }
     };
-    
+
     updateState({
       isLoading: true,
       showBookingModal: false,
       showConfirmationModal: true
     });
-    
+
     try {
-      // First, try to book the appointment
       const bookingResponse = await axios.post("https://67e3e1e42ae442db76d2035d.mockapi.io/register/book", payload);
-      
-      // If booking is successful, try to send notification (but don't fail if this fails)
       try {
         await axios.post("https://67e631656530dbd3110f0322.mockapi.io/drnotifiy", payload.notification);
       } catch (notificationError) {
         console.warn("Notification failed but booking was successful:", notificationError);
-        // Don't throw error here - booking was successful
       }
-      
-      // If we reach here, booking was successful
       console.log("Booking successful:", bookingResponse.data);
-      
       setTimeout(() => {
-        // Clear form state from session storage after successful booking
         const formStateKeys = [
-          'consultationType', 'symptoms', 'specialty', 'selectedState', 
+          'consultationType', 'symptoms', 'specialty', 'selectedState',
           'location', 'pincode', 'doctorType', 'hospitalName', 'minPrice', 'maxPrice',
           'fullAddress', 'isCurrentLocation'
         ];
         formStateKeys.forEach(key => {
           sessionStorage.removeItem(`formState_${key}`);
         });
-        
         updateState({
           showConfirmationModal: false,
           selectedState: "",
@@ -545,43 +360,31 @@ const MultiStepForm = () => {
         });
         navigate("/patientdashboard/app");
       }, 2000);
-      
     } catch (error) {
       console.error("Booking failed:", error);
-      
-      // Close the confirmation modal and show error
-      updateState({ 
+      updateState({
         showConfirmationModal: false,
-        isLoading: false 
+        isLoading: false
       });
-      
-      // Show more specific error message
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
+      const errorMessage = error.response?.data?.message ||
+                          error.message ||
                           "Booking failed. Please check your internet connection and try again.";
-      
       alert(`Booking Failed: ${errorMessage}`);
-      
-      // Reopen the booking modal so user can try again
       updateState({ showBookingModal: true });
     }
   };
 
-  // Updated function to get times for selected date
   const getTimesForDate = (date) => {
     if (!state.selectedDoctor?.availability || !date) return [];
-    
     const availabilitySlot = state.selectedDoctor.availability.find(slot => slot.date === date);
     return availabilitySlot ? availabilitySlot.times : [];
   };
 
-  // Function to get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   };
 
-  // Function to handle navigation to doctor list with preserved state
   const handleViewAllDoctors = () => {
     const currentFormState = {
       consultationType: state.consultationType,
@@ -601,7 +404,6 @@ const MultiStepForm = () => {
       doctors: state.doctors,
       filteredDoctors: state.filteredDoctors || []
     };
-
     navigate('/patientdashboard/alldoctors', {
       state: {
         filteredDoctors: state.filteredDoctors || [],
@@ -610,37 +412,24 @@ const MultiStepForm = () => {
     });
   };
 
-  // Safe array access with default empty array
   const safeFilteredDoctors = state.filteredDoctors || [];
   const safeSpecialties = state.specialties || [];
 
   return (
-    <div className="min-h-screen  px-5">
-  <div className="w-full">
-
-{/* Back Button */}
-{/* Back Button */}
-<button 
-  onClick={() => navigate("/patientdashboard/app")}
-  className="mt-4 flex items-center gap-1.5 md:gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600 text-xs md:text-sm"
->
-  <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-  <span className="font-medium">Back to Appointments</span>
-</button>
-
-
-        {/* Compact Header */}
-        <div className="text-center mb-6">
-          
-         
-        </div>
-
-        {/* Main Form Container */}
+    <div className="min-h-screen px-5">
+      <div className="w-full">
+        <button
+          onClick={() => navigate("/patientdashboard/app")}
+          className="mt-4 flex items-center gap-1.5 md:gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600 text-xs md:text-sm"
+        >
+          <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+          <span className="font-medium">Back to Appointments</span>
+        </button>
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6 space-y-6">
           <div className="space-y-4">
-             <h3 className="text-xl md:text-3xl text-center font-bold text-slate-800 mb-2">
-            Book Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">Appointment</span>
-          </h3>
+            <h3 className="text-xl md:text-3xl text-center font-bold text-slate-800 mb-2">
+              Book Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">Appointment</span>
+            </h3>
             <p className="text-sm font-semibold text-slate-800 flex items-center gap-2">
               <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
               Consultation Type
@@ -661,10 +450,8 @@ const MultiStepForm = () => {
               ))}
             </div>
           </div>
-
           {state.consultationType === "Physical" && (
             <div className="space-y-4">
-              {/* Pincode Input */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                   <FaMapMarkerAlt className="text-emerald-500 text-xs" />
@@ -703,15 +490,12 @@ const MultiStepForm = () => {
                   </p>
                 )}
               </div>
-
               <div className="text-center text-xs text-slate-500 flex items-center justify-center gap-2">
                 <div className="h-px bg-slate-200 flex-1"></div>
                 <span>OR</span>
                 <div className="h-px bg-slate-200 flex-1"></div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* State Dropdown */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                     <FaMapMarkerAlt className="text-emerald-500 text-xs" />
@@ -729,11 +513,11 @@ const MultiStepForm = () => {
                   </label>
                   <select
                     value={state.selectedState}
-                    onChange={handleManualStateChange}
-                    className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
-                    disabled={state.isCurrentLocation || state.pincodeLoading}
+                    onChange={handleStateChange}
+                    disabled={!!state.pincode || state.isCurrentLocation}
+                    className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
                   >
-                    <option value="">Select State</option>
+                    <option value="">{state.selectedState}</option>
                     {Array.isArray(state.states) &&
                       state.states.map((stateName) => (
                         <option key={stateName} value={stateName}>
@@ -741,9 +525,15 @@ const MultiStepForm = () => {
                         </option>
                       ))}
                   </select>
+                  {state.pincode && state.selectedState && !state.isCurrentLocation && (
+                    <p className="text-xs text-emerald-600 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      State: {state.selectedState}
+                    </p>
+                  )}
                 </div>
-
-                {/* City Dropdown */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                     <FaMapMarkerAlt className="text-emerald-500 text-xs" />
@@ -774,8 +564,6 @@ const MultiStepForm = () => {
                         </option>
                       ))}
                   </select>
-
-                  {/* Selected City Info */}
                   {state.location && state.location !== "current-location" && (
                     <p className="text-xs text-emerald-600 flex items-center gap-1">
                       <FaMapMarkerAlt className="text-xs" />
@@ -787,7 +575,6 @@ const MultiStepForm = () => {
               </div>
             </div>
           )}
-
           {state.consultationType === "Virtual" && (
             <div className="bg-gradient-to-r from-green-50 to-indigo-50 border border-green-200 rounded-xl p-4">
               <div className="flex items-center gap-3">
@@ -803,188 +590,162 @@ const MultiStepForm = () => {
               </div>
             </div>
           )}
-<div className="flex flex-col md:flex-row gap-4 w-full">
-  {state.consultationType === "Physical" && (
-    <div className="space-y-2 w-full md:w-1/2">
-      <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-        <FaHospital className="text-emerald-500 text-xs" />
-        Hospital (Optional)
-        {state.hospitalsLoading && (
-          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-500"></div>
-        )}
-      </label>
-
-      {/* === Searchable dropdown (select replacement) === */}
-      <div className="relative">
-        {(() => {
-          const normalizeText = (s) =>
-            String(s ?? "")
-              .normalize("NFKD")
-              .replace(/\p{Diacritic}/gu, "")
-              .replace(/[‐-–—]/g, "-")
-              .replace(/\s+/g, " ")
-              .trim()
-              .toLowerCase();
-
-          const openKey = "hospitalDropdownOpen";
-          const searchKey = "hospitalDropdownSearch";
-
-          const open = !!state[openKey];
-          const searchVal = state[searchKey] || "";
-          const normSearch = normalizeText(searchVal);
-
-          const opts = Array.isArray(state.hospitalsOptions) ? state.hospitalsOptions : [];
-
-          const filtered = opts.filter(o =>
-            normalizeText(o.label).includes(normSearch)
-          );
-
-          // derive button label from selected name (fallback to placeholder)
-          const buttonLabel = state.hospitalName ? state.hospitalName : "Select Hospital (Optional)";
-
-          return (
-            <>
-              <button
-                type="button"
-                disabled={state.hospitalsLoading}
-                onClick={() =>
-                  updateState({
-                    [openKey]: !open,
-                    [searchKey]: ""
-                  })
-                }
-                className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white disabled:bg-slate-100 disabled:cursor-not-allowed flex justify-between items-center"
-              >
-                <span className="truncate">{buttonLabel}</span>
-                <ChevronDown className="w-4 h-4 text-slate-500" />
-              </button>
-
-              {open && (
-                <div className="absolute z-[1000] mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white shadow border border-slate-200">
-                  <input
-                    type="text"
-                    placeholder="Search hospitals..."
-                    value={searchVal}
-                    onChange={(e) => updateState({ [searchKey]: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border-b border-slate-100 outline-none"
-                  />
-
-                  {filtered.length === 0 && (
-                    <div className="px-4 py-2 text-sm text-slate-500">No results</div>
+          <div className="flex flex-col md:flex-row gap-4 w-full">
+            {state.consultationType === "Physical" && (
+              <div className="space-y-2 w-full md:w-1/2">
+                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                  <FaHospital className="text-emerald-500 text-xs" />
+                  Hospital (Optional)
+                  {state.hospitalsLoading && (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-500"></div>
                   )}
-
-                  {filtered.map(opt => (
-                    <div
-                      key={String(opt.value)}
-                      onClick={() => {
-                        // save both id and label
-                        updateState({
-                          hospitalId: opt.value,
-                          hospitalName: opt.label,
-                          [openKey]: false
-                        });
-                      }}
-                      className="px-4 py-2 hover:bg-slate-50 cursor-pointer text-sm"
-                    >
-                      {opt.label}
-                    </div>
-                  ))}
+                </label>
+                <div className="relative">
+                  {(() => {
+                    const normalizeText = (s) =>
+                      String(s ?? "")
+                        .normalize("NFKD")
+                        .replace(/\p{Diacritic}/gu, "")
+                        .replace(/[‐-–—]/g, "-")
+                        .replace(/\s+/g, " ")
+                        .trim()
+                        .toLowerCase();
+                    const openKey = "hospitalDropdownOpen";
+                    const searchKey = "hospitalDropdownSearch";
+                    const open = !!state[openKey];
+                    const searchVal = state[searchKey] || "";
+                    const normSearch = normalizeText(searchVal);
+                    const opts = Array.isArray(state.hospitalsOptions) ? state.hospitalsOptions : [];
+                    const filtered = opts.filter(o =>
+                      normalizeText(o.label).includes(normSearch)
+                    );
+                    const buttonLabel = state.hospitalName ? state.hospitalName : "Select Hospital (Optional)";
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          disabled={state.hospitalsLoading}
+                          onClick={() =>
+                            updateState({
+                              [openKey]: !open,
+                              [searchKey]: ""
+                            })
+                          }
+                          className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white disabled:bg-slate-100 disabled:cursor-not-allowed flex justify-between items-center"
+                        >
+                          <span className="truncate">{buttonLabel}</span>
+                          <ChevronDown className="w-4 h-4 text-slate-500" />
+                        </button>
+                        {open && (
+                          <div className="absolute z-[1000] mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white shadow border border-slate-200">
+                            <input
+                              type="text"
+                              placeholder="Search hospitals..."
+                              value={searchVal}
+                              onChange={(e) => updateState({ [searchKey]: e.target.value })}
+                              className="w-full px-3 py-2 text-sm border-b border-slate-100 outline-none"
+                            />
+                            {filtered.length === 0 && (
+                              <div className="px-4 py-2 text-sm text-slate-500">No results</div>
+                            )}
+                            {filtered.map(opt => (
+                              <div
+                                key={String(opt.value)}
+                                onClick={() => {
+                                  updateState({
+                                    hospitalId: opt.value,
+                                    hospitalName: opt.label,
+                                    [openKey]: false
+                                  });
+                                }}
+                                className="px-4 py-2 hover:bg-slate-50 cursor-pointer text-sm"
+                              >
+                                {opt.label}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
-              )}
-            </>
-          );
-        })()}
-      </div>
-
-      {(!state.hospitalsOptions || state.hospitalsOptions.length === 0) &&
-        !state.hospitalsLoading && (
-          <p className="text-xs text-slate-500">No hospitals available</p>
-      )}
-    </div>
-  )}
-
-  <div className={`space-y-2 w-full ${state.consultationType === "Physical" ? "md:w-1/2" : ""}`}>
-    <label className="text-sm font-medium text-slate-700">Symptoms</label>
-    <input
-      type="text"
-      value={state.symptoms}
-      onChange={handleSymptomsChange}
-      placeholder="Describe your symptoms"
-      className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
-    />
-  </div>
-</div>
-
-
-       {safeSpecialties.length > 0 && (
-  <div className="space-y-3">
-    <h3 className="text-sm font-medium text-slate-700">Suggested Specialties</h3>
-    <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2">
-      {safeSpecialties.map((spec) => (
-        <button
-          key={spec}
-          onClick={() => updateState({ specialty: spec })}
-          className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
-            state.specialty === spec
-              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
-              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-          }`}
-        >
-          {spec}
-        </button>
-      ))}
-    </div>
-  </div>
-)}
-
-         <div className="space-y-4">
-  {/* Doctor Panel */}
-  <h3 className="text-base font-medium text-slate-700">Doctor Panel</h3>
-  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-    {["All", "Our Medical Expert", "Hospital Affiliated", "Consultant Doctor"].map((type) => (
-      <button
-        key={type}
-        onClick={() => updateState({ doctorType: type })}
-        className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
-          state.doctorType === type
-            ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
-            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-        }`}
-      >
-        {type}
-      </button>
-    ))}
-  </div>
-
-  {/* Fee Filters */}
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    {/* Min Fees */}
-    <div className="space-y-2 w-full">
-      <label className="text-sm font-medium text-slate-700">Min Fees (₹)</label>
-      <input
-        type="number"
-        value={state.minPrice}
-        onChange={(e) => updateState({ minPrice: e.target.value })}
-        placeholder="Minimum price"
-        className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
-      />
-    </div>
-
-    {/* Max Fees */}
-    <div className="space-y-2 w-full">
-      <label className="text-sm font-medium text-slate-700">Max Fees (₹)</label>
-      <input
-        type="number"
-        value={state.maxPrice}
-        onChange={(e) => updateState({ maxPrice: e.target.value })}
-        placeholder="Maximum price"
-        className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
-      />
-    </div>
-  </div>
-</div>
-
-
+                {(!state.hospitalsOptions || state.hospitalsOptions.length === 0) &&
+                  !state.hospitalsLoading && (
+                    <p className="text-xs text-slate-500">No hospitals available</p>
+                  )}
+              </div>
+            )}
+            <div className={`space-y-2 w-full ${state.consultationType === "Physical" ? "md:w-1/2" : ""}`}>
+              <label className="text-sm font-medium text-slate-700">Symptoms</label>
+              <input
+                type="text"
+                value={state.symptoms}
+                onChange={handleSymptomsChange}
+                placeholder="Describe your symptoms"
+                className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
+              />
+            </div>
+          </div>
+          {safeSpecialties.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-slate-700">Suggested Specialties</h3>
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2">
+                {safeSpecialties.map((spec) => (
+                  <button
+                    key={spec}
+                    onClick={() => updateState({ specialty: spec })}
+                    className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+                      state.specialty === spec
+                        ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    {spec}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="space-y-4">
+            <h3 className="text-base font-medium text-slate-700">Doctor Panel</h3>
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+              {["All", "Our Medical Expert", "Hospital Affiliated", "Consultant Doctor"].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => updateState({ doctorType: type })}
+                  className={`w-full sm:w-auto px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+                    state.doctorType === type
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2 w-full">
+                <label className="text-sm font-medium text-slate-700">Min Fees (₹)</label>
+                <input
+                  type="number"
+                  value={state.minPrice}
+                  onChange={(e) => updateState({ minPrice: e.target.value })}
+                  placeholder="Minimum price"
+                  className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
+                />
+              </div>
+              <div className="space-y-2 w-full">
+                <label className="text-sm font-medium text-slate-700">Max Fees (₹)</label>
+                <input
+                  type="number"
+                  value={state.maxPrice}
+                  onChange={(e) => updateState({ maxPrice: e.target.value })}
+                  placeholder="Maximum price"
+                  className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 text-sm bg-white"
+                />
+              </div>
+            </div>
+          </div>
           <div className="space-y-4">
             {safeFilteredDoctors.length > 0 ? (
               <div className="space-y-4">
@@ -1069,8 +830,6 @@ const MultiStepForm = () => {
           </div>
         </div>
       </div>
-
-      {/* Updated Booking Modal with Date Input */}
       {state.showBookingModal && state.selectedDoctor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl relative animate-slide-up">
@@ -1114,7 +873,6 @@ const MultiStepForm = () => {
               </div>
             </div>
             <div className="space-y-4">
-              {/* Date Input Field */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                   <FaCalendarAlt className="text-emerald-500 text-xs" />
@@ -1128,8 +886,6 @@ const MultiStepForm = () => {
                   onChange={(e) => updateState({ selectedDate: e.target.value, selectedTime: '' })}
                 />
               </div>
-
-              {/* Time Slots Section */}
               {state.selectedDate && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
@@ -1141,11 +897,10 @@ const MultiStepForm = () => {
                       </span>
                     )}
                   </label>
-                  
                   {getTimesForDate(state.selectedDate).length > 0 ? (
                     <div className="grid grid-cols-3 gap-2">
                       {getTimesForDate(state.selectedDate).map(time => {
-                        const isBooked = state.selectedDoctor.bookedSlots?.some(slot => 
+                        const isBooked = state.selectedDoctor.bookedSlots?.some(slot =>
                           slot.date === state.selectedDate && slot.time === time
                         );
                         const isSelected = state.selectedTime === time;
@@ -1179,8 +934,6 @@ const MultiStepForm = () => {
                   )}
                 </div>
               )}
-
-              {/* Booking Button */}
               <button
                 onClick={handlePayment}
                 disabled={!state.selectedDate || !state.selectedTime || state.isLoading || getTimesForDate(state.selectedDate).length === 0}
@@ -1190,14 +943,14 @@ const MultiStepForm = () => {
                     : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg transform hover:scale-105"
                 }`}
               >
-                {state.isLoading 
-                  ? "Processing..." 
-                  : !state.selectedDate 
-                  ? 'Select Date First' 
+                {state.isLoading
+                  ? "Processing..."
+                  : !state.selectedDate
+                  ? 'Select Date First'
                   : getTimesForDate(state.selectedDate).length === 0
                   ? 'No Slots Available'
-                  : !state.selectedTime 
-                  ? 'Select Time Slot' 
+                  : !state.selectedTime
+                  ? 'Select Time Slot'
                   : 'Confirm Booking'
                 }
               </button>
@@ -1205,8 +958,6 @@ const MultiStepForm = () => {
           </div>
         </div>
       )}
-
-      {/* Updated Confirmation Modal with Auto-Close */}
       {state.showConfirmationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl animate-slide-up">
@@ -1217,8 +968,6 @@ const MultiStepForm = () => {
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Booking Confirmed!</h3>
             <p className="text-slate-600 text-sm mb-4">Your appointment has been successfully scheduled.</p>
-            
-            {/* Auto-close indicator */}
             <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-emerald-500"></div>
               <span>Redirecting to patientdashboard...</span>
