@@ -88,3 +88,46 @@ export const getMedicalStatusById = (id) => axiosInstance.get(`/master/medicalSt
 export const updateMedicalStatus = (id, data) => axiosInstance.put(`/master/medicalStatus/${id}`, data);
 export const deleteMedicalStatus = (id) => axiosInstance.delete(`/master/medicalStatus/${id}`);
 export const createMedicalStatus = (data) => axiosInstance.post('/master/medicalStatus', data);
+
+
+
+//dosage unit api 
+
+export const getDosageUnits = () => axiosInstance.get("/dosage-units");
+export const createDosageUnit = data => axiosInstance.post("/dosage-units", data);
+export const updateDosageUnit = (id, data) => axiosInstance.put(`/dosage-units/${id}`, data);
+export const deleteDosageUnit = id => axiosInstance.delete(`/dosage-units/${id}`);
+
+// frequencies api
+export const getFrequencies = () => axiosInstance.get("/frequency");
+export const createFrequency = data => axiosInstance.post("/frequency", data);
+export const updateFrequency = (id, data) => axiosInstance.put(`/frequency/${id}`, data);
+export const deleteFrequency = id => axiosInstance.delete(`/frequency/${id}`);
+
+// intakes api
+export const getIntakes = () => axiosInstance.get("/intake");
+export const createIntake = data => axiosInstance.post("/intake", data);
+export const updateIntake = (id, data) => axiosInstance.put(`/intake/${id}`, data);
+export const deleteIntake = id => axiosInstance.delete(`/intake/${id}`);
+
+
+// eye-test
+// vision-type api
+export const getVisionTypes = () => axiosInstance.get("/vision-types");
+export const createVisionType = data => axiosInstance.post("/vision-types", data);
+export const updateVisionType = (id, data) => axiosInstance.put(`/vision-types/${id}`, data);
+export const deleteVisionType = id => axiosInstance.delete(`/vision-types/${id}`);
+
+
+// EyeTest api
+
+export const getAllEyeTests = () => axiosInstance.get("/eye-tests");
+export const getEyeTestById = id => axiosInstance.get(`/eye-tests/${id}`);
+export const createEyeTest = data => axiosInstance.post("/eye-tests", data);
+export const createBulkEyeTests = data => axiosInstance.post("/eye-tests/bulk", data);
+export const updateEyeTest = (id, data) => axiosInstance.put(`/eye-tests/${id}`, data);
+export const updateBulkEyeTests = data => axiosInstance.put("/eye-tests/bulk", data);
+export const deleteEyeTest = id => axiosInstance.delete(`/eye-tests/${id}`);
+
+
+

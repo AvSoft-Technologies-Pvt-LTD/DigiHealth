@@ -1,19 +1,15 @@
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { Eye, Save, Printer, Plus, Trash2, Edit, Check, X } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { getVisionTypes, createBulkEyeTests } from "../../../../../utils/masterService";
 
-const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
+const EyeTestForm = ({ data, onPrint }) => {
   const [rows, setRows] = useState(data?.rows || []);
   const [editingRow, setEditingRow] = useState(null);
   const [currentRow, setCurrentRow] = useState({
     testDate: new Date().toISOString().split('T')[0],
     visionType: '',
+    visionTypeId: 0,
     od_sph: '',
     od_cyl: '',
     od_va: '',
@@ -27,24 +23,51 @@ const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
     remarks: '',
     product: '',
   });
+  const [visionTypes, setVisionTypes] = useState([]);
 
   useEffect(() => {
     if (data?.rows) setRows(data.rows);
   }, [data]);
 
+  useEffect(() => {
+    const fetchVisionTypes = async () => {
+      try {
+        const response = await getVisionTypes();
+        setVisionTypes(response.data);
+      } catch (error) {
+        console.error("Failed to fetch vision types:", error);
+        toast.error("Failed to load vision types. Please try again later.", {
+          position: 'top-right',
+          autoClose: 2000,
+        });
+      }
+    };
+    fetchVisionTypes();
+  }, []);
+
   const handleChange = (field, value) => {
     setCurrentRow((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleVisionTypeChange = (e) => {
+    const selectedType = visionTypes.find(type => type.name === e.target.value);
+    setCurrentRow((prev) => ({
+      ...prev,
+      visionType: e.target.value,
+      visionTypeId: selectedType?.id || 0,
+    }));
+  };
+
   const handleAddRow = () => {
-    if (Object.values(currentRow).every((v) => v === '')) {
+    if (Object.values(currentRow).every((v) => v === '' || v === 0)) {
       toast.warning('Please fill at least one field before adding.');
       return;
     }
-    setRows((prev) => [...prev, currentRow]);
+    setRows((prev) => [...prev, { ...currentRow }]);
     setCurrentRow({
       testDate: new Date().toISOString().split('T')[0],
       visionType: '',
+      visionTypeId: 0,
       od_sph: '',
       od_cyl: '',
       od_va: '',
@@ -70,11 +93,12 @@ const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
   };
 
   const handleSaveEdit = () => {
-    setRows((prev) => prev.map((row, idx) => (idx === editingRow ? currentRow : row)));
+    setRows((prev) => prev.map((row, idx) => (idx === editingRow ? { ...currentRow } : row)));
     setEditingRow(null);
     setCurrentRow({
       testDate: new Date().toISOString().split('T')[0],
       visionType: '',
+      visionTypeId: 0,
       od_sph: '',
       od_cyl: '',
       od_va: '',
@@ -103,12 +127,52 @@ const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
     });
   };
 
-  const handleSave = () => {
-    onSave('eye', { rows });
-    toast.success('✅ Eye test saved!', {
-      position: 'top-right',
-      autoClose: 2000,
-    });
+  const handleSave = async () => {
+    try {
+      const payload = rows.map(row => ({
+        patientId: 1,          // Hardcoded (ensure this exists in DB)
+        doctorId: 3,           // Hardcoded (ensure this exists in DB)
+        context: "IPD",        // Changed to "IPD" (as per your example)
+        testDate: row.testDate,
+        visionTypeId: row.visionTypeId || 1,
+        remark: row.remarks || "No remarks",
+        product: row.product || "No product",
+        rightSph: row.od_sph || "0",
+        rightCyl: row.od_cyl || "0",
+        rightVa: row.od_va || "20/20",
+        rightAxis: row.od_axis || "0",
+        rightPreviousVa: row.od_prev_va || "20/20",
+        leftSph: row.os_sph || "0",
+        leftCyl: row.os_cyl || "0",
+        leftVa: row.os_va || "20/20",
+        leftAxis: row.os_axis || "0",
+        leftPreviousVa: row.os_prev_va || "20/20",
+      }));
+
+      console.log("Payload being sent:", payload);
+      const response = await createBulkEyeTests(payload);
+      console.log("API response:", response);
+
+      if (!response.data) {
+        toast.warning("API returned an empty response. Check backend logs.", {
+          position: 'top-right',
+          autoClose: 5000,
+        });
+        return;
+      }
+
+      toast.success("Eye test records saved successfully!", {
+        position: 'top-right',
+        autoClose: 2000,
+      });
+    } catch (error) {
+      console.error("Failed to save eye test records:", error);
+      const errorMessage = error.response?.data?.message || "Failed to save eye test records. Please try again.";
+      toast.error(errorMessage, {
+        position: 'top-right',
+        autoClose: 2000,
+      });
+    }
   };
 
   return (
@@ -134,7 +198,6 @@ const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
           </button>
         </div>
       </div>
-
       {/* Form Content */}
       <div className="p-3 bg-gray-50">
         {/* Form Input Section */}
@@ -161,14 +224,15 @@ const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
               </label>
               <select
                 value={currentRow.visionType || ''}
-                onChange={(e) => handleChange('visionType', e.target.value)}
+                onChange={handleVisionTypeChange}
                 className="input-field text-sm"
               >
                 <option value="">Select Type</option>
-                <option value="Distance">Distance Vision</option>
-                <option value="Near">Near Vision</option>
-                <option value="Bifocal">Bifocal</option>
-                <option value="Progressive">Progressive</option>
+                {visionTypes.map((type) => (
+                  <option key={type.id} value={type.name}>
+                    {type.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -196,7 +260,6 @@ const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
               />
             </div>
           </div>
-
           {/* Eye Measurements */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Right Eye */}
@@ -242,7 +305,6 @@ const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
                 </div>
               </div>
             </div>
-
             {/* Left Eye */}
             <div className="border border-green-200 rounded-lg p-4 bg-green-50">
               <h5 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
@@ -287,63 +349,60 @@ const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
               </div>
             </div>
           </div>
-<div className="mt-6 flex justify-end gap-3">
-  {editingRow === null ? (
-    <button
-      onClick={handleAddRow}
-      className="btn btn-primary get-details-animate text-xs px-3 py-2 sm:px-4 sm:py-2"
-    >
-      <Plus className="w-4 h-4" />
-      Add Record
-    </button>
-  ) : (
-    <>
-      <button
-        onClick={handleSaveEdit}
-        className="btn btn-primary text-xs px-3 py-2 sm:px-4 sm:py-2"
-      >
-        <Check className="w-4 h-4" />
-        Save Changes
-      </button>
-      <button
-        onClick={() => {
-          setEditingRow(null);
-          setCurrentRow({
-            testDate: new Date().toISOString().split('T')[0],
-            visionType: '',
-            od_sph: '',
-            od_cyl: '',
-            od_va: '',
-            od_axis: '',
-            od_prev_va: '',
-            os_sph: '',
-            os_cyl: '',
-            os_va: '',
-            os_axis: '',
-            os_prev_va: '',
-            remarks: '',
-            product: '',
-          });
-        }}
-        className="btn-secondary text-xs px-3 py-2 sm:px-4 sm:py-2"
-      >
-        <X className="w-4 h-4" />
-        Cancel
-      </button>
-    </>
-  )}
-</div>
-
-          
+          <div className="mt-6 flex justify-end gap-3">
+            {editingRow === null ? (
+              <button
+                onClick={handleAddRow}
+                className="btn btn-primary get-details-animate text-xs px-3 py-2 sm:px-4 sm:py-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Record
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleSaveEdit}
+                  className="btn btn-primary text-xs px-3 py-2 sm:px-4 sm:py-2"
+                >
+                  <Check className="w-4 h-4" />
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingRow(null);
+                    setCurrentRow({
+                      testDate: new Date().toISOString().split('T')[0],
+                      visionType: '',
+                      visionTypeId: 0,
+                      od_sph: '',
+                      od_cyl: '',
+                      od_va: '',
+                      od_axis: '',
+                      od_prev_va: '',
+                      os_sph: '',
+                      os_cyl: '',
+                      os_va: '',
+                      os_axis: '',
+                      os_prev_va: '',
+                      remarks: '',
+                      product: '',
+                    });
+                  }}
+                  className="btn-secondary text-xs px-3 py-2 sm:px-4 sm:py-2"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
         </div>
-
         {/* Records Table (Responsive) */}
         {rows.length > 0 && (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="table-head text-center py-3">
               <h4>Eye Test Records</h4>
             </div>
-
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
               <table className="table-container w-full">
@@ -398,7 +457,6 @@ const EyeTestForm = ({ data, onSave, onPrint, patient }) => {
                 </tbody>
               </table>
             </div>
-
             {/* Mobile Card View */}
             <div className="md:hidden p-2">
               {rows.map((row, idx) => (
