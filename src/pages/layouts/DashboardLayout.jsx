@@ -134,7 +134,7 @@ const DashboardLayout = () => {
           toggleSidebar={toggleSidebar}
           currentPageName={currentPageName}
         />
-        <main className="flex-1 overflow-y-auto p-2 relative">
+        <main className="flex-1 overflow-y-auto relative">
           {loading && (
             <div className="absolute inset-0 z-40 flex items-center justify-center bg-white bg-opacity-70">
               <Loader />

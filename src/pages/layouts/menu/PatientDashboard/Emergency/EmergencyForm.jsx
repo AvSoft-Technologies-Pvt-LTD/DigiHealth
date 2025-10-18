@@ -1,3 +1,4 @@
+// File: EmergencyForm.jsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
 import { format } from "date-fns";
@@ -6,38 +7,57 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import PaymentGateway from "../../../../components/microcomponents/PaymentGatway";
-import { getHospitalDropdown } from "../../../../utils/masterService";
+import PaymentGateway from "../../../../../components/microcomponents/PaymentGatway";
+
+// <- adjust the path below if your crudService lives elsewhere
+import {
+  getAllAmbulanceTypes,
+  getAllAmbulanceEquipments,
+  getAllAmbulanceCategories,
+  getAllHospitals,
+} from "../../../../../utils/CrudService";
+
 import { useNavigate } from "react-router-dom";
+import EmergencyPreview from "./EmergencyPreview";
 
 const EmergencyForm = () => {
   const navigate = useNavigate();
+
+  // ----- state -----
   const [step, setStep] = useState(0);
   const [type, setType] = useState("");
   const [typeSearch, setTypeSearch] = useState("");
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const typeRef = useRef(null);
+
   const [cat, setCat] = useState("");
   const [catSearch, setCatSearch] = useState("");
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const catRef = useRef(null);
+
   const [pickupSearch, setPickupSearch] = useState("");
   const [showPickupDropdown, setShowPickupDropdown] = useState(false);
   const pickupRef = useRef(null);
+  const [pickup, setPickup] = useState("");
+
   const [hospitals, setHospitals] = useState([]);
   const [selectedHospital, setSelectedHospital] = useState("");
   const [selectedHospitalId, setSelectedHospitalId] = useState("");
   const [hospitalSearch, setHospitalSearch] = useState("");
   const [showHospitalDropdown, setShowHospitalDropdown] = useState(false);
   const hospitalRef = useRef(null);
+
   const [equip, setEquip] = useState([]);
-  const [date, setDate] = useState(new Date());
-  const [pickup, setPickup] = useState("");
-  const [data, setData] = useState(null);
+  const equipRef = useRef(null);
   const [showEquip, setShowEquip] = useState(false);
+
+  const [date, setDate] = useState(new Date());
+  const [data, setData] = useState(null); // booking configuration from backend
   const [loading, setLoading] = useState(true);
+
   const [showPaymentGateway, setShowPaymentGateway] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+
   const [addressForm, setAddressForm] = useState({
     type: "Other",
     flatNo: "",
@@ -47,34 +67,44 @@ const EmergencyForm = () => {
     name: "",
     phone: "",
   });
-  const equipRef = useRef(null);
-  const BOOKING_API_URL = "https://mocki.io/v1/c183fd44-05e4-4659-9af9-f1917b1a0d6c";
 
+  const CONFIG_URL = "/api/booking-config"; // optional config
+  const BOOKING_API_URL = "/api/bookings";
+
+  // ----- small debounce hook -----
   const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
-      const handler = setTimeout(() => {
-        setDebouncedValue(value);
-      }, delay);
+      const handler = setTimeout(() => setDebouncedValue(value), delay);
       return () => clearTimeout(handler);
     }, [value, delay]);
     return debouncedValue;
   };
-
   const debouncedHospitalSearch = useDebounce(hospitalSearch, 300);
 
+  // ----- hospital filtering -----
   const filteredHospitals = useMemo(() => {
     if (!debouncedHospitalSearch.trim()) return hospitals;
     return hospitals.filter((hospital) =>
-      hospital.hospitalName?.toLowerCase().includes(debouncedHospitalSearch.toLowerCase())
+      (hospital.name || hospital.hospitalName || "")
+        .toLowerCase()
+        .includes(debouncedHospitalSearch.toLowerCase())
     );
   }, [hospitals, debouncedHospitalSearch]);
 
+  // ----- fetch hospitals dropdown -----
   const fetchHospitals = async () => {
     try {
-      const response = await getHospitalDropdown();
-      const sortedHospitals = (response.data || []).sort((a, b) =>
-        a.hospitalName.localeCompare(b.hospitalName)
+      const res = await getAllHospitals();
+      // support both res.data as array or res.data.items
+      const list = Array.isArray(res.data) ? res.data : res.data?.items || [];
+      // normalize possible property names
+      const normalized = list.map((h) => ({
+        ...h,
+        hospitalName: h.hospitalName || h.name || "",
+      }));
+      const sortedHospitals = (normalized || []).sort((a, b) =>
+        (a.hospitalName || "").localeCompare(b.hospitalName || "")
       );
       setHospitals(sortedHospitals);
     } catch (error) {
@@ -87,85 +117,104 @@ const EmergencyForm = () => {
     fetchHospitals();
   }, []);
 
+  // ----- fetch booking config (ambulance types, categories, equipment, locations) -----
   useEffect(() => {
     (async () => {
+      setLoading(true);
+
       try {
-        setLoading(true);
-        const res = await axios.get(BOOKING_API_URL);
-        setData(res.data);
+        const [
+          typesRes,
+          categoriesRes,
+          equipmentsRes,
+          configRes,
+        ] = await Promise.allSettled([
+          getAllAmbulanceTypes(),
+          getAllAmbulanceCategories(),
+          getAllAmbulanceEquipments(),
+          axios.get(CONFIG_URL).catch(() => null),
+        ]);
+
+        const ambulanceTypes =
+          typesRes.status === "fulfilled" ? typesRes.value.data || [] : [];
+        const categories =
+          categoriesRes.status === "fulfilled" ? categoriesRes.value.data || [] : [];
+        const equipment =
+          equipmentsRes.status === "fulfilled" ? equipmentsRes.value.data || [] : [];
+
+        const configData =
+          configRes && configRes.status === "fulfilled" && configRes.value
+            ? configRes.value.data || {}
+            : {};
+
+        // normalize equipment objects (in case they use name/price/id)
+        const normalizedEquipment = Array.isArray(equipment)
+          ? equipment.map((it) => ({ ...it }))
+          : [];
+
+        setData({
+          ...configData,
+          ambulanceTypes: Array.isArray(ambulanceTypes) ? ambulanceTypes : [],
+          categories: Array.isArray(categories) ? categories : [],
+          equipment: normalizedEquipment,
+        });
       } catch (e) {
+        console.error("Failed to load booking config:", e);
         toast.error("Failed to load booking data");
+        setData(null);
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [CONFIG_URL]);
 
+  // ----- clicks outside to close dropdowns -----
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (showEquip && equipRef.current && !equipRef.current.contains(e.target))
         setShowEquip(false);
-      if (
-        showTypeDropdown &&
-        typeRef.current &&
-        !typeRef.current.contains(e.target)
-      )
+      if (showTypeDropdown && typeRef.current && !typeRef.current.contains(e.target))
         setShowTypeDropdown(false);
-      if (
-        showCatDropdown &&
-        catRef.current &&
-        !catRef.current.contains(e.target)
-      )
+      if (showCatDropdown && catRef.current && !catRef.current.contains(e.target))
         setShowCatDropdown(false);
-      if (
-        showPickupDropdown &&
-        pickupRef.current &&
-        !pickupRef.current.contains(e.target)
-      )
+      if (showPickupDropdown && pickupRef.current && !pickupRef.current.contains(e.target))
         setShowPickupDropdown(false);
-      if (
-        showHospitalDropdown &&
-        hospitalRef.current &&
-        !hospitalRef.current.contains(e.target)
-      )
+      if (showHospitalDropdown && hospitalRef.current && !hospitalRef.current.contains(e.target))
         setShowHospitalDropdown(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [
-    showEquip,
-    showTypeDropdown,
-    showCatDropdown,
-    showPickupDropdown,
-    showHospitalDropdown,
-  ]);
+  }, [showEquip, showTypeDropdown, showCatDropdown, showPickupDropdown, showHospitalDropdown]);
 
+  // ----- get current location for pickup (reverse geocode using Nominatim) -----
   const getCurrentLocationForPickup = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async ({ coords }) => {
-          try {
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}`
-            );
-            const data = await res.json();
-            if (data.display_name) {
-              setPickupSearch(data.display_name);
-              toast.success("Current location set as pickup location");
-            }
-          } catch (e) {
-            toast.error("Failed to get location details");
-          }
-        },
-        (err) => {
-          toast.error("Unable to get current location");
-        }
-      );
-    } else {
+    if (!navigator.geolocation) {
       toast.error("Geolocation not supported");
+      return;
     }
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}`
+          );
+          const d = await res.json();
+          if (d?.display_name) {
+            setPickupSearch(d.display_name);
+            toast.success("Current location set as pickup location");
+          }
+        } catch (e) {
+          console.error("Reverse geocode failed:", e);
+          toast.error("Failed to get location details");
+        }
+      },
+      () => {
+        toast.error("Unable to get current location");
+      }
+    );
   };
 
+  // ----- icon helper (keeps mapping centralized) -----
   const getIcon = (name, size = 20) => {
     const icons = {
       Activity: Lucide.Activity,
@@ -182,26 +231,30 @@ const EmergencyForm = () => {
     return React.createElement(icons[name] || Lucide.Activity, { size });
   };
 
+  // ----- totals & booking builder -----
   const calculateEquipmentTotal = () =>
     !data
       ? 0
       : equip.reduce(
-          (t, id) => t + (data.equipment.find((e) => e.id === id)?.price || 0),
+          (t, id) => t + (data.equipment?.find((e) => e.id === id)?.price || 0),
           0
         );
 
   const buildBooking = () => ({
-    ambulanceType: data.ambulanceTypes.find((t) => t.id === type)?.name,
-    category: data.categories.find((c) => c.id === cat)?.name,
+    ambulanceType:
+      data?.ambulanceTypes?.find((t) => t.id === type)?.name || null,
+    category: data?.categories?.find((c) => c.id === cat)?.name || null,
     equipment: equip,
-    pickupLocation: data.locations.find((l) => l.id === pickup)?.name || pickupSearch,
+    pickupLocation:
+      data?.locations?.find((l) => l.id === pickup)?.name || pickupSearch,
     dropLocation: "N/A",
-    hospitalLocation: selectedHospital,
-    hospitalId: selectedHospitalId,
+    hospitalLocation: selectedHospital || null,
+    hospitalId: selectedHospitalId || null,
     date: format(date, "yyyy-MM-dd"),
     totalAmount: calculateEquipmentTotal(),
   });
 
+  // ----- reset -----
   const resetForm = () => {
     setStep(0);
     setType("");
@@ -217,14 +270,19 @@ const EmergencyForm = () => {
     setDate(new Date());
   };
 
+  // ----- submit / payment flows -----
   const handleSubmit = async () => {
-    if (!data) return;
+    if (!data) {
+      toast.error("Booking data not ready");
+      return;
+    }
     const booking = buildBooking();
     try {
       await axios.post(BOOKING_API_URL, booking);
       toast.success("Booking submitted successfully!");
       resetForm();
-    } catch {
+    } catch (err) {
+      console.error("Booking submit failed:", err);
       toast.error("Failed to submit booking.");
     }
   };
@@ -239,28 +297,25 @@ const EmergencyForm = () => {
     try {
       await axios.post(BOOKING_API_URL, {
         ...selectedBooking,
-        paymentId:
-          paymentData.paymentId || "PAY-" + Math.floor(Math.random() * 10000),
+        paymentId: paymentData?.paymentId || `PAY-${Math.floor(Math.random() * 10000)}`,
         paymentMethod: method,
       });
       toast.success("Booking and payment completed successfully!");
       resetForm();
       setSelectedBooking(null);
       setShowPaymentGateway(false);
-    } catch {
+    } catch (err) {
+      console.error("Payment completion failed:", err);
       toast.error("Failed to complete booking and payment.");
     }
   };
 
   const handlePaymentFailure = (error) => {
-    toast.error(
-      `Payment failed: ${
-        error.reason || "Unknown error"
-      }. Please try again or use a different payment method.`
-    );
+    toast.error(`Payment failed: ${error?.reason || "Unknown error"}.`);
     setShowPaymentGateway(false);
   };
 
+  // ----- navigation -----
   const canGoNext = () => {
     if (step === 0) {
       return type && cat && (pickup || pickupSearch);
@@ -269,17 +324,12 @@ const EmergencyForm = () => {
   };
 
   const handleNext = () => {
-    if (canGoNext()) {
-      setStep((prev) => Math.min(prev + 1, 1));
-    } else {
-      toast.warning("Please complete all required fields before proceeding.");
-    }
+    if (canGoNext()) setStep((p) => Math.min(p + 1, 1));
+    else toast.warning("Please complete all required fields before proceeding.");
   };
+  const handleBack = () => setStep((p) => Math.max(p - 1, 0));
 
-  const handleBack = () => {
-    setStep((prev) => Math.max(prev - 1, 0));
-  };
-
+  // ----- render helpers -----
   const renderNavigationButtons = () => (
     <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
       <button
@@ -294,6 +344,7 @@ const EmergencyForm = () => {
         <Lucide.ArrowLeft size={16} />
         <span className="hidden sm:inline">Back</span>
       </button>
+
       {step < 1 ? (
         <button
           onClick={handleNext}
@@ -330,28 +381,28 @@ const EmergencyForm = () => {
   );
 
   const renderStep = () => {
-    if (!data) {
+    if (loading || !data) {
       return (
         <div className="text-center py-6 sm:py-8 lg:py-10">
           <Lucide.Loader2
             className="animate-spin mx-auto mb-3 sm:mb-4 text-blue-500 w-6 h-6 sm:w-8 sm:h-8"
           />
-          <p className="text-gray-600 text-sm sm:text-base">
-            Loading booking data...
-          </p>
+          <p className="text-gray-600 text-sm sm:text-base">Loading booking data...</p>
         </div>
       );
     }
+
     if (step === 0) {
       return (
         <div className="w-full space-y-3 sm:space-y-4 lg:space-y-6">
+          {/* pickup + hospital */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             <div className="w-full relative" ref={pickupRef}>
               <div className="relative">
                 <input
                   id="pickup-input"
                   type="text"
-                  value={pickup ? data.locations.find((l) => l.id === pickup)?.name : pickupSearch}
+                  value={pickup ? data.locations?.find((l) => l.id === pickup)?.name || "" : pickupSearch}
                   onChange={(e) => {
                     setPickupSearch(e.target.value);
                     setShowPickupDropdown(true);
@@ -380,18 +431,14 @@ const EmergencyForm = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowPickupDropdown(!showPickupDropdown)}
+                    onClick={() => setShowPickupDropdown((s) => !s)}
                     className="p-1.5 text-gray-400 hover:text-gray-600 z-20"
                   >
-                    <Lucide.ChevronDown
-                      className={`transition-transform duration-200 ${
-                        showPickupDropdown ? "rotate-180" : ""
-                      }`}
-                      size={14}
-                    />
+                    <Lucide.ChevronDown className={`transition-transform duration-200 ${showPickupDropdown ? "rotate-180" : ""}`} size={14} />
                   </button>
                 </div>
               </div>
+
               {showPickupDropdown && data.locations?.length > 0 && (
                 <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
                   {data.locations
@@ -414,6 +461,7 @@ const EmergencyForm = () => {
                 </div>
               )}
             </div>
+
             <div className="w-full relative" ref={hospitalRef}>
               <div className="relative">
                 <input
@@ -439,17 +487,13 @@ const EmergencyForm = () => {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setShowHospitalDropdown(!showHospitalDropdown)}
+                  onClick={() => setShowHospitalDropdown((s) => !s)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
                 >
-                  <Lucide.ChevronDown
-                    className={`transition-transform duration-200 ${
-                      showHospitalDropdown ? "rotate-180" : ""
-                    }`}
-                    size={16}
-                  />
+                  <Lucide.ChevronDown className={`transition-transform duration-200 ${showHospitalDropdown ? "rotate-180" : ""}`} size={16} />
                 </button>
               </div>
+
               {showHospitalDropdown && (
                 <div className="absolute z-[10000] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-hidden shadow-2xl">
                   <div className="max-h-48 overflow-y-auto">
@@ -457,14 +501,14 @@ const EmergencyForm = () => {
                       <div
                         key={hospital.id}
                         onClick={() => {
-                          setSelectedHospital(hospital.hospitalName);
+                          setSelectedHospital(hospital.hospitalName || hospital.name);
                           setSelectedHospitalId(hospital.id);
-                          setHospitalSearch(hospital.hospitalName);
+                          setHospitalSearch(hospital.hospitalName || hospital.name);
                           setShowHospitalDropdown(false);
                         }}
                         className="px-2.5 py-1.5 sm:px-3 sm:py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-xs sm:text-sm text-gray-900 transition-colors"
                       >
-                        {hospital.hospitalName}
+                        {hospital.hospitalName || hospital.name}
                       </div>
                     ))}
                     {filteredHospitals.length === 0 && (
@@ -477,13 +521,15 @@ const EmergencyForm = () => {
               )}
             </div>
           </div>
+
+          {/* ambulance type + category */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             <div className="w-full relative" ref={typeRef}>
               <div className="relative">
                 <input
                   id="ambulance-type-input"
                   type="text"
-                  value={type ? data.ambulanceTypes.find((t) => t.id === type)?.name : typeSearch}
+                  value={type ? data.ambulanceTypes?.find((t) => t.id === type)?.name || "" : typeSearch}
                   onChange={(e) => setTypeSearch(e.target.value)}
                   onFocus={() => setShowTypeDropdown(true)}
                   className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
@@ -500,45 +546,40 @@ const EmergencyForm = () => {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                  onClick={() => setShowTypeDropdown((s) => !s)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
                 >
-                  <Lucide.ChevronDown
-                    className={`transition-transform duration-200 ${
-                      showTypeDropdown ? "rotate-180" : ""
-                    }`}
-                    size={16}
-                  />
+                  <Lucide.ChevronDown className={`transition-transform duration-200 ${showTypeDropdown ? "rotate-180" : ""}`} size={16} />
                 </button>
               </div>
+
               {showTypeDropdown && (
                 <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
-                  {data.ambulanceTypes
-                    .filter((item) =>
-                      item.name.toLowerCase().includes(typeSearch.toLowerCase())
-                    )
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => {
-                          setType(item.id);
-                          setTypeSearch(item.name);
-                          setShowTypeDropdown(false);
-                        }}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
-                      >
-                        {item.name}
-                      </div>
-                    ))}
+                  {data.ambulanceTypes?.filter((item) =>
+                    item.name.toLowerCase().includes(typeSearch.toLowerCase())
+                  ).map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setType(item.id);
+                        setTypeSearch(item.name);
+                        setShowTypeDropdown(false);
+                      }}
+                      className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      {item.name}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
+
             <div className="w-full relative" ref={catRef}>
               <div className="relative">
                 <input
                   id="category-input"
                   type="text"
-                  value={cat ? data.categories.find((c) => c.id === cat)?.name : catSearch}
+                  value={cat ? data.categories?.find((c) => c.id === cat)?.name || "" : catSearch}
                   onChange={(e) => setCatSearch(e.target.value)}
                   onFocus={() => setShowCatDropdown(true)}
                   className="peer block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--primary-color)] focus:ring-1 focus:ring-[var(--primary-color)] pr-10"
@@ -555,40 +596,36 @@ const EmergencyForm = () => {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setShowCatDropdown(!showCatDropdown)}
+                  onClick={() => setShowCatDropdown((s) => !s)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-20"
                 >
-                  <Lucide.ChevronDown
-                    className={`transition-transform duration-200 ${
-                      showCatDropdown ? "rotate-180" : ""
-                    }`}
-                    size={16}
-                  />
+                  <Lucide.ChevronDown className={`transition-transform duration-200 ${showCatDropdown ? "rotate-180" : ""}`} size={16} />
                 </button>
               </div>
+
               {showCatDropdown && (
                 <div className="absolute z-[10000] w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl">
-                  {data.categories
-                    .filter((item) =>
-                      item.name.toLowerCase().includes(catSearch.toLowerCase())
-                    )
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => {
-                          setCat(item.id);
-                          setCatSearch(item.name);
-                          setShowCatDropdown(false);
-                        }}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
-                      >
-                        {item.name}
-                      </div>
-                    ))}
+                  {data.categories?.filter((item) =>
+                    item.name.toLowerCase().includes(catSearch.toLowerCase())
+                  ).map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setCat(item.id);
+                        setCatSearch(item.name);
+                        setShowCatDropdown(false);
+                      }}
+                      className="px-3 py-1.5 sm:px-4 sm:py-2 cursor-pointer hover:bg-blue-50 text-xs sm:text-sm border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      {item.name}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
+
+          {/* equipment + date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="w-full relative" ref={equipRef}>
               <button
@@ -596,60 +633,43 @@ const EmergencyForm = () => {
                 className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg flex justify-between items-center cursor-pointer hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
                 onClick={() => setShowEquip((prev) => !prev)}
               >
-                <span>
-                  {equip.length === 0
-                    ? "Select equipment"
-                    : `${equip.length} items selected`}
-                </span>
-                <Lucide.ChevronDown
-                  className={`transition-transform duration-200 ${
-                    showEquip ? "rotate-180" : ""
-                  }`}
-                  size={14}
-                />
+                <span>{equip.length === 0 ? "Select equipment" : `${equip.length} items selected`}</span>
+                <Lucide.ChevronDown className={`transition-transform duration-200 ${showEquip ? "rotate-180" : ""}`} size={14} />
               </button>
+
               {showEquip && (
                 <div className="absolute z-[10000] mt-1 w-full bg-white border border-gray-200 rounded-lg max-h-48 overflow-auto shadow-2xl">
-                  {data.equipment.map((item) => (
-                    <label
-                      key={item.id}
-                      className="flex items-center justify-between px-2.5 py-1.5 sm:px-3 sm:py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                    >
+                  {data.equipment?.map((item) => (
+                    <label key={item.id} className="flex items-center justify-between px-2.5 py-1.5 sm:px-3 sm:py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
                       <div className="flex items-center">
                         <input
                           type="checkbox"
                           checked={equip.includes(item.id)}
                           onChange={() =>
                             setEquip((prev) =>
-                              prev.includes(item.id)
-                                ? prev.filter((id) => id !== item.id)
-                                : [...prev, item.id]
+                              prev.includes(item.id) ? prev.filter((id) => id !== item.id) : [...prev, item.id]
                             )
                           }
                           className="mr-1.5 sm:mr-2"
                         />
                         <span className="flex items-center gap-1.5 sm:gap-2">
                           {getIcon(item.icon, 14)}
-                          <span className="text-xs sm:text-sm">
-                            {item.name}
-                          </span>
+                          <span className="text-xs sm:text-sm">{item.name}</span>
                         </span>
                       </div>
-                      <span className="text-xs sm:text-sm font-semibold text-green-600">
-                        ₹{item.price}
-                      </span>
+                      <span className="text-xs sm:text-sm font-semibold text-green-600">₹{item.price}</span>
                     </label>
                   ))}
                 </div>
               )}
+
               {equip.length > 0 && (
                 <div className="mt-1.5 sm:mt-2 p-2.5 sm:p-3 border rounded-lg bg-green-50 border-green-200">
-                  <span className="font-semibold text-green-600 text-xs sm:text-sm">
-                    Total: ₹{calculateEquipmentTotal()}
-                  </span>
+                  <span className="font-semibold text-green-600 text-xs sm:text-sm">Total: ₹{calculateEquipmentTotal()}</span>
                 </div>
               )}
             </div>
+
             <div className="w-full relative">
               <ReactDatePicker
                 selected={date}
@@ -657,191 +677,39 @@ const EmergencyForm = () => {
                 minDate={new Date()}
                 className="w-full px-2.5 py-2.5 sm:px-3 sm:py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-xs sm:text-sm"
                 dateFormat="yyyy-MM-dd"
-                popperProps={{
-                  positionFixed: true,
-                }}
+                popperProps={{ positionFixed: true }}
                 popperClassName="react-datepicker-popper-fixed"
               />
-              <style jsx global>{`
-                .react-datepicker-popper-fixed {
-                  z-index: 99999 !important;
-                }
-                .react-datepicker {
-                  z-index: 99999 !important;
-                }
-                .react-datepicker__triangle {
-                  z-index: 99999 !important;
-                }
+              {/* Inline <style> — DO NOT use `jsx global` attribute */}
+              <style>{`
+                .react-datepicker-popper-fixed { z-index: 99999 !important; }
+                .react-datepicker { z-index: 99999 !important; }
+                .react-datepicker__triangle { z-index: 99999 !important; }
               `}</style>
             </div>
           </div>
         </div>
       );
     }
+
+    // STEP 1: confirmation / preview
     return (
-      <div className="space-y-3 sm:space-y-4 lg:space-y-6">
-        <div className="bg-gradient-to-r from-[#01B07A] to-[#1A223F] rounded-xl p-3 sm:p-4 lg:p-6 mb-3 sm:mb-4 lg:mb-6 text-white">
-          <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <Lucide.CheckCircle
-                className="text-white w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6"
-              />
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-base sm:text-lg lg:text-xl">
-                Booking Confirmation
-              </h3>
-              <p className="text-white/90 text-xs sm:text-sm">
-                Please review your booking details below
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
-              <Lucide.Ambulance
-                className="text-red-600 w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6"
-              />
-              <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800">
-                Service Details
-              </h4>
-            </div>
-            <div className="space-y-2 sm:space-y-2.5 lg:space-y-3">
-              <div className="flex justify-between items-center py-1 sm:py-1.5 lg:py-2 border-b border-gray-100">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">
-                  Ambulance Type:
-                </span>
-                <span className="font-semibold text-gray-800 text-xs sm:text-sm">
-                  {data.ambulanceTypes.find((t) => t.id === type)?.name}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1 sm:py-1.5 lg:py-2 border-b border-gray-100">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">
-                  Category:
-                </span>
-                <span className="font-semibold text-gray-800 text-xs sm:text-sm">
-                  {data.categories.find((c) => c.id === cat)?.name}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1 sm:py-1.5 lg:py-2 border-b border-gray-100">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">
-                  Pickup Location:
-                </span>
-                <span className="font-semibold text-gray-800 text-xs sm:text-sm">
-                  {data.locations.find((l) => l.id === pickup)?.name || pickupSearch}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1 sm:py-1.5 lg:py-2">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">
-                  Hospital Location:
-                </span>
-                <span className="font-semibold text-gray-800 text-xs sm:text-sm">
-                  {selectedHospital || "Not specified"}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
-              <Lucide.Calendar
-                className="text-blue-600 w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6"
-              />
-              <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800">
-                Schedule & Location
-              </h4>
-            </div>
-            <div className="space-y-2 sm:space-y-2.5 lg:space-y-3">
-              <div className="flex justify-between items-center py-1 sm:py-1.5 lg:py-2 border-b border-gray-100">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">
-                  Booking Date:
-                </span>
-                <span className="font-semibold text-gray-800 text-xs sm:text-sm">
-                  {format(date, "dd MMM yyyy")}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1 sm:py-1.5 lg:py-2 border-b border-gray-100">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">
-                  Day:
-                </span>
-                <span className="font-semibold text-gray-800 text-xs sm:text-sm">
-                  {format(date, "EEEE")}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1 sm:py-1.5 lg:py-2">
-                <span className="text-gray-600 font-medium text-xs sm:text-sm">
-                  Status:
-                </span>
-                <span className="px-2 py-0.5 sm:px-2.5 sm:py-0.5 lg:px-3 lg:py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                  Confirmed
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6">
-          <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
-            <Lucide.Package
-              className="text-purple-600 w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6"
-            />
-            <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800">
-              Equipment & Billing
-            </h4>
-          </div>
-          {equip.length > 0 ? (
-            <div className="space-y-2 sm:space-y-2.5 lg:space-y-3">
-              {equip.map((eqId) => {
-                const equipment = data.equipment.find((e) => e.id === eqId);
-                return equipment ? (
-                  <div
-                    key={eqId}
-                    className="flex items-center justify-between py-1 sm:py-1.5 lg:py-2 border-b border-gray-100"
-                  >
-                    <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3">
-                      <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                        {getIcon(equipment.icon, 14)}
-                      </div>
-                      <span className="text-gray-700 font-medium text-xs sm:text-sm">
-                        {equipment.name}
-                      </span>
-                    </div>
-                    <span className="font-semibold text-gray-800 text-xs sm:text-sm">
-                      ₹{equipment.price}
-                    </span>
-                  </div>
-                ) : null;
-              })}
-              <div className="border-t-2 border-gray-200 pt-2 sm:pt-2.5 lg:pt-3 mt-2 sm:mt-2.5 lg:mt-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm sm:text-base lg:text-lg font-bold text-gray-800">
-                    Total Equipment Cost:
-                  </span>
-                  <div className="text-right">
-                    <span className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">
-                      ₹{calculateEquipmentTotal()}
-                    </span>
-                    <p className="text-xs text-gray-500">
-                      Including all equipment
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-4 sm:py-6 lg:py-8">
-              <Lucide.Package
-                className="mx-auto mb-2 sm:mb-2.5 lg:mb-3 text-gray-400 w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8"
-              />
-              <p className="text-gray-500 text-xs sm:text-sm">
-                No additional equipment selected
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+      <EmergencyPreview
+        data={data}
+        type={type}
+        cat={cat}
+        pickup={pickup}
+        pickupSearch={pickupSearch}
+        selectedHospital={selectedHospital}
+        equip={equip}
+        date={date}
+        calculateEquipmentTotal={calculateEquipmentTotal}
+        getIcon={getIcon}
+      />
     );
   };
 
+  // ----- return UI -----
   return (
     <div className="w-full min-h-screen bg-gray-50 py-2 px-2 sm:py-4 sm:px-4 lg:py-8 lg:px-8">
       <ToastContainer
@@ -860,9 +728,7 @@ const EmergencyForm = () => {
           isOpen={showPaymentGateway}
           onClose={() => setShowPaymentGateway(false)}
           amount={calculateEquipmentTotal()}
-          bookingId={
-            selectedBooking?.id || "EMG-" + Math.floor(Math.random() * 10000)
-          }
+          bookingId={selectedBooking?.id || `EMG-${Math.floor(Math.random() * 10000)}`}
           onPay={handlePaymentSuccess}
           onFail={handlePaymentFailure}
           bookingDetails={{
@@ -876,7 +742,7 @@ const EmergencyForm = () => {
                 name: addressForm.name || "Patient Name",
                 age: 30,
                 gender: "Unknown",
-                patientId: "PT-" + Math.floor(Math.random() * 10000),
+                patientId: `PT-${Math.floor(Math.random() * 10000)}`,
               },
             ],
             contactEmail: "patient@example.com",
@@ -894,19 +760,12 @@ const EmergencyForm = () => {
         <div className="max-w-full sm:max-w-4xl lg:max-w-6xl mx-auto bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 bg-gray-800">
             <div className="flex items-center gap-2 sm:gap-2.5 lg:gap-3">
-              <div
-                className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: "#01B07A", color: "white" }}
-              >
+              <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#01B07A", color: "white" }}>
                 <Lucide.Ambulance className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
               </div>
               <div>
-                <h1 className="text-sm sm:text-base lg:text-lg font-bold text-white mb-0">
-                  Ambulance Booking
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-200 mb-0">
-                  Book an ambulance from AV Swasthya's trusted network
-                </p>
+                <h1 className="text-sm sm:text-base lg:text-lg font-bold text-white mb-0">Ambulance Booking</h1>
+                <p className="text-xs sm:text-sm text-gray-200 mb-0">Book an ambulance from AV Swasthya's trusted network</p>
               </div>
             </div>
             <button
@@ -917,62 +776,27 @@ const EmergencyForm = () => {
               Near By Ambulance
             </button>
           </div>
+
           <div className="px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4 border-b border-gray-200">
             <div className="flex justify-center items-center w-full max-w-xs sm:max-w-md mx-auto">
               {["Details", "Confirm"].map((stepName, index) => (
                 <React.Fragment key={index}>
                   <div className="flex flex-col items-center">
-                    <div
-                      className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full mb-1 sm:mb-1.5 lg:mb-2 transition-all ${
-                        step === index || step > index
-                          ? "text-white"
-                          : "bg-gray-200 text-gray-600 border border-gray-300"
-                      }`}
-                      style={
-                        step === index || step > index
-                          ? { backgroundColor: "var(--accent-color)" }
-                          : {}
-                      }
-                    >
-                      {step > index ? (
-                        <Lucide.CheckCircle2
-                          className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5"
-                        />
-                      ) : (
-                        <span className="font-semibold text-xs sm:text-sm">
-                          {index + 1}
-                        </span>
-                      )}
+                    <div className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full mb-1 sm:mb-1.5 lg:mb-2 transition-all ${step === index || step > index ? "text-white" : "bg-gray-200 text-gray-600 border border-gray-300"}`} style={step === index || step > index ? { backgroundColor: "var(--accent-color)" } : {}}>
+                      {step > index ? <Lucide.CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" /> : <span className="font-semibold text-xs sm:text-sm">{index + 1}</span>}
                     </div>
-                    <p
-                      className={`text-xs font-medium transition-colors ${
-                        step === index || step > index
-                          ? "font-semibold"
-                          : "text-gray-500"
-                      }`}
-                      style={
-                        step === index || step > index
-                          ? { color: "var(--accent-color)" }
-                          : {}
-                      }
-                    >
+                    <p className={`text-xs font-medium transition-colors ${step === index || step > index ? "font-semibold" : "text-gray-500"}`} style={step === index || step > index ? { color: "var(--accent-color)" } : {}}>
                       {stepName}
                     </p>
                   </div>
                   {index < ["Details", "Confirm"].length - 1 && (
-                    <div
-                      className={`flex-1 h-0.5 sm:h-1 mx-2 sm:mx-3 lg:mx-4 mb-3 sm:mb-4 lg:mb-6 rounded transition-colors`}
-                      style={
-                        step > index
-                          ? { backgroundColor: "var(--accent-color)" }
-                          : { backgroundColor: "#D1D5DB" }
-                      }
-                    />
+                    <div className="flex-1 h-0.5 sm:h-1 mx-2 sm:mx-3 lg:mx-4 mb-3 sm:mb-4 lg:mb-6 rounded transition-colors" style={step > index ? { backgroundColor: "var(--accent-color)" } : { backgroundColor: "#D1D5DB" }} />
                   )}
                 </React.Fragment>
               ))}
             </div>
           </div>
+
           <div className="px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-6 relative">
             {renderStep()}
             {renderNavigationButtons()}

@@ -1,17 +1,12 @@
+// EmergencySearch.jsx
 import React, { useState, useEffect, useRef } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  useMapEvents,
-} from "react-leaflet";
 import axios from "axios";
 import * as Lucide from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import LocationModal from "./LocationModal"; // must be in same folder
 
 // Fix for Leaflet's default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -24,22 +19,7 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Custom hook for debouncing
-const useDebounce = (value, delay) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-
-  return debouncedValue;
-};
-
-// Mobile Filter Modal Component
+// Mobile Filter Modal (kept here)
 const MobileFilterModal = ({
   isOpen,
   onClose,
@@ -52,11 +32,8 @@ const MobileFilterModal = ({
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[99999] xl:hidden">
-      {/* Backdrop */}
       <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      {/* Modal */}
       <div className="fixed inset-0 flex flex-col bg-white">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-800 text-white">
           <h2 className="text-lg font-semibold">Filter Ambulances</h2>
           <div className="flex items-center gap-4">
@@ -74,7 +51,7 @@ const MobileFilterModal = ({
             </button>
           </div>
         </div>
-        {/* Search Bar */}
+
         <div className="p-4 bg-gray-100">
           <div className="relative">
             <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -85,7 +62,7 @@ const MobileFilterModal = ({
             />
           </div>
         </div>
-        {/* Filter Options */}
+
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {filters.map((filter) => {
             const selected = activeFilters[filter.key] || [];
@@ -143,7 +120,7 @@ const MobileFilterModal = ({
             );
           })}
         </div>
-        {/* Apply Button */}
+
         <div className="p-4 border-t border-gray-200">
           <button
             onClick={onApply}
@@ -183,7 +160,7 @@ const EmergencySearch = () => {
     category: [],
     availability: [],
     rating: [],
-    distance: []
+    distance: [],
   });
   const [originalAmbulances, setOriginalAmbulances] = useState([]);
   const filterRef = useRef(null);
@@ -199,63 +176,63 @@ const EmergencySearch = () => {
   });
 
   const searchRef = useRef(null);
-  const BOOKING_API_URL = "https://mocki.io/v1/c183fd44-05e4-4659-9af9-f1917b1a0d6c";
+  const BOOKING_API_URL = "https://mocki.io/v1/33249b2f-bbf5-42c9-bb74-583ebb809974";
 
   // Filter configuration
   const filterConfig = [
     {
-      key: 'type',
-      label: 'Ambulance Type',
+      key: "type",
+      label: "Ambulance Type",
       icon: <Lucide.Ambulance className="w-4 h-4" />,
       options: [
-        { value: 'ICU', label: 'ICU Ambulance' },
-        { value: 'ALS', label: 'ALS Ambulance' },
-        { value: 'BLS', label: 'BLS Ambulance' },
-        { value: 'NICU', label: 'NICU Ambulance' }
-      ]
+        { value: "ICU", label: "ICU Ambulance" },
+        { value: "ALS", label: "ALS Ambulance" },
+        { value: "BLS", label: "BLS Ambulance" },
+        { value: "NICU", label: "NICU Ambulance" },
+      ],
     },
     {
-      key: 'category',
-      label: 'Category',
+      key: "category",
+      label: "Category",
       icon: <Lucide.Building className="w-4 h-4" />,
       options: [
-        { value: 'government', label: 'Government' },
-        { value: 'private', label: 'Private' },
-        { value: 'hospital', label: 'Hospital' },
-        { value: 'ngo', label: 'NGO' }
-      ]
+        { value: "government", label: "Government" },
+        { value: "private", label: "Private" },
+        { value: "hospital", label: "Hospital" },
+        { value: "ngo", label: "NGO" },
+      ],
     },
     {
-      key: 'availability',
-      label: 'Availability',
+      key: "availability",
+      label: "Availability",
       icon: <Lucide.Clock className="w-4 h-4" />,
       options: [
-        { value: 'available', label: 'Available' },
-        { value: 'busy', label: 'Busy' }
-      ]
+        { value: "available", label: "Available" },
+        { value: "busy", label: "Busy" },
+      ],
     },
     {
-      key: 'rating',
-      label: 'Minimum Rating',
+      key: "rating",
+      label: "Minimum Rating",
       icon: <Lucide.Star className="w-4 h-4" />,
       options: [
-        { value: '4.0', label: '4.0+ Stars' },
-        { value: '3.5', label: '3.5+ Stars' },
-        { value: '3.0', label: '3.0+ Stars' },
-        { value: '2.5', label: '2.5+ Stars' }
-      ]
+        { value: "4.0", label: "4.0+ Stars" },
+        { value: "3.5", label: "3.5+ Stars" },
+        { value: "3.0", label: "3.0+ Stars" },
+        { value: "2.5", label: "2.5+ Stars" },
+      ],
     },
     {
-      key: 'distance',
-      label: 'Maximum Distance',
+      key: "distance",
+      label: "Maximum Distance",
       icon: <Lucide.Navigation className="w-4 h-4" />,
       options: [
-        { value: '5', label: 'Within 5 km' },
-        { value: '10', label: 'Within 10 km' },
-        { value: '20', label: 'Within 20 km' },
-        { value: '50', label: 'Within 50 km' }
-      ]
-    }
+        { value: "5", label: "Within 5 km" },
+        { value: "10", label: "Within 10 km" },
+        { value: "20", label: "Within 20 km" },
+        { value: "50", label: "Within 50 km" },
+      ],
+    },
   ];
 
   useEffect(() => {
@@ -274,59 +251,32 @@ const EmergencySearch = () => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (
-        showSuggestions &&
-        searchRef.current &&
-        !searchRef.current.contains(e.target)
-      ) {
+      if (showSuggestions && searchRef.current && !searchRef.current.contains(e.target)) {
         setTimeout(() => {
           setShowSuggestions(false);
         }, 150);
       }
-      if (
-        showLocationSuggestions &&
-        mapSearchRef.current &&
-        !mapSearchRef.current.contains(e.target)
-      ) {
+      if (showLocationSuggestions && mapSearchRef.current && !mapSearchRef.current.contains(e.target)) {
         setTimeout(() => {
           setShowLocationSuggestions(false);
         }, 150);
       }
-      if (
-        isDesktopFiltersExpanded &&
-        filterRef.current &&
-        !filterRef.current.contains(e.target)
-      ) {
+      if (isDesktopFiltersExpanded && filterRef.current && !filterRef.current.contains(e.target)) {
         setIsDesktopFiltersExpanded(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [
-    showSuggestions,
-    showLocationSuggestions,
-    isDesktopFiltersExpanded,
-  ]);
-
-  const MapClickHandler = () => {
-    useMapEvents({
-      click: (e) => {
-        setMarkerPosition([e.latlng.lat, e.latlng.lng]);
-        reverseGeocode(e.latlng.lat, e.latlng.lng);
-      },
-    });
-    return null;
-  };
+  }, [showSuggestions, showLocationSuggestions, isDesktopFiltersExpanded]);
 
   const reverseGeocode = async (lat, lng) => {
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
       );
-      const data = await res.json();
-      if (data.display_name)
-        setAddressForm((p) => ({ ...p, locality: data.display_name }));
+      const d = await res.json();
+      if (d.display_name) setAddressForm((p) => ({ ...p, locality: d.display_name }));
     } catch (e) {
       console.error("Reverse geocoding failed:", e);
     }
@@ -471,10 +421,9 @@ const EmergencySearch = () => {
       }
     });
 
-    const uniqueSuggestions = suggestions.filter(
-      (v, i, self) =>
-        i === self.findIndex((t) => t.value === v.value && t.type === v.type)
-    ).slice(0, 8);
+    const uniqueSuggestions = suggestions
+      .filter((v, i, self) => i === self.findIndex((t) => t.value === v.value && t.type === v.type))
+      .slice(0, 8);
 
     return uniqueSuggestions;
   };
@@ -501,46 +450,40 @@ const EmergencySearch = () => {
 
     // Filter by type
     if (activeFilters.type.length > 0) {
-      filtered = filtered.filter(ambulance => 
-        activeFilters.type.some(type => 
-          ambulance.type.toLowerCase().includes(type.toLowerCase())
-        )
+      filtered = filtered.filter((ambulance) =>
+        activeFilters.type.some((type) => ambulance.type.toLowerCase().includes(type.toLowerCase()))
       );
     }
 
     // Filter by category
     if (activeFilters.category.length > 0) {
-      filtered = filtered.filter(ambulance => 
+      filtered = filtered.filter((ambulance) =>
         activeFilters.category.includes(ambulance.category.toLowerCase())
       );
     }
 
     // Filter by availability
     if (activeFilters.availability.length > 0) {
-      filtered = filtered.filter(ambulance => {
-        if (activeFilters.availability.includes('available')) {
-          return ambulance.available === true;
-        }
-        if (activeFilters.availability.includes('busy')) {
-          return ambulance.available === false;
-        }
+      filtered = filtered.filter((ambulance) => {
+        if (activeFilters.availability.includes("available")) return ambulance.available === true;
+        if (activeFilters.availability.includes("busy")) return ambulance.available === false;
         return true;
       });
     }
 
     // Filter by rating
     if (activeFilters.rating.length > 0) {
-      filtered = filtered.filter(ambulance => {
+      filtered = filtered.filter((ambulance) => {
         const rating = parseFloat(ambulance.rating);
-        return activeFilters.rating.some(minRating => rating >= parseFloat(minRating));
+        return activeFilters.rating.some((minRating) => rating >= parseFloat(minRating));
       });
     }
 
     // Filter by distance
     if (activeFilters.distance.length > 0) {
-      filtered = filtered.filter(ambulance => {
+      filtered = filtered.filter((ambulance) => {
         const distance = parseFloat(ambulance.distance);
-        return activeFilters.distance.some(maxDistance => distance <= parseFloat(maxDistance));
+        return activeFilters.distance.some((maxDistance) => distance <= parseFloat(maxDistance));
       });
     }
 
@@ -570,7 +513,7 @@ const EmergencySearch = () => {
 
       // Store original results before filtering
       setOriginalAmbulances(results);
-      
+
       // Apply filters
       results = applyFilters(results);
 
@@ -586,7 +529,7 @@ const EmergencySearch = () => {
   };
 
   const handleFilterChange = (filterType, value) => {
-    setActiveFilters(prev => {
+    setActiveFilters((prev) => {
       const updated = { ...prev };
       updated[filterType] = value;
       return updated;
@@ -601,7 +544,7 @@ const EmergencySearch = () => {
     const filtered = applyFilters(originalAmbulances);
     setFilteredAmbulances(filtered);
     setIsDesktopFiltersExpanded(false);
-    
+
     if (filtered.length === 0 && originalAmbulances.length > 0) {
       toast.info("No ambulances match the selected filters. Try adjusting your filters.");
     } else if (filtered.length > 0) {
@@ -615,7 +558,7 @@ const EmergencySearch = () => {
       category: [],
       availability: [],
       rating: [],
-      distance: []
+      distance: [],
     });
     if (originalAmbulances.length > 0) {
       setFilteredAmbulances(originalAmbulances);
@@ -625,9 +568,8 @@ const EmergencySearch = () => {
     setIsDesktopFiltersExpanded(false);
   };
 
-  const getActiveFilterCount = () => {
-    return Object.values(activeFilters).reduce((count, filterArray) => count + filterArray.length, 0);
-  };
+  const getActiveFilterCount = () =>
+    Object.values(activeFilters).reduce((count, filterArray) => count + filterArray.length, 0);
 
   const handleMobileFilterReset = () => {
     setActiveFilters({
@@ -635,7 +577,7 @@ const EmergencySearch = () => {
       category: [],
       availability: [],
       rating: [],
-      distance: []
+      distance: [],
     });
     if (originalAmbulances.length > 0) {
       setFilteredAmbulances(originalAmbulances);
@@ -646,7 +588,7 @@ const EmergencySearch = () => {
     const filtered = applyFilters(originalAmbulances);
     setFilteredAmbulances(filtered);
     setShowFilterPopup(false);
-    
+
     if (filtered.length === 0 && originalAmbulances.length > 0) {
       toast.info("No ambulances match the selected filters. Try adjusting your filters.");
     } else if (filtered.length > 0) {
@@ -675,9 +617,7 @@ const EmergencySearch = () => {
       ICU: <Lucide.Heart className="text-red-600" size={20} />,
       ALS: <Lucide.HeartPulse className="text-blue-600" size={20} />,
       BLS: <Lucide.Activity className="text-green-600" size={20} />,
-    }[type.split(" ")[0]] || (
-      <Lucide.Ambulance className="text-red-600" size={20} />
-    ));
+    }[type.split(" ")[0]] || <Lucide.Ambulance className="text-red-600" size={20} />);
 
   const getCategoryColor = (c) =>
     ({
@@ -687,221 +627,7 @@ const EmergencySearch = () => {
       ngo: "bg-orange-100 text-orange-700 border-orange-200",
     }[c.toLowerCase()] || "bg-gray-100 text-gray-700 border-gray-200");
 
-  const renderLocationPopup = () => (
-    <div className="fixed inset-0 backdrop-blur-sm bg-white/10 z-[99998] overflow-y-auto p-2 sm:p-4">
-      <div className="mx-auto max-w-full sm:max-w-4xl bg-white rounded-lg border border-gray-300 min-h-[90vh] sm:h-[90vh] flex flex-col mt-2 sm:mt-4">
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
-          <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800">
-            Enter complete address
-          </h2>
-          <button
-            onClick={() => setShowLocationPopup(false)}
-            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <Lucide.X className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-        </div>
-
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          <div className="flex-1 relative">
-            <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 z-[99999] pointer-events-auto">
-              <div className="bg-white rounded-lg border border-gray-300 p-2 sm:p-3 w-full max-w-full sm:max-w-3xl mx-auto">
-                <div className="flex gap-1.5 sm:gap-2" ref={mapSearchRef}>
-                  <div className="flex-1 relative">
-                    <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5 sm:w-4 sm:h-4 z-10" />
-                    <input
-                      type="text"
-                      placeholder="Search location..."
-                      value={mapSearchQuery}
-                      onChange={(e) =>
-                        handleLocationSearchInputChange(e.target.value)
-                      }
-                      onKeyPress={handleLocationSearchKeyPress}
-                      className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
-                    />
-                    {showLocationSuggestions &&
-                      locationSuggestions.length > 0 && (
-                        <div className="absolute z-[99999] w-full mt-1 bg-white border border-gray-200 rounded-lg max-h-48 sm:max-h-60 overflow-y-auto shadow-2xl">
-                          {locationSuggestions.map((suggestion) => (
-                            <button
-                              key={suggestion.id}
-                              onClick={() =>
-                                handleLocationSuggestionSelect(suggestion)
-                              }
-                              className="w-full px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-3 text-left hover:bg-gray-50 flex items-center gap-1.5 sm:gap-2 lg:gap-3 border-b border-gray-100 last:border-b-0 transition-colors text-xs sm:text-sm"
-                            >
-                              <Lucide.MapPin
-                                className="text-blue-500 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate">
-                                  {suggestion.display_name}
-                                </div>
-                                {suggestion.address &&
-                                  suggestion.address.country && (
-                                    <div className="text-xs text-gray-500 truncate">
-                                      {suggestion.type} •{" "}
-                                      {suggestion.address.country}
-                                    </div>
-                                  )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                  </div>
-                  <button
-                    onClick={searchLocation}
-                    disabled={isSearching}
-                    className="px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-xs sm:text-sm"
-                  >
-                    {isSearching ? "Searching..." : "Search"}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={getCurrentLocation}
-              className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 z-10 px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center gap-1 sm:gap-1.5 lg:gap-2 text-xs sm:text-sm"
-            >
-              <Lucide.MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Current location
-            </button>
-
-            <div className="h-64 sm:h-full">
-              <MapContainer
-                center={mapPosition}
-                zoom={13}
-                style={{ height: "100%", width: "100%" }}
-                key={`${mapPosition[0]}-${mapPosition[1]}`}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                <MapClickHandler />
-                {markerPosition && (
-                  <Marker position={markerPosition}>
-                    <Popup>
-                      Selected Location
-                      <br />
-                      Lat: {markerPosition[0].toFixed(6)}
-                      <br />
-                      Lng: {markerPosition[1].toFixed(6)}
-                    </Popup>
-                  </Marker>
-                )}
-              </MapContainer>
-            </div>
-          </div>
-
-          <div className="w-full lg:w-80 bg-gray-50 p-3 sm:p-4 overflow-y-auto">
-            <div className="space-y-3 sm:space-y-4">
-              <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2">
-                Add New Address
-              </p>
-              <input
-                type="text"
-                placeholder="Flat / House no / Building name *"
-                value={addressForm.flatNo}
-                onChange={(e) =>
-                  setAddressForm((prev) => ({
-                    ...prev,
-                    flatNo: e.target.value,
-                  }))
-                }
-                className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
-              />
-              <input
-                type="text"
-                placeholder="Floor (optional)"
-                value={addressForm.floor}
-                onChange={(e) =>
-                  setAddressForm((prev) => ({
-                    ...prev,
-                    floor: e.target.value,
-                  }))
-                }
-                className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
-              />
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2">
-                  Area / Sector / Locality *
-                </p>
-                <input
-                  type="text"
-                  value={addressForm.locality}
-                  onChange={(e) =>
-                    setAddressForm((prev) => ({
-                      ...prev,
-                      locality: e.target.value,
-                    }))
-                  }
-                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-gray-100 text-xs sm:text-sm"
-                  readOnly
-                />
-              </div>
-              <input
-                type="text"
-                placeholder="Nearby landmark (optional)"
-                value={addressForm.landmark}
-                onChange={(e) =>
-                  setAddressForm((prev) => ({
-                    ...prev,
-                    landmark: e.target.value,
-                  }))
-                }
-                className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
-              />
-
-              <div className="border-t border-gray-200 my-3 sm:my-4" />
-
-              <p className="text-xs sm:text-sm text-gray-600 mb-2.5 sm:mb-3">
-                Enter your details for seamless delivery experience
-              </p>
-              <input
-                type="text"
-                placeholder="Your name *"
-                value={addressForm.name}
-                onChange={(e) =>
-                  setAddressForm((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
-              />
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2">
-                  Your phone number *
-                </p>
-                <input
-                  type="tel"
-                  placeholder="9901341763"
-                  value={addressForm.phone}
-                  onChange={(e) =>
-                    setAddressForm((prev) => ({
-                      ...prev,
-                      phone: e.target.value,
-                    }))
-                  }
-                  className="w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
-                />
-              </div>
-
-              <button
-                onClick={saveAddress}
-                className="w-full px-3 py-1.5 sm:px-4 sm:py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium text-xs sm:text-sm"
-              >
-                Save Address
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const renderLocationPopup = () => null; // Moved to LocationModal component
 
   if (loading) {
     return (
@@ -920,9 +646,7 @@ const EmergencySearch = () => {
           <Lucide.Loader2
             className="animate-spin mx-auto mb-3 sm:mb-4 text-blue-500 w-6 h-6 sm:w-8 sm:h-8"
           />
-          <p className="text-gray-600 text-sm sm:text-base">
-            Loading ambulance data...
-          </p>
+          <p className="text-gray-600 text-sm sm:text-base">Loading ambulance data...</p>
         </div>
       </div>
     );
@@ -940,8 +664,30 @@ const EmergencySearch = () => {
         draggable
         pauseOnHover
       />
-      {showLocationPopup && renderLocationPopup()}
-      
+      {/* Location modal (separate component) */}
+      <LocationModal
+        show={showLocationPopup}
+        onClose={() => setShowLocationPopup(false)}
+        mapPosition={mapPosition}
+        markerPosition={markerPosition}
+        setMapPosition={setMapPosition}
+        setMarkerPosition={setMarkerPosition}
+        addressForm={addressForm}
+        setAddressForm={setAddressForm}
+        getCurrentLocation={getCurrentLocation}
+        mapSearchQuery={mapSearchQuery}
+        setMapSearchQuery={setMapSearchQuery}
+        handleLocationSearchInputChange={handleLocationSearchInputChange}
+        showLocationSuggestions={showLocationSuggestions}
+        locationSuggestions={locationSuggestions}
+        handleLocationSuggestionSelect={handleLocationSuggestionSelect}
+        searchLocation={searchLocation}
+        isSearching={isSearching}
+        mapSearchRef={mapSearchRef}
+        reverseGeocode={reverseGeocode}
+        saveAddress={saveAddress}
+      />
+
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 lg:p-6 mb-3 sm:mb-4 lg:mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 lg:mb-6 gap-3 sm:gap-4">
@@ -969,96 +715,96 @@ const EmergencySearch = () => {
               <div className="flex items-center justify-between gap-4 mb-4">
                 {/* Search Section - Right Side */}
                 <div className="flex items-center gap-2 min-w-0">
-  <div className="flex-1 relative min-w-0" ref={searchRef}>
-    <div className="relative">
-      <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
-      <input
-        type="text"
-        placeholder="Search by name, location..."
-        value={searchQuery}
-        onChange={(e) => handleSearchInputChange(e.target.value)}
-        onKeyPress={handleSearchKeyPress}
-        className="w-full max-w-[640px] pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm"
-      />
+                  <div className="flex-1 relative min-w-0" ref={searchRef}>
+                    <div className="relative">
+                      <Lucide.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+                      <input
+                        type="text"
+                        placeholder="Search by name, location..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearchInputChange(e.target.value)}
+                        onKeyPress={handleSearchKeyPress}
+                        className="w-full max-w-[640px] pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm"
+                      />
 
-      {searchQuery && (
-        <button
-          type="button"
-          onClick={() => {
-            setSearchQuery("");
-            setShowSuggestions(false);
-            setFilteredAmbulances([]);
-            setOriginalAmbulances([]);
-            setHasSearched(false);
-          }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 bg-white rounded-full w-5 h-5 flex items-center justify-center transition-all duration-200 text-xs z-10"
-        >
-          ✕
-        </button>
-      )}
-    </div>
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchQuery("");
+                            setShowSuggestions(false);
+                            setFilteredAmbulances([]);
+                            setOriginalAmbulances([]);
+                            setHasSearched(false);
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 bg-white rounded-full w-5 h-5 flex items-center justify-center transition-all duration-200 text-xs z-10"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
 
-    {showSuggestions && suggestions.length > 0 && (
-      <div className="absolute z-[99999] left-0 right-0 w-full max-w-[640px] mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto shadow-2xl">
-        {suggestions.map((suggestion, index) => (
-          <button
-            key={`${suggestion.type}-${suggestion.value}-${index}`}
-            onClick={() => handleSuggestionSelect(suggestion)}
-            className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2 border-b border-gray-100 last:border-b-0 transition-colors text-sm"
-          >
-            {suggestion.type === "ambulance" && (
-              <Lucide.Ambulance className="text-red-500 flex-shrink-0 w-4 h-4" />
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="font-medium truncate">{suggestion.value}</div>
-              {suggestion.location && (
-                <div className="text-xs text-gray-500 flex items-center gap-1">
-                  <span className="truncate">{suggestion.location}</span>
-                  {suggestion.available !== undefined && (
-                    <span
-                      className={`ml-1 px-1 py-0.5 rounded-full text-xs ${
-                        suggestion.available
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {suggestion.available ? "Available" : "Busy"}
-                    </span>
-                  )}
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div className="absolute z-[99999] left-0 right-0 w-full max-w-[640px] mt-1 bg-white border border-gray-200 rounded-lg max-h-60 overflow-y-auto shadow-2xl">
+                        {suggestions.map((suggestion, index) => (
+                          <button
+                            key={`${suggestion.type}-${suggestion.value}-${index}`}
+                            onClick={() => handleSuggestionSelect(suggestion)}
+                            className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2 border-b border-gray-100 last:border-b-0 transition-colors text-sm"
+                          >
+                            {suggestion.type === "ambulance" && (
+                              <Lucide.Ambulance className="text-red-500 flex-shrink-0 w-4 h-4" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{suggestion.value}</div>
+                              {suggestion.location && (
+                                <div className="text-xs text-gray-500 flex items-center gap-1">
+                                  <span className="truncate">{suggestion.location}</span>
+                                  {suggestion.available !== undefined && (
+                                    <span
+                                      className={`ml-1 px-1 py-0.5 rounded-full text-xs ${
+                                        suggestion.available
+                                          ? "bg-green-100 text-green-700"
+                                          : "bg-red-100 text-red-700"
+                                      }`}
+                                    >
+                                      {suggestion.available ? "Available" : "Busy"}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => searchAmbulances()}
+                    disabled={searchLoading}
+                    style={{ backgroundColor: "var(--accent-color)" }}
+                    className={`px-4 py-2.5 text-white rounded-lg hover:brightness-90 flex items-center gap-2 whitespace-nowrap text-sm ${
+                      searchLoading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    {searchLoading ? (
+                      <Lucide.Loader2 className="animate-spin w-4 h-4" />
+                    ) : (
+                      <Lucide.Search className="w-4 h-4" />
+                    )}
+                    Search
+                  </button>
+
+                  <button
+                    onClick={searchByCurrentLocation}
+                    style={{ backgroundColor: "var(--accent-color)" }}
+                    className="px-4 py-2.5 text-white rounded-lg hover:brightness-90 flex items-center gap-2 whitespace-nowrap text-sm"
+                  >
+                    <Lucide.MapPin className="w-4 h-4" />
+                    Current Location
+                  </button>
                 </div>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-    )}
-  </div>
-
-  <button
-    onClick={() => searchAmbulances()}
-    disabled={searchLoading}
-    style={{ backgroundColor: "var(--accent-color)" }}
-    className={`px-4 py-2.5 text-white rounded-lg hover:brightness-90 flex items-center gap-2 whitespace-nowrap text-sm ${
-      searchLoading ? "opacity-50 cursor-not-allowed" : ""
-    }`}
-  >
-    {searchLoading ? (
-      <Lucide.Loader2 className="animate-spin w-4 h-4" />
-    ) : (
-      <Lucide.Search className="w-4 h-4" />
-    )}
-    Search
-  </button>
-
-  <button
-    onClick={searchByCurrentLocation}
-    style={{ backgroundColor: "var(--accent-color)" }}
-    className="px-4 py-2.5 text-white rounded-lg hover:brightness-90 flex items-center gap-2 whitespace-nowrap text-sm"
-  >
-    <Lucide.MapPin className="w-4 h-4" />
-    Current Location
-  </button>
-</div>
 
                 {/* Filter Section - Left Side */}
                 <div className="flex items-center gap-4">
@@ -1072,9 +818,9 @@ const EmergencySearch = () => {
                   >
                     <Lucide.Filter className="w-4 h-4" />
                     <span className="text-sm font-medium">
-                      {getActiveFilterCount() > 0 
-                        ? `${getActiveFilterCount()} Filter${getActiveFilterCount() !== 1 ? 's' : ''}` 
-                        : 'Filter'}
+                      {getActiveFilterCount() > 0
+                        ? `${getActiveFilterCount()} Filter${getActiveFilterCount() !== 1 ? "s" : ""}`
+                        : "Filter"}
                     </span>
                     {isDesktopFiltersExpanded ? (
                       <Lucide.ChevronUp className="w-4 h-4" />
@@ -1082,7 +828,6 @@ const EmergencySearch = () => {
                       <Lucide.ChevronDown className="w-4 h-4" />
                     )}
                   </button>
-               
                 </div>
               </div>
 
@@ -1121,9 +866,7 @@ const EmergencySearch = () => {
                                       />
                                       <div
                                         className={`w-4 h-4 border-2 rounded transition-all ${
-                                          isSelected
-                                            ? "bg-blue-600 border-blue-600"
-                                            : "border-gray-300 group-hover:border-gray-400"
+                                          isSelected ? "bg-blue-600 border-blue-600" : "border-gray-300 group-hover:border-gray-400"
                                         }`}
                                       >
                                         {isSelected && (
@@ -1143,9 +886,7 @@ const EmergencySearch = () => {
                                     </div>
                                     <span
                                       className={`text-sm transition-colors ${
-                                        isSelected
-                                          ? "text-gray-900 font-medium"
-                                          : "text-gray-700 group-hover:text-gray-900"
+                                        isSelected ? "text-gray-900 font-medium" : "text-gray-700 group-hover:text-gray-900"
                                       }`}
                                     >
                                       {option.label}
@@ -1213,20 +954,14 @@ const EmergencySearch = () => {
                           <Lucide.Ambulance className="text-red-500 flex-shrink-0 w-3 h-3 sm:w-4 sm:h-4" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">
-                            {suggestion.value}
-                          </div>
+                          <div className="font-medium truncate">{suggestion.value}</div>
                           {suggestion.location && (
                             <div className="text-xs text-gray-500 flex items-center gap-1">
-                              <span className="truncate">
-                                {suggestion.location}
-                              </span>
+                              <span className="truncate">{suggestion.location}</span>
                               {suggestion.available !== undefined && (
                                 <span
                                   className={`ml-1 px-1 py-0.5 rounded-full text-xs ${
-                                    suggestion.available
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-red-100 text-red-700"
+                                    suggestion.available ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                                   }`}
                                 >
                                   {suggestion.available ? "Available" : "Busy"}
@@ -1274,9 +1009,7 @@ const EmergencySearch = () => {
                   }`}
                 >
                   {searchLoading ? (
-                    <Lucide.Loader2
-                      className="animate-spin w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5"
-                    />
+                    <Lucide.Loader2 className="animate-spin w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
                   ) : (
                     <Lucide.Search className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
                   )}
@@ -1298,10 +1031,8 @@ const EmergencySearch = () => {
                       {value}
                       <button
                         onClick={() => {
-                          const newValues = activeFilters[filterType].filter(v => v !== value);
+                          const newValues = activeFilters[filterType].filter((v) => v !== value);
                           handleFilterChange(filterType, newValues);
-                          // Apply filters immediately
-                          const updatedFilters = { ...activeFilters, [filterType]: newValues };
                           const filtered = applyFilters(originalAmbulances);
                           setFilteredAmbulances(filtered);
                         }}
@@ -1312,10 +1043,7 @@ const EmergencySearch = () => {
                     </span>
                   ))
                 )}
-                <button
-                  onClick={clearAllFilters}
-                  className="text-xs text-purple-600 hover:text-purple-800 underline"
-                >
+                <button onClick={clearAllFilters} className="text-xs text-purple-600 hover:text-purple-800 underline">
                   Clear all
                 </button>
               </div>
@@ -1388,35 +1116,28 @@ const EmergencySearch = () => {
                     </div>
 
                     <div className="border rounded-lg p-2 sm:p-3 mb-2 sm:mb-3 lg:mb-4 bg-green-50 border-green-200">
-                     <div className="flex items-center gap-1 sm:gap-2 text-green-600">
-  <Lucide.Phone className="w-3 h-3 sm:w-4 sm:h-4" />
-  <button
-    onClick={() => navigator.clipboard.writeText(ambulance.phone)}
-    className="font-semibold text-sm sm:text-base lg:text-lg underline hover:text-green-700 focus:outline-none"
-    title="Click to copy"
-  >
-    {ambulance.phone}
-  </button>
-</div>
-
+                      <div className="flex items-center gap-1 sm:gap-2 text-green-600">
+                        <Lucide.Phone className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <button
+                          onClick={() => navigator.clipboard.writeText(ambulance.phone)}
+                          className="font-semibold text-sm sm:text-base lg:text-lg underline hover:text-green-700 focus:outline-none"
+                          title="Click to copy"
+                        >
+                          {ambulance.phone}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex gap-1 sm:gap-2">
                       <button
-                        onClick={() =>
-                          window.open(`tel:${ambulance.phone}`, "_self")
-                        }
+                        onClick={() => window.open(`tel:${ambulance.phone}`, "_self")}
                         className="flex-1 px-2 py-1 sm:px-3 sm:py-1.5 lg:px-3 lg:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-1 sm:gap-1.5 lg:gap-2 text-xs sm:text-sm"
                       >
                         <Lucide.Phone className="w-3 h-3 sm:w-4 sm:h-4" />
                         Call Now
                       </button>
                       <button
-                        onClick={() =>
-                          toast.success(
-                            `Booking request sent to ${ambulance.serviceName}`
-                          )
-                        }
+                        onClick={() => toast.success(`Booking request sent to ${ambulance.serviceName}`)}
                         className="flex-1 px-2 py-1 sm:px-3 sm:py-1.5 lg:px-3 lg:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1 sm:gap-1.5 lg:gap-2 text-xs sm:text-sm"
                       >
                         <Lucide.Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1432,39 +1153,28 @@ const EmergencySearch = () => {
 
         {searchLoading && (
           <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 lg:p-12 text-center">
-            <Lucide.Loader2
-              className="animate-spin mx-auto mb-3 sm:mb-4 text-green-500 w-6 h-6 sm:w-8 sm:h-8"
-            />
-            <p className="text-gray-600 text-sm sm:text-base">
-              Searching ambulances...
-            </p>
+            <Lucide.Loader2 className="animate-spin mx-auto mb-3 sm:mb-4 text-green-500 w-6 h-6 sm:w-8 sm:h-8" />
+            <p className="text-gray-600 text-sm sm:text-base">Searching ambulances...</p>
           </div>
         )}
 
-        {!searchLoading &&
-          filteredAmbulances.length === 0 &&
-          hasSearched &&
-          searchQuery && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 lg:p-12 text-center">
-              <Lucide.AlertCircle
-                className="mx-auto mb-3 sm:mb-4 text-gray-400 w-6 h-6 sm:w-8 sm:h-8"
-              />
-              <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">
-                No ambulances found for "<strong>{searchQuery}</strong>"
-                {getActiveFilterCount() > 0 && " with selected filters"}
-              </p>
-              <div className="text-xs sm:text-sm text-gray-500">
-                <p>Try:</p>
-                <ul className="list-disc list-inside mt-1.5 sm:mt-2 space-y-1">
-                  <li>
-                    Different search terms (e.g., "Hubli", "BLS", "Government")
-                  </li>
-                  <li>Checking spelling</li>
-                  {getActiveFilterCount() > 0 && <li>Clearing some filters</li>}
-                </ul>
-              </div>
+        {!searchLoading && filteredAmbulances.length === 0 && hasSearched && searchQuery && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 lg:p-12 text-center">
+            <Lucide.AlertCircle className="mx-auto mb-3 sm:mb-4 text-gray-400 w-6 h-6 sm:w-8 sm:h-8" />
+            <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">
+              No ambulances found for "<strong>{searchQuery}</strong>"
+              {getActiveFilterCount() > 0 && " with selected filters"}
+            </p>
+            <div className="text-xs sm:text-sm text-gray-500">
+              <p>Try:</p>
+              <ul className="list-disc list-inside mt-1.5 sm:mt-2 space-y-1">
+                <li>Different search terms (e.g., "Hubli", "BLS", "Government")</li>
+                <li>Checking spelling</li>
+                {getActiveFilterCount() > 0 && <li>Clearing some filters</li>}
+              </ul>
             </div>
-          )}
+          </div>
+        )}
       </div>
 
       {/* Mobile Filter Modal */}

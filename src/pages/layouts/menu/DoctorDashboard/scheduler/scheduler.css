@@ -1,11 +1,10 @@
-/* ===== SCHEDULER STYLES ===== */
-
 /* Container & Layout */
 .scheduler-container {
-  height: 100vh;
+  min-height: 100vh;
   padding: 24px;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  overflow: hidden;
+  overflow: visible;
+  padding-bottom: 32px;
 }
 
 .scheduler-loading {
@@ -30,11 +29,13 @@
   to { transform: rotate(360deg); }
 }
 
+/* Narrower layout: sidebar reduced to 280px, smaller gap */
 .scheduler-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 24px;
-  height: calc(100vh - 48px);
+  grid-template-columns: 1fr 280px; /* was 340px */
+  gap: 16px;                         /* reduced gap */
+  height: auto;
+  min-height: calc(100vh - 160px);  /* slightly smaller min-height to avoid extra vertical space */
 }
 
 /* Calendar Section */
@@ -42,8 +43,8 @@
   background: white;
   border-radius: 20px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  padding: 28px;
-  overflow: hidden;
+  padding: 24px;                     /* slightly reduced padding to save vertical space */
+  overflow: visible !important;
   display: flex;
   flex-direction: column;
 }
@@ -53,8 +54,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
+  margin-bottom: 20px;               /* reduced vertical spacing */
+  padding-bottom: 16px;
   border-bottom: 1px solid #f1f5f9;
   position: relative;
   z-index: 100;
@@ -73,11 +74,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 8px 14px;                 /* tightened */
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: #1e293b;
   cursor: pointer;
@@ -92,7 +93,7 @@
 
 .picker-dropdown {
   position: absolute;
-  top: 50px;
+  top: 48px;
   left: 0;
   background: white;
   border: 1px solid #e2e8f0;
@@ -120,7 +121,7 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   padding: 8px;
-  min-width: 320px;
+  min-width: 300px;
 }
 
 .year-picker {
@@ -131,7 +132,7 @@
 }
 
 .picker-option {
-  padding: 10px 16px;
+  padding: 10px 14px;
   border: none;
   background: transparent;
   border-radius: 8px;
@@ -181,7 +182,7 @@
 }
 
 .today-btn {
-  padding: 8px 20px;
+  padding: 8px 18px;
   border: 1px solid #e2e8f0;
   background: white;
   border-radius: 10px;
@@ -203,13 +204,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 10px 18px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
   border-radius: 10px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
@@ -224,10 +225,11 @@
 .rbc-calendar {
   font-family: 'Inter', sans-serif;
   flex: 1;
+  min-height: 680px; /* slightly reduced so calendar doesn't force too much vertical space */
 }
 
 .rbc-header {
-  padding: 16px 8px;
+  padding: 14px 8px;
   font-weight: 600;
   font-size: 13px;
   color: #64748b;
@@ -238,7 +240,7 @@
 }
 
 .rbc-date-cell {
-  padding: 6px 8px;
+  padding: 6px 6px;
   text-align: center;
   font-weight: 500;
   color: #475569;
@@ -290,11 +292,11 @@
   right: 6px;
   min-width: 24px;
   height: 24px;
-  borderRadius: 12px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  fontSize: 12px;
+  font-size: 12px;
   font-weight: 700;
   background: #2563eb;
   color: #fff;
@@ -323,8 +325,8 @@
 
 /* Duration Options */
 .duration-options {
-  margin-top: 20px;
-  padding-top: 20px;
+  margin-top: 18px;
+  padding-top: 18px;
   border-top: 1px solid #e2e8f0;
 }
 
@@ -342,7 +344,7 @@
 }
 
 .duration-option-btn {
-  padding: 8px 16px;
+  padding: 8px 14px;
   border: 2px solid #e2e8f0;
   background: white;
   border-radius: 10px;
@@ -370,8 +372,11 @@
 .sidebar-section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;               /* reduced gap */
   overflow-y: auto;
+  width: 280px;            /* fixed to match grid column */
+  max-width: 280px;
+  min-width: 220px;
 }
 
 /* Google Meet Card */
@@ -379,7 +384,7 @@
   background: white;
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  padding: 20px;
+  padding: 18px;
 }
 
 .meet-link-container {
@@ -439,31 +444,32 @@
   background: white;
   border-radius: 20px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  padding: 24px;
+  padding: 20px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 
 .upcoming-card {
   background: white;
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  padding: 16px;
-  max-width: 340px;
+  padding: 14px;
+  max-width: 100%;
+  width: 100%;
 }
 
 .card-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   color: #1e293b;
 }
 
 .card-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
 }
 
@@ -519,7 +525,7 @@
   justify-content: center;
   font-weight: 800;
   color: #fff;
-  font-size: 14;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
@@ -603,7 +609,7 @@
 /* Stat styles */
 .stat-item {
   text-align: center;
-  padding: 18px;
+  padding: 16px;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 12px;
 }
@@ -618,7 +624,7 @@
 }
 
 .stat-value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 800;
   color: #1e293b;
 }
@@ -1330,29 +1336,515 @@
   background: #e2e8f0; 
 }
 
-/* Today view event card */
-.today-event-card {
+/* Month view optimizations */
+.no-inner-scroll .rbc-month-view,
+.no-inner-scroll .rbc-month-row,
+.no-inner-scroll .rbc-row-content {
+  overflow: visible !important;
+}
+
+.rbc-month-row, 
+.rbc-row, 
+.rbc-month-view {
+  -webkit-overflow-scrolling: touch;
+  overflow: visible !important;
+}
+
+/* increased min heights to avoid clipping of events in month view */
+.rbc-month-view .rbc-row-content {
+  min-height: 70px;
+  overflow: visible !important;
+}
+
+.rbc-month-view .rbc-row {
+  min-height: 72px;
+}
+
+.rbc-month-view .rbc-event {
+  position: relative !important;
+  transform: none !important;
+  margin: 4px auto 0 !important;
+  max-width: 94% !important;
+  box-sizing: border-box;
+  overflow: visible !important;
+}
+
+.rbc-month-view .custom-event .time-pill {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rbc-month-view .rbc-date-cell {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* ===== TODAY VIEW STYLES ===== */
+
+/* TODAY VIEW: Main Container */
+.todayview-root {
+  min-height: calc(100vh - 120px);
+  padding: 24px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* TODAY VIEW: Grid Layout - Fixed Structure */
+.todayview-root > div:last-child {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+/* TODAY VIEW: Time Column (Left) */
+.todayview-root > div:last-child > div:first-child {
+  background: linear-gradient(180deg, #fafbfc 0%, #f8fafc 100%);
+  border-right: 2px solid #e2e8f0;
+  padding: 0;
+}
+
+/* TODAY VIEW: Time Slot Row */
+.slot-row {
+  height: 80px;
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e8eef5;
+  position: relative;
+  background: white;
+}
+
+.slot-row:last-child {
+  border-bottom: none;
+}
+
+.slot-row > div {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* TODAY VIEW: Appointments Column (Right) */
+.todayview-root > div:last-child > div:last-child {
+  background: white;
+  padding: 0;
+}
+
+.todayview-root > div:last-child > div:last-child > div {
+  display: flex;
+  flex-direction: column;
+}
+
+/* TODAY VIEW: Slot Container with Grid Lines */
+.slot-container {
+  min-height: 60px;
+  height: 70px;
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 8px;
+  border-bottom: 1px solid #e8eef5;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.2s ease;
+}
+
+.slot-container:hover {
+  background: #fafbfc;
+}
+
+.slot-container:last-child {
+  border-bottom: none;
+}
+
+/* TODAY VIEW: Empty Slot Placeholder */
+.slot-placeholder:hover {
+  border-color: #9ca3af;
+  background: #f3f4f6;
+}
+
+.slot-placeholder > div {
+  font-size: 13px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* TODAY VIEW: Slot Events Container */
+.slot-events {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ===== Updated Event Card styling to match screenshots ===== */
+
+/* Base event card — spacing & compact look tuned */
+.event-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+  box-sizing: border-box;
 }
 
-.today-event-card:hover {
-  background: #f8fafc !important;
+/* Color Indicator Bar positioned close to the left edge, matching screenshot */
+.event-card::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 12px;
+  width: 6px;
+  height: calc(100% - 24px);
+  border-radius: 4px;
+  background: currentColor;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
+/* Hover effect */
+.event-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  border-color: currentColor;
+}
+
+/* Event left: avatar placement aligned to color bar */
+.event-left {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+/* Avatar slightly smaller and with white border like screenshot */
+.event-card .patient-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 3px solid white;
+}
+
+/* Main content — two-row layout: top row (name + type), right-aligned time; bottom row (optional) */
+.event-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Top row: name on the left, time on the right */
+.event-main > .top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Name + small badge group */
+.name-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* patient name */
+.event-patient {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;               /* reduced to fit narrower layout */
+}
+
+/* Small type badge next to the name (rounded pill) */
+.event-card .type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+
+/* Type color variants remain */
+.event-card .type-badge.physical {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid rgba(30,64,175,0.08);
+}
+
+.event-card .type-badge.virtual {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid rgba(6,95,70,0.08);
+}
+
+/* Time block (clock icon + text) — aligned right inside the top row */
+.time-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* clock icon smaller and muted */
+.time-block .time-icon {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+}
+
+/* bottom row (secondary info) - kept compact */
+.event-main > .bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* Inline status pill placed inside card (if present), smaller to match screenshot */
+.inline-status {
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #eef6ff;
+  color: #0369a1;
+  border: 1px solid rgba(3,105,161,0.08);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* If you still use .event-right for other views, keep it but it's not used for the screenshot layout */
+.event-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+/* Legacy .status-pill (kept) */
+.status-pill {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid rgba(3,105,161,0.1);
+  white-space: nowrap;
+}
+
+/* Group Pill */
+.group-pill {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid rgba(146,64,14,0.1);
+  white-space: nowrap;
+}
+
+/* TODAY VIEW: Responsive Design */
+@media (max-width: 1100px) {
+  /* keep two columns longer on medium screens, collapse later */
+  .scheduler-layout {
+    grid-template-columns: 1fr 240px;
+  }
+  .sidebar-section {
+    width: 240px;
+    max-width: 240px;
+  }
+}
+
+@media (max-width: 1000px) {
   .scheduler-layout { 
     grid-template-columns: 1fr; 
   }
+  .sidebar-section {
+    width: 100%;
+    max-width: none;
+  }
+}
 
+@media (max-width: 1024px) {
+  .todayview-root > div:last-child {
+    grid-template-columns: 100px 1fr;
+  }
+  
+  .slot-container {
+    padding: 10px 16px;
+  }
+  
+  .event-card {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  
+  .event-card .patient-avatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    font-size: 14px;
+    border-width: 2px;
+  }
+}
+
+@media (max-width: 768px) {
+  .todayview-root {
+    padding: 16px;
+  }
+  
+  .todayview-root > div:last-child {
+    grid-template-columns: 80px 1fr;
+    gap: 0;
+  }
+  
+  .slot-row {
+    height: 70px;
+    padding: 10px 12px;
+  }
+  
+  .slot-container {
+    min-height: 70px;
+    height: 70px;
+    padding: 8px 12px;
+  }
+  
+  .event-card {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  
+  .event-card .patient-avatar {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 13px;
+  }
+  
+  .event-patient {
+    font-size: 14px;
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .event-main > .top-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .event-main > .bottom-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .event-right {
+    align-items: flex-start;
+  }
+}
+
+/* Responsive Design - General */
+@media (max-width: 1200px) {
   .sidebar-section {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
   }
 
   .upcoming-card { 
     max-width: 100%; 
+  }
+  .upcoming-card {
+  overflow: visible; /* allow children to expand outside fixed box if any */
+}
+.upcoming-list {
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+}
+/* Option 1: remove scrolling, let list grow */
+.upcoming-card {
+  overflow: visible !important;
+  /* if you had a fixed height previously, remove it or set height:auto */
+  height: auto !important;
+}
+
+.upcoming-list {
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* also hide any pseudo-element tracks that might appear */
+.upcoming-list::-webkit-scrollbar,
+.upcoming-list::-webkit-scrollbar-track,
+.upcoming-list::-webkit-scrollbar-thumb {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* defensive: remove reserved scrollbar gutter (modern browsers) */
+.upcoming-list {
+  scrollbar-gutter: stable both-edges; /* avoid layout jumps; or use 'auto' / 'none' as needed */
+}
+
+@media (max-width: 900px) {
+  .rbc-month-view .rbc-row-content { 
+    min-height: 70px; 
+  }
+  .rbc-month-view .rbc-row { 
+    min-height: 76px; 
   }
 }
 
@@ -1405,54 +1897,13 @@
   }
 }
 
-/* Month view optimizations */
-.no-inner-scroll .rbc-month-view,
-.no-inner-scroll .rbc-month-row,
-.no-inner-scroll .rbc-row-content {
-  overflow: visible !important;
+/* Accessibility */
+.event-card:focus {
+  outline: 3px solid rgba(59,130,246,0.3);
+  outline-offset: 2px;
 }
 
-.rbc-month-row, 
-.rbc-row, 
-.rbc-month-view {
-  -webkit-overflow-scrolling: touch;
-  overflow: visible !important;
-}
-
-.rbc-month-view .rbc-row-content {
-  min-height: 56px;
-  overflow: visible !important;
-}
-
-.rbc-month-view .rbc-row {
-  min-height: 60px;
-}
-
-.rbc-month-view .rbc-event {
-  position: relative !important;
-  transform: none !important;
-  margin: 4px auto 0 !important;
-  max-width: 92% !important;
-  box-sizing: border-box;
-  overflow: visible !important;
-}
-
-.rbc-month-view .custom-event .time-pill {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.rbc-month-view .rbc-date-cell {
-  padding-top: 6px;
-  padding-bottom: 6px;
-}
-
-@media (max-width: 900px) {
-  .rbc-month-view .rbc-row-content { 
-    min-height: 70px; 
-  }
-  .rbc-month-view .rbc-row { 
-    min-height: 76px; 
-  }
+.event-card:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
 }

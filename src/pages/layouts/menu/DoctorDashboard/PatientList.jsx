@@ -12,7 +12,7 @@ import {
 } from "../../../../utils/masterService";
 // Import tab components
 import OpdTab from "./OPDTab";
-import IpdTab from "./IPDTab";
+import IpdTab from "./ipd/IPDTab";
 import VirtualTab from "./VirtualTab";
 
 const PatientList = () => {

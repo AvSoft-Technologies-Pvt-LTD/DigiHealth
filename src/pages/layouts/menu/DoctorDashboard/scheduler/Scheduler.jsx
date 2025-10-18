@@ -30,7 +30,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import AvailabilityModal from "./AvailabilityModal";
 import AppointmentDetailModal from "./AppointmentDetailModal";
-import DayAppointmentsModal from "./DayAppointmentsModal";
+
 import "./scheduler.css";
 
 const locales = { "en-US": enUS };
@@ -230,14 +230,18 @@ const Scheduler = () => {
   const groupEventsByDate = (individualEvents) => {
     const map = {};
     individualEvents.forEach((e) => {
-      const d = startOfDay(new Date(e.start));
-      const key = d.toISOString().slice(0, 10);
+const d = startOfDay(new Date(e.start));
+// use local date string (date-fns format) instead of toISOString (UTC)
+const key = format(d, "yyyy-MM-dd");
       if (!map[key]) map[key] = [];
       map[key].push(e);
     });
 
     const grouped = Object.keys(map).map((key) => {
-      const d = new Date(key + "T00:00:00");
+    // parse yyyy-MM-dd back into a local Date at start-of-day
+const [y, m, dd] = key.split("-").map(Number);
+const d = new Date(y, m - 1, dd);
+
       map[key].sort((a, b) => compareAsc(new Date(a.start), new Date(b.start)));
       return {
         id: `day-${key}`,
@@ -296,7 +300,7 @@ const Scheduler = () => {
   const handleSelectEvent = useCallback(
     (event) => {
       if (event?.resource?.events) {
-        const iso = startOfDay(event.start).toISOString().slice(0, 10);
+const iso = format(startOfDay(event.start), "yyyy-MM-dd");
         navigate(`today?date=${iso}`, {
           state: { events: event.resource.events },
         });
@@ -310,9 +314,8 @@ const Scheduler = () => {
 
   const handleSelectSlot = useCallback(
     (slotInfo) => {
-      const iso = startOfDay(new Date(slotInfo.start))
-        .toISOString()
-        .slice(0, 10);
+   const iso = format(startOfDay(new Date(slotInfo.start)), "yyyy-MM-dd");
+
       const dayEvents = events.filter((ev) => {
         const evDate = new Date(ev.start).toISOString().slice(0, 10);
         return evDate === iso;
@@ -348,7 +351,8 @@ const Scheduler = () => {
   const dayCountsMap = useMemo(() => {
     const map = {};
     monthEvents.forEach((m) => {
-      const key = m.start.toISOString().slice(0, 10);
+      const key = format(startOfDay(m.start), "yyyy-MM-dd");
+
       const count = Array.isArray(m.resource?.events)
         ? m.resource.events.length
         : 0;
@@ -382,7 +386,7 @@ const Scheduler = () => {
   };
 
   const DateCellWrapper = ({ children, value }) => {
-    const key = startOfDay(new Date(value)).toISOString().slice(0, 10);
+const key = format(startOfDay(new Date(value)), "yyyy-MM-dd");
     const count = dayCountsMap[key] || 0;
 
     return (
@@ -478,7 +482,8 @@ const Scheduler = () => {
       setCurrentDate(newDate);
     };
     const goToCurrent = () => {
-      const iso = startOfDay(new Date()).toISOString().slice(0, 10);
+const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
+
       // navigate relative to current path (which is /doctordashboard/scheduler)
       navigate(`today?date=${iso}`, { relative: "path" });
     };
@@ -623,7 +628,8 @@ const Scheduler = () => {
             events={monthEvents}
             startAccessor="start"
             endAccessor="end"
-            style={{ height: "100%", overflow: "visible" }}
+          style={{ height: "auto", minHeight: 680, overflow: "visible" }}
+
             eventPropGetter={eventStyleGetter}
             components={{
               toolbar: CustomToolbar,
@@ -641,34 +647,14 @@ const Scheduler = () => {
             className="no-inner-scroll"
           />
 
-          {/* Duration Options */}
-          <div className="duration-options">
-            <h4>Appointment Duration</h4>
-            <div className="duration-buttons">
-              {[15, 30, 45, 60, 120].map((mins) => (
-                <button
-                  key={mins}
-                  className={`duration-option-btn ${
-                    selectedDuration === mins ? "active" : ""
-                  }`}
-                  onClick={() => setSelectedDuration(mins)}
-                >
-                  {mins < 60
-                    ? `${mins} min`
-                    : mins === 60
-                    ? "1 hour"
-                    : "2 hour"}
-                </button>
-              ))}
-            </div>
-          </div>
+        
         </div>
 
         <div className="sidebar-section">
           {/* Google Meet Section */}
           <div className="google-meet-card">
             <div className="card-header">
-              <Video size={18} color="#10b981" />
+              
               <h3>Connect with upcoming patient</h3>
             </div>
             <div className="meet-link-container">
@@ -769,19 +755,6 @@ const Scheduler = () => {
         />
       )}
 
-      {showDayAppointments && (
-        <DayAppointmentsModal
-          isOpen={showDayAppointments}
-          onClose={() => setShowDayAppointments(false)}
-          date={selectedDate}
-          events={dayEvents}
-          onSelectEvent={(event) => {
-            setShowDayAppointments(false);
-            setSelectedEvent(event);
-            setShowAppointmentDetail(true);
-          }}
-        />
-      )}
     </div>
   );
 };
