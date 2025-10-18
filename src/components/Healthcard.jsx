@@ -7,80 +7,11 @@ import { Download, X, Check, Crown, Star, Shield, Zap, KeyRound } from "lucide-r
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logo from '../assets/logo.png';
+import { getSubscriptionPlans, getPatientById } from "../utils/masterService"; // Import the service
+import { getPatientPhoto } from "../utils/masterService"; // Import the photo service
 
 const API_BASE_URL = "https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1";
 const CARD_API_URL = "https://681075c727f2fdac24116e70.mockapi.io/user/healthcard";
-
-const subscriptionPlans = [
-  {
-    id: "basic",
-    name: "Basic",
-    price: "₹299",
-    period: "/month",
-    icon: Shield,
-    color: "blue",
-    gradient: "from-blue-700 to-blue-900",
-    cardGradient: "from-[#1E40AF] to-[#1E3A8A]",
-    qrColor: "#1E40AF",
-    benefits: [
-      "Basic health card",
-      "QR code access",
-      "Emergency contacts",
-      "Basic medical history"
-    ]
-  },
-  {
-    id: "silver",
-    name: "Silver",
-    price: "₹599",
-    period: "/month",
-    icon: Star,
-    color: "gray",
-    gradient: "from-gray-600 to-gray-800",
-    cardGradient: "from-[#374151] to-[#1F2937]",
-    qrColor: "#6B7280",
-    benefits: [
-      "Enhanced health card design",
-      "Priority medical support",
-      "Detailed health analytics",
-      "Family member cards"
-    ]
-  },
-  {
-    id: "gold",
-    name: "Gold",
-    price: "₹999",
-    period: "/month",
-    icon: Crown,
-    color: "yellow",
-    gradient: "from-yellow-500 to-yellow-700",
-    cardGradient: "from-[#FFD700] to-[#FFA500]",
-    qrColor: "#B8860B",
-    benefits: [
-      "Premium gold card design",
-      "24/7 health concierge",
-      "Advanced health monitoring",
-      "Specialist consultations"
-    ]
-  },
-  {
-    id: "platinum",
-    name: "Platinum",
-    price: "₹1,499",
-    period: "/month",
-    icon: Zap,
-    color: "purple",
-    gradient: "from-purple-800 to-purple-950",
-    cardGradient: "from-[#4C1D95] to-[#5B21B6]",
-    qrColor: "#7C3AED",
-    benefits: [
-      "Exclusive platinum card",
-      "Personal health manager",
-      "AI-powered health insights",
-      "Global medical coverage"
-    ]
-  }
-];
 
 function Healthcard({ hideLogin }) {
   const [userData, setUserData] = useState(null);
@@ -92,30 +23,150 @@ function Healthcard({ hideLogin }) {
   const [showModal, setShowModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscription, setSubscription] = useState(localStorage.getItem("subscription") || null);
-  const [selectedPlan, setSelectedPlan] = useState(subscription ? subscriptionPlans.find(p => p.id === subscription) : subscriptionPlans.find(p => p.id === "gold"));
-
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [loadingPlans, setLoadingPlans] = useState(true);
   const navigate = useNavigate();
-  const userEmail = useSelector((state) => state.auth.user?.email);
+  const user = useSelector((state) => state.auth.user);
   const cardRef = useRef(null);
 
+  // Fetch subscription plans from masterService
+  useEffect(() => {
+    const fetchSubscriptionPlans = async () => {
+      try {
+        const res = await getSubscriptionPlans();
+        const plans = res.data.map((plan) => ({
+          id: plan.name.toLowerCase(),
+          name: plan.name,
+          price: `₹${plan.price}`,
+          period: "/month",
+          icon: getIconForPlan(plan.name),
+          color: getColorForPlan(plan.name),
+          gradient: getGradientForPlan(plan.name),
+          cardGradient: getCardGradientForPlan(plan.name),
+          qrColor: getQRColorForPlan(plan.name),
+          benefits: plan.features,
+        }));
+        setSubscriptionPlans(plans);
+        setSelectedPlan(plans.find((p) => p.id === subscription) || plans.find((p) => p.id === "gold"));
+        setLoadingPlans(false);
+      } catch (err) {
+        console.error("Failed to fetch subscription plans", err);
+        setLoadingPlans(false);
+      }
+    };
+    fetchSubscriptionPlans();
+  }, [subscription]);
+
+  // Helper functions to map API plan names to UI properties
+  const getIconForPlan = (name) => {
+    switch (name) {
+      case "Basic":
+        return Shield;
+      case "Silver":
+        return Star;
+      case "Gold":
+        return Crown;
+      case "Platinum":
+        return Zap;
+      default:
+        return Shield;
+    }
+  };
+
+  const getColorForPlan = (name) => {
+    switch (name) {
+      case "Basic":
+        return "blue";
+      case "Silver":
+        return "gray";
+      case "Gold":
+        return "yellow";
+      case "Platinum":
+        return "purple";
+      default:
+        return "blue";
+    }
+  };
+
+  const getGradientForPlan = (name) => {
+    switch (name) {
+      case "Basic":
+        return "from-blue-700 to-blue-900";
+      case "Silver":
+        return "from-gray-600 to-gray-800";
+      case "Gold":
+        return "from-yellow-500 to-yellow-700";
+      case "Platinum":
+        return "from-purple-800 to-purple-950";
+      default:
+        return "from-blue-700 to-blue-900";
+    }
+  };
+
+  const getCardGradientForPlan = (name) => {
+    switch (name) {
+      case "Basic":
+        return "from-[#1E40AF] to-[#1E3A8A]";
+      case "Silver":
+        return "from-[#374151] to-[#1F2937]";
+      case "Gold":
+        return "from-[#FFD700] to-[#FFA500]";
+      case "Platinum":
+        return "from-[#4C1D95] to-[#5B21B6]";
+      default:
+        return "from-[#1E40AF] to-[#1E3A8A]";
+    }
+  };
+
+  const getQRColorForPlan = (name) => {
+    switch (name) {
+      case "Basic":
+        return "#1E40AF";
+      case "Silver":
+        return "#6B7280";
+      case "Gold":
+        return "#B8860B";
+      case "Platinum":
+        return "#7C3AED";
+      default:
+        return "#1E40AF";
+    }
+  };
+
+  // Fetch user data from masterService
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/users?email=${userEmail}`);
-        if (res.data && res.data.length > 0) {
-          setUserData(res.data[0]);
+        if (!user?.patientId) return;
+         console.log("No patientId found in user object");
+        const res = await getPatientById(user.patientId);
+        console.log("API Response:", res.data); 
+        const userData = res.data;
+        // Format dob from array to string
+        const dob = userData.dob ? new Date(userData.dob[0], userData.dob[1] - 1, userData.dob[2]) : null;
+        // Fetch user photo
+        let photoUrl = null;
+        if (userData.photo) {
+          const photoRes = await getPatientPhoto(userData.photo);
+          photoUrl = URL.createObjectURL(photoRes.data);
         }
+        setUserData({
+          ...userData,
+          dob: dob ? dob.toISOString().split('T')[0] : null,
+          photo: photoUrl,
+        });
       } catch (err) {
         console.error("Failed to fetch user data", err);
         setUserData(null);
       }
     };
-    if (userEmail) fetchUserData();
-  }, [userEmail]);
+    if (user?.patientId) fetchUserData();
+  }, [user?.patientId]);
 
   useEffect(() => {
     if (healthId && subscription) {
-      const plan = subscriptionPlans.find(p => p.id === subscription);
+      const plan = subscriptionPlans.find((p) => p.id === subscription);
       QRCode.toDataURL(
         healthId,
         {
@@ -129,13 +180,13 @@ function Healthcard({ hideLogin }) {
         }
       );
     }
-  }, [healthId, subscription]);
+  }, [healthId, subscription, subscriptionPlans]);
 
   useEffect(() => {
-    if (!subscription) {
+    if (!subscription && !loadingPlans) {
       setShowSubscriptionModal(true);
     }
-  }, [subscription]);
+  }, [subscription, loadingPlans]);
 
   const generateHealthId = (userData) => {
     const now = new Date();
@@ -153,7 +204,7 @@ function Healthcard({ hideLogin }) {
 
   useEffect(() => {
     const autoGenerateCard = async () => {
-      if (!userData?.aadhaar || isCardGenerated || !subscription) return;
+      if (!userData?.aadhaar || isCardGenerated || !subscription || loadingPlans) return;
       try {
         const genId = generateHealthId(userData);
         setHealthId(genId);
@@ -165,7 +216,7 @@ function Healthcard({ hideLogin }) {
       }
     };
     autoGenerateCard();
-  }, [userData, isCardGenerated, subscription, rtoData]);
+  }, [userData, isCardGenerated, subscription, rtoData, loadingPlans]);
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -207,7 +258,7 @@ function Healthcard({ hideLogin }) {
   const handleSubscriptionChoice = (planId) => {
     setSubscription(planId);
     localStorage.setItem("subscription", planId);
-    setSelectedPlan(subscriptionPlans.find(p => p.id === planId));
+    setSelectedPlan(subscriptionPlans.find((p) => p.id === planId));
     setShowSubscriptionModal(false);
   };
 
@@ -215,8 +266,9 @@ function Healthcard({ hideLogin }) {
     setShowSubscriptionModal(true);
   };
 
-  const currentPlan = subscriptionPlans.find(p => p.id === subscription);
+  const currentPlan = subscriptionPlans.find((p) => p.id === subscription);
 
+  if (loadingPlans) return <div className="text-center p-4">Loading subscription plans...</div>;
   if (!userData) return <div className="text-center p-4">Loading user data...</div>;
 
   if (showSubscriptionModal) {
@@ -248,10 +300,10 @@ function Healthcard({ hideLogin }) {
                   className={`relative cursor-pointer rounded-xl p-4 sm:p-6 border-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
                     isSelected
                       ? `border-${plan.color}-500 bg-${plan.color}-50 shadow-2xl ring-2 ring-${plan.color}-200`
-                      : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                      : "border-gray-200 hover:border-gray-300 hover:shadow-md"
                   }`}
                 >
-                  {plan.id === 'gold' && (
+                  {plan.id === "gold" && (
                     <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
                       <span className="bg-gradient-to-r from-yellow-500 to-yellow-700 text-white text-xs px-2 py-0.5 rounded-full font-semibold shadow-md whitespace-nowrap">
                         Most Popular
@@ -259,7 +311,9 @@ function Healthcard({ hideLogin }) {
                     </div>
                   )}
                   <div className="text-center mb-3">
-                    <div className={`inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r ${plan.gradient} text-white mb-2 shadow-md`}>
+                    <div
+                      className={`inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r ${plan.gradient} text-white mb-2 shadow-md`}
+                    >
                       <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-1">{plan.name}</h3>
@@ -294,10 +348,10 @@ function Healthcard({ hideLogin }) {
               className={`px-6 py-2 sm:px-8 sm:py-3 rounded-lg font-semibold transition-all duration-300 shadow-md text-sm sm:text-base ${
                 selectedPlan
                   ? `bg-gradient-to-r ${selectedPlan.gradient} text-white hover:shadow-lg transform hover:scale-[1.02]`
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-50"
               }`}
             >
-              {selectedPlan ? `Activate ${selectedPlan.name} Plan` : 'Select a Plan First'}
+              {selectedPlan ? `Activate ${selectedPlan.name} Plan` : "Select a Plan First"}
             </button>
           </div>
           <div className="text-center mt-4 pt-3 border-t border-gray-200">
@@ -311,9 +365,14 @@ function Healthcard({ hideLogin }) {
   }
 
   const textColor = currentPlan?.id === "gold" ? "text-gray-800" : "text-white";
-  const accentColor = currentPlan?.id === "gold" ? "text-gray-700" :
-                     currentPlan?.id === "platinum" ? "text-purple-300" :
-                     currentPlan?.id === "silver" ? "text-gray-200" : "text-blue-200";
+  const accentColor =
+    currentPlan?.id === "gold"
+      ? "text-gray-700"
+      : currentPlan?.id === "platinum"
+      ? "text-purple-300"
+      : currentPlan?.id === "silver"
+      ? "text-gray-200"
+      : "text-blue-200";
 
   return (
     <div className="flex flex-col items-center justify-center min-w-full p-2 sm:p-4">
@@ -324,7 +383,8 @@ function Healthcard({ hideLogin }) {
             className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl
               bg-gradient-to-r ${currentPlan.gradient} text-white font-bold
               text-sm sm:text-lg shadow-lg ring-1 ring-white/20 relative overflow-hidden
-              [box-shadow:inset_2px_2px_6px_rgba(0,0,0,0.25),inset_-2px_-2px_6px_rgba(255,255,255,0.2),0_4px_12px_rgba(0,0,0,0.2)]`}>
+              [box-shadow:inset_2px_2px_6px_rgba(0,0,0,0.25),inset_-2px_-2px_6px_rgba(255,255,255,0.2),0_4px_12px_rgba(0,0,0,0.2)]`}
+          >
             <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white/20 rounded-full shadow-inner">
               <currentPlan.icon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
@@ -342,9 +402,9 @@ function Healthcard({ hideLogin }) {
         ref={cardRef}
         className="relative w-full max-w-[350px] sm:max-w-[400px] h-[220px] sm:h-[250px] rounded-xl overflow-hidden shadow-xl mx-auto"
         style={{
-          background: currentPlan?.cardGradient ?
-            `linear-gradient(135deg, ${currentPlan.cardGradient.replace('from-[', '').replace('] to-[', ', ').replace(']', '')})` :
-            'linear-gradient(135deg, #6B7280, #374151)'
+          background: currentPlan?.cardGradient
+            ? `linear-gradient(135deg, ${currentPlan.cardGradient.replace("from-[", "").replace("] to-[", ", ").replace("]", "")})`
+            : "linear-gradient(135deg, #6B7280, #374151)",
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
@@ -354,11 +414,7 @@ function Healthcard({ hideLogin }) {
             <div className="flex items-center"></div>
             <div className="text-right">
               <div className="flex items-center justify-end gap-1 sm:gap-2">
-                <img
-                  src={logo}
-                  alt="DigiHealth Logo"
-                  className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                />
+                <img src={logo} alt="DigiHealth Logo" className="w-12 h-12 sm:w-16 sm:h-16 object-contain" />
                 <h1 className={`text-lg sm:text-xl font-bold ${accentColor}`}>DigiHealth</h1>
               </div>
             </div>
@@ -421,7 +477,9 @@ function Healthcard({ hideLogin }) {
             document.title = title;
           }}
           className={`flex items-center gap-1.5 sm:gap-2 font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.03] shadow-lg text-xs sm:text-sm ${
-            currentPlan ? `bg-gradient-to-r ${currentPlan.gradient} text-white hover:shadow-xl` : 'bg-gray-600 text-white hover:bg-gray-700 '
+            currentPlan
+              ? `bg-gradient-to-r ${currentPlan.gradient} text-white hover:shadow-xl`
+              : "bg-gray-600 text-white hover:bg-gray-700 "
           }`}
         >
           <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -478,7 +536,8 @@ function Healthcard({ hideLogin }) {
               </button>
             </div>
             <div className="text-xs text-gray-400 text-center">
-              Didn&apos;t receive the code? <span className="text-blue-600 cursor-pointer hover:underline">Resend</span>
+              Didn&apos;t receive the code?{" "}
+              <span className="text-blue-600 cursor-pointer hover:underline">Resend</span>
             </div>
           </div>
         </div>

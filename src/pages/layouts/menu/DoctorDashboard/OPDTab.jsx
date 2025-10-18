@@ -1,4 +1,3 @@
-// OPDTab.jsx
 import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -9,21 +8,10 @@ import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import ReusableModal from "../../../../components/microcomponents/Modal";
 import TeleConsultFlow from "../../../../components/microcomponents/Call";
 import { getFamilyMembersByPatient, getPersonalHealthByPatientId } from "../../../../utils/CrudService";
-
-const API = {
-  FORM: "https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient",
-  VITAL_SIGNS: "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary",
-  UPLOAD: "https://your-mock-api-endpoint.com/upload",
-};
-
-const OCCUPATIONS = [
-  { value: "Doctor", label: "Doctor" },
-  { value: "Engineer", label: "Engineer" },
-  { value: "Teacher", label: "Teacher" },
-  { value: "Student", label: "Student" },
-  { value: "Retired", label: "Retired" },
-];
-
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser} from "../../../../context-api/authSlice";
+import {  getPatientById, updatePatient,getGenders  } from "../../../../utils/masterService";
+import axiosInstance from "../../../../utils/axiosInstance";
 const getCurrentDate = () => new Date().toISOString().slice(0, 10);
 const getCurrentTime = () => new Date().toTimeString().slice(0, 5);
 
@@ -113,11 +101,9 @@ const PatientViewSections = ({ data, personalHealthDetails, familyHistory, vital
 
 const PatientViewModal = ({ isOpen, onClose, patient, personalHealthDetails, familyHistory, vitalSigns, loading, onEdit }) => {
   const [selectedFile, setSelectedFile] = useState(null);
-
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
   };
-
   const handleUpload = async () => {
     if (!selectedFile) {
       toast.error("Please select a file to upload.");
@@ -127,11 +113,8 @@ const PatientViewModal = ({ isOpen, onClose, patient, personalHealthDetails, fam
     formData.append("file", selectedFile);
     formData.append("patientId", patient.id);
     try {
-      const response = await fetch(API.UPLOAD, {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) throw new Error("Failed to upload file.");
+      const response = await axiosInstance.post("/upload", formData);
+      if (!response.data.success) throw new Error("Failed to upload file.");
       toast.success("File uploaded successfully!");
       setSelectedFile(null);
     } catch (error) {
@@ -139,9 +122,7 @@ const PatientViewModal = ({ isOpen, onClose, patient, personalHealthDetails, fam
       toast.error("Failed to upload file.");
     }
   };
-
   if (!isOpen) return null;
-
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4"
@@ -244,8 +225,10 @@ const OpdTab = forwardRef(
     ref
   ) => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [errors, setErrors] = useState({});
     const [newPatientId, setNewPatientId] = useState(null);
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [modals, setModals] = useState({ addPatient: false, appointment: false, viewPatient: false, editPatient: false });
@@ -255,7 +238,26 @@ const OpdTab = forwardRef(
     const [familyHistory, setFamilyHistory] = useState([]);
     const [vitalSigns, setVitalSigns] = useState(null);
     const [detailsLoading, setDetailsLoading] = useState(false);
+    const [genderOptions, setGenderOptions] = useState([]);
 
+    // Fetch genders on component mount
+   useEffect(() => {
+  const fetchGenders = async () => {
+    try {
+      const response = await getGenders();
+      const genders = response.data.map((gender) => ({
+        value: gender.id,
+        label: gender.name, // ✅ Updated to match API field
+      }));
+      setGenderOptions(genders);
+    } catch (error) {
+      console.error("Error fetching genders:", error);
+      toast.error("Failed to fetch genders");
+    }
+  };
+
+  fetchGenders();
+}, []);
     useImperativeHandle(ref, () => ({
       openAddPatientModal: () => {
         openModal("addPatient");
@@ -280,8 +282,8 @@ const OpdTab = forwardRef(
     const fetchAllPatients = async () => {
       setLoading(true);
       try {
-        const res = await fetch(API.FORM);
-        const allPatients = await res.json();
+        const response = await axiosInstance.get("/auth/patient");
+        const allPatients = response.data;
         const processedPatients = allPatients
           .map((p) => ({
             ...p,
@@ -318,7 +320,7 @@ const OpdTab = forwardRef(
         const [personalRes, familyRes, vitalRes] = await Promise.all([
           getPersonalHealthByPatientId(patientId).catch(() => ({ data: null })),
           getFamilyMembersByPatient(patientId).catch(() => ({ data: [] })),
-          fetch(API.VITAL_SIGNS).then((res) => res.json()).catch(() => []),
+          axiosInstance.get("/vital-signs").then((res) => res.data).catch(() => []),
         ]);
         setPersonalHealthDetails(personalRes.data || null);
         setFamilyHistory(Array.isArray(familyRes.data) ? familyRes.data : []);
@@ -384,30 +386,39 @@ const OpdTab = forwardRef(
       }
     };
 
-    const handleFormChange = async (data) => {
-      if (data.sameAsPermAddress && data.addressPerm) {
-        data.addressTemp = data.addressPerm;
-      }
-      if (data.pincode && data.pincode.length === 6) {
-        const address = await fetchAddressFromPincode(data.pincode);
-        data = {
-          ...data,
-          city: address.city,
-          state: address.state,
-          district: address.district,
-          cityOptions: address.cityOptions,
-        };
-      } else if (!data.pincode || data.pincode.length !== 6) {
-        data = {
-          ...data,
-          city: "",
-          state: "",
-          district: "",
-          cityOptions: [],
-        };
-      }
-      setFormData(data);
+  const handleFormChange = async (data) => {
+  // Clear errors for the field being edited
+  const newErrors = { ...errors };
+  Object.keys(data).forEach((key) => {
+    if (newErrors[key]) delete newErrors[key];
+  });
+  setErrors(newErrors);
+
+  // Rest of your existing logic
+  if (data.sameAsPermAddress && data.addressPerm) {
+    data.addressTemp = data.addressPerm;
+  }
+  if (data.pincode && data.pincode.length === 6) {
+    const address = await fetchAddressFromPincode(data.pincode);
+    data = {
+      ...data,
+      city: address.city,
+      state: address.state,
+      district: address.district,
+      cityOptions: address.cityOptions,
     };
+  } else if (!data.pincode || data.pincode.length !== 6) {
+    data = {
+      ...data,
+      city: "",
+      state: "",
+      district: "",
+      cityOptions: [],
+    };
+  }
+  setFormData(data);
+};
+
 
     const handleViewPatient = (patient) => {
       setSelectedPatient(patient);
@@ -429,61 +440,93 @@ const OpdTab = forwardRef(
       openModal("editPatient");
     };
 
-    const handleUpdatePatient = async (formData) => {
-      try {
-        const payload = {
-          ...formData,
-          name: `${formData.firstName || ""} ${formData.middleName || ""} ${formData.lastName || ""}`.trim(),
-          permanentAddress: formData.addressPerm,
-          temporaryAddress: formData.addressTemp,
-          updatedAt: new Date().toISOString(),
-        };
-        const response = await fetch(`${API.FORM}/${selectedPatient.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error("Failed to update patient");
-        toast.success("Patient updated successfully!");
-        closeModal("editPatient");
-        fetchAllPatients();
-      } catch (error) {
-        console.error("Error updating patient:", error);
-        toast.error("Failed to update patient");
-      }
+   const handleUpdatePatient = async (formData) => {
+  try {
+    const payload = {
+      ...formData,
+      name: `${formData.firstName || ""} ${formData.middleName || ""} ${formData.lastName || ""}`.trim(),
+      permanentAddress: formData.addressPerm,
+      temporaryAddress: formData.addressTemp,
+      updatedAt: new Date().toISOString(),
     };
 
-    const handleSavePatient = async (formData) => {
-      try {
-        const payload = {
-          ...formData,
-          name: `${formData.firstName || ""} ${formData.middleName || ""} ${formData.lastName || ""}`.trim(),
-          permanentAddress: formData.addressPerm,
-          temporaryAddress: formData.addressTemp,
-          type: "opd",
-          doctorName,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        const response = await fetch(API.FORM, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+    const response = await dispatch(updatePatient({ id: selectedPatient.id, data: payload }));
+    if (response.error) {
+      const errorMessage = response.payload;
+      if (typeof errorMessage === "object") {
+        Object.entries(errorMessage).forEach(([field, message]) => {
+          toast.error(`${field}: ${message}`);
         });
-        if (!response.ok) throw new Error("Failed to save patient");
-        const responseData = await response.json();
-        setNewPatientId(responseData.id);
-        toast.success("Patient details saved!");
-        closeModal("addPatient");
-        openModal("appointment");
-        toast.success("Please schedule appointment.");
-        fetchAllPatients();
-      } catch (error) {
-        console.error("Error saving patient:", error);
-        toast.error("Failed to save patient details");
+      } else {
+        toast.error(errorMessage || "Failed to update patient");
       }
-    };
+      return;
+    }
 
+    toast.success("Patient updated successfully!");
+    closeModal("editPatient");
+    fetchAllPatients();
+  } catch (error) {
+    console.error("Error updating patient:", error);
+    toast.error("Failed to update patient");
+  }
+};
+
+const handleSavePatient = async (formData) => {
+  try {
+    const payload = new FormData();
+
+    // Append all fields to FormData
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === "dob" && Array.isArray(value)) {
+        payload.append(key, value.join("-"));
+      } else if (key === "photo" && value instanceof File) {
+        payload.append(key, value);
+      } else if (value !== undefined && value !== null) {
+        payload.append(key, value);
+      }
+    });
+    // Append genderId as a top-level field
+    if (formData.gender?.value) {
+      payload.append("genderId", formData.gender.value); // Send as genderId, not gender
+    }
+
+    // Append other required fields
+    if (formData.pincode) {
+      payload.append("pinCode", formData.pincode);
+    }
+
+    payload.append("userType", "patient");
+
+    // Log FormData for debugging
+    for (let [key, value] of payload.entries()) {
+      console.log(key, value);
+    }
+
+    const response = await dispatch(registerUser(payload));
+    if (response.error) {
+      const errorMessage = response.payload;
+      if (typeof errorMessage === "object") {
+        Object.entries(errorMessage).forEach(([field, message]) => {
+          toast.error(`${field}: ${message}`);
+        });
+      } else {
+        toast.error(errorMessage || "Failed to save patient");
+      }
+      return;
+    }
+
+    setNewPatientId(response.payload.patientId);
+    toast.success("Patient details saved!");
+    closeModal("addPatient");
+    openModal("appointment");
+    toast.success("Please schedule appointment.");
+    fetchAllPatients();
+  } catch (error) {
+    console.error("Error saving patient:", error);
+    toast.error("Failed to save patient details");
+  }
+};
     const handleScheduleAppointment = async (formData) => {
       try {
         const payload = {
@@ -496,12 +539,8 @@ const OpdTab = forwardRef(
           type: "OPD",
           updatedAt: new Date().toISOString(),
         };
-        const response = await fetch(`${API.FORM}/${newPatientId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error("Failed to schedule appointment");
+        const response = await axiosInstance.put(`/auth/patient/${newPatientId}`, payload);
+        if (!response.data.success) throw new Error("Failed to schedule appointment");
         toast.success("Appointment scheduled successfully!");
         closeModal("appointment");
         fetchAllPatients();
@@ -518,17 +557,17 @@ const OpdTab = forwardRef(
       { name: "middleName", label: "Middle Name", type: "text" },
       { name: "lastName", label: "Last Name", type: "text", required: true },
       { name: "phone", label: "Phone Number", type: "text", required: true },
-      { name: "Aadhaar Number", label: "Aadhaar Numbe", type: "text", required: true },
+      { name: "aadhaar", label: "Aadhaar Number", type: "text", required: true },
       { name: "email", label: "Email Address", type: "email", required: true },
-      { name: "gender", label: "Gender", type: "select", required: true, options: masterData.genders },
+      { name: "gender", label: "Gender", type: "select", required: true, options: genderOptions },
       { name: "dob", label: "Date of Birth", type: "date", required: true },
-      { name: "occupation", label: "Occupation", type: "select", required: true, options: OCCUPATIONS },
+      { name: "occupation", label: "Occupation", type: "text", required: true },
       { name: "pincode", label: "PIN Code", type: "text", required: true, placeholder: "Enter 6-digit PIN code" },
       { name: "city", label: "City/Locality", type: "select", required: true, options: formData.cityOptions || [] },
       { name: "state", label: "State", type: "text", required: true, disabled: true },
       { name: "district", label: "District", type: "text", required: true, disabled: true },
       {
-        name: "profileImage",
+        name: "photo",
         label: "Upload Profile Image",
         type: "file",
         accept: "image/*",
@@ -600,24 +639,26 @@ const OpdTab = forwardRef(
       },
     ];
 
-    // Child may populate its own tabActions; keep an array in case you want internal actions later
-    const childTabActions = []; // leave empty or populate as needed
-
+    const childTabActions = [];
     const filters = [
       { key: "status", label: "Status", options: ["Scheduled", "Completed", "Cancelled"].map((status) => ({ value: status, label: status })) },
       { key: "department", label: "Department", options: masterData.departments },
     ];
 
-    // Keep parent informed if childTabActions change
     useEffect(() => {
       if (typeof setTabActions === "function") {
         setTabActions(childTabActions);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [/* childTabActions intentionally static here; add dependencies if dynamic */]);
+    }, []);
 
-    useEffect(() => { if (doctorName && !masterData.loading) fetchAllPatients(); }, [doctorName, masterData.loading]);
-    useEffect(() => { const highlightIdFromState = location.state?.highlightId; if (highlightIdFromState) setNewPatientId(highlightIdFromState); }, [location.state]);
+    useEffect(() => {
+      if (doctorName && !masterData.loading) fetchAllPatients();
+    }, [doctorName, masterData.loading]);
+
+    useEffect(() => {
+      const highlightIdFromState = location.state?.highlightId;
+      if (highlightIdFromState) setNewPatientId(highlightIdFromState);
+    }, [location.state]);
 
     const tabActionsToUse = tabActions.length ? tabActions : childTabActions;
 
@@ -658,6 +699,7 @@ const OpdTab = forwardRef(
           saveLabel="Next"
           cancelLabel="Cancel"
           size="lg"
+          errors={errors}
         />
         <ReusableModal
           isOpen={modals.appointment}

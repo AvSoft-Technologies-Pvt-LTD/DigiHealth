@@ -15,7 +15,7 @@ const TestDetail = () => {
   const iconColor = "text-[var(--primary-color)]";
 
   useEffect(() => {
-    axios.get('https://mocki.io/v1/89ffa826-55eb-4513-8e2b-f560eace88de')
+    axios.get('https://mocki.io/v1/2300a9dc-7329-4c17-9e3e-c29efbc7fdcc')
       .then((res) => {
         const allItems = [...res.data.tests, ...res.data.scans, ...res.data.packages];
         const found = allItems.find((i) => i.id.toString() === id);

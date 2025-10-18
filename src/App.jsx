@@ -50,24 +50,24 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import InitialAssessmentForm from "./components/InitialAssesment";
 
-// ---------------------- NEW Scheduler Imports ----------------------
-import Scheduler from "./pages/layouts/menu/DoctorDashboard/scheduler/Scheduler";
- import Today from "./pages/layouts/menu/DoctorDashboard/scheduler/Today";
-import AvailabilityModal from "./pages/layouts/menu/DoctorDashboard/scheduler/AvailabilityModal";
 // ---------------------- Helpers ----------------------
 
 // ✅ PrivateRoute with allowed userType
 const PrivateRoute = ({ allowedTypes }) => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   
+  console.log('PrivateRoute - Auth state:', { isAuthenticated, user, allowedTypes });
+  
   if (!isAuthenticated || !user) {
+    console.log('PrivateRoute - Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
   const userType = user.userType?.toLowerCase();
+  console.log('PrivateRoute - User type:', userType);
   
   if (allowedTypes && !allowedTypes.includes(userType)) {
-
+    console.log('PrivateRoute - User type not allowed, redirecting to appropriate dashboard');
     // Redirect to appropriate dashboard based on user type
     const redirectRoutes = {
       patient: '/patientdashboard',
@@ -87,11 +87,16 @@ const PrivateRoute = ({ allowedTypes }) => {
 const RoleRedirect = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   
+  console.log('RoleRedirect - Auth state:', { isAuthenticated, user });
+  
   if (!isAuthenticated || !user) {
+    console.log('RoleRedirect - Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
   const userType = user.userType?.toLowerCase();
+  console.log('RoleRedirect - Redirecting based on user type:', userType);
+
   switch (userType) {
     case "doctor":
       return <Navigate to="/doctordashboard" replace />;
@@ -124,11 +129,14 @@ const App = () => {
   const [appLoading, setAppLoading] = useState(true);
 
   useEffect(() => {
+    console.log('App - Initializing auth');
+    // ✅ On app load, restore user from localStorage
     dispatch(initializeAuth());
     setAppLoading(false);
   }, [dispatch]);
 
   useEffect(() => {
+    console.log('App - Auth state changed:', { isAuthenticated, user });
   }, [isAuthenticated, user]);
 
   if (appLoading) {
@@ -212,11 +220,6 @@ const App = () => {
             {sharedRoutes}
             <Route path="template" element={<ImageAnnotationCanvas />} />
             <Route path="bedroommanagement/bedmaster" element={<BedMaster />} />
-     {/* ---------- NEW: Scheduler Routes ---------- */}
-            <Route path="scheduler" element={<Scheduler />} />
-            <Route path="scheduler/availability" element={<AvailabilityModal />} />
-            <Route path="scheduler/today" element={<Today />} />    
-            {/* ------------------------------------------- */}
 
             <Route path="*" element={<DrRoutes />} />
           </Route>

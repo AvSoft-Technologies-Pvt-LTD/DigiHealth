@@ -32,7 +32,7 @@ const LabHome = () => {
   const btnRefs = useRef({});
 
   const MOCK_API_URL =
-    'https://mocki.io/v1/89ffa826-55eb-4513-8e2b-f560eace88de';
+    'https://mocki.io/v1/2300a9dc-7329-4c17-9e3e-c29efbc7fdcc';
 
   useEffect(() => {
     setLoading(true);

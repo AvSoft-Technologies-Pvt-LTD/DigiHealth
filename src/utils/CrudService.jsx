@@ -2,7 +2,6 @@ import axiosInstance from "./axiosInstance";
 
 
 
-
 // Fetch all patients
 export const getAllPatients = () => axiosInstance.get('/auth/patient/all');
 
@@ -13,6 +12,9 @@ export const getPatientById = (id) => axiosInstance.get(`/auth/patient/${id}`);
 
 // Update patient by ID
 export const updatePatient = (id, data) => axiosInstance.put(`/auth/patient/${id}`, data);
+/* -----------------------------
+
+
 /* -----------------------------
    FAMILY MEMBERS (CRUD)
 ------------------------------ */
@@ -116,6 +118,35 @@ export const getPersonalHealthById = (id) =>
   axiosInstance.get(`/patient-dashboard/personal-health/${id}`);
 
 
+// OPD Records
+export const getOPDRecordsByPatientId = (patientId) =>
+  axiosInstance.get(`/opd-records/${patientId}`);
+
+export const createOPDRecord = (data) =>
+  axiosInstance.post("opd-records", data);
+
+export const deleteOPDRecord = (recordId) =>
+  axiosInstance.delete(`/opd-records/${recordId}`);
+
+// IPD Records
+export const getIPDRecordsByPatientId = (patientId) =>
+  axiosInstance.get(`/ipd-records/${patientId}`);
+
+export const createIPDRecord = (data) =>
+  axiosInstance.post("/ipd-records", data);
+
+export const deleteIPDRecord = (recordId) =>
+  axiosInstance.delete(`/ipd-records/${recordId}`);
+
+// Virtual Records
+export const getVirtualRecordsByPatientId = (patientId) =>
+  axiosInstance.get(`/virtual-records/${patientId}`);
+
+export const createVirtualRecord = (data) =>
+  axiosInstance.post("/virtual-records", data);
+
+export const deleteVirtualRecord = (recordId) =>
+  axiosInstance.delete(`/virtual-records/${recordId}`);
 
 /* -----------------------------
    WARD TYPES (CRUD)
@@ -219,16 +250,6 @@ export const updateSpecializationWards = (specializationId, data) =>
 // DELETE: Delete a specific ward by wardId
 export const deleteWard = (wardId) =>
   axiosInstance.delete(`/specializations/wards/wards/${wardId}`);
-
-// Get summary of specializations with wards (new)
-export const getSpecializationsWardsSummary = () =>
-  axiosInstance.get('/specializations/wards/summary');
-
-// Get a single ward by id
-export const getWardById = (wardId) =>
-  axiosInstance.get(`/specializations/wards/ward/${wardId}`);
-
-// Get summary of specializations with wards for a given specialization id
 export const getSpecializationsWardsSummaryById = (specializationId) =>
   axiosInstance.get(`/specializations/wards/summary/${specializationId}`);
 
@@ -249,3 +270,32 @@ export const getAllAmbulanceCategories = () =>
 export const getAllHospitals = () =>
   axiosInstance.get('/ambulance/public/hospitals');
 
+// Get summary of specializations with wards (new)
+export const getSpecializationsWardsSummary = () =>
+  axiosInstance.get('/specializations/wards/summary');
+
+// Get a single ward by id
+export const getWardById = (wardId) =>
+  axiosInstance.get(`/specializations/wards/ward/${wardId}`);
+
+
+
+
+/* -----------------------------
+   VIRTUAL APPOINTMENTS (CRUD)
+------------------------------ */
+// Get all virtual appointments
+export const getAllVirtualAppointments = () =>
+  axiosInstance.get('/virtual-appointments');
+// Get virtual appointment by ID
+export const getVirtualAppointmentById = (id) =>
+  axiosInstance.get(`/virtual-appointments/${id}`);
+// Create a new virtual appointment
+export const createVirtualAppointment = (data) =>
+  axiosInstance.post('/virtual-appointments', data);
+// Update virtual appointment by ID
+export const updateVirtualAppointment = (id, data) =>
+  axiosInstance.put(`/virtual-appointments/${id}`, data);
+// Delete virtual appointment by ID
+export const deleteVirtualAppointment = (id) =>
+  axiosInstance.delete(`/virtual-appointments/${id}`);

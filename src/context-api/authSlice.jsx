@@ -206,6 +206,7 @@ const authSlice = createSlice({
     token: localStorage.getItem('token') || null,
     mockOTP: MOCK_OTP,
     patientId: JSON.parse(localStorage.getItem('user'))?.patientId || null,
+    doctorId: JSON.parse(localStorage.getItem('user'))?.doctorId || null,
     userId: JSON.parse(localStorage.getItem('user'))?.userId || null,
     permissions: JSON.parse(localStorage.getItem('user'))?.permissions || [],
     name: JSON.parse(localStorage.getItem('user'))?.name || null,
@@ -241,6 +242,7 @@ const authSlice = createSlice({
       state.userType = action.payload.userType;
       state.token = action.payload.token;
       state.patientId = action.payload.patientId;
+      state.doctorId = action.payload.doctorId || null;
       state.userId = action.payload.userId;
       state.permissions = action.payload.permissions;
       state.name = action.payload.name;
@@ -289,6 +291,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.isVerified = true;
         state.patientId = user.patientId;
+        state.doctorId = user.doctorId || null;
         state.userId = user.userId;
         state.permissions = user.permissions;
         state.name = user.name;
@@ -318,9 +321,11 @@ const authSlice = createSlice({
           dob: action.payload.dob,
           userType: action.payload.userType,
           patientId: action.payload.patientId,
+          doctorId: action.payload.doctorId || null,
           userId: action.payload.userId,
         };
         state.patientId = action.payload.patientId;
+        state.doctorId = action.payload.doctorId || null; 
         state.userId = action.payload.userId;
         state.userType = action.payload.userType;
         state.isOTPSent = false;
@@ -341,6 +346,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.token = action.payload.token;
         state.patientId = action.payload.patientId;
+        state.doctorId = action.payload.doctorId || null;
         state.userId = action.payload.userId;
         state.permissions = action.payload.permissions;
         state.name = action.payload.name;
@@ -392,6 +398,7 @@ const authSlice = createSlice({
         state.registrationData = null;
         state.token = action.payload.token;
         state.patientId = action.payload.patientId;
+        state.doctorId = action.payload.doctorId || null; 
         state.userId = action.payload.userId;
         state.permissions = action.payload.permissions;
         state.name = action.payload.name;

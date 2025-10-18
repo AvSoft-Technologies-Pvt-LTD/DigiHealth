@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import DoctorAppointments from "./Appointments";
 import { motion } from "framer-motion";
+import { getDoctorById, getDoctorPhoto } from '../../../../utils/masterService';
 
 const Overview = () => {
   const user = useSelector((state) => state.auth.user);
@@ -21,20 +22,30 @@ const Overview = () => {
 
   useEffect(() => {
     (async () => {
+      if (!user?.doctorId) {
+        setError('Doctor ID not found in Redux store.');
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
-        const doctorRes = await axios.get(`https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1/users?email=${encodeURIComponent(user?.email)}`);
-        const allDoctors = doctorRes.data;
-        const doctorData = allDoctors[0];
+        // Fetch doctor data using doctorId from Redux
+        const doctorRes = await getDoctorById(user.doctorId);
+        const doctorData = doctorRes.data;
         if (!doctorData) throw new Error('Doctor not found');
 
-        // TODO: Replace with your own API or mock data for appointments and payments
-        // const dashboardRes = await axios.get('https://mocki.io/v1/16f62a47-cb52-4f02-b5cd-dc13feee53fe');
-        // const { appointments, payments } = dashboardRes.data;
+        // Fetch doctor photo
+        let photoUrl = '';
+        if (doctorData.photo) {
+          const photoRes = await getDoctorPhoto(doctorData.photo);
+          photoUrl = URL.createObjectURL(photoRes.data);
+        }
 
+        // Fetch patients and calculate stats
         const patientsRes = await axios.get('https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient');
         const allPatients = patientsRes.data;
-        const doctorPatients = allPatients.filter(patient => patient.doctorId === doctorData.id);
+        const doctorPatients = allPatients.filter(patient => patient.doctorId === user.doctorId);
         const patientStats = {
           totalPatients: doctorPatients.length,
           opdPatients: doctorPatients.filter(p => p.patientType?.toLowerCase().includes('opd')).length,
@@ -42,22 +53,23 @@ const Overview = () => {
           virtualPatients: doctorPatients.filter(p => p.patientType?.toLowerCase().includes('virtual')).length,
         };
 
+        // Fetch appointments and revenue (replace with your actual endpoints)
+        // const appointmentsRes = await axios.get(`/api/appointments?doctorId=${user.doctorId}`);
+        // const revenueRes = await axios.get(`/api/revenue?doctorId=${user.doctorId}`);
+
         const formattedDoctor = {
           name: `${doctorData.firstName} ${doctorData.lastName}`,
-          specialty: doctorData.roleSpecificData.specialization,
-          qualifications: doctorData.roleSpecificData.qualification,
-          registrationId: doctorData.roleSpecificData.registrationNumber,
+          specialty: doctorData.specialization,
+          qualifications: doctorData.qualification,
+          registrationId: doctorData.registrationNumber,
           email: doctorData.email,
-          photo: doctorData.photo,
+          photo: photoUrl,
         };
 
         setDoctor(formattedDoctor);
-        // setAppointments(appointments); // Uncomment and replace with your data
-        // setRevenue({
-        //   total: Array.isArray(payments) ? payments.reduce((s, p) => s + Number(p.amount), 0) : 0,
-        //   breakdown: calculateRevenueBreakdown(Array.isArray(payments) ? payments : []),
-        // });
         setStats(patientStats);
+        // setAppointments(appointmentsRes.data);
+        // setRevenue(revenueRes.data);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Failed to load dashboard data. Please try again later.');
@@ -65,10 +77,9 @@ const Overview = () => {
         setIsLoading(false);
       }
     })();
-  }, [user?.email]);
+  }, [user?.doctorId]);
 
   const handleEditClick = () => navigate('/doctordashboard/settings');
-
   const calculateRevenueBreakdown = (payments) => {
     const groups = {};
     const colors = {
@@ -92,7 +103,6 @@ const Overview = () => {
       color: colors[type] || 'text-[var(--primary-color)]',
     }));
   };
-
   const getIconBgClass = (type) => {
     if (!type) return "bg-[var(--primary-color)]";
     const t = type.toLowerCase();

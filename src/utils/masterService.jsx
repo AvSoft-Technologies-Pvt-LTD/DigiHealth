@@ -13,6 +13,13 @@ export const getPatientById = (id) => axiosInstance.get(`/auth/patient/${id}`);
 
 // Update patient by ID
 export const updatePatient = (id, data) => axiosInstance.put(`/auth/patient/${id}`, data);
+
+// Doctor API Endpoints
+export const getAllDoctors = () => axiosInstance.get('/auth/doctor/all');
+export const getDoctorById = (id) => axiosInstance.get(`/auth/doctor/${id}`);
+export const getDoctorPhoto = (path) =>
+  axiosInstance.get('/auth/doctor/photo', { params: { path }, responseType: 'blob' });
+export const updateDoctor = (id, data) => axiosInstance.put(`/auth/doctor/${id}`, data);
 /* -----------------------------
    MASTER DATA APIs (Dropdowns for all users)
 ------------------------------ */
@@ -45,7 +52,7 @@ export const getAllHospitals = () => axiosInstance.get('/hospitals');
 export const getHospitalDropdown = () => axiosInstance.get('/hospitals/dropdown');
 export const getAllMedicalConditions = () => axiosInstance.get('/master/medicalConditions');
 export const getAllMedicalStatus = () => axiosInstance.get('/master/medicalStatus');
-
+export const getConsultationTypes = () => axiosInstance.get('/consultation-types');
 
 // COVERAGE TYPES
 export const createCoverageType = (data) => axiosInstance.post('/master/coverage-type', data);
@@ -98,3 +105,9 @@ export const getMedicalStatusById = (id) => axiosInstance.get(`/master/medicalSt
 export const updateMedicalStatus = (id, data) => axiosInstance.put(`/master/medicalStatus/${id}`, data);
 export const deleteMedicalStatus = (id) => axiosInstance.delete(`/master/medicalStatus/${id}`);
 export const createMedicalStatus = (data) => axiosInstance.post('/master/medicalStatus', data);
+
+//CONSULTATION TYPES
+export const getConsultationTypeById = (id) => axiosInstance.get(`/consultation-types/${id}`);
+export const createConsultationType = (data) => axiosInstance.post('/consultation-types', data);
+export const updateConsultationType = (id, data) => axiosInstance.put(`/consultation-types/${id}`, data);
+export const deleteConsultationType = (id) => axiosInstance.delete(`/consultation-types/${id}`);

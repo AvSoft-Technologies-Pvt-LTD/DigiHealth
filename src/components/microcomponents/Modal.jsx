@@ -405,11 +405,11 @@ const ReusableModal = ({
                                 />
                               ) : field.type === "date" ? (
                                 <input
-                                  type="date"
-                                  name={field.name}
-                                  value={formValues[field.name] || ""}
-                                  onChange={(e) => handleChange(field.name, e.target.value)}
-                                  className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                                type="date"
+                                name={field.name}
+                                value={ formValues[field.name]? new Date(formValues[field.name]).toISOString().split("T")[0]  : ""}
+                                onChange={(e) => handleChange(field.name, e.target.value)}
+                                className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2"
                                 />
                               ) : field.type === "file" ? (
                                 <div className="relative flex items-center">

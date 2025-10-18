@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from "react-router-dom";
+import { useSelector } from 'react-redux';
 import { CircleUser, Heart, Users, ClipboardCheck, Pencil, Phone, Calendar, Droplet } from 'lucide-react';
 import { FaRegEdit } from "react-icons/fa";
 import { GiMale, GiFemale } from "react-icons/gi";
-import { useSelector } from 'react-redux';
 import DashboardOverview from './DashboardOverview';
 import ReusableModal from '../../../../components/microcomponents/Modal';
 import Healthcard from '../../../../components/Healthcard';
@@ -12,7 +12,10 @@ import {
   createPersonalHealth, updatePersonalHealth, getPersonalHealthByPatientId,
   getAdditionalDetailsByPatientId, createAdditionalDetails, updateAdditionalDetails,
 } from '../../../../utils/CrudService';
-import { getHealthConditions, getCoverageTypes, getRelations, getBloodGroups, getAllPatients, getPatientPhoto } from '../../../../utils/masterService';
+import {
+  getHealthConditions, getCoverageTypes, getRelations, getBloodGroups,
+  getPatientById, getPatientPhoto
+} from '../../../../utils/masterService';
 
 const initialUserData = {
   name: '', email: '', gender: '', phone: '', dob: '', bloodGroup: '', height: '', weight: '',
@@ -66,7 +69,6 @@ function Dashboard() {
   const [bloodGroups, setBloodGroups] = useState([]);
   const [hasPersonalHealthData, setHasPersonalHealthData] = useState(false);
   const [patientData, setPatientData] = useState(null);
-  const [allPatients, setAllPatients] = useState([]);
   const [additionalDetails, setAdditionalDetails] = useState({
     insuranceProviderName: '',
     policyNum: '',
@@ -165,26 +167,15 @@ function Dashboard() {
   };
 
   const fetchAllData = async () => {
-    if (!user?.email && !user?.phone && !reduxPatientId) return;
+   if (!user?.patientId) return;
     setLoading(true);
     try {
-      const [patientsRes, coverageRes, healthConditionsRes, familyRelationsRes, bloodGroupsRes] = await Promise.all([
-        getAllPatients().catch(() => ({ data: [] })),
+      const [coverageRes, healthConditionsRes, familyRelationsRes, bloodGroupsRes] = await Promise.all([
         getCoverageTypes().catch(() => ({ data: [] })),
         getHealthConditions().catch(() => ({ data: [] })),
         getRelations().catch(() => ({ data: [] })),
         getBloodGroups().catch(() => ({ data: [] })),
       ]);
-
-      setAllPatients(patientsRes.data || []);
-      const currentPatient = patientsRes.data?.find(patient =>
-        patient.email === user.email ||
-        patient.phone === user.phone ||
-        patient.id === reduxPatientId
-      );
-      if (currentPatient) {
-        setPatientData(currentPatient);
-      }
 
       setBloodGroups(
         bloodGroupsRes.data?.map((item) => ({
@@ -211,13 +202,46 @@ function Dashboard() {
         })) || []
       );
 
-      const patientId = currentPatient?.id || reduxPatientId;
+      const patientId = reduxPatientId;
       if (patientId) {
-        const [familyRes, healthRes, additionalRes] = await Promise.all([
+        const [patientRes, familyRes, healthRes, additionalRes] = await Promise.all([
+          getPatientById(patientId).catch(() => ({ data: null })),
           getFamilyMembersByPatient(patientId).catch(() => ({ data: [] })),
           getPersonalHealthByPatientId(patientId).catch(() => ({ data: null })),
           getAdditionalDetailsByPatientId(patientId).catch(() => ({ data: null })),
         ]);
+
+        const currentPatient = patientRes.data;
+        if (currentPatient) {
+          setPatientData(currentPatient);
+          const dob = currentPatient.dob ? new Date(currentPatient.dob[0], currentPatient.dob[1] - 1, currentPatient.dob[2]) : null;
+          let photoUrl = null;
+          if (currentPatient.photo) {
+            try {
+              const photoResponse = await getPatientPhoto(currentPatient.photo);
+              photoUrl = URL.createObjectURL(photoResponse.data);
+            } catch (err) {
+              console.error('Failed to fetch photo:', err);
+            }
+          }
+
+          setProfileData({
+            name: `${currentPatient.firstName || 'Guest'} ${currentPatient.lastName || ''}`.trim(),
+            firstName: currentPatient.firstName || '',
+            lastName: currentPatient.lastName || '',
+            dob: dob ? dob.toISOString().split('T')[0] : null,
+            gender: currentPatient.gender || '',
+            phone: currentPatient.phone || '',
+            email: currentPatient.email || '',
+            photo: photoUrl,
+            address: currentPatient.address || '',
+            city: currentPatient.city || '',
+            state: currentPatient.state || '',
+            pincode: currentPatient.pincode || '',
+            emergencyContact: currentPatient.emergencyContact || '',
+            registrationDate: currentPatient.createdAt || currentPatient.registrationDate || ''
+          });
+        }
 
         const mappedFamilyMembers = familyRes.data?.map((member) => ({
           id: member.id,
@@ -264,34 +288,6 @@ function Dashboard() {
             primaryHolder: additionalRes.data.primaryHolder || false,
           });
         }
-
-        let photoUrl = null;
-        if (currentPatient?.photoPath) {
-          try {
-            const photoResponse = await getPatientPhoto(currentPatient.photoPath);
-            photoUrl = URL.createObjectURL(photoResponse.data);
-          } catch (err) {
-            console.error('Failed to fetch photo:', err);
-          }
-        }
-
-        const profileSource = currentPatient || user;
-        setProfileData({
-          name: `${profileSource?.firstName || 'Guest'} ${profileSource?.lastName || ''}`.trim(),
-          firstName: profileSource?.firstName || '',
-          lastName: profileSource?.lastName || '',
-          dob: profileSource?.dob || '',
-          gender: profileSource?.gender || '',
-          phone: profileSource?.phone || '',
-          email: profileSource?.email || '',
-          photo: photoUrl,
-          address: profileSource?.address || '',
-          city: profileSource?.city || '',
-          state: profileSource?.state || '',
-          pincode: profileSource?.pincode || '',
-          emergencyContact: profileSource?.emergencyContact || '',
-          registrationDate: profileSource?.createdAt || profileSource?.registrationDate || ''
-        });
       }
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -616,7 +612,7 @@ function Dashboard() {
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
           {/* Profile Image and Name */}
           <div className="flex-shrink-0 flex flex-col items-center md:items-start text-center md:text-left">
-            <div className="w-24 h-24 md:w-24 md:h-24 rounded-full overflow-hidden mb-3">
+            <div className="w-24 h-24 md:w-24 md:h-24 rounded-full border border-gray-400 overflow-hidden mb-3">
               {profileData?.photo ? (
                 <img
                   src={profileData.photo}
