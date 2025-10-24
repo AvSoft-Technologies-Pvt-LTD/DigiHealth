@@ -1,4 +1,4 @@
-// BedRoomList.jsx
+// File: BedRoomList.jsx
 import React, { useEffect, useState } from "react";
 import { FaPlus, FaEdit, FaTrash, FaExclamationTriangle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -47,6 +47,9 @@ const BedRoomList = () => {
     const specialization = item.specializationName ?? item.specialization ?? item.department ?? "Unknown";
     const wardName = item.wardName ?? item.ward ?? item.name ?? "Unknown";
     const total = Number(item.totalBeds ?? item.total ?? 0);
+    // parse totalRooms from server response (some entries have totalRooms)
+    const totalRooms = Number(item.totalRooms ?? item.rooms ?? 0);
+
     const availableFromGroups =
       item?.bedStatusGroups && typeof item.bedStatusGroups === "object"
         ? Number(item.bedStatusGroups.Available ?? item.bedStatusGroups.available ?? 0)
@@ -61,6 +64,7 @@ const BedRoomList = () => {
       department: specialization,
       ward: wardName,
       totalBeds: total,
+      totalRooms: totalRooms,
       occupied,
       available,
       status: item.status ?? (occupied < total ? "Active" : "Inactive"),
@@ -281,6 +285,15 @@ const BedRoomList = () => {
         return <span className={`px-2 py-1 rounded-full text-sm font-medium border ${colorClass}`}>{row.ward}</span>;
       },
     },
+    // NEW Rooms column (displays totalRooms from server)
+    {
+      header: "Rooms",
+      accessor: "totalRooms",
+      cell: (row) => {
+        const rooms = Number(row.totalRooms ?? row.raw?.totalRooms ?? 0);
+        return <div className="font-medium text-gray-900">{rooms}</div>;
+      },
+    },
     {
       header: "Beds Ratio",
       accessor: "beds",
@@ -346,7 +359,6 @@ const BedRoomList = () => {
 
   return (
     <div className="p-4">
-     
       {loading && (
         <div className="mb-4 p-3 rounded-md bg-gray-50 border border-gray-100 text-sm text-gray-700 flex items-center gap-2">
           <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
