@@ -45,6 +45,10 @@ import TokenDisplay from "./components/Token-Display";
 import BedRoomList from "./pages/layouts/menu/DoctorDashboard/bed-manangement/BedRoomList"
 import ImageAnnotationCanvas from "./components/microcomponents/ImageAnnotationCanvas";
 import BedMaster from "./pages/layouts/menu/DoctorDashboard/bed-manangement/BedMaster";
+// ---------------------- NEW Scheduler Imports ----------------------
+import Scheduler from "./pages/layouts/menu/DoctorDashboard/scheduler/Scheduler";
+ import Today from "./pages/layouts/menu/DoctorDashboard/scheduler/Today";
+import AvailabilityModal from "./pages/layouts/menu/DoctorDashboard/scheduler/AvailabilityModal";
 // Toast
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -220,7 +224,9 @@ const App = () => {
             {sharedRoutes}
             <Route path="template" element={<ImageAnnotationCanvas />} />
             <Route path="bedroommanagement/bedmaster" element={<BedMaster />} />
-
+ <Route path="scheduler" element={<Scheduler />} />
+<Route path="scheduler/availability" element={<AvailabilityModal />} />
+            <Route path="scheduler/today" element={<Today />} />    
             <Route path="*" element={<DrRoutes />} />
           </Route>
         </Route>

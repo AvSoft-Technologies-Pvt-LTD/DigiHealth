@@ -166,3 +166,26 @@ export const getSpecializationsWardsSummary = () =>
 // Get a single ward by id
 export const getWardById = (wardId) =>
   axiosInstance.get(`/specializations/wards/ward/${wardId}`);
+
+
+
+/* -----------------------------
+   🚑 AMBULANCE (PUBLIC APIs)
+------------------------------ */
+
+export const getAllAmbulanceTypes = () =>
+  axiosInstance.get('/ambulance/public/types');
+
+export const getAllAmbulanceEquipments = () =>
+  axiosInstance.get('/ambulance/public/equipments');
+
+export const getAllAmbulanceCategories = () =>
+  axiosInstance.get('/ambulance/public/categories');
+
+// ✅ NEW: Get all hospitals (public)
+export const getAllHospitals = () =>
+  axiosInstance.get('/ambulance/public/hospitals');
+
+// Add this to your existing CrudService.js
+export const getSpecializationsWardsSummaryForIpdAdmission = () =>
+  axiosInstance.get('/specializations/wards/summary/ipd-admission');
