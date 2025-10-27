@@ -48,7 +48,8 @@ import BedMaster from "./pages/layouts/menu/DoctorDashboard/bed-manangement/BedM
 // ---------------------- NEW Scheduler Imports ----------------------
 import Scheduler from "./pages/layouts/menu/DoctorDashboard/scheduler/Scheduler";
  import Today from "./pages/layouts/menu/DoctorDashboard/scheduler/Today";
-import AvailabilityModal from "./pages/layouts/menu/DoctorDashboard/scheduler/AvailabilityModal";
+import AvailabilityPage from "./pages/layouts/menu/DoctorDashboard/scheduler/AvailabilityPage";
+import AvailabilityOverviewPage from "./pages/layouts/menu/DoctorDashboard/scheduler/AvailabilityOverviewPage";
 // Toast
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -224,9 +225,11 @@ const App = () => {
             {sharedRoutes}
             <Route path="template" element={<ImageAnnotationCanvas />} />
             <Route path="bedroommanagement/bedmaster" element={<BedMaster />} />
- <Route path="scheduler" element={<Scheduler />} />
-<Route path="scheduler/availability" element={<AvailabilityModal />} />
-            <Route path="scheduler/today" element={<Today />} />    
+<Route path="scheduler" element={<Scheduler />} />
+    <Route path="scheduler/availability" element={<AvailabilityOverviewPage />} />
+    <Route path="scheduler/availability/create" element={<AvailabilityPage />} />
+    <Route path="scheduler/availability/edit/:scheduleId" element={<AvailabilityPage />} />
+    <Route path="scheduler/today" element={<Today />} />  
             <Route path="*" element={<DrRoutes />} />
           </Route>
         </Route>

@@ -133,9 +133,10 @@ const Scheduler = () => {
     (event) => {
       if (event?.resource?.events) {
         const iso = format(startOfDay(event.start), "yyyy-MM-dd");
-        navigate(`/doctordashboard/scheduler/today?date=${iso}`, {
-          state: { events: event.resource.events },
-        });
+      navigate(`/doctordashboard/scheduler/today?date=${iso}`, {
+  state: { events: event.resource.events },
+});
+
       } else {
         setSelectedEvent(event);
         setShowAppointmentDetail(true);
@@ -151,7 +152,7 @@ const Scheduler = () => {
         const evDate = new Date(ev.start).toISOString().slice(0, 10);
         return evDate === iso;
       });
-      navigate(`/doctordashboard/scheduler/today?date=${iso}`, { state: { events: dayEvents } });
+navigate(`/doctordashboard/scheduler/today?date=${iso}`, { state: { events: dayEvents } });
     },
     [navigate, events]
   );
@@ -178,6 +179,17 @@ const Scheduler = () => {
     navigator.clipboard.writeText(text);
     toast.success("Link copied to clipboard!");
   };
+
+const handleManageAvailability = () => {
+  const saved = localStorage.getItem("doctorAvailability");
+  if (saved) {
+    // Schedules exist, go to overview
+    navigate("/doctordashboard/scheduler/availability");
+  } else {
+    // No schedules, go directly to create
+    navigate("/doctordashboard/scheduler/availability/create");
+  }
+};
 
   const dayCountsMap = useMemo(() => {
     const map = {};
@@ -291,7 +303,7 @@ const Scheduler = () => {
     };
     const goToCurrent = () => {
       const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
-      navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
+navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
     };
     const handleMonthChange = (monthIndex) => {
       const newDate = new Date(date);
@@ -364,7 +376,7 @@ const Scheduler = () => {
         </div>
         <div className="toolbar-right">
           <button
-            onClick={() => navigate("/doctordashboard/scheduler/availability")}
+            onClick={handleManageAvailability}
             className="availability-btn"
           >
             Manage Availability

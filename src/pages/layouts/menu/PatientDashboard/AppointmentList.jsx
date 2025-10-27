@@ -4,6 +4,7 @@ import axios from "axios";
 import { FiCalendar, FiMapPin } from "react-icons/fi";
 import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import PaymentGateway from "../../../../components/microcomponents/PaymentGatway";
+import ReusableModal from "../../../../components/microcomponents/Modal";
 
 const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = false, data }) => {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
     d: [],
     selectedAppointment: null,
     showPaymentGateway: false,
+    showModal: false,
+    modalMode: "view",
   });
 
   useEffect(() => {
@@ -125,13 +128,34 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
       );
   };
 
+  const handleTrackClick = (appointment) => {
+    setState((prev) => ({
+      ...prev,
+      selectedAppointment: appointment,
+      showModal: true,
+      modalMode: "view",
+    }));
+  };
+
   const doctorColumns = [
-    { header: "Doctor", accessor: "doctorName" },
+    {
+      header: "Doctor",
+      accessor: "doctorName",
+      cell: (appointment) => (
+        <button
+          onClick={() => handleTrackClick(appointment)}
+          className="text-[var(--primary-color)] underline hover:text-[var(--accent-color)] font-semibold text-xs sm:text-sm"
+        >
+          {appointment.doctorName}
+        </button>
+      ),
+    },
     { header: "Speciality", accessor: "specialty" },
     { header: "Date", accessor: "date" },
     { header: "Time", accessor: "time" },
     { header: "Status", accessor: "status", cell: (row) => getStatusBadge(row.status, row) },
   ];
+
   const doctorFilters = [
     {
       key: "status",
@@ -144,35 +168,48 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
       ],
     },
   ];
- const labColumns = [
-  { header: "ID", accessor: "bookingId" },
-  { header: "Test", accessor: "testTitle" },
-  { header: "Lab", accessor: "labName" },
-  {
-    header: "Status",
-    accessor: "status",
-    cell: (appointment) => (
-      <span className={`px-2 py-1 rounded-full paragraph text-xs sm:text-sm ${getStatusClass(appointment.status)}`}>
-        {appointment.status || "Pending"}
-      </span>
-    ),
-  },
-  {
-    header: "Action", // This must match the detection logic in DynamicTable
-    cell: (appointment) => (
-      <button
-        onClick={() => navigate(`/patientdashboard/track-appointment/${appointment.bookingId}`)}
-        className="group relative inline-flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 border border-[var(--accent-color)] text-[var(--accent-color)] rounded-full font-semibold bg-transparent overflow-hidden transition-colors duration-300 ease-in-out hover:bg-[var(--accent-color)] hover:text-white text-xs sm:text-sm"
-      >
-        <FiMapPin className="text-sm sm:text-lg transition-transform duration-300 ease-in-out group-hover:scale-110" />
-        <span className="tracking-wide transition-all duration-300 ease-in-out">
-          Track
+
+  const labColumns = [
+    {
+      header: "ID",
+      accessor: "bookingId",
+      cell: (appointment) => (
+        <button
+          onClick={() => handleTrackClick(appointment)}
+          className="text-[var(--primary-color)] underline hover:text-[var(--accent-color)] font-semibold text-xs sm:text-sm"
+        >
+          {appointment.bookingId}
+        </button>
+      ),
+    },
+    { header: "Test", accessor: "testTitle" },
+    { header: "Lab", accessor: "labName" },
+    {
+      header: "Status",
+      accessor: "status",
+      cell: (appointment) => (
+        <span className={`px-2 py-1 rounded-full paragraph text-xs sm:text-sm ${getStatusClass(appointment.status)}`}>
+          {appointment.status || "Pending"}
         </span>
-      </button>
-    ),
-  },
-];
- const labFilters = [
+      ),
+    },
+    {
+      header: "Action",
+      cell: (appointment) => (
+        <button
+          onClick={() => navigate(`/patientdashboard/track-appointment/${appointment.bookingId}`)}
+          className="group relative inline-flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 border border-[var(--accent-color)] text-[var(--accent-color)] rounded-full font-semibold bg-transparent overflow-hidden transition-colors duration-300 ease-in-out hover:bg-[var(--accent-color)] hover:text-white text-xs sm:text-sm"
+        >
+          <FiMapPin className="text-sm sm:text-lg transition-transform duration-300 ease-in-out group-hover:scale-110" />
+          <span className="tracking-wide transition-all duration-300 ease-in-out">
+            Track
+          </span>
+        </button>
+      ),
+    },
+  ];
+
+  const labFilters = [
     {
       key: "status",
       label: "Status",
@@ -185,9 +222,7 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
         { value: "Cancelled", label: "Cancelled" },
       ],
     },
-    
   ];
-
 
   const getStatusClass = (status) => {
     const statusClasses = {
@@ -200,6 +235,32 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
     };
     return statusClasses[status] || "bg-gray-100 text-gray-800";
   };
+
+  const doctorViewFields = [
+    { key: "doctorName", label: "Doctor Name", titleKey: true },
+    { key: "specialty", label: "Speciality", subtitleKey: true },
+    { key: "date", label: "Date" },
+    { key: "time", label: "Time" },
+    { key: "status", label: "Status" },
+    { key: "consultationType", label: "Consultation Type" },
+    { key: "location", label: "Location" },
+    { key: "fees", label: "Fees" },
+    { key: "symptoms", label: "Symptoms" },
+    { key: "doctorName", label: "Initials", initialsKey: true },
+  ];
+
+  const labViewFields = [
+    { key: "labName", label: "Lab Name", titleKey: true },
+    { key: "testTitle", label: "Test Name", subtitleKey: true },
+    { key: "bookingId", label: "Initials", initialsKey: true },
+    { key: "location", label: "Location" },
+    { key: "date", label: "Date" },
+    { key: "time", label: "Time" },
+    { key: "status", label: "Status" },
+    { key: "reportTime", label: "Report Time" },
+    { key: "amountPaid", label: "Amount Paid" },
+    { key: "paymentStatus", label: "Payment Status" },
+  ];
 
   const overviewData = isOverview
     ? (state.t === "doctor" ? state.d : state.l).slice(0, 4)
@@ -235,7 +296,18 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
           currency="₹"
         />
       )}
-      {!state.showPaymentGateway && (
+      {state.showModal && state.selectedAppointment && (
+        <ReusableModal
+          isOpen={state.showModal}
+          onClose={() => setState((prev) => ({ ...prev, showModal: false }))}
+          mode="viewProfile"
+          title={state.t === "doctor" ? "Doctor Appointment Details" : "Lab Appointment Details"}
+          data={state.selectedAppointment}
+          viewFields={state.t === "doctor" ? doctorViewFields : labViewFields}
+          size="lg"
+        />
+      )}
+      {!state.showPaymentGateway && !state.showModal && (
         <DynamicTable
           columns={state.t === "doctor" ? doctorColumns : labColumns}
           data={overviewData}
@@ -245,7 +317,7 @@ const AppointmentList = ({ displayType, showOnlyTable = false, isOverview = fals
           onTabChange={handleTabChange}
           showSearchBar={!isOverview}
           showPagination={!isOverview}
-         filters={isOverview ? [] : (state.t === "doctor" ? doctorFilters : labFilters)}
+          filters={isOverview ? [] : (state.t === "doctor" ? doctorFilters : labFilters)}
         />
       )}
     </div>

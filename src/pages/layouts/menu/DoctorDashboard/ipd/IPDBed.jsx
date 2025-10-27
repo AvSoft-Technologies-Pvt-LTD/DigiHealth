@@ -47,39 +47,35 @@ const IPDBed = ({
 }) => {
   if (!selectedWard || !selectedRoom) return null;
 
-  const bedsPerPage =
-    window.innerWidth < 640 ? 4 : window.innerWidth < 768 ? 6 : 12;
+  // Find the selected room object from the ward's rooms array
+  const selectedRoomObj = selectedWard.rooms.find(
+    (room) => room.roomNumber === selectedRoom.toString()
+  );
 
-  // Calculate which beds belong to the selected room
-  const totalRooms = selectedWard.rooms || 1;
-  const bedsPerRoom = Math.ceil(selectedWard.totalBeds / totalRooms);
-  const startBed = (selectedRoom - 1) * bedsPerRoom + 1;
-  const endBed = Math.min(selectedRoom * bedsPerRoom, selectedWard.totalBeds);
+  // Use the actual beds from the selected room
+  const roomBeds = selectedRoomObj?.beds || [];
 
-  const visibleBeds = Array.from(
-    { length: bedsPerPage },
-    (_, i) => bedScrollIndex + startBed + i
-  ).filter((bed) => bed >= startBed && bed <= endBed);
+  // Paginate the beds
+  const bedsPerPage = window.innerWidth < 640 ? 4 : window.innerWidth < 768 ? 6 : 12;
+  const visibleBeds = roomBeds.slice(bedScrollIndex, bedScrollIndex + bedsPerPage);
 
   const isBedOccupied = (bedNumber) => {
     const wardFormat = `${selectedWard.type}-${selectedWard.number}-${bedNumber}`;
     return ipdPatients.some(
-      (patient) =>
-        patient.status === "Admitted" && patient.ward === wardFormat
+      (patient) => patient.status === "Admitted" && patient.ward === wardFormat
     );
   };
 
-  const getBedStatus = (bedNumber) => {
+  const getBedStatus = (bed) => {
     const isUnderMaintenance = Math.random() < 0.05;
     if (isUnderMaintenance) return "maintenance";
-    if (isBedOccupied(bedNumber)) return "occupied";
+    if (isBedOccupied(bed.bedNumber)) return "occupied";
     return "available";
   };
 
-  const getBedColors = (bedNumber) => {
-    const status = getBedStatus(bedNumber);
-    const isSelected = selectedBed === bedNumber;
-
+  const getBedColors = (bed) => {
+    const status = getBedStatus(bed);
+    const isSelected = selectedBed === bed.bedNumber;
     if (isSelected)
       return "border-green-500 bg-green-50 text-green-700 shadow-lg shadow-green-200";
     if (status === "occupied")
@@ -89,10 +85,9 @@ const IPDBed = ({
     return "border-[var(--primary-color,#0E1630)] bg-white text-[var(--primary-color,#0E1630)] hover:border-[var(--primary-color,#0E1630)] hover:shadow-lg hover:shadow-blue-200";
   };
 
-  const getBedIcon = (bedNumber) => {
-    const status = getBedStatus(bedNumber);
-    const isSelected = selectedBed === bedNumber;
-
+  const getBedIcon = (bed) => {
+    const status = getBedStatus(bed);
+    const isSelected = selectedBed === bed.bedNumber;
     if (isSelected) return "text-green-500";
     if (status === "occupied") return "text-gray-500";
     if (status === "maintenance") return "text-gray-400";
@@ -109,7 +104,7 @@ const IPDBed = ({
           <strong>Department:</strong> {selectedWard.department}
         </p>
         <p className="text-sm text-blue-800">
-          <strong>Room Beds:</strong> {endBed - startBed + 1}
+          <strong>Room Beds:</strong> {roomBeds.length}
         </p>
       </div>
       <div className="flex items-center gap-2 mb-4">
@@ -122,23 +117,21 @@ const IPDBed = ({
           </button>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 sm:gap-2 flex-1">
-          {visibleBeds.map((bedNumber) => {
-            const status = getBedStatus(bedNumber);
-            const isSelected = selectedBed === bedNumber;
-            const facilities = bedFacilities[bedNumber] || [];
-            const isDisabled =
-              status === "occupied" || status === "maintenance";
-
+          {visibleBeds.map((bed) => {
+            const status = getBedStatus(bed);
+            const isSelected = selectedBed === bed.bedNumber;
+            const facilities = bedFacilities[bed.bedNumber] || [];
+            const isDisabled = status === "occupied" || status === "maintenance";
             return (
               <div
-                key={bedNumber}
-                onClick={() => !isDisabled && onSelectBed(bedNumber)}
+                key={bed.bedId}
+                onClick={() => !isDisabled && onSelectBed(bed.bedNumber)}
                 className={`relative p-1.5 sm:p-2 rounded-lg border-2 cursor-pointer transition-all duration-300 ${getBedColors(
-                  bedNumber
+                  bed
                 )} ${isDisabled ? "cursor-not-allowed opacity-60" : ""}`}
               >
                 <div className="flex flex-col items-center space-y-0.5 sm:space-y-1">
-                  <div className={`${getBedIcon(bedNumber)}`}>
+                  <div className={`${getBedIcon(bed)}`}>
                     {status === "maintenance" ? (
                       <Wrench className="w-3 h-3 sm:w-4 sm:h-4" />
                     ) : status === "occupied" ? (
@@ -150,7 +143,7 @@ const IPDBed = ({
                     )}
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-xs">Bed {bedNumber}</div>
+                    <div className="font-bold text-xs">Bed {bed.bedNumber}</div>
                     <div className="text-[8px] sm:text-[10px] opacity-75 capitalize">
                       {status === "maintenance"
                         ? "Maintenance"
@@ -164,6 +157,7 @@ const IPDBed = ({
                       const IconComponent = FACILITY_ICONS[facility];
                       return IconComponent ? (
                         <div key={facility} className="relative group">
+                          <IconComponent className="w-3 h-3 sm:w-4 sm:h-4" />
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
                             {facility}
                           </div>
@@ -181,7 +175,7 @@ const IPDBed = ({
             );
           })}
         </div>
-        {bedScrollIndex + bedsPerPage < endBed - startBed + 1 && (
+        {bedScrollIndex + bedsPerPage < roomBeds.length && (
           <button
             onClick={() => onScrollBeds("right")}
             className="p-1.5 sm:p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition-all duration-200 shadow-md flex-shrink-0"

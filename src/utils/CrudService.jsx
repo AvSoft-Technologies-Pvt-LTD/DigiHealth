@@ -186,6 +186,5 @@ export const getAllAmbulanceCategories = () =>
 export const getAllHospitals = () =>
   axiosInstance.get('/ambulance/public/hospitals');
 
-// Add this to your existing CrudService.js
 export const getSpecializationsWardsSummaryForIpdAdmission = () =>
-  axiosInstance.get('/specializations/wards/summary/ipd-admission');
+  axiosInstance.get('/specializations/wards/summary/ipd-addmission');

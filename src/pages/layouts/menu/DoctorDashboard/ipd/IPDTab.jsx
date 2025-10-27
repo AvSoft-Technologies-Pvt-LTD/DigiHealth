@@ -1,4 +1,3 @@
-// File: IPDTab.jsx
 import React, {
   useState,
   useEffect,
@@ -17,23 +16,18 @@ import TeleConsultFlow from "../../../../../components/microcomponents/Call";
 import {
   getFamilyMembersByPatient,
   getPersonalHealthByPatientId,
+  getSpecializationsWardsSummaryForIpdAdmission,
 } from "../../../../../utils/CrudService";
-
-// Import step components with their helpers
 import IPDBasic, {
   fileToBase64,
   handlePincodeLookup,
   generateBasicFields,
 } from "./IPDBasic";
-import IPDWard, {
-  getWardDataFromLocalStorage,
-  getBedFacilitiesFromLocalStorage,
-} from "./IPDWard";
+import IPDWard from "./IPDWard";
 import IPDRoom from "./IPDRoom";
 import IPDBed from "./IPDBed";
 import IPDFinal, { generateAdmissionFields } from "./IPDFinal";
 
-// API endpoints
 const API = {
   FORM: "https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient",
   VITAL_SIGNS: "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary",
@@ -88,7 +82,6 @@ const WIZARD_STEPS = [
   },
 ];
 
-// Helper functions
 const getCurrentDate = () => new Date().toISOString().slice(0, 10);
 const getCurrentTime = () => new Date().toTimeString().slice(0, 5);
 const to24Hour = (t) =>
@@ -394,48 +387,49 @@ const IPDTab = forwardRef(
       return false;
     }, []);
 
-    // Load ward data on mount
-    useEffect(() => {
-      const loadWardData = async () => {
-        try {
-          const [wardsLocal, facilitiesLocal] = await Promise.all([
-            getWardDataFromLocalStorage(),
-            getBedFacilitiesFromLocalStorage(),
-          ]);
-          if (wardsLocal) setWardData(wardsLocal);
-          if (facilitiesLocal) setBedFacilities(facilitiesLocal);
-        } catch (err) {
-          console.error("[DEBUG] Error loading ward data:", err);
+    const loadWardData = useCallback(async () => {
+      try {
+        const response = await getSpecializationsWardsSummaryForIpdAdmission();
+        if (response?.data) {
+          const formatted = response.data.map((item, index) => {
+            const availableGroup = item.bedGroups?.find(
+              (g) => g.statusName.toLowerCase() === "available"
+            );
+            const availableBeds = availableGroup ? availableGroup.count : 0;
+            const occupiedBeds = item.totalBeds - availableBeds;
+            return {
+              id: item.wardId || index,
+              type: item.wardName,
+              department: item.specializationName,
+              totalBeds: item.totalBeds,
+              availableBeds,
+              occupiedBeds,
+              rooms: item.rooms?.length || 0,
+              roomNumbers: item.roomNumbers,
+              beds: item.rooms?.flatMap((r) => r.beds || []),
+            };
+          });
+          setWardData(formatted);
         }
-      };
-      loadWardData();
+      } catch (err) {
+        console.error("[DEBUG] Error loading ward data:", err);
+      }
     }, []);
 
-    // Listen for storage changes
+    useEffect(() => {
+      loadWardData();
+    }, [loadWardData]);
+
     useEffect(() => {
       const handleStorageChange = (e) => {
         if (e.key === "bedMasterData") {
-          const loadMasterData = async () => {
-            try {
-              const [wards, facilities] = await Promise.all([
-                getWardDataFromLocalStorage(),
-                getBedFacilitiesFromLocalStorage(),
-              ]);
-              setWardData(wards || []);
-              setBedFacilities(facilities || {});
-              toast.success("Ward and bed data updated from Bed Master");
-            } catch (error) {
-              console.error("Failed to reload master data:", error);
-            }
-          };
-          loadMasterData();
+          loadWardData();
         }
       };
       window.addEventListener("storage", handleStorageChange);
       return () => window.removeEventListener("storage", handleStorageChange);
-    }, []);
+    }, [loadWardData]);
 
-    // Handle photo change using imported helper
     const handlePhotoChange = async (e) => {
       const file = e?.target?.files?.[0];
       if (file && file.type && file.type.startsWith("image/")) {
@@ -452,10 +446,8 @@ const IPDTab = forwardRef(
       }
     };
 
-    // Handle pincode change using imported helper
     const handlePincodeChange = async (pincode) => {
       const value = (pincode || "").replace(/\D/g, "").slice(0, 6);
-      // setIpdWizardData handled by caller (we will update after lookup)
       if (value.length === 6) {
         setIsLoadingCities(true);
         try {
@@ -503,7 +495,6 @@ const IPDTab = forwardRef(
       }
     };
 
-    // Network call: Fetch all patients
     const fetchAllPatients = useCallback(async () => {
       setLoading(true);
       try {
@@ -522,7 +513,6 @@ const IPDTab = forwardRef(
               .join(" "),
           }))
           .reverse();
-
         const ipdPatientsData = processedPatients
           .filter(
             (p) =>
@@ -545,12 +535,10 @@ const IPDTab = forwardRef(
             admissionDate: p.admissionDate || "Not specified",
             department: p.department || "General Medicine",
           }));
-
         setIpdPatients(ipdPatientsData);
         try {
           localStorage.setItem("ipdPatients", JSON.stringify(ipdPatientsData));
         } catch (e) {
-          // localStorage might fail in some contexts
         }
       } catch (error) {
         console.error("Error fetching patients:", error);
@@ -560,7 +548,6 @@ const IPDTab = forwardRef(
       }
     }, [doctorName]);
 
-    // Network call: Fetch patient details
     const fetchPatientDetails = useCallback(
       async (patientId) => {
         if (!patientId) return;
@@ -642,7 +629,6 @@ const IPDTab = forwardRef(
       }
     }, []);
 
-    // Network call: Fetch patient by ID (used in OPD->IPD transfer)
     const handleFetchPatientDetails = useCallback(async () => {
       if (!patientIdInput.trim()) {
         toast.error("Please enter a Patient ID");
@@ -704,10 +690,9 @@ const IPDTab = forwardRef(
 
     const handleIpdWizardChange = useCallback((field, value) => {
       setIpdWizardData((prev) => {
-        // For pincode, route through helper which will update state separately
         if (field === "pincode") {
           handlePincodeChange(value);
-          return prev; // pincode change handled by helper which updates ipdWizardData
+          return prev;
         }
         const updated = { ...prev, [field]: value };
         if (field === "phone") {
@@ -730,7 +715,6 @@ const IPDTab = forwardRef(
       });
     }, []);
 
-    // Network call: Save patient (step 1)
     const handleIpdWizardNext = useCallback(async () => {
       if (ipdWizardStep === 1) {
         try {
@@ -826,7 +810,6 @@ const IPDTab = forwardRef(
       doctorName,
     ]);
 
-    // Network call: Finalize admission (step 5)
     const handleIpdWizardFinish = useCallback(async () => {
       try {
         const payload = {
@@ -840,21 +823,16 @@ const IPDTab = forwardRef(
           doctorName,
           updatedAt: new Date().toISOString(),
         };
-
-        // If no newPatientId, attempt to create then update — but preserve original behavior
         if (!newPatientId) {
           toast.error("Missing patient ID. Please restart admission.");
           return;
         }
-
         const response = await fetch(`${API.FORM}/${newPatientId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         if (!response.ok) throw new Error("Failed to finalize IPD admission");
-
-        // Update local bed master (best effort)
         try {
           const savedData = localStorage.getItem("bedMasterData");
           if (savedData) {
@@ -874,7 +852,6 @@ const IPDTab = forwardRef(
             });
             try {
               localStorage.setItem("bedMasterData", JSON.stringify(updatedData));
-              // trigger storage event for other windows
               window.dispatchEvent(new StorageEvent("storage", {
                 key: "bedMasterData",
                 newValue: JSON.stringify(updatedData),
@@ -887,7 +864,6 @@ const IPDTab = forwardRef(
         } catch (err) {
           console.warn("Error updating bed master data:", err);
         }
-
         toast.success("IPD admission completed successfully!");
         closeModal("ipdWizard");
         fetchAllPatients();
@@ -1134,15 +1110,16 @@ const IPDTab = forwardRef(
             onSelectWard={handleWardSelection}
           />
         );
-      if (ipdWizardStep === 3)
-        return (
-          <IPDRoom
-            wardData={wardData}
-            selectedWard={selectedWard}
-            selectedRoom={selectedRoom}
-            onSelectRoom={handleRoomSelection}
-          />
-        );
+     if (ipdWizardStep === 3)
+  return (
+    <IPDRoom
+      wardData={wardData}
+      selectedWard={selectedWard}
+      selectedRoom={selectedRoom}
+      onSelectRoom={handleRoomSelection}
+    />
+  );
+
       if (ipdWizardStep === 4)
         return (
           <IPDBed
@@ -1156,7 +1133,6 @@ const IPDTab = forwardRef(
             onScrollBeds={scrollBeds}
           />
         );
-
       const admissionFields = generateAdmissionFields(masterData || {}, STATIC_DATA);
       return (
         <IPDFinal
@@ -1351,5 +1327,4 @@ const IPDTab = forwardRef(
 );
 
 IPDTab.displayName = "IPDTab";
-
 export default IPDTab;
