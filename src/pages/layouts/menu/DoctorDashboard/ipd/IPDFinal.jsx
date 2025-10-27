@@ -23,13 +23,93 @@ const WARD_ICONS = {
   Surgical: Stethoscope,
 };
 
-const IPDFinal = ({ data, selectedWard, selectedRoom, selectedBed, fields, onChange }) => {
-  const getWardIcon = (wardType) => {
-    if (!wardType) return <Bed className="w-4 h-4 sm:w-5 sm:h-5" />;
-    const IconComponent = WARD_ICONS[wardType] || Bed;
-    return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />;
-  };
+const getWardIcon = (wardType) => {
+  if (!wardType) return <Bed className="w-4 h-4 sm:w-5 sm:h-5" />;
+  const IconComponent = WARD_ICONS[wardType] || Bed;
+  return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />;
+};
 
+// Helper: Generate fields for admission/final step
+export const generateAdmissionFields = (masterData, staticData) => {
+  return [
+    {
+      name: "admissionDate",
+      label: "Admission Date",
+      type: "date",
+      required: true,
+    },
+    {
+      name: "admissionTime",
+      label: "Admission Time",
+      type: "time",
+      required: true,
+    },
+    {
+      name: "status",
+      label: "Status",
+      type: "select",
+      required: true,
+      options: staticData.status,
+    },
+    {
+      name: "wardType",
+      label: "Ward Type",
+      type: "text",
+      readonly: true,
+    },
+    {
+      name: "wardNumber",
+      label: "Ward Number",
+      type: "text",
+      readonly: true,
+    },
+    {
+      name: "roomNumber",
+      label: "Room Number",
+      type: "text",
+      readonly: true,
+    },
+    {
+      name: "bedNumber",
+      label: "Bed Number",
+      type: "text",
+      readonly: true,
+    },
+    {
+      name: "department",
+      label: "Department",
+      type: "select",
+      required: true,
+      options: masterData.departments.map((d, i) => ({
+        ...d,
+        key: `dept-${i}`,
+      })),
+    },
+    {
+      name: "insuranceType",
+      label: "Insurance Type",
+      type: "select",
+      required: true,
+      options: staticData.insurance,
+    },
+    {
+      name: "surgeryRequired",
+      label: "Surgery Required",
+      type: "select",
+      options: staticData.surgery,
+    },
+    { name: "dischargeDate", label: "Discharge Date", type: "date" },
+    { name: "diagnosis", label: "Diagnosis", type: "text" },
+    {
+      name: "reasonForAdmission",
+      label: "Reason For Admission",
+      type: "textarea",
+      colSpan: 2,
+    },
+  ];
+};
+
+const IPDFinal = ({ data, selectedWard, selectedRoom, selectedBed, fields, onChange }) => {
   const renderField = (field) => (
     <div
       key={field.name}

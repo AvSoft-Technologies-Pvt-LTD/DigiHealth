@@ -1,6 +1,158 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Camera } from "lucide-react";
 
+// Helper: Convert file to base64
+export const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({
+        base64: reader.result,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      });
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
+  });
+};
+
+// Helper: Handle pincode lookup
+export const handlePincodeLookup = async (pincode) => {
+  try {
+    const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+    const data = await res.json();
+    if (
+      data[0].Status === "Success" &&
+      data[0].PostOffice &&
+      data[0].PostOffice.length > 0
+    ) {
+      const cities = [
+        ...new Set(data[0].PostOffice.map((office) => office.Name)),
+      ];
+      return {
+        cities,
+        district: data[0].PostOffice[0].District,
+        state: data[0].PostOffice[0].State,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching pincode data:", error);
+    return null;
+  }
+};
+
+// Helper: Generate basic fields for step 1
+export const generateBasicFields = (masterData, availableCities, isLoadingCities) => {
+  return [
+    {
+      name: "firstName",
+      label: "First Name",
+      type: "text",
+      required: true,
+    },
+    { name: "middleName", label: "Middle Name", type: "text" },
+    {
+      name: "lastName",
+      label: "Last Name",
+      type: "text",
+      required: true,
+    },
+    {
+      name: "phone",
+      label: "Phone Number",
+      type: "text",
+      required: true,
+    },
+    {
+      name: "email",
+      label: "Email Address",
+      type: "email",
+      required: true,
+    },
+    {
+      name: "aadhaar",
+      label: "Aadhaar Number",
+      type: "text",
+      required: true,
+    },
+    {
+      name: "gender",
+      label: "Gender",
+      type: "select",
+      required: true,
+      options: masterData.genders.map((g, i) => ({
+        ...g,
+        key: `gender-${i}`,
+      })),
+    },
+    {
+      name: "dob",
+      label: "Date of Birth",
+      type: "date",
+      required: true,
+    },
+    {
+      name: "occupation",
+      label: "Occupation",
+      type: "text",
+      required: true,
+    },
+    {
+      name: "pincode",
+      label: "Pincode",
+      type: "text",
+      required: true,
+      maxLength: 6,
+    },
+    {
+      name: "city",
+      label: "City",
+      type: "select",
+      required: true,
+      options: availableCities.map((city, i) => ({
+        value: city,
+        label: city,
+        key: `city-${i}`,
+      })),
+      disabled: isLoadingCities || availableCities.length === 0,
+    },
+    {
+      name: "district",
+      label: "District",
+      type: "text",
+      readonly: true,
+    },
+    { name: "state", label: "State", type: "text", readonly: true },
+    {
+      name: "photo",
+      label: "Upload Photo",
+      type: "custom",
+    },
+    {
+      name: "password",
+      label: "Create Password",
+      type: "password",
+      required: true,
+    },
+    {
+      name: "confirmPassword",
+      label: "Confirm Password",
+      type: "password",
+      required: true,
+    },
+    {
+      name: "agreeDeclaration",
+      label: "I agree to the declaration / Privacy Policy",
+      type: "checkbox",
+      required: true,
+      colSpan: 3,
+    },
+  ];
+};
+
 const PhotoUpload = ({ photoPreview, onPhotoChange, onPreviewClick }) => (
   <div className="relative w-full">
     <label className="block relative cursor-pointer">

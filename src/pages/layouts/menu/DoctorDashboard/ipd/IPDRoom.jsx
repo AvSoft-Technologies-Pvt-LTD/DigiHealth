@@ -23,45 +23,14 @@ const WARD_ICONS = {
   Surgical: Stethoscope,
 };
 
+const getWardIcon = (wardType) => {
+  if (!wardType) return <DoorOpen className="w-4 h-4 sm:w-5 sm:h-5" />;
+  const IconComponent = WARD_ICONS[wardType] || DoorOpen;
+  return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />;
+};
+
 const IPDRoom = ({ wardData, selectedWard, selectedRoom, onSelectRoom }) => {
   if (!selectedWard) return null;
-
-  const getWardIcon = (wardType) => {
-    if (!wardType) return <DoorOpen className="w-4 h-4 sm:w-5 sm:h-5" />;
-    const IconComponent = WARD_ICONS[wardType] || DoorOpen;
-    return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />;
-  };
-
-  // Calculate room stats from ward data
-  const calculateRoomStats = () => {
-    if (!selectedWard) return [];
-
-    const totalRooms = selectedWard.rooms || 1;
-    const bedsPerRoom = Math.ceil(selectedWard.totalBeds / totalRooms);
-
-    const roomStats = [];
-    for (let i = 1; i <= totalRooms; i++) {
-      const startBed = (i - 1) * bedsPerRoom + 1;
-      const endBed = Math.min(i * bedsPerRoom, selectedWard.totalBeds);
-      const roomBeds = endBed - startBed + 1;
-
-      // Calculate occupied beds in this room range
-      const occupiedInRoom = selectedWard.occupiedBedNumbers?.filter(
-        bedNum => bedNum >= startBed && bedNum <= endBed
-      ).length || 0;
-
-      roomStats.push({
-        roomNumber: i,
-        totalBeds: roomBeds,
-        occupiedBeds: occupiedInRoom,
-        availableBeds: roomBeds - occupiedInRoom,
-      });
-    }
-
-    return roomStats;
-  };
-
-  const roomStats = calculateRoomStats();
 
   return (
     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
@@ -73,22 +42,26 @@ const IPDRoom = ({ wardData, selectedWard, selectedRoom, onSelectRoom }) => {
           <strong>Department:</strong> {selectedWard.department}
         </p>
         <p className="text-sm text-blue-800">
-          <strong>Total Rooms:</strong> {selectedWard.rooms || 1}
+          <strong>Total Rooms:</strong> {selectedWard.rooms.length}
         </p>
       </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {roomStats.map((room) => (
+        {selectedWard.rooms.map((room) => (
           <div
-            key={room.roomNumber}
+            key={room.roomId}
             className={`p-3 sm:p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
               selectedRoom === room.roomNumber
                 ? "border-[#01B07A] bg-[#E6FBF5] shadow-lg"
                 : "border-gray-200 hover:border-gray-300"
             } ${
-              room.availableBeds === 0 ? "opacity-50 cursor-not-allowed" : ""
+              room.beds.filter(bed => bed.bedStatusId === 1).length === 0
+                ? "opacity-50 cursor-not-allowed"
+                : ""
             }`}
-            onClick={() => room.availableBeds > 0 && onSelectRoom(room.roomNumber)}
+            onClick={() =>
+              room.beds.filter(bed => bed.bedStatusId === 1).length > 0 &&
+              onSelectRoom(room.roomNumber)
+            }
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -98,20 +71,19 @@ const IPDRoom = ({ wardData, selectedWard, selectedRoom, onSelectRoom }) => {
                 </h4>
               </div>
               <div className="flex flex-col items-end gap-1">
-                {room.availableBeds === 0 && (
+                {room.beds.filter(bed => bed.bedStatusId === 1).length === 0 && (
                   <span className="text-[10px] text-red-600 font-medium">
                     Full
                   </span>
                 )}
               </div>
             </div>
-
             <div className="grid grid-cols-3 gap-2 mt-2">
               <div className="bg-blue-50 rounded-xl p-2 text-center shadow-sm flex flex-col items-center">
                 <Bed className="w-4 h-4 text-blue-600 mb-1" />
                 <p className="text-[10px] text-gray-500 font-medium">Total</p>
                 <p className="text-blue-600 font-bold text-sm">
-                  {room.totalBeds}
+                  {room.beds.length}
                 </p>
               </div>
               <div className="bg-green-50 rounded-xl p-2 text-center shadow-sm flex flex-col items-center">
@@ -120,7 +92,7 @@ const IPDRoom = ({ wardData, selectedWard, selectedRoom, onSelectRoom }) => {
                   Available
                 </p>
                 <p className="text-green-600 font-bold text-sm">
-                  {room.availableBeds}
+                  {room.beds.filter(bed => bed.bedStatusId === 1).length}
                 </p>
               </div>
               <div className="bg-red-50 rounded-xl p-2 text-center shadow-sm flex flex-col items-center">
@@ -129,23 +101,23 @@ const IPDRoom = ({ wardData, selectedWard, selectedRoom, onSelectRoom }) => {
                   Occupied
                 </p>
                 <p className="text-red-600 font-bold text-sm">
-                  {room.occupiedBeds}
+                  {room.beds.filter(bed => bed.bedStatusId !== 1).length}
                 </p>
               </div>
             </div>
-
             <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
               <div
                 className="bg-red-500 h-2 rounded-full transition-all duration-300"
                 style={{
-                  width: `${(room.occupiedBeds / room.totalBeds) * 100}%`,
+                  width: `${
+                    (room.beds.filter(bed => bed.bedStatusId !== 1).length / room.beds.length) * 100
+                  }%`,
                 }}
               ></div>
             </div>
           </div>
         ))}
       </div>
-
       {selectedRoom && (
         <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-[#E6FBF5] rounded-lg border border-[#01B07A]">
           <p className="text-xs sm:text-sm text-[#01B07A] font-medium">

@@ -1,4 +1,3 @@
-// File: Scheduler.jsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import {
@@ -11,8 +10,6 @@ import {
   startOfDay,
   endOfDay,
   compareAsc,
-  setHours,
-  setMinutes,
 } from "date-fns";
 import { enUS } from "date-fns/locale";
 import {
@@ -28,9 +25,8 @@ import { toast, ToastContainer } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import AvailabilityModal from "./AvailabilityModal";
 import AppointmentDetailModal from "./AppointmentDetailModal";
-
+import { generateDummyAppointments } from "./dummyData";
 import "./scheduler.css";
 
 const locales = { "en-US": enUS };
@@ -42,162 +38,6 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Generate comprehensive dummy data for September and October 2025
-const generateDummyAppointments = () => {
-  const patients = [
-    {
-      name: "John Smith",
-      phone: "555-0101",
-      email: "john@example.com",
-      type: "Physical",
-    },
-    {
-      name: "Sarah Johnson",
-      phone: "555-0102",
-      email: "sarah@example.com",
-      type: "Virtual",
-    },
-    {
-      name: "Mike Davis",
-      phone: "555-0103",
-      email: "mike@example.com",
-      type: "Physical",
-    },
-    {
-      name: "Emily Chen",
-      phone: "555-0104",
-      email: "emily@example.com",
-      type: "Virtual",
-    },
-    {
-      name: "Robert Wilson",
-      phone: "555-0105",
-      email: "robert@example.com",
-      type: "Physical",
-    },
-    {
-      name: "Lisa Anderson",
-      phone: "555-0106",
-      email: "lisa@example.com",
-      type: "Virtual",
-    },
-    {
-      name: "David Brown",
-      phone: "555-0107",
-      email: "david@example.com",
-      type: "Physical",
-    },
-    {
-      name: "Maria Garcia",
-      phone: "555-0108",
-      email: "maria@example.com",
-      type: "Virtual",
-    },
-    {
-      name: "James Taylor",
-      phone: "555-0109",
-      email: "james@example.com",
-      type: "Physical",
-    },
-    {
-      name: "Jennifer Martinez",
-      phone: "555-0110",
-      email: "jennifer@example.com",
-      type: "Virtual",
-    },
-  ];
-
-  const symptoms = [
-    "Routine Checkup",
-    "Follow-up consultation",
-    "Annual Physical",
-    "Medical Consultation",
-    "Health Screening",
-    "Preventive Care",
-    "Wellness Visit",
-    "Lab Results Review",
-  ];
-
-  const colors = [
-    "#3b82f6",
-    "#10b981",
-    "#8b5cf6",
-    "#f59e0b",
-    "#ef4444",
-    "#ec4899",
-    "#06b6d4",
-    "#84cc16",
-  ];
-
-  const appointments = [];
-  let id = 1;
-
-  // Generate appointments for September 2025 (month 8, all days except Sundays)
-  for (let day = 1; day <= 30; day++) {
-    const date = new Date(2025, 8, day);
-    if (date.getDay() === 0) continue; // Skip Sundays
-
-    // Random number of appointments per day (2-6)
-    const numAppointments = Math.floor(Math.random() * 5) + 2;
-
-    for (let i = 0; i < numAppointments; i++) {
-      const patient = patients[Math.floor(Math.random() * patients.length)];
-      const symptom = symptoms[Math.floor(Math.random() * symptoms.length)];
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      const hour = 9 + Math.floor(Math.random() * 8); // 9 AM to 5 PM
-      const minute = Math.random() > 0.5 ? 0 : 30;
-
-      appointments.push({
-        id: String(id++),
-        name: patient.name,
-        phone: patient.phone,
-        email: patient.email,
-        date: new Date(2025, 8, day, hour, minute),
-        consultationType: patient.type,
-        symptoms: symptom,
-        status: "confirmed",
-        color: color,
-        meetLink: `https://meet.google.com/${Math.random()
-          .toString(36)
-          .substring(7)}`,
-      });
-    }
-  }
-
-  // Generate appointments for October 2025 (month 9, days 1-31)
-  for (let day = 1; day <= 31; day++) {
-    const date = new Date(2025, 9, day);
-    if (date.getDay() === 0) continue; // Skip Sundays
-
-    const numAppointments = Math.floor(Math.random() * 5) + 2;
-
-    for (let i = 0; i < numAppointments; i++) {
-      const patient = patients[Math.floor(Math.random() * patients.length)];
-      const symptom = symptoms[Math.floor(Math.random() * symptoms.length)];
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      const hour = 9 + Math.floor(Math.random() * 8);
-      const minute = Math.random() > 0.5 ? 0 : 30;
-
-      appointments.push({
-        id: String(id++),
-        name: patient.name,
-        phone: patient.phone,
-        email: patient.email,
-        date: new Date(2025, 9, day, hour, minute),
-        consultationType: patient.type,
-        symptoms: symptom,
-        status: "confirmed",
-        color: color,
-        meetLink: `https://meet.google.com/${Math.random()
-          .toString(36)
-          .substring(7)}`,
-      });
-    }
-  }
-
-  return appointments;
-};
-
 const mockAppointments = generateDummyAppointments();
 
 const Scheduler = () => {
@@ -205,17 +45,12 @@ const Scheduler = () => {
   const [events, setEvents] = useState([]);
   const [monthEvents, setMonthEvents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 8, 1)); // Start with September 2025
-  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 8, 1));
   const [showAppointmentDetail, setShowAppointmentDetail] = useState(false);
-  const [showDayAppointments, setShowDayAppointments] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [dayEvents, setDayEvents] = useState([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState(30);
 
   useEffect(() => {
     loadAppointments();
@@ -230,18 +65,15 @@ const Scheduler = () => {
   const groupEventsByDate = (individualEvents) => {
     const map = {};
     individualEvents.forEach((e) => {
-const d = startOfDay(new Date(e.start));
-// use local date string (date-fns format) instead of toISOString (UTC)
-const key = format(d, "yyyy-MM-dd");
+      const d = startOfDay(new Date(e.start));
+      const key = format(d, "yyyy-MM-dd");
       if (!map[key]) map[key] = [];
       map[key].push(e);
     });
 
     const grouped = Object.keys(map).map((key) => {
-    // parse yyyy-MM-dd back into a local Date at start-of-day
-const [y, m, dd] = key.split("-").map(Number);
-const d = new Date(y, m - 1, dd);
-
+      const [y, m, dd] = key.split("-").map(Number);
+      const d = new Date(y, m - 1, dd);
       map[key].sort((a, b) => compareAsc(new Date(a.start), new Date(b.start)));
       return {
         id: `day-${key}`,
@@ -300,10 +132,11 @@ const d = new Date(y, m - 1, dd);
   const handleSelectEvent = useCallback(
     (event) => {
       if (event?.resource?.events) {
-const iso = format(startOfDay(event.start), "yyyy-MM-dd");
-        navigate(`today?date=${iso}`, {
-          state: { events: event.resource.events },
-        });
+        const iso = format(startOfDay(event.start), "yyyy-MM-dd");
+      navigate(`/doctordashboard/scheduler/today?date=${iso}`, {
+  state: { events: event.resource.events },
+});
+
       } else {
         setSelectedEvent(event);
         setShowAppointmentDetail(true);
@@ -314,13 +147,12 @@ const iso = format(startOfDay(event.start), "yyyy-MM-dd");
 
   const handleSelectSlot = useCallback(
     (slotInfo) => {
-   const iso = format(startOfDay(new Date(slotInfo.start)), "yyyy-MM-dd");
-
+      const iso = format(startOfDay(new Date(slotInfo.start)), "yyyy-MM-dd");
       const dayEvents = events.filter((ev) => {
         const evDate = new Date(ev.start).toISOString().slice(0, 10);
         return evDate === iso;
       });
-      navigate(`today?date=${iso}`, { state: { events: dayEvents } });
+navigate(`/doctordashboard/scheduler/today?date=${iso}`, { state: { events: dayEvents } });
     },
     [navigate, events]
   );
@@ -348,14 +180,22 @@ const iso = format(startOfDay(event.start), "yyyy-MM-dd");
     toast.success("Link copied to clipboard!");
   };
 
+const handleManageAvailability = () => {
+  const saved = localStorage.getItem("doctorAvailability");
+  if (saved) {
+    // Schedules exist, go to overview
+    navigate("/doctordashboard/scheduler/availability");
+  } else {
+    // No schedules, go directly to create
+    navigate("/doctordashboard/scheduler/availability/create");
+  }
+};
+
   const dayCountsMap = useMemo(() => {
     const map = {};
     monthEvents.forEach((m) => {
       const key = format(startOfDay(m.start), "yyyy-MM-dd");
-
-      const count = Array.isArray(m.resource?.events)
-        ? m.resource.events.length
-        : 0;
+      const count = Array.isArray(m.resource?.events) ? m.resource.events.length : 0;
       map[key] = (map[key] || 0) + count;
     });
     return map;
@@ -364,9 +204,7 @@ const iso = format(startOfDay(event.start), "yyyy-MM-dd");
   const GroupedDayEvent = ({ event }) => {
     const dayEvents = event.resource?.events || [];
     const earliest = dayEvents[0];
-    const earliestTime = earliest
-      ? format(new Date(earliest.start), "h:mm a")
-      : null;
+    const earliestTime = earliest ? format(new Date(earliest.start), "h:mm a") : null;
 
     return (
       <div className="custom-event month-grouped">
@@ -386,17 +224,14 @@ const iso = format(startOfDay(event.start), "yyyy-MM-dd");
   };
 
   const DateCellWrapper = ({ children, value }) => {
-const key = format(startOfDay(new Date(value)), "yyyy-MM-dd");
+    const key = format(startOfDay(new Date(value)), "yyyy-MM-dd");
     const count = dayCountsMap[key] || 0;
 
     return (
       <div style={{ position: "relative", height: "100%" }}>
         <div style={{ height: "100%" }}>{children}</div>
         {count > 0 && (
-          <div
-            className="date-count-badge"
-            title={`${count} appointment${count > 1 ? "s" : ""}`}
-          >
+          <div className="date-count-badge" title={`${count} appointment${count > 1 ? "s" : ""}`}>
             {count}
           </div>
         )}
@@ -452,42 +287,24 @@ const key = format(startOfDay(new Date(value)), "yyyy-MM-dd");
 
   const CustomToolbar = ({ date, onNavigate }) => {
     const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
     ];
-    const years = Array.from(
-      { length: 11 },
-      (_, i) => date.getFullYear() - 5 + i
-    );
-
+    const years = Array.from({ length: 11 }, (_, i) => date.getFullYear() - 5 + i);
     const goToBack = () => {
       const newDate = subMonths(date, 1);
       onNavigate("prev", newDate);
       setCurrentDate(newDate);
     };
-
     const goToNext = () => {
       const newDate = addMonths(date, 1);
       onNavigate("next", newDate);
       setCurrentDate(newDate);
     };
     const goToCurrent = () => {
-const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
-
-      // navigate relative to current path (which is /doctordashboard/scheduler)
-      navigate(`today?date=${iso}`, { relative: "path" });
+      const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
+navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
     };
-
     const handleMonthChange = (monthIndex) => {
       const newDate = new Date(date);
       newDate.setMonth(monthIndex);
@@ -495,7 +312,6 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
       setCurrentDate(newDate);
       setShowMonthPicker(false);
     };
-
     const handleYearChange = (year) => {
       const newDate = new Date(date);
       newDate.setFullYear(year);
@@ -503,9 +319,7 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
       setCurrentDate(newDate);
       setShowYearPicker(false);
     };
-
     const stop = (e) => e.stopPropagation();
-
     return (
       <div className="scheduler-toolbar" onClick={stop}>
         <div className="toolbar-left">
@@ -533,15 +347,12 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
               <ChevronDown size={16} />
             </button>
           </div>
-
           {showMonthPicker && (
             <div className="picker-dropdown month-picker" onClick={stop}>
               {months.map((month, index) => (
                 <button
                   key={month}
-                  className={`picker-option ${
-                    date.getMonth() === index ? "active" : ""
-                  }`}
+                  className={`picker-option ${date.getMonth() === index ? "active" : ""}`}
                   onClick={() => handleMonthChange(index)}
                 >
                   {month}
@@ -549,15 +360,12 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
               ))}
             </div>
           )}
-
           {showYearPicker && (
             <div className="picker-dropdown year-picker" onClick={stop}>
               {years.map((year) => (
                 <button
                   key={year}
-                  className={`picker-option ${
-                    date.getFullYear() === year ? "active" : ""
-                  }`}
+                  className={`picker-option ${date.getFullYear() === year ? "active" : ""}`}
                   onClick={() => handleYearChange(year)}
                 >
                   {year}
@@ -566,34 +374,9 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
             </div>
           )}
         </div>
-
-        {/* <div className="toolbar-center">
-          <button
-            onClick={goToBack}
-            className="nav-btn"
-            aria-label="Previous month"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button
-            onClick={goToCurrent}
-            className="today-btn"
-            aria-label="Today"
-          >
-            Today
-          </button>
-          <button
-            onClick={goToNext}
-            className="nav-btn"
-            aria-label="Next month"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div> */}
-
         <div className="toolbar-right">
           <button
-            onClick={() => setShowAvailabilityModal(true)}
+            onClick={handleManageAvailability}
             className="availability-btn"
           >
             Manage Availability
@@ -628,8 +411,7 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
             events={monthEvents}
             startAccessor="start"
             endAccessor="end"
-          style={{ height: "auto", minHeight: 680, overflow: "visible" }}
-
+            style={{ height: "auto", minHeight: 680, overflow: "visible" }}
             eventPropGetter={eventStyleGetter}
             components={{
               toolbar: CustomToolbar,
@@ -646,15 +428,11 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
             onNavigate={(newDate) => setCurrentDate(newDate)}
             className="no-inner-scroll"
           />
-
-        
         </div>
 
         <div className="sidebar-section">
-          {/* Google Meet Section */}
           <div className="google-meet-card">
             <div className="card-header">
-              
               <h3>Connect with upcoming patient</h3>
             </div>
             <div className="meet-link-container">
@@ -671,9 +449,7 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
               </div>
               <button
                 className="copy-btn"
-                onClick={() =>
-                  copyToClipboard("https://meet.google.com/y4x72A")
-                }
+                onClick={() => copyToClipboard("https://meet.google.com/y4x72A")}
                 title="Copy link"
               >
                 <Copy size={16} />
@@ -681,7 +457,6 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
             </div>
           </div>
 
-          {/* Upcoming Appointments */}
           <div className="upcoming-card">
             <div className="card-header">
               <CalendarIcon size={18} />
@@ -712,13 +487,9 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
 
                     <div className="appt-details">
                       <div className="appt-patient">
-                        <span className="patient-name">
-                          {appt.resource.patient}
-                        </span>
+                        <span className="patient-name">{appt.resource.patient}</span>
                         {appt.resource.type && (
-                          <span
-                            className={`type-inline ${appt.resource.type?.toLowerCase()}`}
-                          >
+                          <span className={`type-inline ${appt.resource.type?.toLowerCase()}`}>
                             {appt.resource.type}
                           </span>
                         )}
@@ -734,17 +505,8 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
               )}
             </div>
           </div>
-
-          {/* Stats */}
         </div>
       </div>
-
-      {showAvailabilityModal && (
-        <AvailabilityModal
-          isOpen={showAvailabilityModal}
-          onClose={() => setShowAvailabilityModal(false)}
-        />
-      )}
 
       {showAppointmentDetail && selectedEvent && (
         <AppointmentDetailModal
@@ -754,7 +516,6 @@ const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
           onUpdateColor={handleUpdateEventColor}
         />
       )}
-
     </div>
   );
 };

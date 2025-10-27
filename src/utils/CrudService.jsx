@@ -253,6 +253,14 @@ export const deleteWard = (wardId) =>
 export const getSpecializationsWardsSummaryById = (specializationId) =>
   axiosInstance.get(`/specializations/wards/summary/${specializationId}`);
 
+// Get summary of specializations with wards (new)
+export const getSpecializationsWardsSummary = () =>
+  axiosInstance.get('/specializations/wards/summary');
+
+// Get a single ward by id
+export const getWardById = (wardId) =>
+  axiosInstance.get(`/specializations/wards/ward/${wardId}`);
+
 /* -----------------------------
    🚑 AMBULANCE (PUBLIC APIs)
 ------------------------------ */
@@ -270,13 +278,8 @@ export const getAllAmbulanceCategories = () =>
 export const getAllHospitals = () =>
   axiosInstance.get('/ambulance/public/hospitals');
 
-// Get summary of specializations with wards (new)
-export const getSpecializationsWardsSummary = () =>
-  axiosInstance.get('/specializations/wards/summary');
-
-// Get a single ward by id
-export const getWardById = (wardId) =>
-  axiosInstance.get(`/specializations/wards/ward/${wardId}`);
+export const getSpecializationsWardsSummaryForIpdAdmission = () =>
+  axiosInstance.get('/specializations/wards/summary/ipd-addmission');
 
 
 

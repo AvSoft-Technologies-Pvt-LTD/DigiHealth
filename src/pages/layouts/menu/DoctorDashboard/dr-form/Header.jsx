@@ -69,7 +69,7 @@ const Header = ({
   };
 
   return (
-    <div id="form-header" ref={headerMeasureRef} className="sticky top-0 left-0 right-0 z-[9999] w-full max-w-full">
+<div id="form-header" ref={headerMeasureRef} className="sticky top-0 z-40 w-full max-w-7xl mx-auto">
       <div className="w-full px-3 sm:px-6 mx-auto relative">
         <QuickLinksPanel
           isOpen={quickLinksOpen}

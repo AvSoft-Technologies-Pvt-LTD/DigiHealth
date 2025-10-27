@@ -441,7 +441,7 @@ const Form = () => {
           onBack={handleBackToPatients}
         />
 
-        <div className="flex-1 min-w-0 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
+<div className="flex-1 min-w-0 max-w-7xl mx-auto px-4 sm:px-6 pt-16 sm:py-8 w-full">
           <div className="mb-6 sm:mb-8">{renderActiveForm()}</div>
 
           <SignatureArea

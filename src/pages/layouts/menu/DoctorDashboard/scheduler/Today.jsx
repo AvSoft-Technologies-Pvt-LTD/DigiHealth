@@ -3,7 +3,6 @@ import { format, startOfDay } from "date-fns";
 import { Clock, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import "./scheduler.css";
 
-/* Helper Functions */
 const mkDemoEventsForDate = (dateObj) => {
   const d = dateObj instanceof Date ? dateObj : new Date(dateObj);
   const mk = (h, m, duration = 40) => {
@@ -90,7 +89,6 @@ const TodayView = ({ events = [], onSelectEvent }) => {
       });
     }
 
-    // fallback demo events
     return mkDemoEventsForDate(selectedDate);
   }, [events, selectedDate]);
 
@@ -113,12 +111,11 @@ const TodayView = ({ events = [], onSelectEvent }) => {
     return map;
   }, [dayEvents]);
 
-  const timeSlots = timeLabelsBetween(8, 18, 30); // 8:00 - 17:30
+  const timeSlots = timeLabelsBetween(8, 18, 30);
 
   return (
     <div className="scheduler-container">
       <div className="todayview-root">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <button
@@ -152,9 +149,7 @@ const TodayView = ({ events = [], onSelectEvent }) => {
           </div>
         </div>
 
-        {/* Main Grid Layout: Time Column + Appointments Column */}
         <div className="todayview-main grid grid-cols-[120px_1fr] gap-4">
-          {/* Time Labels Column */}
           <div className="time-column">
             <div className="flex flex-col">
               {timeSlots.map((t, idx) => (
@@ -165,7 +160,6 @@ const TodayView = ({ events = [], onSelectEvent }) => {
             </div>
           </div>
 
-          {/* Appointments Column */}
           <div className="appointments-column">
             <div>
               {timeSlots.map((t, idx) => {
@@ -186,7 +180,6 @@ const TodayView = ({ events = [], onSelectEvent }) => {
                           const color = ev.resource?.color ?? "#3b82f6";
                           const type = (ev.resource?.consultationType || "").toUpperCase();
                           const typeLabel = type === "PHYSICAL" ? "PHYSICAL" : type === "VIRTUAL" ? "VIRTUAL" : "—";
-                          const status = ev.resource?.status ?? "";
 
                           return (
                             <button
@@ -198,7 +191,6 @@ const TodayView = ({ events = [], onSelectEvent }) => {
                               style={{ color }}
                               data-color={color}
                             >
-                              {/* Left: Avatar */}
                               <div className="event-left">
                                 <div
                                   className="patient-avatar"
@@ -209,7 +201,6 @@ const TodayView = ({ events = [], onSelectEvent }) => {
                                 </div>
                               </div>
 
-                              {/* Main: Patient Info */}
                               <div className="event-main">
                                 <div className="flex items-center gap-3">
                                   <div className="event-patient">{patient}</div>
@@ -218,13 +209,10 @@ const TodayView = ({ events = [], onSelectEvent }) => {
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-4  text-sm text-slate-500">
-                                  {/* (this block intentionally left empty per your code)
-                                      previously had clock/time; moved to the right side */}
+                                <div className="flex items-center gap-4 text-sm text-slate-500">
                                 </div>
                               </div>
 
-                              {/* Right: Status & Group Info */}
                               <div className="flex items-center gap-2">
                                 <Clock size={14} className="text-slate-400" />
                                 <div className="font-medium text-slate-700">

@@ -1,3 +1,6 @@
+
+
+
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import {
@@ -18,33 +21,18 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getDosageUnits, getFrequencies, getIntakes } from "../../.../../../../../utils/masterService";
 
 const defaultMedicine = {
   drugName: "",
   form: "",
   strength: "",
   dosage: 1,
-  dosageUnit: "Tablet",
+  dosageUnit: "",
   frequency: "",
-  intake: "Before Food",
+  intake: "",
   duration: 1,
 };
-
-const frequencyOptions = [
-  "once a day",
-  "twice a day",
-  "three times a day",
-  "every 6 hours",
-  "every 8 hours",
-];
-
-const intakeOptions = ["Before Food", "After Food"];
-
-const localDrugList = [
-  { id: 1, name: "Dolo 650", strength: "650mg", form: "Tablet" },
-  { id: 2, name: "Paracetamol", strength: "500mg", form: "Tablet" },
-  { id: 3, name: "Ibuprofen", strength: "400mg", form: "Tablet" },
-];
 
 const PrescriptionForm = ({
   data,
@@ -77,12 +65,61 @@ const PrescriptionForm = ({
   const [capturedImage, setCapturedImage] = useState(null);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [dosageUnits, setDosageUnits] = useState([]);
+  const [frequencies, setFrequencies] = useState([]);
+  const [intakes, setIntakes] = useState([]);
   const canvasRef = useRef(null);
 
   useEffect(() => {
     setEmail(propEmail || patient?.email || "");
     setPhone(propPhone || patient?.phone || patient?.mobileNo || "");
   }, [propEmail, propPhone, patient]);
+
+  // Fetch all dropdown data from APIs
+  useEffect(() => {
+    const fetchDosageUnits = async () => {
+      try {
+        const response = await getDosageUnits();
+        setDosageUnits(response.data);
+      } catch (error) {
+        console.error("Failed to fetch dosage units:", error);
+        toast.error("Failed to load dosage units. Please try again later.", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+      }
+    };
+
+    const fetchFrequencies = async () => {
+      try {
+        const response = await getFrequencies();
+        setFrequencies(response.data);
+      } catch (error) {
+        console.error("Failed to fetch frequencies:", error);
+        toast.error("Failed to load frequencies. Please try again later.", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+      }
+    };
+
+    const fetchIntakes = async () => {
+      try {
+        const response = await getIntakes();
+        setIntakes(response.data);
+      } catch (error) {
+        console.error("Failed to fetch intakes:", error);
+        toast.error("Failed to load intakes. Please try again later.", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+      }
+    };
+
+    fetchDosageUnits();
+    fetchFrequencies();
+    fetchIntakes();
+  }, []);
 
   const handleChange = (i, field, val) => {
     setPrescriptions((prev) =>
@@ -139,84 +176,82 @@ const PrescriptionForm = ({
     }
   };
 
-const handleSave = async () => {
-  const prescriptionPayload = {
-    prescriptions,
-  };
-  try {
-    const result = await postPrescriptionToMockAPI(prescriptionPayload);
-    setIsSaved(true);
-    setPrescriptionId(result.id);
-    setIsEdit(false);
-    if (onSave) {
-      onSave("prescription", { prescriptions, id: result.id });
-    }
-    toast.success("✅ Prescription saved successfully to MockAPI!", {
-      position: "top-right",
-      autoClose: 2000,
-      closeOnClick: true,
-    });
-  } catch (error) {
-    console.error("MockAPI Error:", error);
-    toast.error(`❌ ${error.message}`, {
-      position: "top-right",
-      autoClose: 2000,
-      closeOnClick: true,
-    });
-  }
-};
-
-const handleUpdate = async () => {
-  if (!prescriptionId) {
-    toast.error("❌ Prescription ID is missing.", {
-      position: "top-right",
-      autoClose: 2000,
-      closeOnClick: true,
-    });
-    return;
-  }
-  const prescriptionPayload = {
-    prescriptions,
-    patientName: patientName || patient?.name || "Unknown Patient",
-    patientEmail: email,
-    doctorName: doctorName || "Dr. Kavya Patil",
-    doctorEmail: drEmail || "dr.sheetal@example.com",
-    hospitalName: hospitalName || "AV Hospital",
-  };
-  try {
-    const response = await axios.put(
-      `https://68abfd0c7a0bbe92cbb8d633.mockapi.io/prescription/${prescriptionId}`,
-      prescriptionPayload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    if (response.status >= 200 && response.status < 300) {
+  const handleSave = async () => {
+    const prescriptionPayload = {
+      prescriptions,
+    };
+    try {
+      const result = await postPrescriptionToMockAPI(prescriptionPayload);
+      setIsSaved(true);
+      setPrescriptionId(result.id);
       setIsEdit(false);
       if (onSave) {
-        onSave("prescription", { prescriptions, id: prescriptionId });
+        onSave("prescription", { prescriptions, id: result.id });
       }
-      toast.success("✅ Prescription updated successfully!", {
+      toast.success("✅ Prescription saved successfully to MockAPI!", {
         position: "top-right",
         autoClose: 2000,
         closeOnClick: true,
       });
-    } else {
-      throw new Error(`API failed: ${response.status}`);
+    } catch (error) {
+      console.error("MockAPI Error:", error);
+      toast.error(`❌ ${error.message}`, {
+        position: "top-right",
+        autoClose: 2000,
+        closeOnClick: true,
+      });
     }
-  } catch (error) {
-    console.error("MockAPI Error:", error);
-    toast.error(`❌ ${error.message}`, {
-      position: "top-right",
-      autoClose: 2000,
-      closeOnClick: true,
-    });
-  }
-};
+  };
 
-
+  const handleUpdate = async () => {
+    if (!prescriptionId) {
+      toast.error("❌ Prescription ID is missing.", {
+        position: "top-right",
+        autoClose: 2000,
+        closeOnClick: true,
+      });
+      return;
+    }
+    const prescriptionPayload = {
+      prescriptions,
+      patientName: patientName || patient?.name || "Unknown Patient",
+      patientEmail: email,
+      doctorName: doctorName || "Dr. Kavya Patil",
+      doctorEmail: drEmail || "dr.sheetal@example.com",
+      hospitalName: hospitalName || "AV Hospital",
+    };
+    try {
+      const response = await axios.put(
+        `https://68abfd0c7a0bbe92cbb8d633.mockapi.io/prescription/${prescriptionId}`,
+        prescriptionPayload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status >= 200 && response.status < 300) {
+        setIsEdit(false);
+        if (onSave) {
+          onSave("prescription", { prescriptions, id: prescriptionId });
+        }
+        toast.success("✅ Prescription updated successfully!", {
+          position: "top-right",
+          autoClose: 2000,
+          closeOnClick: true,
+        });
+      } else {
+        throw new Error(`API failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("MockAPI Error:", error);
+      toast.error(`❌ ${error.message}`, {
+        position: "top-right",
+        autoClose: 2000,
+        closeOnClick: true,
+      });
+    }
+  };
 
   const fetchDrugSuggestions = async (query) => {
     if (query.length < 2) {
@@ -226,18 +261,13 @@ const handleUpdate = async () => {
     try {
       const response = await fetch("https://mocki.io/v1/efc542df-dc4c-4b06-9e5b-32567facef11");
       const drugs = await response.json();
-      const filteredDrugs = drugs.length > 0 ? drugs : localDrugList;
       setDrugSuggestions(
-        filteredDrugs.filter((drug) =>
+        drugs.filter((drug) =>
           drug.name.toLowerCase().includes(query.toLowerCase())
         )
       );
     } catch (error) {
-      setDrugSuggestions(
-        localDrugList.filter((drug) =>
-          drug.name.toLowerCase().includes(query.toLowerCase())
-        )
-      );
+      console.error("Failed to fetch drug suggestions:", error);
     }
   };
 
@@ -321,59 +351,54 @@ const handleUpdate = async () => {
           maxWidth: "100%",
         }}
       >
-     <div
-  style={{
-    backgroundColor: "var(--primary-color)",
-    padding: "0.75rem 1rem",
-    display: "flex",
-    flexDirection: "row", // row layout
-    justifyContent: "space-between", // space between title+icon and buttons
-    alignItems: "center", // vertically align center
-    width: "100%",
-  }}
->
-  {/* Left Section - Icon + Title */}
-  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-    <Pill style={{ color: "#fff", width: "1.25rem", height: "1.25rem" }} />
-    <h3 style={{ color: "#fff", fontWeight: "600", fontSize: "1rem" }}>
-      Prescription
-    </h3>
-  </div>
-
-  {/* Right Section - Buttons */}
-  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-    <button
-      onClick={openShareModal}
-      style={{
-        backgroundColor: "transparent",
-        border: "none",
-        color: "#fff",
-        padding: "0.5rem",
-        borderRadius: "0.5rem",
-        cursor: "pointer",
-      }}
-      title="Share Prescription"
-    >
-      <Share2 style={{ width: "1.25rem", height: "1.25rem" }} />
-    </button>
-    <button
-      onClick={() => onPrint && onPrint("prescription")}
-      style={{
-        backgroundColor: "transparent",
-        border: "none",
-        color: "#fff",
-        padding: "0.5rem",
-        borderRadius: "0.5rem",
-        cursor: "pointer",
-      }}
-      title="Print Prescription"
-    >
-      <Printer style={{ width: "1.25rem", height: "1.25rem" }} />
-    </button>
-  </div>
-</div>
-
-
+        <div
+          style={{
+            backgroundColor: "var(--primary-color)",
+            padding: "0.75rem 1rem",
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Pill style={{ color: "#fff", width: "1.25rem", height: "1.25rem" }} />
+            <h3 style={{ color: "#fff", fontWeight: "600", fontSize: "1rem" }}>
+              Prescription
+            </h3>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <button
+              onClick={openShareModal}
+              style={{
+                backgroundColor: "transparent",
+                border: "none",
+                color: "#fff",
+                padding: "0.5rem",
+                borderRadius: "0.5rem",
+                cursor: "pointer",
+              }}
+              title="Share Prescription"
+            >
+              <Share2 style={{ width: "1.25rem", height: "1.25rem" }} />
+            </button>
+            <button
+              onClick={() => onPrint && onPrint("prescription")}
+              style={{
+                backgroundColor: "transparent",
+                border: "none",
+                color: "#fff",
+                padding: "0.5rem",
+                borderRadius: "0.5rem",
+                cursor: "pointer",
+              }}
+              title="Print Prescription"
+            >
+              <Printer style={{ width: "1.25rem", height: "1.25rem" }} />
+            </button>
+          </div>
+        </div>
         {capturedImage && (
           <div style={{ margin: "1rem", padding: "1rem", backgroundColor: "#f9fafb", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }}>
             <h3 style={{ fontSize: "0.875rem", fontWeight: "600", color: "#374151", marginBottom: "0.5rem" }}>
@@ -500,12 +525,11 @@ const handleUpdate = async () => {
                           onChange={(e) => handleChange(i, "dosageUnit", e.target.value)}
                           disabled={!isEdit}
                         >
-                          <option value="Tablet">Tablet</option>
-                          <option value="Capsule">Capsule</option>
-                          <option value="ml">ml</option>
-                          <option value="gm">gm</option>
-                          <option value="mg">mg</option>
-                          <option value="Drops">Drops</option>
+                          {dosageUnits.map((unit) => (
+                            <option key={unit.name} value={unit.name}>
+                              {unit.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </td>
@@ -523,9 +547,9 @@ const handleUpdate = async () => {
                         disabled={!isEdit}
                       >
                         <option value="">Select frequency</option>
-                        {frequencyOptions.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
+                        {frequencies.map((freq) => (
+                          <option key={freq.name} value={freq.name}>
+                            {freq.name}
                           </option>
                         ))}
                       </select>
@@ -543,9 +567,10 @@ const handleUpdate = async () => {
                         onChange={(e) => handleChange(i, "intake", e.target.value)}
                         disabled={!isEdit}
                       >
-                        {intakeOptions.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
+                        <option value="">Select intake</option>
+                        {intakes.map((intake) => (
+                          <option key={intake.name} value={intake.name}>
+                            {intake.name}
                           </option>
                         ))}
                       </select>
@@ -712,12 +737,11 @@ const handleUpdate = async () => {
                         onChange={(e) => handleChange(i, "dosageUnit", e.target.value)}
                         disabled={!isEdit}
                       >
-                        <option value="Tablet">Tablet</option>
-                        <option value="Capsule">Capsule</option>
-                        <option value="ml">ml</option>
-                        <option value="gm">gm</option>
-                        <option value="mg">mg</option>
-                        <option value="Drops">Drops</option>
+                        {dosageUnits.map((unit) => (
+                          <option key={unit.name} value={unit.name}>
+                            {unit.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -738,9 +762,9 @@ const handleUpdate = async () => {
                       disabled={!isEdit}
                     >
                       <option value="">Select frequency</option>
-                      {frequencyOptions.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
+                      {frequencies.map((freq) => (
+                        <option key={freq.name} value={freq.name}>
+                          {freq.name}
                         </option>
                       ))}
                     </select>
@@ -762,9 +786,10 @@ const handleUpdate = async () => {
                         onChange={(e) => handleChange(i, "intake", e.target.value)}
                         disabled={!isEdit}
                       >
-                        {intakeOptions.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
+                        <option value="">Select intake</option>
+                        {intakes.map((intake) => (
+                          <option key={intake.name} value={intake.name}>
+                            {intake.name}
                           </option>
                         ))}
                       </select>
@@ -858,7 +883,7 @@ const handleUpdate = async () => {
                              w-full md:w-auto md:max-w-[200px]"
                 >
                   <Edit className="w-4 h-4" />
-               
+                  Edit Prescription
                 </button>
               </div>
             )}

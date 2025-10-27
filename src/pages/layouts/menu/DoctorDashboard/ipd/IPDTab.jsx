@@ -16,15 +16,18 @@ import TeleConsultFlow from "../../../../../components/microcomponents/Call";
 import {
   getFamilyMembersByPatient,
   getPersonalHealthByPatientId,
-  getSpecializationsWardsSummaryById,
+  getSpecializationsWardsSummaryForIpdAdmission,
 } from "../../../../../utils/CrudService";
-import IPDBasic from "./IPDBasic";
+import IPDBasic, {
+  fileToBase64,
+  handlePincodeLookup,
+  generateBasicFields,
+} from "./IPDBasic";
 import IPDWard from "./IPDWard";
 import IPDRoom from "./IPDRoom";
 import IPDBed from "./IPDBed";
-import IPDFinal from "./IPDFinal";
+import IPDFinal, { generateAdmissionFields } from "./IPDFinal";
 
-// API endpoints
 const API = {
   FORM: "https://681f2dfb72e59f922ef5774c.mockapi.io/addpatient",
   VITAL_SIGNS: "https://6808fb0f942707d722e09f1d.mockapi.io/health-summary",
@@ -79,11 +82,10 @@ const WIZARD_STEPS = [
   },
 ];
 
-// Helper functions
 const getCurrentDate = () => new Date().toISOString().slice(0, 10);
 const getCurrentTime = () => new Date().toTimeString().slice(0, 5);
 const to24Hour = (t) =>
-  t.includes("AM") || t.includes("PM")
+  t && (t.includes("AM") || t.includes("PM"))
     ? t.replace(
         /(\d+):(\d+)\s*(AM|PM)/,
         (_, h, m, mod) =>
@@ -96,101 +98,17 @@ const to24Hour = (t) =>
             .toString()
             .padStart(2, "0")}:${m}`
       )
-    : t;
-const incrementTime = (time) => {
+    : t || "";
+const incrementTime = (time = "00:00") => {
   const [h, m] = time.split(":").map(Number);
-  return `${((h + Math.floor((m + 30) / 60)) % 24)
-    .toString()
-    .padStart(2, "0")}:${((m + 30) % 60).toString().padStart(2, "0")}`;
-};
-
-const fileToBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve({
-        base64: reader.result,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-      });
-    };
-    reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(file);
-  });
-};
-
-const getWardData = async () => {
-  try {
-    const savedData = localStorage.getItem("bedMasterData");
-    if (savedData) {
-      const bedMasterData = JSON.parse(savedData);
-      return bedMasterData.map((item, index) => ({
-        id: item.id || `${item.ward.toLowerCase()}-${index}`,
-        type: item.ward,
-        number: String.fromCharCode(65 + index),
-        department: item.department,
-        totalBeds: item.totalBeds,
-        availableBeds: item.available,
-        occupiedBeds: item.occupied,
-        occupiedBedNumbers: Array.from({ length: item.occupied }, (_, i) =>
-          Math.floor(Math.random() * item.totalBeds) + 1
-        ).filter((v, i, arr) => arr.indexOf(v) === i),
-        status: item.status,
-        rooms: item.rooms ? item.rooms.length : 1,
-        beds: item.beds || [],
-      }));
-    }
-  } catch (error) {
-    console.error("Error loading ward data from localStorage:", error);
-  }
-  return [];
-};
-
-const getBedFacilities = async () => {
-  try {
-    const savedData = localStorage.getItem("bedMasterData");
-    if (savedData) {
-      const bedMasterData = JSON.parse(savedData);
-      const facilities = {};
-      bedMasterData.forEach((wardData) => {
-        const totalBeds = wardData.totalBeds;
-        if (wardData.beds && Array.isArray(wardData.beds)) {
-          wardData.beds.forEach((bed, index) => {
-            const bedNumber = index + 1;
-            const bedAmenities = bed.amenities || bed.bedAmenities || [];
-            const facilityNames = bedAmenities.map((amenityId) => {
-              const amenityMap = {
-                ac: "AC",
-                monitor: "Monitor",
-                oxygen: "Oxygen",
-                adjustable: "Adjustable Bed",
-                sidetable: "Bedside Table",
-                oxygenpipeline: "Oxygen Pipeline",
-                callbutton: "Call Button",
-                lighting: "Adjustable Lighting",
-                tv: "TV",
-                bathroom: "Bathroom",
-                phone: "Phone",
-                wifi: "WiFi",
-                heating: "Heating",
-              };
-              return amenityMap[amenityId] || amenityId;
-            });
-            facilities[bedNumber] = facilityNames;
-          });
-        }
-      });
-      return facilities;
-    }
-  } catch (error) {
-    console.error("Error loading bed facilities from localStorage:", error);
-  }
-  return {};
+  const totalMinutes = h * 60 + m + 30;
+  const nh = Math.floor((totalMinutes / 60) % 24);
+  const nm = totalMinutes % 60;
+  return `${nh.toString().padStart(2, "0")}:${nm.toString().padStart(2, "0")}`;
 };
 
 const PatientViewSections = ({
-  data,
+  data = {},
   personalHealthDetails,
   familyHistory,
   vitalSigns,
@@ -201,28 +119,28 @@ const PatientViewSections = ({
       {
         title: "Basic Information",
         data: {
-          Name: data.name,
-          Email: data.email,
-          Phone: data.phone,
-          Gender: data.gender,
-          "Blood Group": data.bloodGroup,
-          DOB: data.dob,
+          Name: data.name || "-",
+          Email: data.email || "-",
+          Phone: data.phone || "-",
+          Gender: data.gender || "-",
+          "Blood Group": data.bloodGroup || "-",
+          DOB: data.dob || "-",
         },
       },
       {
         title: "IPD Admission Details",
         data: {
-          "Admission Date": data.admissionDate,
-          Status: data.status,
-          Ward: data.ward,
-          "Ward Type": data.wardType,
-          "Ward Number": data.wardNo,
+          "Admission Date": data.admissionDate || "-",
+          Status: data.status || "-",
+          Ward: data.ward || "-",
+          "Ward Type": data.wardType || "-",
+          "Ward Number": data.wardNo || "-",
           "Room Number": data.roomNumber || data.roomNo || "N/A",
-          "Bed Number": data.bedNo,
-          Department: data.department,
-          "Insurance Type": data.insuranceType,
+          "Bed Number": data.bedNo || "-",
+          Department: data.department || "-",
+          "Insurance Type": data.insuranceType || "-",
           "Discharge Date": data.dischargeDate || "Not discharged",
-          Diagnosis: data.diagnosis,
+          Diagnosis: data.diagnosis || "-",
         },
       },
       {
@@ -252,17 +170,17 @@ const PatientViewSections = ({
             }
           : null,
       },
-      { title: "Family History", isArray: true, data: familyHistory },
+      { title: "Family History", isArray: true, data: familyHistory || [] },
       {
         title: "Vital Signs",
         data: vitalSigns
           ? {
-              "Blood Pressure": vitalSigns.bloodPressure,
-              "Heart Rate": vitalSigns.heartRate,
-              Temperature: vitalSigns.temperature,
-              "Blood Sugar": vitalSigns.bloodSugar,
-              "Oxygen Saturation": vitalSigns.oxygenSaturation,
-              "Respiratory Rate": vitalSigns.respiratoryRate,
+              "Blood Pressure": vitalSigns.bloodPressure || "-",
+              "Heart Rate": vitalSigns.heartRate || "-",
+              Temperature: vitalSigns.temperature || "-",
+              "Blood Sugar": vitalSigns.bloodSugar || "-",
+              "Oxygen Saturation": vitalSigns.oxygenSaturation || "-",
+              "Respiratory Rate": vitalSigns.respiratoryRate || "-",
             }
           : null,
       },
@@ -312,7 +230,7 @@ const PatientViewSections = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               {Object.entries(section.data).map(([key, value]) => (
                 <p key={key}>
-                  <strong>{key}:</strong> {value || "N/A"}
+                  <strong>{key}:</strong> {value ?? "N/A"}
                 </p>
               ))}
             </div>
@@ -368,18 +286,8 @@ const PatientViewModal = ({
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-white text-white hover:bg-white hover:text-[#01B07A] transition-all duration-200"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
@@ -395,7 +303,7 @@ const PatientViewModal = ({
         </div>
         <div className="bg-white border-t p-3 sm:p-4 flex justify-end">
           <button
-            onClick={() => onEdit(patient)}
+            onClick={() => onEdit && onEdit(patient)}
             className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
           >
             Edit Patient
@@ -410,8 +318,8 @@ const IPDTab = forwardRef(
   (
     {
       doctorName,
-      masterData,
-      location,
+      masterData = { departments: [] },
+      location = {},
       setTabActions,
       tabActions = [],
       tabs = [],
@@ -454,72 +362,77 @@ const IPDTab = forwardRef(
     }));
 
     const hasRecording = useCallback((patientEmail, hospitalName) => {
-      const videoKeys = Object.keys(localStorage).filter((key) =>
-        key.startsWith("consultationVideo_")
-      );
-      for (const key of videoKeys) {
-        const metadataStr = localStorage.getItem(`${key}_metadata`);
-        if (metadataStr) {
-          try {
-            const metadata = JSON.parse(metadataStr);
-            if (
-              metadata.patientEmail === patientEmail &&
-              metadata.hospitalName === hospitalName
-            )
-              return true;
-          } catch (error) {
-            console.error("Failed to parse metadata:", error);
+      try {
+        const videoKeys = Object.keys(localStorage).filter((key) =>
+          key.startsWith("consultationVideo_")
+        );
+        for (const key of videoKeys) {
+          const metadataStr = localStorage.getItem(`${key}_metadata`);
+          if (metadataStr) {
+            try {
+              const metadata = JSON.parse(metadataStr);
+              if (
+                metadata.patientEmail === patientEmail &&
+                metadata.hospitalName === hospitalName
+              )
+                return true;
+            } catch (err) {
+              console.error("Failed to parse metadata:", err);
+            }
           }
         }
+      } catch (err) {
+        console.error("hasRecording error:", err);
       }
       return false;
     }, []);
 
-    useEffect(() => {
-      const specializationId = 1;
-      const loadWardData = async () => {
-        console.log("[DEBUG] IPDTab ward loader running...");
-        try {
-          const [wardsLocal, facilitiesLocal] = await Promise.all([
-            getWardData(),
-            getBedFacilities(),
-          ]);
-          setWardData(wardsLocal);
-          setBedFacilities(facilitiesLocal);
-          console.log("[DEBUG] Loaded fallback local data");
-        } catch (err) {
-          console.error("[DEBUG] Error loading ward data:", err);
+    const loadWardData = useCallback(async () => {
+      try {
+        const response = await getSpecializationsWardsSummaryForIpdAdmission();
+        if (response?.data) {
+          const formatted = response.data.map((item, index) => {
+            const availableGroup = item.bedGroups?.find(
+              (g) => g.statusName.toLowerCase() === "available"
+            );
+            const availableBeds = availableGroup ? availableGroup.count : 0;
+            const occupiedBeds = item.totalBeds - availableBeds;
+            return {
+              id: item.wardId || index,
+              type: item.wardName,
+              department: item.specializationName,
+              totalBeds: item.totalBeds,
+              availableBeds,
+              occupiedBeds,
+              rooms: item.rooms?.length || 0,
+              roomNumbers: item.roomNumbers,
+              beds: item.rooms?.flatMap((r) => r.beds || []),
+            };
+          });
+          setWardData(formatted);
         }
-      };
-      loadWardData();
+      } catch (err) {
+        console.error("[DEBUG] Error loading ward data:", err);
+      }
     }, []);
+
+    useEffect(() => {
+      loadWardData();
+    }, [loadWardData]);
 
     useEffect(() => {
       const handleStorageChange = (e) => {
         if (e.key === "bedMasterData") {
-          const loadMasterData = async () => {
-            try {
-              const [wards, facilities] = await Promise.all([
-                getWardData(),
-                getBedFacilities(),
-              ]);
-              setWardData(wards);
-              setBedFacilities(facilities);
-              toast.success("Ward and bed data updated from Bed Master");
-            } catch (error) {
-              console.error("Failed to reload master data:", error);
-            }
-          };
-          loadMasterData();
+          loadWardData();
         }
       };
       window.addEventListener("storage", handleStorageChange);
       return () => window.removeEventListener("storage", handleStorageChange);
-    }, []);
+    }, [loadWardData]);
 
     const handlePhotoChange = async (e) => {
-      const file = e.target.files[0];
-      if (file && file.type.startsWith("image/")) {
+      const file = e?.target?.files?.[0];
+      if (file && file.type && file.type.startsWith("image/")) {
         try {
           const base64Data = await fileToBase64(file);
           setPhotoPreview(base64Data.base64);
@@ -534,43 +447,35 @@ const IPDTab = forwardRef(
     };
 
     const handlePincodeChange = async (pincode) => {
-      const value = pincode.replace(/\D/g, "").slice(0, 6);
-      setIpdWizardData((prev) => ({ ...prev, pincode: value }));
+      const value = (pincode || "").replace(/\D/g, "").slice(0, 6);
       if (value.length === 6) {
         setIsLoadingCities(true);
         try {
-          const res = await fetch(
-            `https://api.postalpincode.in/pincode/${value}`
-          );
-          const data = await res.json();
-          if (
-            data[0].Status === "Success" &&
-            data[0].PostOffice &&
-            data[0].PostOffice.length > 0
-          ) {
-            const cities = [
-              ...new Set(data[0].PostOffice.map((office) => office.Name)),
-            ];
-            setAvailableCities(cities);
+          const result = await handlePincodeLookup(value);
+          if (result) {
+            setAvailableCities(result.cities || []);
             setIpdWizardData((prev) => ({
               ...prev,
+              pincode: value,
               city: "",
-              district: data[0].PostOffice[0].District,
-              state: data[0].PostOffice[0].State,
+              district: result.district || "",
+              state: result.state || "",
             }));
           } else {
             setAvailableCities([]);
             setIpdWizardData((prev) => ({
               ...prev,
+              pincode: value,
               city: "",
               district: "",
               state: "",
             }));
           }
-        } catch {
+        } catch (error) {
           setAvailableCities([]);
           setIpdWizardData((prev) => ({
             ...prev,
+            pincode: value,
             city: "",
             district: "",
             state: "",
@@ -582,6 +487,7 @@ const IPDTab = forwardRef(
         setAvailableCities([]);
         setIpdWizardData((prev) => ({
           ...prev,
+          pincode: value,
           city: "",
           district: "",
           state: "",
@@ -589,201 +495,12 @@ const IPDTab = forwardRef(
       }
     };
 
-    const generateFields = useCallback(
-      (step) => {
-        if (step === 1)
-          return [
-            {
-              name: "firstName",
-              label: "First Name",
-              type: "text",
-              required: true,
-            },
-            { name: "middleName", label: "Middle Name", type: "text" },
-            {
-              name: "lastName",
-              label: "Last Name",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "phone",
-              label: "Phone Number",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "email",
-              label: "Email Address",
-              type: "email",
-              required: true,
-            },
-            {
-              name: "aadhaar",
-              label: "Aadhaar Number",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "gender",
-              label: "Gender",
-              type: "select",
-              required: true,
-              options: masterData.genders.map((g, i) => ({
-                ...g,
-                key: `gender-${i}`,
-              })),
-            },
-            {
-              name: "dob",
-              label: "Date of Birth",
-              type: "date",
-              required: true,
-            },
-            {
-              name: "occupation",
-              label: "Occupation",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "pincode",
-              label: "Pincode",
-              type: "text",
-              required: true,
-              maxLength: 6,
-            },
-            {
-              name: "city",
-              label: "City",
-              type: "select",
-              required: true,
-              options: availableCities.map((city, i) => ({
-                value: city,
-                label: city,
-                key: `city-${i}`,
-              })),
-              disabled: isLoadingCities || availableCities.length === 0,
-            },
-            {
-              name: "district",
-              label: "District",
-              type: "text",
-              readonly: true,
-            },
-            { name: "state", label: "State", type: "text", readonly: true },
-            {
-              name: "photo",
-              label: "Upload Photo",
-              type: "custom",
-            },
-            {
-              name: "password",
-              label: "Create Password",
-              type: "password",
-              required: true,
-            },
-            {
-              name: "confirmPassword",
-              label: "Confirm Password",
-              type: "password",
-              required: true,
-            },
-            {
-              name: "agreeDeclaration",
-              label: "I agree to the declaration / Privacy Policy",
-              type: "checkbox",
-              required: true,
-              colSpan: 3,
-            },
-          ];
-        // final/admission fields (step >1 reused for steps 2-5; include roomNumber readonly)
-        return [
-          {
-            name: "admissionDate",
-            label: "Admission Date",
-            type: "date",
-            required: true,
-          },
-          {
-            name: "admissionTime",
-            label: "Admission Time",
-            type: "time",
-            required: true,
-          },
-          {
-            name: "status",
-            label: "Status",
-            type: "select",
-            required: true,
-            options: STATIC_DATA.status,
-          },
-          {
-            name: "wardType",
-            label: "Ward Type",
-            type: "text",
-            readonly: true,
-          },
-          {
-            name: "wardNumber",
-            label: "Ward Number",
-            type: "text",
-            readonly: true,
-          },
-          {
-            name: "roomNumber",
-            label: "Room Number",
-            type: "text",
-            readonly: true,
-          },
-          {
-            name: "bedNumber",
-            label: "Bed Number",
-            type: "text",
-            readonly: true,
-          },
-          {
-            name: "department",
-            label: "Department",
-            type: "select",
-            required: true,
-            options: masterData.departments.map((d, i) => ({
-              ...d,
-              key: `dept-${i}`,
-            })),
-          },
-          {
-            name: "insuranceType",
-            label: "Insurance Type",
-            type: "select",
-            required: true,
-            options: STATIC_DATA.insurance,
-          },
-          {
-            name: "surgeryRequired",
-            label: "Surgery Required",
-            type: "select",
-            options: STATIC_DATA.surgery,
-          },
-          { name: "dischargeDate", label: "Discharge Date", type: "date" },
-          { name: "diagnosis", label: "Diagnosis", type: "text" },
-          {
-            name: "reasonForAdmission",
-            label: "Reason For Admission",
-            type: "textarea",
-            colSpan: 2,
-          },
-        ];
-      },
-      [masterData, availableCities, isLoadingCities]
-    );
-
     const fetchAllPatients = useCallback(async () => {
       setLoading(true);
       try {
         const res = await fetch(API.FORM);
         const allPatients = await res.json();
-        const processedPatients = allPatients
+        const processedPatients = (Array.isArray(allPatients) ? allPatients : [])
           .map((p) => ({
             ...p,
             name:
@@ -796,11 +513,10 @@ const IPDTab = forwardRef(
               .join(" "),
           }))
           .reverse();
-
         const ipdPatientsData = processedPatients
           .filter(
             (p) =>
-              p.type?.toLowerCase() === "ipd" && p.doctorName === doctorName
+              (p.type && p.type.toLowerCase() === "ipd") && p.doctorName === doctorName
           )
           .map((p, i) => ({
             ...p,
@@ -808,7 +524,6 @@ const IPDTab = forwardRef(
             wardNo: p.wardNumber || p.wardNo,
             roomNo: p.roomNumber || p.roomNo,
             bedNo: p.bedNumber || p.bedNo,
-            // include room in the ward display string if present
             ward: `${p.wardType || "N/A"}-${p.wardNumber || p.wardNo || "N/A"}${p.roomNumber || p.roomNo ? `-${p.roomNumber || p.roomNo}` : ""}-${p.bedNumber || p.bedNo || "N/A"}`,
             temporaryAddress:
               p.temporaryAddress || p.addressTemp || p.address || "",
@@ -820,9 +535,11 @@ const IPDTab = forwardRef(
             admissionDate: p.admissionDate || "Not specified",
             department: p.department || "General Medicine",
           }));
-
         setIpdPatients(ipdPatientsData);
-        localStorage.setItem("ipdPatients", JSON.stringify(ipdPatientsData));
+        try {
+          localStorage.setItem("ipdPatients", JSON.stringify(ipdPatientsData));
+        } catch (e) {
+        }
       } catch (error) {
         console.error("Error fetching patients:", error);
         toast.error("Failed to fetch patients");
@@ -837,23 +554,19 @@ const IPDTab = forwardRef(
         setDetailsLoading(true);
         try {
           const [personalRes, familyRes, vitalRes] = await Promise.all([
-            getPersonalHealthByPatientId(patientId).catch(() => ({
-              data: null,
-            })),
+            getPersonalHealthByPatientId(patientId).catch(() => ({ data: null })),
             getFamilyMembersByPatient(patientId).catch(() => ({ data: [] })),
             fetch(API.VITAL_SIGNS)
               .then((res) => res.json())
               .then((data) => ({ data }))
               .catch(() => ({ data: [] })),
           ]);
-          setPersonalHealthDetails(personalRes.data);
-          setFamilyHistory(
-            Array.isArray(familyRes.data) ? familyRes.data : []
-          );
-          const patientEmail = selectedPatient?.email?.toLowerCase().trim();
-          if (patientEmail && Array.isArray(vitalRes.data)) {
+          setPersonalHealthDetails(personalRes?.data ?? null);
+          setFamilyHistory(Array.isArray(familyRes?.data) ? familyRes.data : []);
+          const patientEmail = (selectedPatient?.email || "").toLowerCase().trim();
+          if (patientEmail && Array.isArray(vitalRes?.data)) {
             const matchingVitalSigns = vitalRes.data.find(
-              (v) => v.email?.toLowerCase().trim() === patientEmail
+              (v) => (v.email || "").toLowerCase().trim() === patientEmail
             );
             setVitalSigns(matchingVitalSigns || null);
           } else {
@@ -917,22 +630,23 @@ const IPDTab = forwardRef(
     }, []);
 
     const handleFetchPatientDetails = useCallback(async () => {
-      if (!patientIdInput.trim())
-        return toast.error("Please enter a Patient ID");
+      if (!patientIdInput.trim()) {
+        toast.error("Please enter a Patient ID");
+        return;
+      }
       try {
         const response = await fetch(API.FORM);
         const data = await response.json();
-        const found = data
+        const found = (Array.isArray(data) ? data : [])
           .filter((p) => !p.type || p.type.toLowerCase() === "opd")
           .find((p) => (p.id || "").toString() === patientIdInput.trim());
         if (found) {
           const nameParts = (found.name || "").split(" ");
           const firstName = found.firstName || nameParts[0] || "";
           const middleName = found.middleName || nameParts[1] || "";
-          const lastName =
-            found.lastName || nameParts[nameParts.length - 1] || "";
-          setIpdWizardData({
-            ...ipdWizardData,
+          const lastName = found.lastName || nameParts[nameParts.length - 1] || "";
+          setIpdWizardData((prev) => ({
+            ...prev,
             ...found,
             firstName,
             middleName,
@@ -942,7 +656,7 @@ const IPDTab = forwardRef(
             temporaryAddress: found.temporaryAddress || found.addressTemp || "",
             admissionDate: getCurrentDate(),
             admissionTime: getCurrentTime(),
-          });
+          }));
           toast.success("OPD Patient details loaded for IPD transfer!");
         } else {
           toast.info(
@@ -953,13 +667,13 @@ const IPDTab = forwardRef(
         console.error("Error fetching patient:", error);
         toast.error("Failed to fetch patient");
       }
-    }, [patientIdInput, ipdWizardData]);
+    }, [patientIdInput]);
 
     const handleViewPatient = useCallback(
       (patient) => {
         setSelectedPatient(patient);
         openModal("viewPatient");
-        const patientId = patient.id || patient.patientId;
+        const patientId = patient?.id || patient?.patientId;
         if (patientId) fetchPatientDetails(patientId);
         else toast.error("Unable to load patient details: Missing patient ID");
       },
@@ -976,13 +690,17 @@ const IPDTab = forwardRef(
 
     const handleIpdWizardChange = useCallback((field, value) => {
       setIpdWizardData((prev) => {
+        if (field === "pincode") {
+          handlePincodeChange(value);
+          return prev;
+        }
         const updated = { ...prev, [field]: value };
         if (field === "phone") {
-          const formatted = value.replace(/\D/g, "").slice(0, 10);
+          const formatted = (value || "").replace(/\D/g, "").slice(0, 10);
           updated.phone = formatted;
         }
         if (field === "aadhaar") {
-          const formatted = value
+          const formatted = (value || "")
             .replace(/\D/g, "")
             .slice(0, 12)
             .replace(/(\d{4})(\d{4})(\d{0,4})/, (_, g1, g2, g3) =>
@@ -1000,7 +718,7 @@ const IPDTab = forwardRef(
     const handleIpdWizardNext = useCallback(async () => {
       if (ipdWizardStep === 1) {
         try {
-          const isExistingPatient = ipdWizardData.id && patientIdInput.trim();
+          const isExistingPatient = ipdWizardData?.id && patientIdInput.trim();
           const payload = {
             firstName: ipdWizardData.firstName,
             middleName: ipdWizardData.middleName,
@@ -1019,9 +737,7 @@ const IPDTab = forwardRef(
             temporaryAddress: ipdWizardData.temporaryAddress,
             photo: ipdWizardData.photo,
             password: ipdWizardData.password,
-            name: `${ipdWizardData.firstName || ""} ${
-              ipdWizardData.middleName || ""
-            } ${ipdWizardData.lastName || ""}`.trim(),
+            name: `${ipdWizardData.firstName || ""} ${ipdWizardData.middleName || ""} ${ipdWizardData.lastName || ""}`.trim(),
             type: "ipd",
             doctorName,
             updatedAt: new Date().toISOString(),
@@ -1098,9 +814,7 @@ const IPDTab = forwardRef(
       try {
         const payload = {
           ...ipdWizardData,
-          name: `${ipdWizardData.firstName || ""} ${
-            ipdWizardData.middleName || ""
-          } ${ipdWizardData.lastName || ""}`.trim(),
+          name: `${ipdWizardData.firstName || ""} ${ipdWizardData.middleName || ""} ${ipdWizardData.lastName || ""}`.trim(),
           admissionTime: to24Hour(ipdWizardData.admissionTime),
           wardNo: ipdWizardData.wardNumber,
           roomNo: ipdWizardData.roomNumber || ipdWizardData.roomNo,
@@ -1109,39 +823,46 @@ const IPDTab = forwardRef(
           doctorName,
           updatedAt: new Date().toISOString(),
         };
+        if (!newPatientId) {
+          toast.error("Missing patient ID. Please restart admission.");
+          return;
+        }
         const response = await fetch(`${API.FORM}/${newPatientId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (!response.ok)
-          throw new Error("Failed to finalize IPD admission");
-
-        // Update local bed master (best effort)
-        const savedData = localStorage.getItem("bedMasterData");
-        if (savedData) {
-          const bedMasterData = JSON.parse(savedData);
-          const updatedData = bedMasterData.map((item) => {
-            if (
-              item.ward === selectedWard.type &&
-              item.department === selectedWard.department
-            ) {
-              return {
-                ...item,
-                occupied: item.occupied + 1,
-                available: item.available - 1,
-              };
+        if (!response.ok) throw new Error("Failed to finalize IPD admission");
+        try {
+          const savedData = localStorage.getItem("bedMasterData");
+          if (savedData) {
+            const bedMasterData = JSON.parse(savedData);
+            const updatedData = (Array.isArray(bedMasterData) ? bedMasterData : []).map((item) => {
+              if (
+                item.ward === selectedWard?.type &&
+                item.department === selectedWard?.department
+              ) {
+                return {
+                  ...item,
+                  occupied: (item.occupied || 0) + 1,
+                  available: Math.max(0, (item.available || 0) - 1),
+                };
+              }
+              return item;
+            });
+            try {
+              localStorage.setItem("bedMasterData", JSON.stringify(updatedData));
+              window.dispatchEvent(new StorageEvent("storage", {
+                key: "bedMasterData",
+                newValue: JSON.stringify(updatedData),
+                url: window.location.href,
+              }));
+            } catch (err) {
+              console.warn("Could not persist bedMasterData to localStorage");
             }
-            return item;
-          });
-          localStorage.setItem("bedMasterData", JSON.stringify(updatedData));
-          window.dispatchEvent(
-            new StorageEvent("storage", {
-              key: "bedMasterData",
-              newValue: JSON.stringify(updatedData),
-              url: window.location.href,
-            })
-          );
+          }
+        } catch (err) {
+          console.warn("Error updating bed master data:", err);
         }
         toast.success("IPD admission completed successfully!");
         closeModal("ipdWizard");
@@ -1163,14 +884,13 @@ const IPDTab = forwardRef(
       setSelectedWard(ward);
       setIpdWizardData((prev) => ({
         ...prev,
-        wardType: ward.type,
-        wardNumber: ward.number,
-        department: ward.department,
+        wardType: ward?.type,
+        wardNumber: ward?.number,
+        department: ward?.department,
       }));
       setIpdWizardStep(3);
     }, []);
 
-    // IMPORTANT: write selected room into ipdWizardData so final step has the room
     const handleRoomSelection = useCallback((roomNumber) => {
       setSelectedRoom(roomNumber);
       setIpdWizardData((prev) => ({
@@ -1185,7 +905,7 @@ const IPDTab = forwardRef(
         const wardFormat = `${selectedWard.type}-${selectedWard.number}-${bedNumber}`;
         const isOccupied = ipdPatients.some(
           (patient) =>
-            patient.status === "Admitted" && patient.ward === wardFormat
+            patient.status === "Admitted" && (patient.ward || "").toString() === wardFormat
         );
         if (isOccupied) {
           toast.error("This bed is currently occupied by another patient");
@@ -1216,7 +936,7 @@ const IPDTab = forwardRef(
           direction === "left"
             ? Math.max(0, bedScrollIndex - bedsPerPage)
             : Math.min(
-                selectedWard.totalBeds - bedsPerPage,
+                Math.max(0, (selectedWard?.totalBeds || 0) - bedsPerPage),
                 bedScrollIndex + bedsPerPage
               );
         setBedScrollIndex(newIndex);
@@ -1242,9 +962,7 @@ const IPDTab = forwardRef(
               onClick={() => handleViewPatient(row)}
             >
               {row.name ||
-                `${row.firstName || ""} ${row.middleName || ""} ${
-                  row.lastName || ""
-                }`
+                `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`
                   .replace(/\s+/g, " ")
                   .trim()}
             </button>
@@ -1282,10 +1000,7 @@ const IPDTab = forwardRef(
           header: "Actions",
           cell: (row) => (
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleAddRecord(row)}
-                className="text-base p-1"
-              >
+              <button onClick={() => handleAddRecord(row)} className="text-base p-1">
                 <FaNotesMedical />
               </button>
               <div className="text-sm">
@@ -1293,9 +1008,7 @@ const IPDTab = forwardRef(
                   phone={row.phone}
                   patientName={
                     row.name ||
-                    `${row.firstName || ""} ${row.middleName || ""} ${
-                      row.lastName || ""
-                    }`
+                    `${row.firstName || ""} ${row.middleName || ""} ${row.lastName || ""}`
                       .replace(/\s+/g, " ")
                       .trim()
                   }
@@ -1305,10 +1018,7 @@ const IPDTab = forwardRef(
                 />
               </div>
               {hasRecording(row.email, row.hospitalName || "AV Hospital") && (
-                <button
-                  className="text-base p-1 text-green-600"
-                  title="View Recording"
-                >
+                <button className="text-base p-1 text-green-600" title="View Recording">
                   <FaVideo />
                 </button>
               )}
@@ -1321,11 +1031,7 @@ const IPDTab = forwardRef(
                     const today = new Date();
                     age = today.getFullYear() - dobDate.getFullYear();
                     const m = today.getMonth() - dobDate.getMonth();
-                    if (
-                      m < 0 ||
-                      (m === 0 && today.getDate() < dobDate.getDate())
-                    )
-                      age--;
+                    if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
                   }
                   navigate("/doctordashboard/medical-record", {
                     state: {
@@ -1334,20 +1040,9 @@ const IPDTab = forwardRef(
                       phone: row.phone || "",
                       gender: row.gender || row.sex || "",
                       temporaryAddress:
-                        row.temporaryAddress ||
-                        row.addressTemp ||
-                        row.address ||
-                        "",
-                      address:
-                        row.address ||
-                        row.temporaryAddress ||
-                        row.addressTemp ||
-                        "",
-                      addressTemp:
-                        row.addressTemp ||
-                        row.temporaryAddress ||
-                        row.address ||
-                        "",
+                        row.temporaryAddress || row.addressTemp || row.address || "",
+                      address: row.address || row.temporaryAddress || row.addressTemp || "",
+                      addressTemp: row.addressTemp || row.temporaryAddress || row.address || "",
                       dob: row.dob || "",
                       age: age,
                       bloodType: row.bloodGroup || row.bloodType || "",
@@ -1378,7 +1073,7 @@ const IPDTab = forwardRef(
         {
           key: "department",
           label: "Department",
-          options: masterData.departments.map((d, i) => ({
+          options: (masterData?.departments || []).map((d, i) => ({
             ...d,
             key: `dept-filter-${i}`,
           })),
@@ -1388,7 +1083,8 @@ const IPDTab = forwardRef(
     );
 
     const renderWizardStep = useCallback(() => {
-      if (ipdWizardStep === 1)
+      if (ipdWizardStep === 1) {
+        const basicFields = generateBasicFields(masterData || {}, availableCities, isLoadingCities);
         return (
           <IPDBasic
             data={ipdWizardData}
@@ -1397,7 +1093,7 @@ const IPDTab = forwardRef(
             patientIdInput={patientIdInput}
             setPatientIdInput={setPatientIdInput}
             onFetchPatient={handleFetchPatientDetails}
-            fields={generateFields(1)}
+            fields={basicFields}
             photoPreview={photoPreview}
             onPhotoChange={handlePhotoChange}
             onPreviewClick={() => setIsPhotoModalOpen(true)}
@@ -1405,6 +1101,7 @@ const IPDTab = forwardRef(
             availableCities={availableCities}
           />
         );
+      }
       if (ipdWizardStep === 2)
         return (
           <IPDWard
@@ -1413,15 +1110,16 @@ const IPDTab = forwardRef(
             onSelectWard={handleWardSelection}
           />
         );
-      if (ipdWizardStep === 3)
-        return (
-          <IPDRoom
-            wardData={wardData}
-            selectedWard={selectedWard}
-            selectedRoom={selectedRoom}
-            onSelectRoom={handleRoomSelection}
-          />
-        );
+     if (ipdWizardStep === 3)
+  return (
+    <IPDRoom
+      wardData={wardData}
+      selectedWard={selectedWard}
+      selectedRoom={selectedRoom}
+      onSelectRoom={handleRoomSelection}
+    />
+  );
+
       if (ipdWizardStep === 4)
         return (
           <IPDBed
@@ -1435,13 +1133,14 @@ const IPDTab = forwardRef(
             onScrollBeds={scrollBeds}
           />
         );
+      const admissionFields = generateAdmissionFields(masterData || {}, STATIC_DATA);
       return (
         <IPDFinal
           data={ipdWizardData}
           selectedWard={selectedWard}
           selectedRoom={selectedRoom}
           selectedBed={selectedBed}
-          fields={generateFields(5)}
+          fields={admissionFields}
           onChange={handleIpdWizardChange}
         />
       );
@@ -1459,6 +1158,7 @@ const IPDTab = forwardRef(
       photoPreview,
       isLoadingCities,
       availableCities,
+      masterData,
       handleIpdWizardChange,
       handleIpdWizardNext,
       handleFetchPatientDetails,
@@ -1466,7 +1166,6 @@ const IPDTab = forwardRef(
       handleRoomSelection,
       handleBedSelection,
       scrollBeds,
-      generateFields,
     ]);
 
     const renderIpdWizardContent = useCallback(
@@ -1484,25 +1183,13 @@ const IPDTab = forwardRef(
             transition={{ duration: 0.3 }}
           >
             <div className="flex-shrink-0 bg-gradient-to-r from-[#01B07A] to-[#004f3d] rounded-t-xl px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-              <h2 className="text-sm sm:text-lg font-bold text-white">
-                IPD Patient Admission
-              </h2>
+              <h2 className="text-sm sm:text-lg font-bold text-white">IPD Patient Admission</h2>
               <button
                 onClick={() => closeModal("ipdWizard")}
                 className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-white text-white hover:bg-white hover:text-[#01B07A] transition-all duration-200"
               >
-                <svg
-                  className="w-3 h-3 sm:w-4 sm:h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
@@ -1514,87 +1201,47 @@ const IPDTab = forwardRef(
                       <div className="flex flex-col items-center">
                         <div
                           className={`w-6 h-6 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all duration-300 ${
-                            ipdWizardStep >= step.id
-                              ? "bg-[#01B07A] text-white"
-                              : "bg-gray-300 text-gray-600"
+                            ipdWizardStep >= step.id ? "bg-[#01B07A] text-white" : "bg-gray-300 text-gray-600"
                           }`}
                         >
                           {ipdWizardStep > step.id ? (
-                            <svg
-                              className="w-3 h-3 sm:w-5 sm:h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
+                            <svg className="w-3 h-3 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                           ) : (
                             step.id
                           )}
                         </div>
                         <div className="text-center mt-1 sm:mt-2">
-                          <div
-                            className={`text-xs sm:text-sm font-medium ${
-                              ipdWizardStep >= step.id
-                                ? "text-[#01B07A]"
-                                : "text-gray-600"
-                            }`}
-                          >
-                            <span className="hidden sm:inline">
-                              {step.title}
-                            </span>
-                            <span className="sm:hidden">
-                              {step.shortTitle}
-                            </span>
+                          <div className={`text-xs sm:text-sm font-medium ${ipdWizardStep >= step.id ? "text-[#01B07A]" : "text-gray-600"}`}>
+                            <span className="hidden sm:inline">{step.title}</span>
+                            <span className="sm:hidden">{step.shortTitle}</span>
                           </div>
-                          <div className="text-xs text-gray-500 hidden sm:block">
-                            {step.description}
-                          </div>
+                          <div className="text-xs text-gray-500 hidden sm:block">{step.description}</div>
                         </div>
                       </div>
                       {index < WIZARD_STEPS.length - 1 && (
-                        <div
-                          className={`w-8 sm:w-16 h-0.5 mx-1 sm:mx-2 transition-all duration-500 ${
-                            ipdWizardStep > step.id ? "bg-[#01B07A]" : "bg-gray-300"
-                          }`}
-                        />
+                        <div className={`w-8 sm:w-16 h-0.5 mx-1 sm:mx-2 transition-all duration-500 ${ipdWizardStep > step.id ? "bg-[#01B07A]" : "bg-gray-300"}`} />
                       )}
                     </div>
                   ))}
                 </div>
               </div>
               <div className="px-2 sm:px-6 pb-4">
-                <motion.div
-                  className="bg-white rounded-xl p-3 sm:p-6 shadow-inner"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                  key={ipdWizardStep}
-                >
+                <motion.div className="bg-white rounded-xl p-3 sm:p-6 shadow-inner" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} key={ipdWizardStep}>
                   {renderWizardStep()}
                 </motion.div>
               </div>
             </div>
             <div className="flex-shrink-0 bg-white border-t p-3 sm:p-4 sticky bottom-0 z-10 flex flex-col-reverse sm:flex-row justify-between gap-2">
               <button
-                onClick={
-                  ipdWizardStep === 1
-                    ? () => closeModal("ipdWizard")
-                    : () => setIpdWizardStep(ipdWizardStep - 1)
-                }
+                onClick={ipdWizardStep === 1 ? () => closeModal("ipdWizard") : () => setIpdWizardStep((s) => Math.max(1, s - 1))}
                 className="px-4 sm:px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 text-xs sm:text-sm"
               >
                 {ipdWizardStep === 1 ? "Cancel" : "Back"}
               </button>
               <button
-                onClick={
-                  ipdWizardStep === 5 ? handleIpdWizardFinish : handleIpdWizardNext
-                }
+                onClick={ipdWizardStep === 5 ? handleIpdWizardFinish : handleIpdWizardNext}
                 className="px-4 sm:px-6 py-2 bg-[#01B07A] text-white rounded-lg hover:bg-[#018A65] transition-all duration-200 text-xs sm:text-sm"
               >
                 {ipdWizardStep === 5 ? "Save Admission" : "Next"}
@@ -1604,11 +1251,7 @@ const IPDTab = forwardRef(
           {isPhotoModalOpen && photoPreview && (
             <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-2">
               <div className="bg-white p-2 sm:p-4 rounded shadow-lg relative max-w-2xl max-h-[80vh] overflow-auto">
-                <img
-                  src={photoPreview}
-                  alt="Preview"
-                  className="max-h-[60vh] max-w-full object-contain"
-                />
+                <img src={photoPreview} alt="Preview" className="max-h-[60vh] max-w-full object-contain" />
                 <button
                   onClick={() => setIsPhotoModalOpen(false)}
                   className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-red-500 text-white rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-red-600 text-xs sm:text-base"
@@ -1638,13 +1281,13 @@ const IPDTab = forwardRef(
     }, [setTabActions]);
 
     useEffect(() => {
-      if (doctorName && !masterData.loading) fetchAllPatients();
-    }, [doctorName, masterData.loading, fetchAllPatients]);
+      if (doctorName && !masterData?.loading) fetchAllPatients();
+    }, [doctorName, masterData?.loading, fetchAllPatients]);
 
     useEffect(() => {
-      const highlightIdFromState = location.state?.highlightId;
+      const highlightIdFromState = location?.state?.highlightId;
       if (highlightIdFromState) setNewPatientId(highlightIdFromState);
-    }, [location.state]);
+    }, [location?.state]);
 
     const tabActionsToUse = tabActions.length ? tabActions : [];
 
@@ -1662,8 +1305,7 @@ const IPDTab = forwardRef(
           activeTab={activeTab}
           onTabChange={onTabChange}
           rowClassName={(row) =>
-            row.sequentialId === newPatientId ||
-            row.sequentialId === location.state?.highlightId
+            row.sequentialId === newPatientId || row.sequentialId === location?.state?.highlightId
               ? "font-bold bg-yellow-100 hover:bg-yellow-200 transition-colors duration-150"
               : ""
           }
@@ -1685,5 +1327,4 @@ const IPDTab = forwardRef(
 );
 
 IPDTab.displayName = "IPDTab";
-
 export default IPDTab;

@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Bed, CheckCircle, XCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import {
   Users,
   Heart,
@@ -10,6 +9,7 @@ import {
   Stethoscope,
   Activity,
 } from "lucide-react";
+import { getSpecializationsWardsSummaryForIpdAdmission } from "../../../../../utils/CrudService";
 
 const WARD_ICONS = {
   "General Ward": Users,
@@ -24,43 +24,77 @@ const WARD_ICONS = {
   Surgical: Stethoscope,
 };
 
-const IPDWard = ({ wardData, selectedWard, onSelectWard }) => {
-  const navigate = useNavigate();
+const getWardIcon = (wardType) => {
+  const IconComponent = WARD_ICONS[wardType] || Bed;
+  return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />;
+};
 
-  const getWardIcon = (wardType) => {
-    if (!wardType) return <Bed className="w-4 h-4 sm:w-5 sm:h-5" />;
-    const IconComponent = WARD_ICONS[wardType] || Bed;
-    return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />;
+const IPDWard = ({ selectedWard, onSelectWard }) => {
+  const [wardData, setWardData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWards = async () => {
+      try {
+        const response = await getSpecializationsWardsSummaryForIpdAdmission();
+        if (response?.data) {
+     const formatted = response.data.map((item, index) => {
+  const availableGroup = item.bedGroups?.find(
+    (g) => g.statusName.toLowerCase() === "available"
+  );
+  const availableBeds = availableGroup ? availableGroup.count : 0;
+  const occupiedBeds = item.totalBeds - availableBeds;
+  return {
+    id: item.wardId || index,
+    type: item.wardName,
+    number: item.wardNumber || item.wardId || index,
+    department: item.specializationName,
+    totalBeds: item.totalBeds,
+    availableBeds,
+    occupiedBeds,
+    rooms: item.rooms || [], // <-- Include the actual rooms array
+    roomNumbers: item.roomNumbers,
+    beds: item.rooms?.flatMap((r) => r.beds || []),
   };
+});
+
+
+          setWardData(formatted);
+        }
+      } catch (error) {
+        console.error("Error fetching ward data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchWards();
+  }, []);
 
   return (
     <div>
       <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
         Ward Selection
       </h3>
-      {wardData.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-10 text-gray-500 text-sm">
+          Loading wards...
+        </div>
+      ) : wardData.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <Bed className="mx-auto mb-4 text-gray-400" size={48} />
           <h3 className="text-lg font-semibold text-gray-600 mb-2">
             No Wards Available
           </h3>
           <p className="text-gray-500 mb-4">
-            No ward configurations found. Please create ward and bed management
-            setup first.
+            No ward configurations found. Please contact administrator.
           </p>
-          <button
-            onClick={() => navigate("/doctordashboard/bedroommanagement")}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Go to Bed Management
-          </button>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {wardData.map((ward) => (
               <div
-                key={`${ward.type}-${ward.number}`}
+                key={ward.id}
                 className={`p-3 sm:p-4 rounded-lg border-2 cursor-pointer transition-all duration-300 ${
                   selectedWard?.id === ward.id
                     ? "border-[#01B07A] bg-[#E6FBF5] shadow-lg"
@@ -70,7 +104,9 @@ const IPDWard = ({ wardData, selectedWard, onSelectWard }) => {
                     ? "opacity-50 cursor-not-allowed"
                     : ""
                 }`}
-                onClick={() => ward.availableBeds > 0 && onSelectWard(ward)}
+                onClick={() =>
+                  ward.availableBeds > 0 && onSelectWard(ward)
+                }
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -79,25 +115,16 @@ const IPDWard = ({ wardData, selectedWard, onSelectWard }) => {
                       {ward.type}
                     </h4>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      {ward.number}
-                    </span>
-                    {ward.availableBeds === 0 && (
-                      <span className="text-[10px] text-red-600 font-medium">
-                        Full
-                      </span>
-                    )}
-                  </div>
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                    {ward.roomNumbers || "N/A"}
+                  </span>
                 </div>
-                <div className="mb-2">
-                  <p className="text-[10px] text-gray-600 mb-1">
-                    <strong>Department:</strong> {ward.department}
-                  </p>
-                </div>
+                <p className="text-[10px] text-gray-600 mb-2">
+                  <strong>Department:</strong> {ward.department}
+                </p>
                 <div className="grid grid-cols-3 gap-2 mt-2">
-                  <div className="bg-blue-50 rounded-xl p-2 text-center shadow-sm flex flex-col items-center">
-                    <Bed className="w-4 h-4 text-blue-600 mb-1" />
+                  <div className="bg-blue-50 rounded-xl p-2 text-center shadow-sm">
+                    <Bed className="w-4 h-4 text-blue-600 mx-auto mb-1" />
                     <p className="text-[10px] text-gray-500 font-medium">
                       Total
                     </p>
@@ -105,8 +132,8 @@ const IPDWard = ({ wardData, selectedWard, onSelectWard }) => {
                       {ward.totalBeds}
                     </p>
                   </div>
-                  <div className="bg-green-50 rounded-xl p-2 text-center shadow-sm flex flex-col items-center">
-                    <CheckCircle className="w-4 h-4 text-green-600 mb-1" />
+                  <div className="bg-green-50 rounded-xl p-2 text-center shadow-sm">
+                    <CheckCircle className="w-4 h-4 text-green-600 mx-auto mb-1" />
                     <p className="text-[10px] text-gray-500 font-medium">
                       Available
                     </p>
@@ -114,8 +141,8 @@ const IPDWard = ({ wardData, selectedWard, onSelectWard }) => {
                       {ward.availableBeds}
                     </p>
                   </div>
-                  <div className="bg-red-50 rounded-xl p-2 text-center shadow-sm flex flex-col items-center">
-                    <XCircle className="w-4 h-4 text-red-600 mb-1" />
+                  <div className="bg-red-50 rounded-xl p-2 text-center shadow-sm">
+                    <XCircle className="w-4 h-4 text-red-600 mx-auto mb-1" />
                     <p className="text-[10px] text-gray-500 font-medium">
                       Occupied
                     </p>
@@ -140,8 +167,7 @@ const IPDWard = ({ wardData, selectedWard, onSelectWard }) => {
           {selectedWard && (
             <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-[#E6FBF5] rounded-lg border border-[#01B07A]">
               <p className="text-xs sm:text-sm text-[#01B07A] font-medium">
-                Selected: {selectedWard.type} Ward {selectedWard.number} -{" "}
-                {selectedWard.department}
+                Selected: {selectedWard.type} - {selectedWard.department}
               </p>
             </div>
           )}

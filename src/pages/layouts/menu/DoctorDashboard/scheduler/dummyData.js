@@ -1,5 +1,3 @@
-
-
 const patientNames = [
   'John Smith', 'Sarah Johnson', 'Mike Davis', 'Emily Wilson', 'David Brown',
   'Lisa Anderson', 'Robert Taylor', 'Jennifer Martinez', 'William Garcia', 'Maria Rodriguez',
@@ -27,7 +25,6 @@ const generateMeetLink = (id) => {
   return `https://meet.google.com/${code}`;
 };
 
-// Generate appointments for September-October 2025
 export const generateDummyAppointments = () => {
   const appointments = [];
   let idCounter = 1;
@@ -37,14 +34,12 @@ export const generateDummyAppointments = () => {
     const date = new Date(2025, 8, day);
     const dayOfWeek = date.getDay();
     
-    // Skip Sundays (0)
     if (dayOfWeek === 0) continue;
 
-    // Vary appointments per day (1-10)
     const numAppointments = Math.floor(Math.random() * 10) + 1;
     
     for (let i = 0; i < numAppointments; i++) {
-      const hour = 8 + Math.floor(Math.random() * 9); // 8 AM to 4 PM
+      const hour = 8 + Math.floor(Math.random() * 9);
       const minute = Math.random() > 0.5 ? 0 : 30;
       
       const appointmentDate = new Date(2025, 8, day, hour, minute);
@@ -68,12 +63,11 @@ export const generateDummyAppointments = () => {
     }
   }
 
-  // October 2025 (month index 9) - days 1-11
-  for (let day = 1; day <= 11; day++) {
+  // October 2025 (month index 9)
+  for (let day = 1; day <= 31; day++) {
     const date = new Date(2025, 9, day);
     const dayOfWeek = date.getDay();
     
-    // Skip Sundays
     if (dayOfWeek === 0) continue;
 
     const numAppointments = Math.floor(Math.random() * 10) + 1;

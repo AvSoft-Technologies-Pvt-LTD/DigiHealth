@@ -17,6 +17,7 @@ import Registration from "./form/Registration";
 import Verification from "./form/Verification";
 import PasswordResetPage from "./form/PasswordResetPage";
 import Healthcard from "./components/Healthcard";
+import HealthcardOTP from "./components/HealthcardOTP";
 import BookApp from "./components/BookApp";
 import Home from "./pages/Home";
 import MedicalRecords from "./pages/layouts/menu/PatientDashboard/MedicalRecord"
@@ -45,6 +46,11 @@ import TokenDisplay from "./components/Token-Display";
 import BedRoomList from "./pages/layouts/menu/DoctorDashboard/bed-manangement/BedRoomList"
 import ImageAnnotationCanvas from "./components/microcomponents/ImageAnnotationCanvas";
 import BedMaster from "./pages/layouts/menu/DoctorDashboard/bed-manangement/BedMaster";
+// ---------------------- NEW Scheduler Imports ----------------------
+import Scheduler from "./pages/layouts/menu/DoctorDashboard/scheduler/Scheduler";
+ import Today from "./pages/layouts/menu/DoctorDashboard/scheduler/Today";
+import AvailabilityPage from "./pages/layouts/menu/DoctorDashboard/scheduler/AvailabilityPage";
+import AvailabilityOverviewPage from "./pages/layouts/menu/DoctorDashboard/scheduler/AvailabilityOverviewPage";
 // Toast
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -198,6 +204,7 @@ const App = () => {
         <Route path="/password-reset" element={<PasswordResetPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/healthcard" element={<Healthcard />} />
+        <Route path="/healthcard-otp" element={<HealthcardOTP />} />
         <Route path="/bookconsultation" element={<BookApp />} />
         <Route path="/medical-records" element={<MedicalRecords />} />
         <Route path="/medical-record-details" element={<MedicalRecordDetails />} />
@@ -220,7 +227,11 @@ const App = () => {
             {sharedRoutes}
             <Route path="template" element={<ImageAnnotationCanvas />} />
             <Route path="bedroommanagement/bedmaster" element={<BedMaster />} />
-
+<Route path="scheduler" element={<Scheduler />} />
+    <Route path="scheduler/availability" element={<AvailabilityOverviewPage />} />
+    <Route path="scheduler/availability/create" element={<AvailabilityPage />} />
+    <Route path="scheduler/availability/edit/:scheduleId" element={<AvailabilityPage />} />
+    <Route path="scheduler/today" element={<Today />} />  
             <Route path="*" element={<DrRoutes />} />
           </Route>
         </Route>
