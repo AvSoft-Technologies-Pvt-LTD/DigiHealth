@@ -6,7 +6,7 @@ import { FaRegEdit } from "react-icons/fa";
 import { GiMale, GiFemale } from "react-icons/gi";
 import DashboardOverview from './DashboardOverview';
 import ReusableModal from '../../../../components/microcomponents/Modal';
-import Healthcard from '../../../../components/Healthcard';
+import Healthcard from '../../../../components/Healthcard/Healthcard';
 import {
   getFamilyMembersByPatient, createFamily, updateFamily, deleteFamily,
   createPersonalHealth, updatePersonalHealth, getPersonalHealthByPatientId,
@@ -80,40 +80,81 @@ function Dashboard() {
   });
 
   // Memoized fields
-  const basePersonalFields = useMemo(() => [
-    { name: 'height', label: 'Height (cm)', type: 'number', colSpan: 1 },
-    { name: 'weight', label: 'Weight (kg)', type: 'number', colSpan: 1 },
-    { name: 'bloodGroup', label: 'Blood Group', type: 'select', colSpan: 1, options: bloodGroups },
-    { name: 'surgeries', label: 'Surgeries', type: 'textarea', colSpan: 1 },
-    { name: 'allergies', label: 'Allergies', type: 'textarea', colSpan: 2 },
-    {
-      name: 'isAlcoholicUser',
-      label: 'Drink alcohol?',
-      type: 'checkboxWithInput',
-      colSpan: 1,
-      inputName: 'alcoholDuration',
-      inputLabel: 'Since (yrs)',
-      inputType: 'number',
-    },
-    {
-      name: 'isSmokerUser',
-      label: 'Do you smoke?',
-      type: 'checkboxWithInput',
-      colSpan: 1,
-      inputName: 'smokingDuration',
-      inputLabel: 'Since (yrs)',
-      inputType: 'number',
-    },
-    {
-      name: 'isTobaccoUser',
-      label: 'Tobacco Use?',
-      type: 'checkboxWithInput',
-      colSpan: 1,
-      inputName: 'tobaccoDuration',
-      inputLabel: 'Since (yrs)',
-      inputType: 'number',
-    }
-  ], [bloodGroups]);
+ const basePersonalFields = useMemo(() => [
+  { name: 'height', label: 'Height (cm)', type: 'number', colSpan: 1 },
+  { name: 'weight', label: 'Weight (kg)', type: 'number', colSpan: 1 },
+  { name: 'bloodGroup', label: 'Blood Group', type: 'select', colSpan: 1, options: bloodGroups },
+
+  {
+    name: 'isAlcoholicUser',
+    label: 'Drink alcohol?',
+    type: 'checkboxWithInput',
+    colSpan: 1,
+    inputName: 'alcoholDuration',
+    inputLabel: 'Since (yrs)',
+    inputType: 'number',
+  },
+  {
+    name: 'isSmokerUser',
+    label: 'Do you smoke?',
+    type: 'checkboxWithInput',
+    colSpan: 1,
+    inputName: 'smokingDuration',
+    inputLabel: 'Since (yrs)',
+    inputType: 'number',
+  },
+  {
+    name: 'isTobaccoUser',
+    label: 'Tobacco Use?',
+    type: 'checkboxWithInput',
+    colSpan: 1,
+    inputName: 'tobaccoDuration',
+    inputLabel: 'Since (yrs)',
+    inputType: 'number',
+  },
+  // 🏥 Surgeries dropdown — shows "Since (yrs)" input when not "none"
+  {
+    name: 'surgeries',
+    label: 'Surgeries',
+    type: 'select',
+    colSpan: 1,
+    options: [
+      { label: 'None', value: 'none' },
+      { label: 'Appendectomy', value: 'appendectomy' },
+      { label: 'Heart Surgery', value: 'heart' },
+      { label: 'C-section', value: 'csection' },
+      { label: 'Fracture Repair', value: 'fracture' },
+      { label: 'Other', value: 'other' },
+    ],
+    durationField: 'surgeriesDuration',   // 👈 field to store duration
+    durationFor: ['appendectomy', 'heart', 'csection', 'fracture', 'other'], // 👈 show only for these
+    inputLabel: 'Since (yrs)',
+    inputType: 'number',
+  },
+
+  // 🤧 Allergies dropdown — shows "Since (yrs)" input when not "none"
+  {
+    name: 'allergies',
+    label: 'Allergies',
+    type: 'select',
+    colSpan: 1,
+    options: [
+      { label: 'None', value: 'none' },
+      { label: 'Food Allergy', value: 'food' },
+      { label: 'Drug Allergy', value: 'drug' },
+      { label: 'Dust Allergy', value: 'dust' },
+      { label: 'Pollen Allergy', value: 'pollen' },
+      { label: 'Other', value: 'other' },
+    ],
+    durationField: 'allergiesDuration',
+    durationFor: ['food', 'drug', 'dust', 'pollen', 'other'],
+    inputLabel: 'Since (yrs)',
+    inputType: 'number',
+  },
+
+ 
+], [bloodGroups]);
+
 
   const familyFields = useMemo(() => [
     { name: 'relation', label: 'Relation', type: 'select', colSpan: 1, options: familyRelations },

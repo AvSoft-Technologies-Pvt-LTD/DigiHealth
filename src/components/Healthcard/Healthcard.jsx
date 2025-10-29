@@ -7,8 +7,8 @@ import QRCode from "qrcode";
 import { Download, X, Check, Crown, Star, Shield, Zap } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import logo from "../assets/logo.png";
-import { getSubscriptionPlans, getPatientById, getPatientPhoto } from "../utils/masterService";
+import logo from "../../assets/logo.png";
+import { getSubscriptionPlans, getPatientById, getPatientPhoto } from "../../utils/masterService";
 
 const API_BASE_URL = "https://6801242781c7e9fbcc41aacf.mockapi.io/api/AV1";
 const CARD_API_URL = "https://681075c727f2fdac24116e70.mockapi.io/user/healthcard";

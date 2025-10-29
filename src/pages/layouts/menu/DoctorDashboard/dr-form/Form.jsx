@@ -20,20 +20,14 @@ import {
   getEyeTestTemplate,
   getPrescriptionTemplate,
 } from "./templates";
-// import AV logo imported from assets so bundler resolves path to a usable URL
 import AVLogo from "../../../../../assets/AV.png";
 
-/**
- * Full getStyledPrescriptionHTML returns a complete HTML document string
- * that reproduces the UI template (header, patient info block, styled tables, footer with logo & contact and signature).
- */
 const getStyledPrescriptionHTML = (doctor = {}, patient = {}, signature = null, logoUrl = "", formContent = "") => {
   const safeLogo = logoUrl || "";
   const patientName = patient?.firstName || patient?.name || "N/A";
   const patientAge = patient?.age || "N/A";
   const patientGender = patient?.gender || "N/A";
   const patientContact = patient?.phone || "N/A";
-
   return `<!doctype html>
 <html>
   <head>
@@ -80,18 +74,15 @@ const getStyledPrescriptionHTML = (doctor = {}, patient = {}, signature = null, 
             ${safeLogo ? `<img src="${safeLogo}" class="logo" alt="logo" />` : ''}
           </div>
         </div>
-
         <div class="patient-box" style="margin-top:18px;">
           <div><strong>Name:</strong> ${patientName}</div>
           <div><strong>Age:</strong> ${patientAge}</div>
           <div><strong>Gender:</strong> ${patientGender}</div>
           <div><strong>Contact:</strong> ${patientContact}</div>
         </div>
-
         <div class="content" style="margin-top:18px;">
           ${formContent || '<p>No content available</p>'}
         </div>
-
         <div class="footer">
           <div class="left">
             ${safeLogo ? `<img src="${safeLogo}" class="logo-small" alt="logo" />` : ''}
@@ -112,13 +103,10 @@ const getStyledPrescriptionHTML = (doctor = {}, patient = {}, signature = null, 
 `;
 };
 
-/** Convert bundler-resolved path or relative path to absolute URL for popup windows */
 const makeAbsoluteUrl = (p) => {
   if (!p) return "";
   if (typeof p !== "string") return "";
   if (p.startsWith("http") || p.startsWith("data:")) return p;
-  // AVLogo imported via bundler usually is already an absolute path (e.g. '/static/media/AV.123.png').
-  // But guard: if it starts with '/', prefix with origin
   try {
     const origin = typeof window !== "undefined" && window.location ? window.location.origin : "";
     return p.startsWith("/") ? `${origin}${p}` : `${origin}/${p}`;
@@ -141,53 +129,28 @@ const formTypes = {
 const Form = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
-  const patient =
-    location.state?.patient ||
-    (JSON.parse(localStorage.getItem("currentAssessment") || "{}").patientInfo || {
-      name: "Unknown Patient",
-      email: "unknown@example.com",
-      phone: "N/A",
-      age: "N/A",
-      gender: "N/A",
-      diagnosis: "N/A",
-      wardType: "N/A",
-    });
-
-  const [annotatedImages, setAnnotatedImages] = useState(() =>
-    location.state?.annotatedImages || JSON.parse(localStorage.getItem("medicalImages") || "[]")
-  );
+  const patient = location.state?.patient || {
+    name: "Unknown Patient",
+    email: "unknown@example.com",
+    phone: "N/A",
+    age: "N/A",
+    gender: "N/A",
+    diagnosis: "N/A",
+    wardType: "N/A",
+  };
+  const [annotatedImages, setAnnotatedImages] = useState(location.state?.annotatedImages || []);
   const [activeForm, setActiveForm] = useState("all");
-  const [formsData, setFormsData] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("medicalForms") || "{}");
-    } catch {
-      return {};
-    }
-  });
-  const [doctorSignature, setDoctorSignature] = useState(localStorage.getItem("doctorSignature") || null);
+  const [formsData, setFormsData] = useState({});
+  const [doctorSignature, setDoctorSignature] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showPatientDetails, setShowPatientDetails] = useState(true);
   const [isChartOpen, setIsChartOpen] = useState(false);
   const [chartVital, setChartVital] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showMoreForms, setShowMoreForms] = useState(false);
-
   const signaturePadRef = useRef();
   const printWindowRef = useRef(null);
-
   const isIPDPatient = (patient?.type || "").toLowerCase() === "ipd";
-
-  useEffect(() => {
-    const storedImages = localStorage.getItem("medicalImages");
-    if (storedImages) {
-      try {
-        setAnnotatedImages(JSON.parse(storedImages));
-      } catch {}
-    }
-    const storedSig = localStorage.getItem("doctorSignature");
-    if (storedSig) setDoctorSignature(storedSig);
-  }, []);
 
   const calculateAge = (dob) => {
     if (!dob) return "N/A";
@@ -229,9 +192,6 @@ const Form = () => {
     reader.onload = ({ target }) => {
       if (target?.result) {
         setDoctorSignature(target.result);
-        try {
-          localStorage.setItem("doctorSignature", target.result);
-        } catch {}
       }
     };
     reader.readAsDataURL(file);
@@ -240,29 +200,17 @@ const Form = () => {
   const handleClearSignature = () => {
     if (signaturePadRef.current) signaturePadRef.current.clear();
     setDoctorSignature(null);
-    try {
-      localStorage.removeItem("doctorSignature");
-    } catch {}
   };
 
   const handleSaveSignature = () => {
     if (signaturePadRef.current) {
       const signatureData = signaturePadRef.current.toDataURL();
       setDoctorSignature(signatureData);
-      try {
-        localStorage.setItem("doctorSignature", signatureData);
-      } catch {}
     }
   };
 
   const handleSaveForm = (formType, data) => {
-    setFormsData((prev) => {
-      const next = { ...prev, [formType]: data };
-      try {
-        localStorage.setItem("medicalForms", JSON.stringify(next));
-      } catch {}
-      return next;
-    });
+    setFormsData((prev) => ({ ...prev, [formType]: data }));
   };
 
   const handleFormTypeClick = (formType) => {
@@ -282,7 +230,6 @@ const Form = () => {
       regNo: "MH123456",
       qualifications: "MBBS, MD",
     };
-
     let formContent = "";
     switch (formType) {
       case "vitals":
@@ -306,16 +253,11 @@ const Form = () => {
       default:
         formContent = "<p>No content available for this form.</p>";
     }
-
     const logoUrl = makeAbsoluteUrl(AVLogo);
     const html = getStyledPrescriptionHTML(doctor, patient, doctorSignature, logoUrl, formContent);
-
-    // ensure previous popup closed
     if (printWindowRef.current && !printWindowRef.current.closed) printWindowRef.current.close();
-
     printWindowRef.current = window.open("", "_blank", "width=900,height=700,scrollbars=yes");
     if (!printWindowRef.current) return;
-
     try {
       printWindowRef.current.document.open();
       printWindowRef.current.document.write(html);
@@ -338,7 +280,6 @@ const Form = () => {
       regNo: "MH123456",
       qualifications: "MBBS, MD",
     };
-
     const formsHtml = Object.keys(formsData || {})
       .filter((formType) => formsData[formType] && Object.keys(formsData[formType]).length > 0)
       .map((formType) => {
@@ -361,16 +302,12 @@ const Form = () => {
         }
       })
       .join("<div style='page-break-after: always;'></div>");
-
     if (!formsHtml) return;
-
     const logoUrl = makeAbsoluteUrl(AVLogo);
     const html = getStyledPrescriptionHTML(doctor, patient, doctorSignature, logoUrl, formsHtml);
-
     if (printWindowRef.current && !printWindowRef.current.closed) printWindowRef.current.close();
     printWindowRef.current = window.open("", "_blank", "width=1000,height=800,scrollbars=yes");
     if (!printWindowRef.current) return;
-
     try {
       printWindowRef.current.document.open();
       printWindowRef.current.document.write(html);
@@ -407,7 +344,6 @@ const Form = () => {
         </div>
       );
     }
-
     return (
       <div className="space-y-8 animate-slideIn">
         {{
@@ -440,32 +376,23 @@ const Form = () => {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           onBack={handleBackToPatients}
         />
-
-<div className="flex-1 min-w-0 max-w-7xl mx-auto px-4 sm:px-6 pt-16 sm:py-8 w-full">
+        <div className="flex-1 min-w-0 max-w-7xl mx-auto px-4 sm:px-6 pt-16 sm:py-8 w-full">
           <div className="mb-6 sm:mb-8">{renderActiveForm()}</div>
-
           <SignatureArea
             signaturePadRef={signaturePadRef}
             doctorSignature={doctorSignature}
-            setDoctorSignature={(sig) => {
-              setDoctorSignature(sig);
-              try {
-                localStorage.setItem("doctorSignature", sig);
-              } catch {}
-            }}
+            setDoctorSignature={setDoctorSignature}
             onSaveSignature={handleSaveSignature}
             onClearSignature={handleClearSignature}
             onUploadSignature={handleSignatureUpload}
           />
         </div>
       </div>
-
       {showShareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <ShareModalContent onClose={() => setShowShareModal(false)} prescriptions={formsData.prescription?.prescriptions || []} patient={patient} />
         </div>
       )}
-
       <ChartModal isOpen={isChartOpen} onClose={() => setIsChartOpen(false)} vital={chartVital} records={formsData.vitals?.vitalsRecords || []} selectedIdx={null} />
     </div>
   );

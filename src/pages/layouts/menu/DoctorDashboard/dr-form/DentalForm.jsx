@@ -1,43 +1,13 @@
-//Dental
 import React, { useState, useEffect } from 'react';
 import { Stethoscope, Save, Printer, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { getDentalProblems, getTreatmentActionPlans, getJawPositions } from "../../../../../utils/masterService";
+import { usePatientContext } from '../../../../../context-api/PatientContext'; // Update this path
+
 const DENTAL_TEETH_NUMBERS = Array.from({ length: 32 }, (_, i) => i + 1);
-const DENTAL_PROBLEMS = [
-  'Dental Caries',
-  'Gingivitis',
-  'Periodontitis',
-  'Tooth Sensitivity',
-  'Enamel Erosion',
-  'Tooth Fracture',
-  'Root Canal Infection',
-  'Impacted Wisdom Tooth',
-  'Malocclusion',
-  'TMJ Disorder',
-  'Oral Ulcers',
-  'Tartar Build-up',
-];
-const DENTAL_ACTIONS = [
-  'Dental Filling',
-  'Root Canal Treatment',
-  'Crown Placement',
-  'Tooth Extraction',
-  'Deep Cleaning',
-  'Fluoride Treatment',
-  'Dental Scaling',
-  'Orthodontic Treatment',
-  'Gum Surgery',
-  'Tooth Whitening',
-  'Dental Bridge',
-  'Implant Placement',
-];
-const DENTAL_POSITIONS = [
-  'Upper Left',
-  'Upper Right',
-  'Lower Left',
-  'Lower Right',
-];
- const DentalForm = ({ data, onSave, onPrint, patient }) => {
+
+const DentalForm = ({ data, onSave, onPrint, patient }) => {
+  const { activeTab, patients } = usePatientContext();
   const [plans, setPlans] = useState(data?.plans || []);
   const [currentPlan, setCurrentPlan] = useState({
     teeth: [],
@@ -45,9 +15,67 @@ const DENTAL_POSITIONS = [
     actions: [],
     positions: [],
   });
+  const [dentalProblems, setDentalProblems] = useState([]);
+  const [treatmentActionPlans, setTreatmentActionPlans] = useState([]);
+  const [jawPositions, setJawPositions] = useState([]);
+
+  useEffect(() => {
+    console.log("Active Tab:", activeTab);
+    console.log("Patient ID:", patient?.id);
+  }, [activeTab, patient]);
+
   useEffect(() => {
     if (data?.plans) setPlans(data.plans);
   }, [data]);
+
+  useEffect(() => {
+    const fetchDentalProblems = async () => {
+      try {
+        const response = await getDentalProblems();
+        setDentalProblems(response.data);
+      } catch (error) {
+        console.error("Failed to fetch dental problems:", error);
+        toast.error("Failed to load dental problems. Please try again later.", {
+          position: 'top-right',
+          autoClose: 2000,
+        });
+      }
+    };
+    fetchDentalProblems();
+  }, []);
+
+  useEffect(() => {
+    const fetchTreatmentActionPlans = async () => {
+      try {
+        const response = await getTreatmentActionPlans();
+        setTreatmentActionPlans(response.data);
+      } catch (error) {
+        console.error("Failed to fetch treatment action plans:", error);
+        toast.error("Failed to load treatment action plans. Please try again later.", {
+          position: 'top-right',
+          autoClose: 2000,
+        });
+      }
+    };
+    fetchTreatmentActionPlans();
+  }, []);
+
+  useEffect(() => {
+    const fetchJawPositions = async () => {
+      try {
+        const response = await getJawPositions();
+        setJawPositions(response.data);
+      } catch (error) {
+        console.error("Failed to fetch jaw positions:", error);
+        toast.error("Failed to load jaw positions. Please try again later.", {
+          position: 'top-right',
+          autoClose: 2000,
+        });
+      }
+    };
+    fetchJawPositions();
+  }, []);
+
   const handleTeethChange = (num) => {
     setCurrentPlan((prev) => ({
       ...prev,
@@ -56,6 +84,7 @@ const DENTAL_POSITIONS = [
         : [...prev.teeth, num],
     }));
   };
+
   const handleProblemChange = (problem) => {
     setCurrentPlan((prev) => ({
       ...prev,
@@ -64,6 +93,7 @@ const DENTAL_POSITIONS = [
         : [...prev.problems, problem],
     }));
   };
+
   const handleActionChange = (action) => {
     setCurrentPlan((prev) => ({
       ...prev,
@@ -72,6 +102,7 @@ const DENTAL_POSITIONS = [
         : [...prev.actions, action],
     }));
   };
+
   const handlePositionChange = (pos) => {
     setCurrentPlan((prev) => ({
       ...prev,
@@ -80,14 +111,17 @@ const DENTAL_POSITIONS = [
         : [...prev.positions, pos],
     }));
   };
+
   const handleAddPlan = () => {
     if (
       currentPlan.teeth.length === 0 &&
       currentPlan.problems.length === 0 &&
       currentPlan.actions.length === 0 &&
       currentPlan.positions.length === 0
-    )
+    ) {
+      toast.warning('Please select at least one option before adding.');
       return;
+    }
     setPlans((prev) => [...prev, currentPlan]);
     setCurrentPlan({ teeth: [], problems: [], actions: [], positions: [] });
     toast.success('Dental plan added successfully!', {
@@ -95,20 +129,23 @@ const DENTAL_POSITIONS = [
       autoClose: 2000,
     });
   };
+
   const handleRemovePlan = (idx) => {
     setPlans((prev) => prev.filter((_, i) => i !== idx));
-    toast.success(' Dental plan removed successfully!', {
+    toast.success('Dental plan removed successfully!', {
       position: 'top-right',
       autoClose: 2000,
     });
   };
+
   const handleSave = () => {
     onSave('dental', { plans });
-    toast.success(' Dental problem action plan saved!', {
+    toast.success('Dental problem action plan saved!', {
       position: 'top-right',
       autoClose: 2000,
     });
   };
+
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-slideIn">
       <div className="sub-heading px-6 py-4 flex justify-between items-center">
@@ -119,14 +156,12 @@ const DENTAL_POSITIONS = [
           </h3>
         </div>
         <div className="flex items-center gap-3 text-white">
-      <button
-  onClick={handleSave}
-  className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"
->
-  <Save className="w-5 h-5" />
-</button>
-
-
+          <button
+            onClick={handleSave}
+            className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"
+          >
+            <Save className="w-5 h-5" />
+          </button>
           <button
             onClick={() => onPrint('dental')}
             className="hover:bg-[var(--primary-color)] hover:bg-opacity-20 p-2 rounded-lg transition-colors"
@@ -142,21 +177,41 @@ const DENTAL_POSITIONS = [
             <div className="font-medium mb-3 text-[var(--primary-color)]">
               Reference Teeth Numbers
             </div>
-            <div className="grid grid-cols-8 gap-1 max-h-32 ">
-              {DENTAL_TEETH_NUMBERS.map((num) => (
-                <label
-                  key={num}
-                  className="flex items-center gap-1 text-xs cursor-pointer hover:bg-blue-50 p-1 rounded"
-                >
-                  <input
-                    type="checkbox"
-                    checked={currentPlan.teeth.includes(num)}
-                    onChange={() => handleTeethChange(num)}
-                    className="text-[var(--accent-color)] focus:ring-[var(--accent-color)]"
-                  />
-                  <span className="text-[var(--primary-color)]">{num}</span>
-                </label>
-              ))}
+            <div className="flex flex-col gap-3">
+              {/* Upper Jaw (Teeth 1-16) */}
+              <div className="grid grid-cols-8 gap-2">
+                {DENTAL_TEETH_NUMBERS.slice(0, 16).map((num) => (
+                  <label
+                    key={num}
+                    className="flex justify-center items-center text-xs cursor-pointer hover:bg-blue-50 py-2 rounded"
+                  >
+                    <span className="text-[var(--primary-color)]">{num}</span>
+                    <input
+                      type="checkbox"
+                      checked={currentPlan.teeth.includes(num)}
+                      onChange={() => handleTeethChange(num)}
+                      className="ml-1 text-[var(--accent-color)] focus:ring-[var(--accent-color)]"
+                    />
+                  </label>
+                ))}
+              </div>
+              {/* Lower Jaw (Teeth 17-32) */}
+              <div className="grid grid-cols-8 gap-2">
+                {DENTAL_TEETH_NUMBERS.slice(16).map((num) => (
+                  <label
+                    key={num}
+                    className="flex justify-center items-center text-xs cursor-pointer hover:bg-blue-50 py-2 rounded"
+                  >
+                    <span className="text-[var(--primary-color)]">{num}</span>
+                    <input
+                      type="checkbox"
+                      checked={currentPlan.teeth.includes(num)}
+                      onChange={() => handleTeethChange(num)}
+                      className="ml-1 text-[var(--accent-color)] focus:ring-[var(--accent-color)]"
+                    />
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
           {/* Dental Problems */}
@@ -165,18 +220,18 @@ const DENTAL_POSITIONS = [
               Dental Problems
             </div>
             <div className="flex flex-col gap-2 max-h-32 overflow-y-auto">
-              {DENTAL_PROBLEMS.map((problem) => (
+              {dentalProblems.map((problem) => (
                 <label
-                  key={problem}
+                  key={problem.id}
                   className="flex items-center gap-2 text-sm cursor-pointer hover:bg-red-50 p-2 rounded"
                 >
                   <input
                     type="checkbox"
-                    checked={currentPlan.problems.includes(problem)}
-                    onChange={() => handleProblemChange(problem)}
+                    checked={currentPlan.problems.includes(problem.name)}
+                    onChange={() => handleProblemChange(problem.name)}
                     className="text-red-500 focus:ring-red-500"
                   />
-                  <span className="text-[var(--primary-color)]">{problem}</span>
+                  <span className="text-[var(--primary-color)]">{problem.name}</span>
                 </label>
               ))}
             </div>
@@ -187,18 +242,18 @@ const DENTAL_POSITIONS = [
               Treatment Action Plans
             </div>
             <div className="flex flex-col gap-2 max-h-32 overflow-y-auto">
-              {DENTAL_ACTIONS.map((action) => (
+              {treatmentActionPlans.map((action) => (
                 <label
-                  key={action}
+                  key={action.id}
                   className="flex items-center gap-2 text-sm cursor-pointer hover:bg-green-50 p-2 rounded"
                 >
                   <input
                     type="checkbox"
-                    checked={currentPlan.actions.includes(action)}
-                    onChange={() => handleActionChange(action)}
+                    checked={currentPlan.actions.includes(action.name)}
+                    onChange={() => handleActionChange(action.name)}
                     className="text-green-500 focus:ring-green-500"
                   />
-                  <span className="text-[var(--primary-color)]">{action}</span>
+                  <span className="text-[var(--primary-color)]">{action.name}</span>
                 </label>
               ))}
             </div>
@@ -208,19 +263,19 @@ const DENTAL_POSITIONS = [
             <div className="font-medium mb-3 text-[var(--primary-color)]">
               Jaw Position
             </div>
-            <div className="flex flex-col gap-2">
-              {DENTAL_POSITIONS.map((pos) => (
+            <div className="flex flex-col gap-2 max-h-32 overflow-y-auto">
+              {jawPositions.map((pos) => (
                 <label
-                  key={pos}
+                  key={pos.id}
                   className="flex items-center gap-2 text-sm cursor-pointer hover:bg-purple-50 p-2 rounded"
                 >
                   <input
                     type="checkbox"
-                    checked={currentPlan.positions.includes(pos)}
-                    onChange={() => handlePositionChange(pos)}
+                    checked={currentPlan.positions.includes(pos.name)}
+                    onChange={() => handlePositionChange(pos.name)}
                     className="text-purple-500 focus:ring-purple-500"
                   />
-                  <span className="text-[var(--primary-color)]">{pos}</span>
+                  <span className="text-[var(--primary-color)]">{pos.name}</span>
                 </label>
               ))}
             </div>
@@ -293,4 +348,5 @@ const DENTAL_POSITIONS = [
     </div>
   );
 };
+
 export default DentalForm;

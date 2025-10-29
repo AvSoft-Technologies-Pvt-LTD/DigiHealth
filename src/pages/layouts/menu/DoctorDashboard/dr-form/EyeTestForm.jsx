@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Eye, Save, Printer, Plus, Trash2, Edit, Check, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getVisionTypes, createBulkEyeTests } from "../../../../../utils/masterService";
+import { usePatientContext } from '../../../../../context-api/PatientContext';
+import { useSelector } from 'react-redux';
 
 const EyeTestForm = ({ data, onPrint }) => {
+  const { activeTab, patients } = usePatientContext();
+  const doctorId = useSelector((state) => state.auth.doctorId);
   const [rows, setRows] = useState(data?.rows || []);
   const [editingRow, setEditingRow] = useState(null);
   const [currentRow, setCurrentRow] = useState({
@@ -24,6 +28,12 @@ const EyeTestForm = ({ data, onPrint }) => {
     product: '',
   });
   const [visionTypes, setVisionTypes] = useState([]);
+
+  useEffect(() => {
+    console.log("Active Tab:", activeTab);
+    console.log("Patient ID:", patients[0]?.id);
+    console.log("Doctor ID from Redux:", doctorId); // Log doctorId to console
+  }, [activeTab, patients, doctorId]);
 
   useEffect(() => {
     if (data?.rows) setRows(data.rows);
@@ -128,11 +138,19 @@ const EyeTestForm = ({ data, onPrint }) => {
   };
 
   const handleSave = async () => {
+    if (!doctorId) {
+      toast.error("Doctor not logged in. Please log in again.", {
+        position: 'top-right',
+        autoClose: 2000,
+      });
+      return;
+    }
+
     try {
       const payload = rows.map(row => ({
-        patientId: 1,          // Hardcoded (ensure this exists in DB)
-        doctorId: 3,           // Hardcoded (ensure this exists in DB)
-        context: "IPD",        // Changed to "IPD" (as per your example)
+        patientId: patients[0]?.id || 1,
+        doctorId: doctorId || 1, // Use doctorId from Redux
+        context: activeTab,
         testDate: row.testDate,
         visionTypeId: row.visionTypeId || 1,
         remark: row.remarks || "No remarks",
@@ -148,11 +166,9 @@ const EyeTestForm = ({ data, onPrint }) => {
         leftAxis: row.os_axis || "0",
         leftPreviousVa: row.os_prev_va || "20/20",
       }));
-
       console.log("Payload being sent:", payload);
       const response = await createBulkEyeTests(payload);
       console.log("API response:", response);
-
       if (!response.data) {
         toast.warning("API returned an empty response. Check backend logs.", {
           position: 'top-right',
@@ -160,7 +176,6 @@ const EyeTestForm = ({ data, onPrint }) => {
         });
         return;
       }
-
       toast.success("Eye test records saved successfully!", {
         position: 'top-right',
         autoClose: 2000,

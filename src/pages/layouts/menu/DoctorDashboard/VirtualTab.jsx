@@ -16,6 +16,8 @@ import {
   updateVirtualAppointment,
 } from "../../../../utils/CrudService";
 import { getConsultationTypes } from "../../../../utils/masterService";
+import { usePatientContext } from "../../../../context-api/PatientContext";
+
 
 // Utility to get current date and time arrays
 const getCurrentDateArray = () => {
@@ -145,10 +147,18 @@ const VirtualTab = forwardRef(({ doctorName, masterData, location, setTabActions
   const [vitalSigns, setVitalSigns] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [consultationTypes, setConsultationTypes] = useState([]);
+  const [errors, setErrors] = useState({});
+  const { setPatients, setActiveTab: setContextActiveTab } = usePatientContext();
 
   useImperativeHandle(ref, () => ({
     openScheduleConsultationModal: () => openModal("scheduleConsultation"),
   }));
+
+  // --- Validation Functions ---
+  const validatePhone = (phone) => {
+    const regex = /^[0-9]{10}$/;
+    return regex.test(phone);
+  };
 
   // --- Fetch consultation types ---
   const fetchConsultationTypes = async () => {
@@ -163,34 +173,30 @@ const VirtualTab = forwardRef(({ doctorName, masterData, location, setTabActions
     }
   };
 
-const fetchAllPatients = async () => {
-  setLoading(true);
-  try {
-    const res = await getAllVirtualAppointments();
-    const allPatients = res.data || [];
-  
-    const filteredPatients = allPatients
-      .map((p, i) => ({
-        ...p,
-        name: p.patientName, // or fetch name from another API
-        phone: p.userPhone,
-        consultationType: p.consultationTypeName,
-        sequentialId: i + 1,
-        scheduledDate: p.scheduledDate,
-        scheduledTime: p.scheduledTime,
-      }))
-      // .filter(p => String(p.userId) === String(patientId));
-
-    console.log("Filtered patients:", filteredPatients);
-    setVirtualPatients(filteredPatients.reverse());
-  } catch (error) {
-    console.error("Failed to fetch appointments:", error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+  // --- Fetch all patients ---
+  const fetchAllPatients = async () => {
+    setLoading(true);
+    try {
+      const res = await getAllVirtualAppointments();
+      const allPatients = res.data || [];
+      const filteredPatients = allPatients
+        .map((p, i) => ({
+          ...p,
+          name: p.patientName,
+          phone: p.userPhone,
+          consultationType: p.consultationTypeName,
+          sequentialId: i + 1,
+          scheduledDate: p.scheduledDate,
+          scheduledTime: p.scheduledTime,
+        }));
+      setVirtualPatients(filteredPatients.reverse());
+      setPatients(filteredPatients);
+    } catch (error) {
+      console.error("Failed to fetch appointments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // --- Fetch patient details ---
   const fetchPatientDetails = async (patientId) => {
@@ -205,10 +211,8 @@ const fetchAllPatients = async () => {
       setPersonalHealthDetails(personalRes.data || null);
       setFamilyHistory(familyRes.data || []);
       setVitalSigns(vitalRes.data || null);
-     success("Patient details loaded successfully!");
     } catch (error) {
       console.error(error);
-    error("Failed to fetch some patient details");
       setPersonalHealthDetails(null);
       setFamilyHistory([]);
       setVitalSigns(null);
@@ -229,6 +233,7 @@ const fetchAllPatients = async () => {
       setVitalSigns(null);
       setDetailsLoading(false);
     }
+    setErrors({});
   };
 
   // --- View / Edit Patient ---
@@ -251,65 +256,61 @@ const fetchAllPatients = async () => {
   };
 
   // --- Schedule & Update consultation ---
-const handleScheduleConsultation = async (formData) => {
-  try {
-    const payload = {
-      ...formData,
-      name: `${formData.firstName} ${formData.lastName}`.trim(),
-      type: "virtual",
-      scheduledDate: formData.scheduledDate,
-      scheduledTime: formData.scheduledTime,
-      consultationStatus: "Scheduled",
-      doctorName,
-      doctorId,
-      patientId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const response = await createVirtualAppointment(payload);
-
-    if (response?.data) {
-      console.log("Consultation created:", response.data);
-      closeModal("scheduleConsultation");
-
-      // Ensure new record appears (fetch fresh data)
-      await new Promise((r) => setTimeout(r, 500)); // small delay for backend to persist
-      fetchAllPatients();
+  const handleScheduleConsultation = async (formData) => {
+   
+    try {
+      const payload = {
+        ...formData,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        type: "virtual",
+        scheduledDate: formData.scheduledDate,
+        scheduledTime: formData.scheduledTime,
+        consultationStatus: "Scheduled",
+        doctorName,
+        doctorId,
+        patientId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const response = await createVirtualAppointment(payload);
+      if (response?.data) {
+    
+        closeModal("scheduleConsultation");
+        await new Promise((r) => setTimeout(r, 500));
+        fetchAllPatients();
+      }
+    } catch (error) {
+      console.error("Error scheduling consultation:", error);
+  
     }
-  } catch (error) {
-    console.error("Error scheduling consultation:", error);
-  }
-};
+  };
 
-
-const handleUpdateConsultation = async (formData) => {
-  try {
-    const payload = {
-      ...formData,
-      id: selectedPatient.id,
-      name: `${formData.firstName} ${formData.lastName}`.trim(),
-      type: "virtual",
-      scheduledDate: formData.scheduledDate,
-      scheduledTime: formData.scheduledTime,
-      consultationStatus: "Scheduled",
-      doctorName,
-      doctorId,
-      patientId,
-      updatedAt: new Date().toISOString(),
-    };
-
-    const response = await updateVirtualAppointment(selectedPatient.id, payload);
-    if (response?.data) {
-      console.log("Consultation updated:", response.data);
-      closeModal("editPatient");
-      await new Promise((r) => setTimeout(r, 500));
-      fetchAllPatients();
+  const handleUpdateConsultation = async (formData) => {
+   
+    try {
+      const payload = {
+        ...formData,
+        id: selectedPatient.id,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        type: "virtual",
+        scheduledDate: formData.scheduledDate,
+        scheduledTime: formData.scheduledTime,
+        consultationStatus: "Scheduled",
+        doctorName,
+        doctorId,
+        patientId,
+        updatedAt: new Date().toISOString(),
+      };
+      const response = await updateVirtualAppointment(selectedPatient.id, payload);
+      if (response?.data) {
+        closeModal("editPatient");
+        await new Promise((r) => setTimeout(r, 500));
+        fetchAllPatients();
+      }
+    } catch (error) {
+      console.error("Error updating consultation:", error);
     }
-  } catch (error) {
-    console.error("Error updating consultation:", error);
-  }
-};
+  };
 
   // --- Columns ---
   const columns = [
@@ -339,39 +340,56 @@ const handleUpdateConsultation = async (formData) => {
   ];
 
   // --- Effects ---
- useEffect(() => { fetchConsultationTypes(); }, []);
- useEffect(() => {
-  // if (doctorId && patientId && consultationTypes.length > 0) {
-    fetchAllPatients();
-  // }
-}, [doctorId, patientId, consultationTypes]);
-  
-  useEffect(() => {
-    const highlightId = location.state?.highlightId;
-    if (highlightId) setNewPatientId(highlightId);
-  }, [location.state]);
+  useEffect(() => { fetchConsultationTypes(); }, []);
+  useEffect(() => { fetchAllPatients(); }, [doctorId, patientId, consultationTypes]);
+  useEffect(() => { const highlightId = location.state?.highlightId; if (highlightId) setNewPatientId(highlightId); }, [location.state]);
 
   return (
     <>
       <DynamicTable columns={columns} data={virtualPatients} filters={filters} loading={loading} newRowIds={[newPatientId].filter(Boolean)} tabs={tabs} tabActions={tabActions} activeTab={activeTab} onTabChange={onTabChange} rowClassName={row => row.sequentialId === newPatientId ? "font-bold bg-yellow-100" : ""} />
       <PatientViewModal isOpen={modals.viewPatient} onClose={() => closeModal("viewPatient")} patient={selectedPatient} personalHealthDetails={personalHealthDetails} familyHistory={familyHistory} vitalSigns={vitalSigns} loading={detailsLoading} onEdit={handleEditPatient} />
-      <ReusableModal isOpen={modals.scheduleConsultation} onClose={() => closeModal("scheduleConsultation")} mode="add" title="Schedule Virtual Consultation" fields={CONSULTATION_FIELDS(consultationTypes)} data={consultationFormData} onSave={handleScheduleConsultation} onChange={setConsultationFormData} saveLabel="Schedule" cancelLabel="Cancel" size="lg" />
-      <ReusableModal isOpen={modals.editPatient} onClose={() => closeModal("editPatient")} mode="edit" title="Edit Virtual Consultation" fields={CONSULTATION_FIELDS(consultationTypes)} data={consultationFormData} onSave={handleUpdateConsultation} onChange={setConsultationFormData} saveLabel="Update" cancelLabel="Cancel" size="lg" />
+      <ReusableModal
+        isOpen={modals.scheduleConsultation}
+        onClose={() => closeModal("scheduleConsultation")}
+        mode="add"
+        title="Schedule Virtual Consultation"
+        fields={CONSULTATION_FIELDS(consultationTypes, errors)}
+        data={consultationFormData}
+        onSave={handleScheduleConsultation}
+        onChange={setConsultationFormData}
+        saveLabel="Schedule"
+        cancelLabel="Cancel"
+        size="lg"
+      />
+      <ReusableModal
+        isOpen={modals.editPatient}
+        onClose={() => closeModal("editPatient")}
+        mode="edit"
+        title="Edit Virtual Consultation"
+        fields={CONSULTATION_FIELDS(consultationTypes, errors)}
+        data={consultationFormData}
+        onSave={handleUpdateConsultation}
+        onChange={setConsultationFormData}
+        saveLabel="Update"
+        cancelLabel="Cancel"
+        size="lg"
+      />
     </>
   );
 });
 
 // --- Form Fields Function ---
 const CONSULTATION_FIELDS = (consultationTypes) => [
-  { name: "firstName", label: "First Name", type: "text", required: true },
-  { name: "lastName", label: "Last Name", type: "text", required: true },
-  { name: "email", label: "Email Address", type: "email", required: true },
-  { name: "phone", label: "Phone Number", type: "text", required: true },
-  { name: "consultationTypeId", label: "Consultation Type", type: "select", required: true, options: consultationTypes.map(t => ({ value: t.id, label: t.name })) },
-  { name: "scheduledDate", label: "Scheduled Date", type: "date", required: true },
-  { name: "scheduledTime", label: "Scheduled Time", type: "time", required: true },
-  { name: "duration", label: "Duration (minutes)", type: "number", required: true },
-  { name: "notes", label: "Consultation Notes", type: "textarea", colSpan: 2 },
+  { name: "firstName",label: "First Name*",type: "text",required: true,validate: (v) => (!v ? "First name is required" : ""),},
+  {name: "lastName",label: "Last Name*",type: "text",required: true,validate: (v) => (!v ? "Last name is required" : ""),},
+  { name: "email",label: "Email Address*",type: "email",required: true,validate: (v) =>!v? "Email is required": !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)? "Invalid email format" : "",},
+  {name: "phone",label: "Phone Number*",type: "text",required: true, placeholder: "10 digits only", validate: (v) =>!v? "Phone number is required": !/^[0-9]{10}$/.test(v)? "Phone must be exactly 10 digits" : "",},
+  {name: "consultationTypeId",label: "Consultation Type*",type: "select",required: true,options: consultationTypes.map((t) => ({value: t.id,label: t.name,})),validate: (v) => (!v ? "Consultation type is required" : ""),},
+  {name: "scheduledDate",label: "Scheduled Date*",type: "date",required: true,validate: (v) => (!v ? "Date is required" : ""),},
+  {name: "scheduledTime",label: "Scheduled Time*",type: "time",required: true,validate: (v) => (!v ? "Time is required" : ""),},
+  {name: "duration",label: "Duration (minutes)*",type: "number",required: true,validate: (v) =>!v ? "Duration is required" : v <= 0 ? "Must be greater than 0" : "",},
+  {name: "notes",label: "Consultation Notes",type: "textarea",colSpan: 2,},
 ];
+
 
 export default VirtualTab;

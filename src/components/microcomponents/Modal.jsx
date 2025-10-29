@@ -51,6 +51,7 @@ const ReusableModal = ({
   showSignature = false,
   onChange,
   onFieldsUpdate,
+  validations = {},
   shouldValidate = false,
   extraContentPosition = "bottom",
 }) => {
@@ -137,14 +138,42 @@ const ReusableModal = ({
     handleChange(fieldName, suggestion);
     setSuggestions({ ...suggestions, [fieldName]: [] });
   };
+  const validateFields = () => {
+    const errors = {};
+    currentFields.forEach((f) => {
+      const value = formValues[f.name];
+
+      // required field
+      if (f.required && !value && value !== 0 && value !== false) {
+        errors[f.name] = `${f.label || f.name} is required`;
+      }
+
+      // custom validation function
+      if (f.validate) {
+        const error = f.validate(value, formValues);
+        if (error) errors[f.name] = error;
+      }
+    });
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
 
   const handleSave = async () => {
+    const isValid = validateFields();
+    if (!isValid) {
+      toast.error("Please fix the errors before saving");
+      return;
+    }
+
     await onSave({ ...formValues, doctorSignature });
     toast.success(
       mode === "add" ? "Record added Successfully!" : "Record updated Successfully!"
     );
     onClose();
   };
+
 
   const handleDelete = () => {
     onDelete();
@@ -226,6 +255,9 @@ const ReusableModal = ({
                                   placeholder={field.inputLabel}
                                 />
                               )}
+                              {formErrors[field.inputName] && (
+                                <p className="mt-1 text-[10px] sm:text-xs text-red-600"> {formErrors[field.inputName]}</p>
+                              )}
                             </div>
                           ) : field.type === "radio" ? (
                             <div className="space-y-1.5 sm:space-y-2">
@@ -252,165 +284,173 @@ const ReusableModal = ({
                             </div>
                           ) : (
                             <div className="floating-input relative" data-placeholder={field.label}>
-                           {field.type === "select" || field.type === "multiselect" ? (
-  <div className="relative">
-    <button
-      type="button"
-      onClick={() =>
-        setFormValues((p) => ({
-          ...p,
-          [`${field.name}Open`]: !p[`${field.name}Open`],
-          [`${field.name}Search`]: "",
-        }))
-      }
-      className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md text-left bg-white focus:outline-none focus:ring-2 flex justify-between items-center"
-    >
-      <span className="truncate text-xs sm:text-sm">
-        {field.type === "multiselect"
-          ? Array.isArray(formValues[field.name]) && formValues[field.name].length
-            ? `${formValues[field.name].length} selected`
-            : `Select ${field.label}`
-          : formValues[field.name] || `Select ${field.label}`}
-      </span>
-      <ChevronDown size={14} className="sm:size-4" />
-    </button>
-
-    {formValues[`${field.name}Open`] && (
-      <div className="fixed z-[1000] mt-1 max-h-40 sm:max-h-60 min-w-auto overflow-auto rounded bg-white shadow">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={formValues[`${field.name}Search`] || ""}
-          onChange={(e) =>
-            setFormValues((p) => ({
-              ...p,
-              [`${field.name}Search`]: e.target.value,
-            }))
-          }
-          className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border-b border-gray-100 outline-none"
-        />
-        {field.options
-          ?.filter((opt) =>
-            opt.label
-              .toLowerCase()
-              .includes((formValues[`${field.name}Search`] || "").toLowerCase())
-          )
-          .map((opt) =>
-            field.type === "select" ? (
-              <div
-                key={opt.value}
-                onClick={() => {
-                  handleChange(field.name, opt.value);
-                  setFormValues((p) => ({
-                    ...p,
-                    [`${field.name}Open`]: false,
-                  }));
-                }}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-100 cursor-pointer text-xs sm:text-sm"
-              >
-                {opt.label}
-              </div>
-            ) : (
-              <label
-                key={opt.value}
-                className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-100 cursor-pointer text-xs sm:text-sm"
-              >
-                <input
-                  type="checkbox"
-                  className="mr-1.5 sm:mr-2"
-                  checked={
-                    Array.isArray(formValues[field.name]) &&
-                    formValues[field.name].includes(opt.value)
-                  }
-                  onChange={(e) => {
-                    const prev = Array.isArray(formValues[field.name])
-                      ? formValues[field.name]
-                      : [];
-                    const next = e.target.checked
-                      ? [...prev, opt.value]
-                      : prev.filter((v) => v !== opt.value);
-                    handleChange(field.name, next);
-                  }}
-                />
-                {opt.label}
-              </label>
-            )
-          )}
-      </div>
-    )}
-
-   
-{field.durationField && (() => {
-  const selected = formValues[field.name];
-  const df = field.durationFor;
-  const showInput =
-    df === true
-      ? !!selected && selected !== ""
-      : Array.isArray(df)
-      ? df.includes(selected)
-      : false;
-  return showInput ? (
-    <div className="mt-2">
-      <input
-        type={field.inputType || "number"}
-        min="0"
-        value={formValues[field.durationField] ?? ""}
-        onChange={(e) =>
-          handleChange(field.durationField, e.target.value)
-        }
-        className="text-xs sm:text-sm border p-2 sm:p-2.5 border-gray-300 rounded-md w-full sm:w-36 placeholder:text-[10px] sm:placeholder:text-xs"
-        placeholder={field.inputLabel || "Since (yrs)"}
-      />
-    </div>
-  ) : null;
-})()}
-
-  </div>
-) : field.type === "password" ? (
-
-  <div className="relative">
-    <input
-      type={formValues[`${field.name}Visible`] ? "text" : "password"}
-      name={field.name}
-      value={formValues[field.name] || ""}
-      onChange={(e) => handleInputChange(e, field)}
-      className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 pr-8 sm:pr-10"
-      placeholder=" "
-    />
-    <button
-      type="button"
-      onClick={() =>
-        setFormValues((p) => ({
-          ...p,
-          [`${field.name}Visible`]: !p[`${field.name}Visible`],
-        }))
-      }
-      className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-    >
-      {formValues[`${field.name}Visible`] ? (
-        <EyeOff size={14} className="sm:size-4" />
-      ) : (
-        <Eye size={14} className="sm:size-4" />
-      )}
-    </button>
-  </div>
-)  :field.type === "textarea" ? (
-                                <textarea
-                                  name={field.name}
-                                  value={formValues[field.name] || ""}
-                                  onChange={(e) => handleChange(field.name, e.target.value)}
-                                  rows={2}
-                                  className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2"
-                                  placeholder=" "
-                                />
+                              {field.type === "select" || field.type === "multiselect" ? (
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setFormValues((p) => ({
+                                        ...p,
+                                        [`${field.name}Open`]: !p[`${field.name}Open`],
+                                        [`${field.name}Search`]: "",
+                                      }))
+                                    }
+                                    className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md text-left bg-white focus:outline-none focus:ring-2 flex justify-between items-center"
+                                  >
+                                    <span className="truncate text-xs sm:text-sm">
+                                      {field.type === "multiselect"
+                                        ? Array.isArray(formValues[field.name]) && formValues[field.name].length
+                                          ? `${formValues[field.name].length} selected`
+                                          : `Select ${field.label}`
+                                        : formValues[field.name] || `Select ${field.label}`}
+                                    </span>
+                                    <ChevronDown size={14} className="sm:size-4" />
+                                  </button>
+                                  {formValues[`${field.name}Open`] && (
+                                    <div className="fixed z-[1000] mt-1 max-h-40 sm:max-h-60 min-w-auto overflow-auto rounded bg-white shadow">
+                                      <input
+                                        type="text"
+                                        placeholder="Search..."
+                                        value={formValues[`${field.name}Search`] || ""}
+                                        onChange={(e) =>
+                                          setFormValues((p) => ({
+                                            ...p,
+                                            [`${field.name}Search`]: e.target.value,
+                                          }))
+                                        }
+                                        className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border-b border-gray-100 outline-none"
+                                      />
+                                      {field.options
+                                        ?.filter((opt) =>
+                                          opt.label
+                                            .toLowerCase()
+                                            .includes((formValues[`${field.name}Search`] || "").toLowerCase())
+                                        )
+                                        .map((opt) =>
+                                          field.type === "select" ? (
+                                            <div
+                                              key={opt.value}
+                                              onClick={() => {
+                                                handleChange(field.name, opt.value);
+                                                setFormValues((p) => ({
+                                                  ...p,
+                                                  [`${field.name}Open`]: false,
+                                                }));
+                                              }}
+                                              className="px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-100 cursor-pointer text-xs sm:text-sm"
+                                            >
+                                              {opt.label}
+                                            </div>
+                                          ) : (
+                                            <label
+                                              key={opt.value}
+                                              className="flex items-center px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-100 cursor-pointer text-xs sm:text-sm"
+                                            >
+                                              <input
+                                                type="checkbox"
+                                                className="mr-1.5 sm:mr-2"
+                                                checked={
+                                                  Array.isArray(formValues[field.name]) &&
+                                                  formValues[field.name].includes(opt.value)
+                                                }
+                                                onChange={(e) => {
+                                                  const prev = Array.isArray(formValues[field.name])
+                                                    ? formValues[field.name]
+                                                    : [];
+                                                  const next = e.target.checked
+                                                    ? [...prev, opt.value]
+                                                    : prev.filter((v) => v !== opt.value);
+                                                  handleChange(field.name, next);
+                                                }}
+                                              />
+                                              {opt.label}
+                                            </label>
+                                          )
+                                        )}
+                                    </div>
+                                  )}
+                                  {field.durationField && (() => {
+                                    const selected = formValues[field.name];
+                                    const df = field.durationFor;
+                                    const showInput =
+                                      df === true
+                                        ? !!selected && selected !== ""
+                                        : Array.isArray(df)
+                                          ? df.includes(selected)
+                                          : false;
+                                    return showInput ? (
+                                      <div className="mt-2 flex items-center gap-2">
+                                        <input
+                                          type={field.inputType || "number"}
+                                          min="0"
+                                          value={formValues[field.durationField] ?? ""}
+                                          onChange={(e) =>
+                                            handleChange(field.durationField, e.target.value)
+                                          }
+                                          className="text-xs sm:text-sm border p-2 sm:p-2.5 border-gray-300 rounded-md w-full sm:w-36 placeholder:text-[10px] sm:placeholder:text-xs"
+                                          placeholder={field.inputLabel || "Since (yrs)"}
+                                        />
+                                      </div>
+                                    ) : null;
+                                  })()}
+                                </div>
+                              ) : field.type === "password" ? (
+                                <div className="relative">
+                                  <input
+                                    type={formValues[`${field.name}Visible`] ? "text" : "password"}
+                                    name={field.name}
+                                    value={formValues[field.name] || ""}
+                                    onChange={(e) => handleInputChange(e, field)}
+                                    className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 pr-8 sm:pr-10"
+                                    placeholder=" "
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setFormValues((p) => ({
+                                        ...p,
+                                        [`${field.name}Visible`]: !p[`${field.name}Visible`],
+                                      }))
+                                    }
+                                    className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                  >
+                                    {formValues[`${field.name}Visible`] ? (
+                                      <EyeOff size={14} className="sm:size-4" />
+                                    ) : (
+                                      <Eye size={14} className="sm:size-4" />
+                                    )}
+                                  </button>
+                                  {formErrors[field.name] && (
+                                    <p className="mt-1 text-[10px] sm:text-xs text-red-600"> {formErrors[field.name]}</p>
+                                  )}
+                                </div>
+                              ) : field.type === "textarea" ? (
+                                <>
+                                  <textarea
+                                    name={field.name}
+                                    value={formValues[field.name] || ""}
+                                    onChange={(e) => handleChange(field.name, e.target.value)}
+                                    rows={2}
+                                    className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                                    placeholder=" "
+                                  />
+                                  {formErrors[field.name] && (
+                                    <p className="mt-1 text-[10px] sm:text-xs text-red-600"> {formErrors[field.name]}</p>
+                                  )}
+                                </>
                               ) : field.type === "date" ? (
-                                <input
-                                type="date"
-                                name={field.name}
-                                value={ formValues[field.name]? new Date(formValues[field.name]).toISOString().split("T")[0]  : ""}
-                                onChange={(e) => handleChange(field.name, e.target.value)}
-                                className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2"
-                                />
+                                <>
+                                  <input
+                                    type="date"
+                                    name={field.name}
+                                    value={formValues[field.name] ? new Date(formValues[field.name]).toISOString().split("T")[0] : ""}
+                                    onChange={(e) => handleChange(field.name, e.target.value)}
+                                    className="input-field peer w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                                  />
+                                  {formErrors[field.name] && (
+                                    <p className="mt-1 text-[10px] sm:text-xs text-red-600"> {formErrors[field.name]}</p>
+                                  )}
+                                </>
                               ) : field.type === "file" ? (
                                 <div className="relative flex items-center">
                                   <input
@@ -437,6 +477,9 @@ const ReusableModal = ({
                                     >
                                       <Eye size={14} className="sm:size-4" />
                                     </button>
+                                  )}
+                                  {formErrors[field.name] && (
+                                    <p className="mt-1 text-[10px] sm:text-xs text-red-600"> {formErrors[field.name]}</p>
                                   )}
                                 </div>
                               ) : (
@@ -490,6 +533,9 @@ const ReusableModal = ({
                                       </svg>
                                       <span className="text-[10px] sm:text-xs">Normal Range: {field.normalRange}</span>
                                     </div>
+                                  )}
+                                  {formErrors[field.name] && (
+                                    <p className="mt-1 text-[10px] sm:text-xs text-red-600"> {formErrors[field.name]}</p>
                                   )}
                                 </>
                               )}

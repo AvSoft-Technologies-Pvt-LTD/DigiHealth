@@ -133,10 +133,9 @@ const Scheduler = () => {
     (event) => {
       if (event?.resource?.events) {
         const iso = format(startOfDay(event.start), "yyyy-MM-dd");
-      navigate(`/doctordashboard/scheduler/today?date=${iso}`, {
-  state: { events: event.resource.events },
-});
-
+        navigate(`/doctordashboard/scheduler/today?date=${iso}`, {
+          state: { events: event.resource.events },
+        });
       } else {
         setSelectedEvent(event);
         setShowAppointmentDetail(true);
@@ -152,7 +151,7 @@ const Scheduler = () => {
         const evDate = new Date(ev.start).toISOString().slice(0, 10);
         return evDate === iso;
       });
-navigate(`/doctordashboard/scheduler/today?date=${iso}`, { state: { events: dayEvents } });
+      navigate(`/doctordashboard/scheduler/today?date=${iso}`, { state: { events: dayEvents } });
     },
     [navigate, events]
   );
@@ -180,16 +179,11 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { state: { events: dayE
     toast.success("Link copied to clipboard!");
   };
 
+// UPDATED: Navigate to /doctordashboard/scheduler/availability (removed conditional navigation)
 const handleManageAvailability = () => {
-  const saved = localStorage.getItem("doctorAvailability");
-  if (saved) {
-    // Schedules exist, go to overview
-    navigate("/doctordashboard/scheduler/availability");
-  } else {
-    // No schedules, go directly to create
-    navigate("/doctordashboard/scheduler/availability/create");
-  }
+  navigate("/doctordashboard/scheduler/availability");
 };
+
 
   const dayCountsMap = useMemo(() => {
     const map = {};
@@ -303,7 +297,7 @@ const handleManageAvailability = () => {
     };
     const goToCurrent = () => {
       const iso = format(startOfDay(new Date()), "yyyy-MM-dd");
-navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
+      navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
     };
     const handleMonthChange = (monthIndex) => {
       const newDate = new Date(date);
@@ -322,6 +316,7 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
     const stop = (e) => e.stopPropagation();
     return (
       <div className="scheduler-toolbar" onClick={stop}>
+        {/* Added responsive toolbar layout */}
         <div className="toolbar-left">
           <div className="month-year-selector">
             <button
@@ -332,8 +327,9 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
                 setShowYearPicker(false);
               }}
             >
-              {months[date.getMonth()]}
-              <ChevronDown size={16} />
+              <span className="hidden sm:inline">{months[date.getMonth()]}</span>
+              <span className="sm:hidden">{months[date.getMonth()].slice(0, 3)}</span>
+              <ChevronDown size={14} className="sm:w-4 sm:h-4" />
             </button>
             <button
               className="selector-btn"
@@ -344,7 +340,7 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
               }}
             >
               {date.getFullYear()}
-              <ChevronDown size={16} />
+              <ChevronDown size={14} className="sm:w-4 sm:h-4" />
             </button>
           </div>
           {showMonthPicker && (
@@ -379,7 +375,8 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
             onClick={handleManageAvailability}
             className="availability-btn"
           >
-            Manage Availability
+            <span className="hidden sm:inline">Manage Availability</span>
+            <span className="sm:hidden">Availability</span>
           </button>
         </div>
       </div>
@@ -395,7 +392,7 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
     return (
       <div className="scheduler-loading">
         <div className="loading-spinner" />
-        <p>Loading your schedule...</p>
+        <p className="text-sm sm:text-base">Loading your schedule...</p>
       </div>
     );
   }
@@ -404,6 +401,7 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
     <div className="scheduler-container">
       <ToastContainer position="top-right" autoClose={3000} theme="colored" />
 
+      {/* Added responsive grid layout */}
       <div className="scheduler-layout">
         <div className="calendar-section">
           <Calendar
@@ -411,7 +409,7 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
             events={monthEvents}
             startAccessor="start"
             endAccessor="end"
-            style={{ height: "auto", minHeight: 680, overflow: "visible" }}
+            style={{ height: "auto", minHeight: 400, overflow: "visible" }}
             eventPropGetter={eventStyleGetter}
             components={{
               toolbar: CustomToolbar,
@@ -430,44 +428,47 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
           />
         </div>
 
+        {/* Sidebar - Added responsive styling */}
         <div className="sidebar-section">
+          {/* Google Meet Card - Added responsive text */}
           <div className="google-meet-card">
             <div className="card-header">
-              <h3>Connect with upcoming patient</h3>
+              <h3 className="text-xs sm:text-sm">Connect with upcoming patient</h3>
             </div>
             <div className="meet-link-container">
               <div className="meet-link-wrapper">
-                <Video size={16} color="#10b981" />
+                <Video size={14} className="sm:w-4 sm:h-4 flex-shrink-0" color="#10b981" />
                 <a
                   href="https://meet.google.com/y4x72A"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="meet-link"
+                  className="meet-link text-xs break-all"
                 >
                   https://meet.google.com/y4x72A
                 </a>
               </div>
               <button
-                className="copy-btn"
+                className="copy-btn flex-shrink-0"
                 onClick={() => copyToClipboard("https://meet.google.com/y4x72A")}
                 title="Copy link"
               >
-                <Copy size={16} />
+                <Copy size={14} className="sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
 
+          {/* Upcoming Appointments - Added responsive styling */}
           <div className="upcoming-card">
             <div className="card-header">
-              <CalendarIcon size={18} />
-              <h3>Upcoming Appointments</h3>
+              <CalendarIcon size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <h3 className="text-xs sm:text-sm">Upcoming Appointments</h3>
             </div>
 
             <div className="upcoming-list">
               {upcomingAppointments.length === 0 ? (
                 <div className="empty-state">
-                  <Clock size={40} className="empty-icon" />
-                  <p>No upcoming appointments</p>
+                  <Clock size={32} className="sm:w-10 sm:h-10 empty-icon" />
+                  <p className="text-xs sm:text-sm">No upcoming appointments</p>
                 </div>
               ) : (
                 upcomingAppointments.map((appt) => (
@@ -485,9 +486,9 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
                       {getInitial(appt.title)}
                     </div>
 
-                    <div className="appt-details">
+                    <div className="appt-details min-w-0">
                       <div className="appt-patient">
-                        <span className="patient-name">{appt.resource.patient}</span>
+                        <span className="patient-name text-xs">{appt.resource.patient}</span>
                         {appt.resource.type && (
                           <span className={`type-inline ${appt.resource.type?.toLowerCase()}`}>
                             {appt.resource.type}
@@ -496,8 +497,8 @@ navigate(`/doctordashboard/scheduler/today?date=${iso}`, { relative: "path" });
                       </div>
 
                       <div className="appt-time">
-                        <Clock size={14} />
-                        {format(appt.start, "h:mm a")}
+                        <Clock size={12} className="sm:w-[14px] sm:h-[14px]" />
+                        <span className="text-xs">{format(appt.start, "h:mm a")}</span>
                       </div>
                     </div>
                   </div>

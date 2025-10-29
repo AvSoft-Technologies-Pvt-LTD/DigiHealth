@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../../../context-api/cartSlice';
-import axios from 'axios';
-import { ShoppingCart, Search, Upload, FileText ,ArrowLeft } from 'lucide-react';
+import { getAllTests, getAllScans, getAllhealthpackages } from '../../../../utils/masterService';
+import { ShoppingCart, Search, Upload, FileText, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const useSearch = () => {
@@ -19,6 +19,7 @@ const useSearch = () => {
 const LabHome = () => {
   const [activeTab, setActiveTab] = useState('tests');
   const [tests, setTests] = useState([]);
+  const [scans, setScans] = useState([]);
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addedIds, setAddedIds] = useState(new Set());
@@ -31,19 +32,28 @@ const LabHome = () => {
   const cartRef = useRef(null);
   const btnRefs = useRef({});
 
-  const MOCK_API_URL =
-    'https://mocki.io/v1/2300a9dc-7329-4c17-9e3e-c29efbc7fdcc';
-
   useEffect(() => {
-    setLoading(true);
-    axios
-      .get(MOCK_API_URL)
-      .then((res) => {
-        const data = res.data[activeTab] || [];
-        setTests(performSearch(data));
-        setPackages(res.data.packages || []);
-      })
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        if (activeTab === 'tests') {
+          const response = await getAllTests();
+          setTests(performSearch(response.data));
+        } else if (activeTab === 'scans') {
+          const response = await getAllScans();
+          setScans(performSearch(response.data));
+        } else if (activeTab === 'packages') {
+          const response = await getAllhealthpackages();
+          setPackages(performSearch(response.data));
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [activeTab, searchQuery]);
 
   const animateFly = (sourceEl) => {
@@ -148,13 +158,13 @@ const LabHome = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-  <button  
-  onClick={() => navigate("/patientdashboard/app")}
-  className="mb-4 flex items-center gap-1.5 md:gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600 text-xs md:text-sm"
->
-  <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-  <span className="font-medium">Back to Appointments</span>
-</button>
+        <button
+          onClick={() => navigate("/patientdashboard/app")}
+          className="mb-4 flex items-center gap-1.5 md:gap-2 hover:text-[var(--accent-color)] transition-colors text-gray-600 text-xs md:text-sm"
+        >
+          <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+          <span className="font-medium">Back to Appointments</span>
+        </button>
 
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
@@ -244,7 +254,7 @@ const LabHome = () => {
 
         {/* Tab Navigation */}
         <div className="flex overflow-x-auto pb-1 mb-4 sm:mb-6">
-          {['tests', 'scans'].map((tab) => (
+          {['tests', 'scans', 'packages'].map((tab) => (
             <button
               key={tab}
               className={`py-2 px-3 sm:px-4 whitespace-nowrap border-b-2 text-sm sm:text-base font-medium ${
@@ -259,98 +269,42 @@ const LabHome = () => {
           ))}
         </div>
 
-        {/* Tests/Scans Section */}
+        {/* Tests/Scans/Packages Section */}
         <div className="mb-8 sm:mb-12">
           {loading ? (
             <div className="text-center py-10">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[var(--primary-color)] mx-auto mb-4"></div>
-              <p className="text-gray-600 text-sm sm:text-base">Loading tests...</p>
+              <p className="text-gray-600 text-sm sm:text-base">Loading...</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tests.map((test) => (
+              {(activeTab === 'tests' ? tests : activeTab === 'scans' ? scans : packages).map((item) => (
                 <div
-                  key={test.id}
-                  onClick={() => navigate(`/patientdashboard/lab-tests/test/${test.id}`)}
+                  key={item.id}
+                  onClick={() => navigate(`/patientdashboard/${activeTab}/${item.id}`)}
                   className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer"
                 >
                   <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
-                    {test.title}
+                    {item.title}
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                    Code: {test.code}
+                    Code: {item.code}
                   </p>
                   <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
-                    {test.description}
+                    {item.description}
                   </p>
                   <p className="text-[var(--primary-color)] font-bold text-sm sm:text-base">
-                    ₹{test.price}
+                    ₹{item.price}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {renderButton(test, 't')}
-                    {renderButton(test, 'tb', true)}
+                    {renderButton(item, activeTab[0])}
+                    {renderButton(item, `${activeTab[0]}b`, true)}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        {/* Popular Health Packages */}
-       <div className="mt-8 sm:mt-12">
-  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
-    Popular Health Packages
-  </h2>
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    {packages.map((pkg) => (
-      <div
-        key={pkg.id}
-       onClick={() => navigate(`/patientdashboard/package-details/${pkg.id}`)}
-        className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer"
-      >
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-            {pkg.title}
-          </h3>
-          <span className="bg-blue-100 text-[10px] sm:text-xs px-2 py-1 rounded-full text-[var(--primary-color)]">
-            {pkg.testsCount} Tests
-          </span>
-        </div>
-        <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
-          {pkg.description}
-        </p>
-        <div className="mb-3">
-          <span className="text-[var(--primary-color)] font-bold text-sm sm:text-base">
-            ₹{pkg.price}
-          </span>
-          {pkg.originalPrice && (
-            <span className="ml-2 text-xs sm:text-sm text-gray-400 line-through">
-              ₹{pkg.originalPrice}
-            </span>
-          )}
-        </div>
-        {/* Display included test names */}
-        {pkg.tests && pkg.tests.length > 0 && (
-          <div className="mb-3">
-            <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-1">
-              Includes:
-            </h4>
-            <ul className="text-xs sm:text-sm text-gray-600 list-disc list-inside space-y-1">
-              {pkg.tests.slice(0, 3).map((test, index) => (
-                <li key={index}>{test}</li>
-              ))}
-              {pkg.tests.length > 3 && (
-                <li className="italic text-gray-500">+{pkg.tests.length - 3} more</li>
-              )}
-            </ul>
-          </div>
-        )}
-        {renderButton(pkg, 'p', true)}
-      </div>
-    ))}
-  </div>
-</div>
-
       </div>
 
       <style jsx>{`

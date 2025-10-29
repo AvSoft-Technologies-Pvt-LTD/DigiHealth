@@ -13,6 +13,7 @@ import {
   getSpecialServices,
   getGenders
 } from '../utils/masterService';
+import PatientRegistration from "./PatientRegistration";
 
 // File Upload Component
 const NeatFileUpload = ({ name, accept, multiple = false, files, onFileChange, label, required = false, icon: Icon = Upload }) => {
@@ -906,76 +907,20 @@ const RegisterForm = () => {
     </div>
   );
 
-  // Render form based on user type
-  if (!userType) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Please select a user type first</h2>
-          <button
-            onClick={() => navigate("/register-select")}
-            className="bg-[var(--accent-color)] text-white px-6 py-2 rounded-lg hover:bg-[var(--accent-color)]"
-          >
-            Go Back to Selection
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   let userFields = null;
-  
+
   if (userType === "patient") {
     userFields = (
-      <>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {renderInput("firstName", "text", "First Name", true)}
-          {renderInput("middleName", "text", "Middle Name")}
-          {renderInput("lastName", "text", "Last Name", true)}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {renderInput("phone", "text", "Phone Number", true)}
-          {renderInput("email", "email", "Email", true)}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {renderInput("aadhaar", "text", "Aadhaar Number", true)}
-          <div className="floating-input relative w-full" data-placeholder="Gender *">
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleInputChange}
-              disabled={apiData.loading.genders || !apiData.genders.length}
-              className={`input-field peer ${errors.gender ? "input-error" : ""} ${
-                (apiData.loading.genders || !apiData.genders.length) ? 'bg-gray-100 cursor-not-allowed' : ''
-              }`}
-              required
-            >
-              <option value="">
-                {apiData.loading.genders
-                  ? "Loading genders..."
-                  : !apiData.genders.length
-                    ? "No genders available"
-                    : "Select Gender"}
-              </option>
-              {apiData.genders.map((gender, index) => (
-                <option key={`${gender}-${index}`} value={gender}>
-                  {gender}
-                </option>
-              ))}
-            </select>
-            {errors.gender && <p className="error-text">{errors.gender}</p>}
-          </div>
-          {renderInput("dob", "date", "Date of Birth", true)}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {renderInput("occupation", "text", "Occupation", true)}
-          <PhotoUpload
-            photoPreview={photoPreview}
-            onPhotoChange={handleFileChange}
-            onPreviewClick={() => setIsModalOpen(true)}
-          />
-        </div>
-      </>
+      <PatientRegistration
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+        handleInputChange={handleInputChange}
+        handleFileChange={handleFileChange}
+        photoPreview={photoPreview}
+        setPhotoPreview={setPhotoPreview}
+      />
     );
   } else if (userType === "hospital") {
     userFields = (
@@ -1311,159 +1256,158 @@ const RegisterForm = () => {
           {userFields}
           
           {/* Address Section */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="floating-input relative w-full" data-placeholder="Pincode *">
-              <input
-                name="pinCode"
-                type="text"
-                maxLength="6"
-                placeholder=" "
-                value={formData.pinCode || ""}
-                onChange={handlePincodeChange}
-                className={`input-field peer ${errors.pinCode ? "input-error" : ""}`}
-                required
-              />
-              {errors.pinCode && <p className="error-text">{errors.pinCode}</p>}
-            </div>
-            <div className="floating-input relative w-full" data-placeholder="City *">
-              <select
-                name="city"
-                value={formData.city || ""}
-                onChange={handleInputChange}
-                disabled={!availableCities.length || isLoadingCities}
-                className={`input-field peer ${errors.city ? "input-error" : ""} ${
-                  !availableCities.length ? "bg-gray-100 cursor-not-allowed" : ""
-                }`}
-                required
-              >
-                <option value="">
-                  {isLoadingCities
-                    ? "Loading cities..."
-                    : availableCities.length
-                      ? "Select City"
-                      : "Enter pincode first"
-                  }
-                </option>
-                {availableCities.map((city, index) => (
-                  <option key={`${city}-${index}`} value={city}>
-                    {city}
+          {userType !== "patient" && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="floating-input relative w-full" data-placeholder="Pincode *">
+                <input
+                  name="pinCode"
+                  type="text"
+                  maxLength="6"
+                  placeholder=" "
+                  value={formData.pinCode || ""}
+                  onChange={handlePincodeChange}
+                  className={`input-field peer ${errors.pinCode ? "input-error" : ""}`}
+                  required
+                />
+                {errors.pinCode && <p className="error-text">{errors.pinCode}</p>}
+              </div>
+              <div className="floating-input relative w-full" data-placeholder="City *">
+                <select
+                  name="city"
+                  value={formData.city || ""}
+                  onChange={handleInputChange}
+                  disabled={!availableCities.length || isLoadingCities}
+                  className={`input-field peer ${errors.city ? "input-error" : ""} ${
+                    !availableCities.length ? "bg-gray-100 cursor-not-allowed" : ""
+                  }`}
+                  required
+                >
+                  <option value="">
+                    {isLoadingCities
+                      ? "Loading cities..."
+                      : availableCities.length
+                        ? "Select City"
+                        : "Enter pincode first"
+                    }
                   </option>
-                ))}
-              </select>
-              {errors.city && <p className="error-text">{errors.city}</p>}
+                  {availableCities.map((city, index) => (
+                    <option key={`${city}-${index}`} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+                {errors.city && <p className="error-text">{errors.city}</p>}
+              </div>
+              <div className="floating-input relative w-full" data-placeholder="District">
+                <input
+                  name="district"
+                  type="text"
+                  value={formData.district || ""}
+                  readOnly
+                  className="input-field peer bg-gray-100 cursor-not-allowed"
+                />
+              </div>
+              <div className="floating-input relative w-full" data-placeholder="State">
+                <input
+                  name="state"
+                  type="text"
+                  value={formData.state || ""}
+                  readOnly
+                  className="input-field peer bg-gray-100 cursor-not-allowed"
+                />
+              </div>
             </div>
-            <div className="floating-input relative w-full" data-placeholder="District">
-              <input
-                name="district"
-                type="text"
-                value={formData.district || ""}
-                readOnly
-                className="input-field peer bg-gray-100 cursor-not-allowed"
-              />
-            </div>
-            <div className="floating-input relative w-full" data-placeholder="State">
-              <input
-                name="state"
-                type="text"
-                value={formData.state || ""}
-                readOnly
-                className="input-field peer bg-gray-100 cursor-not-allowed"
-              />
-            </div>
-          </div>
+          )}
 
           {/* Password Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="floating-input relative w-full" data-placeholder="Create Password *">
-              <input
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder=" "
-                onChange={handleInputChange}
-                className={`input-field peer pr-10 ${errors.password ? "input-error" : ""}`}
-                value={formData.password}
-                autoComplete="off"
-              />
-              <span
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute top-3 right-3 cursor-pointer text-gray-700"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </span>
-              {errors.password && <p className="error-text">{errors.password}</p>}
-            </div>
-            <div className="floating-input relative w-full" data-placeholder="Confirm Password *">
-              <input
-                name="confirmPassword"
-                type={showPassword ? "text" : "password"}
-                placeholder=" "
-                onChange={handleInputChange}
-                className={`input-field peer pr-10 ${errors.confirmPassword ? "input-error" : ""}`}
-                value={formData.confirmPassword}
-                autoComplete="off"
-              />
-              <span
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute top-3 right-3 cursor-pointer text-gray-700"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </span>
-              {errors.confirmPassword && <p className="error-text">{errors.confirmPassword}</p>}
-            </div>
-          </div>
-          
-          <div className="text-xs text-gray-600">Include Capital Letters, Numbers, and Special Characters</div>
-
-          {/* Agreement Checkbox */}
-          <label className="flex items-start">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name={userType === "doctor" ? "roleSpecificData.agreeDeclaration" : "agreeDeclaration"}
-                checked={userType === "doctor" ? formData.roleSpecificData.agreeDeclaration : formData.agreeDeclaration}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  if (userType === "doctor") {
-                    setFormData(prev => ({
-                      ...prev,
-                      roleSpecificData: { ...prev.roleSpecificData, agreeDeclaration: checked }
-                    }));
-                  } else {
-                    setFormData(prev => ({ ...prev, agreeDeclaration: checked }));
-                  }
-                  setErrors(prev => ({ ...prev, agreeDeclaration: "" }));
-                }}
-                className="text-[var(--accent-color)] focus:ring-[var(--accent-color)]"
-              />
-              <span className="text-sm text-gray-700 ml-2">
-                I agree to the{" "}
-                <button
-                  type="button"
-                  onClick={() => navigate("/terms-and-conditions")}
-                  className="text-[var(--accent-color)] underline hover:text-[var(--accent-color)]"
+          {userType !== "patient" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="floating-input relative w-full" data-placeholder="Create Password *">
+                <input
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder=" "
+                  onChange={handleInputChange}
+                  className={`input-field peer pr-10 ${errors.password ? "input-error" : ""}`}
+                  value={formData.password}
+                  autoComplete="off"
+                />
+                <span
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute top-3 right-3 cursor-pointer text-gray-700"
                 >
-                  declaration / Privacy Policy
-                </button>{" "}
-                *
-              </span>
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </span>
+                {errors.password && <p className="error-text">{errors.password}</p>}
+              </div>
+              <div className="floating-input relative w-full" data-placeholder="Confirm Password *">
+                <input
+                  name="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  placeholder=" "
+                  onChange={handleInputChange}
+                  className={`input-field peer pr-10 ${errors.confirmPassword ? "input-error" : ""}`}
+                  value={formData.confirmPassword}
+                  autoComplete="off"
+                />
+                <span
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute top-3 right-3 cursor-pointer text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </span>
+                {errors.confirmPassword && <p className="error-text">{errors.confirmPassword}</p>}
+              </div>
             </div>
-          </label>
-          {errors.agreeDeclaration && <p className="error-text">{errors.agreeDeclaration}</p>}
+          )}
+
+          {/* Declaration Checkbox */}
+          {userType !== "patient" && (
+            <label className="flex items-start">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="agreeDeclaration"
+                  checked={formData.agreeDeclaration}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setFormData(prev => ({ ...prev, agreeDeclaration: checked }));
+                    setErrors(prev => ({ ...prev, agreeDeclaration: "" }));
+                  }}
+                  className="text-[var(--accent-color)] focus:ring-[var(--accent-color)]"
+                />
+                <span className="text-sm text-gray-700 ml-2">
+                  I agree to the {" "}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/terms-and-conditions")}
+                    className="text-[var(--accent-color)] underline hover:text-[var(--accent-color)]"
+                  >
+                    declaration / Privacy Policy
+                  </button>{" "}
+                  *
+                </span>
+              </div>
+            </label>
+          )}
+          {userType !== "patient" && errors.agreeDeclaration && <p className="error-text">{errors.agreeDeclaration}</p>}
 
           {/* Submit Button */}
-          <div className="flex justify-center">
-            <button
-              type="submit"
-              disabled={isSubmitting || loading}
-              className={`btn btn-primary ${
-                (isSubmitting || loading)
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'btn btn-primary-hover'
-              }`}
-            >
-              {isSubmitting || loading ? "Submitting..." : "Verify & Proceed"}
-            </button>
-          </div>
+          {userType !== "patient" && (
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                disabled={isSubmitting || loading}
+                className={`btn btn-primary ${
+                  (isSubmitting || loading)
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'btn btn-primary-hover'
+                }`}
+              >
+                {isSubmitting || loading ? "Submitting..." : "Verify & Proceed"}
+              </button>
+            </div>
+          )}
 
           {/* Error Display */}
           {(error || errors.global) && (

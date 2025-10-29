@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate, useLocation } from "react-router-dom";
-import VerifyOTP from "../components/microcomponents/VerifyOtp";
+import VerifyOTP from "../../components/microcomponents/VerifyOtp";
 
 const HealthcardOTP = () => {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ const HealthcardOTP = () => {
       if (enteredOtp === "123456") {
         toast.success("OTP verified successfully!");
         setTimeout(() => {
-          navigate("/medical-records", { state: { userData, healthId } });
+          navigate("/healthcard-medicalrecord", { state: { userData, healthId } });
         }, 1000);
       } else {
         toast.error("Invalid OTP. Please try again.");

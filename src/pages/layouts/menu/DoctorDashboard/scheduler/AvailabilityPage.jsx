@@ -307,29 +307,31 @@ const AvailabilityPage = () => {
   const activeDatesCount = selectedDates.filter((d) => !deselectedDates.includes(d)).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-4 sm:py-8 px-2 sm:px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6 p-6 bg-white rounded-2xl shadow-lg">
+        {/* Header - Added responsive text sizing */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6 p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl shadow-lg">
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-base sm:text-lg md:text-xl font-bold text-slate-900">
               {isEditMode ? "Update Availability" : "Create Availability"}
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
               Configure your working hours and schedule
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 mt-6">
-          <div className="flex items-center justify-center mb-8">
-            <div className="flex items-center gap-4">
+        {/* Stepper - Added responsive layout */}
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-8 mt-4 sm:mt-6">
+          <div className="flex items-center justify-center mb-6 sm:mb-8">
+            <div className="flex items-center gap-3 sm:gap-4">
               <div
-                className={`flex flex-col items-center gap-2 ${
+                className={`flex flex-col items-center gap-1 sm:gap-2 ${
                   currentStep >= 1 ? "text-blue-600" : "text-gray-400"
                 }`}
               >
                 <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 ${
+                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg transition-all duration-300 ${
                     currentStep >= 1
                       ? "bg-blue-600 text-white shadow-lg scale-110"
                       : "bg-gray-200 text-gray-500"
@@ -337,16 +339,16 @@ const AvailabilityPage = () => {
                 >
                   1
                 </div>
-                <span className="text-sm font-semibold">Schedule</span>
+                <span className="text-xs sm:text-sm font-semibold text-center">Schedule</span>
               </div>
-              <div className={`w-24 h-1 rounded transition-all duration-500 ${currentStep >= 2 ? "bg-blue-600" : "bg-gray-200"}`}></div>
+              <div className={`w-16 sm:w-24 h-1 rounded transition-all duration-500 ${currentStep >= 2 ? "bg-blue-600" : "bg-gray-200"}`}></div>
               <div
-                className={`flex flex-col items-center gap-2 ${
+                className={`flex flex-col items-center gap-1 sm:gap-2 ${
                   currentStep >= 2 ? "text-blue-600" : "text-gray-400"
                 }`}
               >
                 <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 ${
+                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg transition-all duration-300 ${
                     currentStep >= 2
                       ? "bg-blue-600 text-white shadow-lg scale-110"
                       : "bg-gray-200 text-gray-500"
@@ -354,34 +356,37 @@ const AvailabilityPage = () => {
                 >
                   2
                 </div>
-                <span className="text-sm font-semibold">Preview & Save</span>
+                <span className="text-xs sm:text-sm font-semibold text-center">Preview & Save</span>
               </div>
             </div>
           </div>
 
           {currentStep === 1 ? (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
-                  <label className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 block">
+            <div className="space-y-6 sm:space-y-8">
+              {/* Step 1 Content - Added responsive grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+                {/* Calendar Section */}
+                <div className="bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200">
+                  <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 block">
                     Select Specific Dates
                   </label>
-                  <div className="bg-white p-4 rounded-lg border border-slate-200">
-                    <div className="flex items-center justify-between mb-3 bg-slate-50 p-3 rounded-lg">
+                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+                    {/* Month/Year Navigation - Added responsive buttons */}
+                    <div className="flex items-center justify-between mb-3 bg-slate-50 p-2 sm:p-3 rounded-lg">
                       <button
                         onClick={() => setSelectedMonth((prev) => (prev === 0 ? 11 : prev - 1))}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg transition-colors"
                       >
-                        <ChevronLeft size={18} />
+                        <ChevronLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
                       </button>
-                      <div className="font-bold text-base text-slate-800">
+                      <div className="font-bold text-sm sm:text-base text-slate-800">
                         {MONTHS[selectedMonth]} {selectedYear}
                       </div>
                       <button
                         onClick={() => setSelectedMonth((prev) => (prev === 11 ? 0 : prev + 1))}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg transition-colors"
                       >
-                        <ChevronRight size={18} />
+                        <ChevronRight size={16} className="sm:w-[18px] sm:h-[18px]" />
                       </button>
                     </div>
 
@@ -400,33 +405,34 @@ const AvailabilityPage = () => {
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
-                  <label className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 block">
+                {/* Working Hours Section - Added responsive inputs */}
+                <div className="bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200">
+                  <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 block">
                     Working Hours
                   </label>
                   <div className="space-y-4">
                     <div>
                       <label className="text-xs font-semibold text-slate-600 mb-2 block">Start Time</label>
-                      <div className="flex items-center gap-3 p-3 border-2 border-slate-200 rounded-lg bg-white hover:border-emerald-400 transition-colors">
-                        <Clock size={18} className="text-slate-400" />
+                      <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border-2 border-slate-200 rounded-lg bg-white hover:border-emerald-400 transition-colors">
+                        <Clock size={16} className="sm:w-[18px] sm:h-[18px] text-slate-400 flex-shrink-0" />
                         <input
                           type="time"
                           value={startTime}
                           onChange={(e) => setStartTime(e.target.value)}
-                          className="flex-1 outline-none font-semibold text-slate-800 text-sm"
+                          className="flex-1 outline-none font-semibold text-slate-800 text-sm min-w-0"
                         />
                       </div>
                     </div>
 
                     <div>
                       <label className="text-xs font-semibold text-slate-600 mb-2 block">End Time</label>
-                      <div className="flex items-center gap-3 p-3 border-2 border-slate-200 rounded-lg bg-white hover:border-emerald-400 transition-colors">
-                        <Clock size={18} className="text-slate-400" />
+                      <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border-2 border-slate-200 rounded-lg bg-white hover:border-emerald-400 transition-colors">
+                        <Clock size={16} className="sm:w-[18px] sm:h-[18px] text-slate-400 flex-shrink-0" />
                         <input
                           type="time"
                           value={endTime}
                           onChange={(e) => setEndTime(e.target.value)}
-                          className="flex-1 outline-none font-semibold text-slate-800 text-sm"
+                          className="flex-1 outline-none font-semibold text-slate-800 text-sm min-w-0"
                         />
                       </div>
                     </div>
@@ -435,17 +441,18 @@ const AvailabilityPage = () => {
               </div>
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
+              {/* Step 2 Content - Added responsive duration buttons */}
               <div>
-                <label className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 block">
+                <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 sm:mb-4 block">
                   Appointment Duration (minutes)
                 </label>
-                <div className="flex gap-3 flex-wrap">
+                <div className="flex gap-2 sm:gap-3 flex-wrap">
                   {[5, 10, 15, 20, 25, 30, 40].map((mins) => (
                     <button
                       key={mins}
                       onClick={() => setDuration(mins)}
-                      className={`px-6 py-3 rounded-xl border-2 font-semibold transition-all duration-200 ${
+                      className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 font-semibold text-xs sm:text-sm transition-all duration-200 ${
                         duration === mins
                           ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-emerald-600 shadow-lg scale-105"
                           : "bg-white border-slate-200 text-slate-600 hover:border-emerald-400 hover:bg-emerald-50"
@@ -457,18 +464,19 @@ const AvailabilityPage = () => {
                 </div>
               </div>
 
+              {/* Slots Preview - Added responsive layout */}
               <div>
-                <label className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 block">
+                <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide mb-3 sm:mb-4 block">
                   Generated Slots Preview ({generatedSlots.length} slots)
                 </label>
-                <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 max-h-96 overflow-y-auto">
+                <div className="bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-200 max-h-64 sm:max-h-96 overflow-y-auto">
                   {[...new Set(generatedSlots.map((s) => s.date))].map((date) => {
                     const dateObj = new Date(date);
                     const dayName = DAYS[dateObj.getDay() === 0 ? 6 : dateObj.getDay() - 1];
                     const dateSlots = generatedSlots.filter((s) => s.date === date);
                     return (
-                      <div key={date} className="mb-6 last:mb-0">
-                        <h4 className="font-bold text-slate-800 mb-3">
+                      <div key={date} className="mb-4 sm:mb-6 last:mb-0">
+                        <h4 className="font-bold text-xs sm:text-sm text-slate-800 mb-2 sm:mb-3">
                           {dayName} -{" "}
                           {dateObj.toLocaleDateString("en-US", {
                             month: "short",
@@ -482,7 +490,7 @@ const AvailabilityPage = () => {
                             .map((slot, idx) => (
                               <div
                                 key={idx}
-                                className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700"
+                                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-semibold text-slate-700"
                               >
                                 {slot.time}
                               </div>
@@ -496,13 +504,14 @@ const AvailabilityPage = () => {
             </div>
           )}
 
-          <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200">
+          {/* Footer Buttons - Added responsive layout */}
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-200">
             {currentStep === 2 && (
               <button
                 onClick={goBack}
-                className="flex items-center gap-2 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-semibold"
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 border-2 border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-semibold text-sm"
               >
-                <ChevronLeft size={18} />
+                <ChevronLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
                 Back
               </button>
             )}
@@ -511,25 +520,25 @@ const AvailabilityPage = () => {
               <button
                 onClick={generateSlots}
                 disabled={activeDatesCount === 0}
-                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold text-sm disabled:opacity-50"
               >
                 Next
-                <ChevronRight size={18} />
+                <ChevronRight size={16} className="sm:w-[18px] sm:h-[18px]" />
               </button>
             ) : (
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold text-sm disabled:opacity-50"
               >
                 {loading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     Saving...
                   </>
                 ) : (
                   <>
-                    <Save size={18} />
+                    <Save size={16} className="sm:w-[18px] sm:h-[18px]" />
                     {isEditMode ? "Update & Save" : "Confirm & Save"}
                   </>
                 )}

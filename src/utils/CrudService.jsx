@@ -282,8 +282,6 @@ export const getSpecializationsWardsSummaryForIpdAdmission = () =>
   axiosInstance.get('/specializations/wards/summary/ipd-addmission');
 
 
-
-
 /* -----------------------------
    VIRTUAL APPOINTMENTS (CRUD)
 ------------------------------ */

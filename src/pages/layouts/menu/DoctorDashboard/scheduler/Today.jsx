@@ -63,9 +63,7 @@ const initials = (name = "") => {
 const TodayView = ({ events = [], onSelectEvent }) => {
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
 
-  useEffect(() => {
-    // Intentionally empty: keeps component controlled internally unless parent overrides props
-  }, []);
+  useEffect(() => {}, []);
 
   const dayEvents = useMemo(() => {
     const iso = selectedDate.toISOString().slice(0, 10);
@@ -75,18 +73,14 @@ const TodayView = ({ events = [], onSelectEvent }) => {
     );
 
     if (filtered.length) {
-      return filtered.map((ev, idx) => {
-        const resource = ev.resource || {
+      return filtered.map((ev, idx) => ({
+        ...ev,
+        id: ev.id ?? `evt-${idx}`,
+        resource: ev.resource || {
           patient: ev.title || "Patient",
           color: "#3b82f6",
-        };
-
-        return {
-          ...ev,
-          id: ev.id ?? `evt-${idx}`,
-          resource,
-        };
-      });
+        },
+      }));
     }
 
     return mkDemoEventsForDate(selectedDate);
@@ -94,6 +88,7 @@ const TodayView = ({ events = [], onSelectEvent }) => {
 
   const gotoPrev = () =>
     setSelectedDate(startOfDay(new Date(selectedDate.getTime() - 24 * 3600 * 1000)));
+
   const gotoNext = () =>
     setSelectedDate(startOfDay(new Date(selectedDate.getTime() + 24 * 3600 * 1000)));
 
@@ -102,8 +97,7 @@ const TodayView = ({ events = [], onSelectEvent }) => {
     dayEvents.forEach((ev) => {
       const dt = new Date(ev.start);
       const key =
-        dt.getHours().toString().padStart(2, "0") +
-        ":" +
+        dt.getHours().toString().padStart(2, "0") + ":" +
         dt.getMinutes().toString().padStart(2, "0");
       map[key] = map[key] || [];
       map[key].push(ev);
@@ -116,64 +110,72 @@ const TodayView = ({ events = [], onSelectEvent }) => {
   return (
     <div className="scheduler-container">
       <div className="todayview-root">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-200 gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={gotoPrev}
               aria-label="Previous day"
-              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all"
+              className="p-1.5 sm:p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all flex-shrink-0"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} className="sm:w-5 sm:h-5" />
             </button>
 
-            <div className="font-bold text-xl text-slate-900">
+            <div className="font-bold text-sm sm:text-base md:text-lg lg:text-xl text-slate-900 min-w-0 flex-1 text-center sm:text-left truncate">
               {format(selectedDate, "EEEE, MMMM d, yyyy")}
             </div>
 
             <button
               onClick={gotoNext}
               aria-label="Next day"
-              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all"
+              className="p-1.5 sm:p-2 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all flex-shrink-0"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} className="sm:w-5 sm:h-5" />
             </button>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-slate-500">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+            <div className="text-xs sm:text-sm text-slate-500">
               Total appointments: <span className="font-bold text-slate-800">{dayEvents.length}</span>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white hover:shadow-md transition-all">
-              <CalendarIcon size={16} /> Back to Calendar
+            <button className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl border border-gray-200 bg-white hover:shadow-md transition-all text-xs sm:text-sm w-full sm:w-auto">
+              <CalendarIcon size={14} className="sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Back to Calendar</span>
+              <span className="sm:hidden">Calendar</span>
             </button>
           </div>
         </div>
 
-        <div className="todayview-main grid grid-cols-[120px_1fr] gap-4">
+        {/* Time Grid */}
+        <div className="todayview-main">
+          {/* Time Column */}
           <div className="time-column">
             <div className="flex flex-col">
               {timeSlots.map((t, idx) => (
                 <div key={idx} className="slot-row" aria-hidden="true">
-                  <div>{format(t, "hh:mm a")}</div>
+                  <div className="text-xs sm:text-sm">{format(t, "hh:mm a")}</div>
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Appointments Column */}
           <div className="appointments-column">
             <div>
               {timeSlots.map((t, idx) => {
                 const key =
-                  t.getHours().toString().padStart(2, "0") + ":" + t.getMinutes().toString().padStart(2, "0");
+                  t.getHours().toString().padStart(2, "0") + ":" +
+                  t.getMinutes().toString().padStart(2, "0");
                 const eventsAt = slotMap[key] || [];
+                const hasEvents = eventsAt.length > 0; // ✅ Important
 
                 return (
-                  <section key={idx} className="slot-container" aria-label={`Slot ${key}`}>
-                    {eventsAt.length === 0 ? (
-                      <div className="slot-placeholder">
-                        <div>No appointments</div>
-                      </div>
-                    ) : (
+                  <section
+                    key={idx}
+                    className={`slot-container ${hasEvents ? "has-events" : ""}`} // ✅ Important
+                    aria-label={`Slot ${key}`}
+                  >
+                    {hasEvents ? (
                       <div className="slot-events">
                         {eventsAt.map((ev) => {
                           const patient = ev.resource?.patient ?? ev.title ?? "Patient";
@@ -186,42 +188,37 @@ const TodayView = ({ events = [], onSelectEvent }) => {
                               key={ev.id}
                               onClick={() => onSelectEvent?.(ev)}
                               className="event-card"
-                              aria-label={`Appointment for ${patient} at ${format(new Date(ev.start), "hh:mm a")}`}
-                              title={`${patient} — ${format(new Date(ev.start), "hh:mm a")} to ${format(new Date(ev.end), "hh:mm a")}`}
                               style={{ color }}
                               data-color={color}
                             >
                               <div className="event-left">
-                                <div
-                                  className="patient-avatar"
-                                  aria-hidden="true"
-                                  style={{ backgroundColor: color }}
-                                >
+                                <div className="patient-avatar" style={{ backgroundColor: color }}>
                                   {initials(patient)}
                                 </div>
                               </div>
 
-                              <div className="event-main">
-                                <div className="flex items-center gap-3">
-                                  <div className="event-patient">{patient}</div>
-                                  <div className={`type-badge ${type === "PHYSICAL" ? "physical" : "virtual"}`}>
+                              <div className="event-main min-w-0 flex-1">
+                                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                                  <div className="event-patient text-xs sm:text-sm truncate">{patient}</div>
+                                  <div className={`type-badge text-xs ${type === "PHYSICAL" ? "physical" : "virtual"}`}>
                                     {typeLabel}
                                   </div>
                                 </div>
-
-                                <div className="flex items-center gap-4 text-sm text-slate-500">
-                                </div>
                               </div>
 
-                              <div className="flex items-center gap-2">
-                                <Clock size={14} className="text-slate-400" />
-                                <div className="font-medium text-slate-700">
+                              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                                <Clock size={12} className="sm:w-[14px] sm:h-[14px] text-slate-400" />
+                                <div className="font-medium text-slate-700 text-xs sm:text-sm whitespace-nowrap">
                                   {format(new Date(ev.start), "hh:mm a")} — {format(new Date(ev.end), "hh:mm a")}
                                 </div>
                               </div>
                             </button>
                           );
                         })}
+                      </div>
+                    ) : (
+                      <div className="slot-placeholder">
+                        <div className="text-xs sm:text-sm">No appointments</div>
                       </div>
                     )}
                   </section>

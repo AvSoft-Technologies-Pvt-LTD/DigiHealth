@@ -16,13 +16,16 @@ import RegisterSelect from "./form/RegisterSelect";
 import Registration from "./form/Registration";
 import Verification from "./form/Verification";
 import PasswordResetPage from "./form/PasswordResetPage";
-import Healthcard from "./components/Healthcard";
-import HealthcardOTP from "./components/HealthcardOTP";
+import { PatientProvider } from "./context-api/PatientContext";
 import BookApp from "./components/BookApp";
 import Home from "./pages/Home";
 import MedicalRecords from "./pages/layouts/menu/PatientDashboard/MedicalRecord"
 import MedicalRecordDetails from "./pages/layouts/menu/PatientDashboard/MedicalRecordDetails";
 
+//Healthcard
+import Healthcard from "./components/Healthcard/Healthcard";
+import HealthcardOTP from "./components/Healthcard/HealthcardOTP";
+import MedicalRecordHC from "./components/Healthcard/MedicalRecordHC";
 // Layouts & Dashboards
 import DashboardLayout from "./pages/layouts/DashboardLayout";
 import PdashboardRoutes from "./pages/layouts/menu/PatientDashboard/PdashboardRoutes";
@@ -194,6 +197,8 @@ const App = () => {
   );
 
   return (
+          <PatientProvider>
+
     <Router>
       <Routes>
         {/* ✅ Public Routes */}
@@ -203,12 +208,14 @@ const App = () => {
         <Route path="/verification" element={<Verification />} />
         <Route path="/password-reset" element={<PasswordResetPage />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/healthcard" element={<Healthcard />} />
-        <Route path="/healthcard-otp" element={<HealthcardOTP />} />
         <Route path="/bookconsultation" element={<BookApp />} />
         <Route path="/medical-records" element={<MedicalRecords />} />
         <Route path="/medical-record-details" element={<MedicalRecordDetails />} />
         
+        {/* Healthcard */}
+         <Route path="/healthcard" element={<Healthcard />} />
+        <Route path="/healthcard-otp" element={<HealthcardOTP />} />
+        <Route path="/healthcard-medicalrecord" element={<MedicalRecordHC />} />
         {/* ✅ Redirect Based on Role */}
         <Route path="/redirect" element={<RoleRedirect />} />
         
@@ -267,6 +274,8 @@ const App = () => {
       
       <ToastContainer position="top-right" autoClose={3000} />
     </Router>
+          </PatientProvider>
+
   );
 };
 

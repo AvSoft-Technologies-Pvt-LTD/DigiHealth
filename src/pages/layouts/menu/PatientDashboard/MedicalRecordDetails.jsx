@@ -6,23 +6,7 @@ import DynamicTable from "../../../../components/microcomponents/DynamicTable";
 import DocsReader from "../../../../components/DocsReader";
 import ProfileCard from "../../../../components/microcomponents/ProfileCard";
 import ReusableModal from "../../../../components/microcomponents/Modal";
-import {
-  ArrowLeft,
-  FileText,
-  Pill,
-  TestTube,
-  CreditCard,
-  Activity,
-  Heart,
-  Thermometer,
-  CheckCircle,
-  AlertTriangle,
-  Printer,
-  Stethoscope,
-  Video,
-  Receipt,
-  Pencil,
-} from "lucide-react";
+import { ArrowLeft,FileText,Pill,TestTube,CreditCard,Activity,Heart,Thermometer,CheckCircle,AlertTriangle,Printer,Stethoscope,Video,Receipt,Pencil,} from "lucide-react";
 import { createPortal } from "react-dom";
 
 class ErrorBoundary extends React.Component {

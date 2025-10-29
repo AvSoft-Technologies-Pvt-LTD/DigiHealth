@@ -1,8 +1,8 @@
 
 
-
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import { useSelector } from "react-redux";
 import {
   Pill,
   Save,
@@ -21,7 +21,15 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getDosageUnits, getFrequencies, getIntakes } from "../../.../../../../../utils/masterService";
+import {
+  getDosageUnits,
+  getFrequencies,
+  getIntakes,
+  searchMedicinesByName,
+  createDoctorPrescription,
+  updateDoctorPrescription,
+} from "../../../../../utils/masterService";
+import { usePatientContext } from "../../../../../context-api/PatientContext";
 
 const defaultMedicine = {
   drugName: "",
@@ -29,9 +37,13 @@ const defaultMedicine = {
   strength: "",
   dosage: 1,
   dosageUnit: "",
+  dosageUnitId: 0,
   frequency: "",
+  frequencyId: 0,
   intake: "",
+  intakeId: 0,
   duration: 1,
+  medicineId: 0,
 };
 
 const PrescriptionForm = ({
@@ -53,9 +65,14 @@ const PrescriptionForm = ({
   drEmail,
   diagnosis,
   type,
+  doctorId: doctorIdFromProps,
 }) => {
+  const { activeTab, patients } = usePatientContext();
+  const doctorIdFromRedux = useSelector((state) => state.auth.doctorId);
   const [prescriptions, setPrescriptions] = useState(
-    data?.prescriptions || [{ ...defaultMedicine }]
+    data?.prescriptions?.length
+      ? data.prescriptions
+      : [{ ...defaultMedicine, drugName: "" }]
   );
   const [drugSuggestions, setDrugSuggestions] = useState([]);
   const [activeInputIndex, setActiveInputIndex] = useState(null);
@@ -75,7 +92,6 @@ const PrescriptionForm = ({
     setPhone(propPhone || patient?.phone || patient?.mobileNo || "");
   }, [propEmail, propPhone, patient]);
 
-  // Fetch all dropdown data from APIs
   useEffect(() => {
     const fetchDosageUnits = async () => {
       try {
@@ -89,7 +105,6 @@ const PrescriptionForm = ({
         });
       }
     };
-
     const fetchFrequencies = async () => {
       try {
         const response = await getFrequencies();
@@ -102,7 +117,6 @@ const PrescriptionForm = ({
         });
       }
     };
-
     const fetchIntakes = async () => {
       try {
         const response = await getIntakes();
@@ -115,7 +129,6 @@ const PrescriptionForm = ({
         });
       }
     };
-
     fetchDosageUnits();
     fetchFrequencies();
     fetchIntakes();
@@ -128,7 +141,7 @@ const PrescriptionForm = ({
   };
 
   const addPrescription = () => {
-    setPrescriptions((prev) => [...prev, { ...defaultMedicine }]);
+    setPrescriptions((prev) => [...prev, { ...defaultMedicine, drugName: "" }]);
   };
 
   const removePrescription = (i) => {
@@ -142,59 +155,62 @@ const PrescriptionForm = ({
     }
   };
 
-  const postPrescriptionToMockAPI = async (prescriptionPayload) => {
+  const fetchDrugSuggestions = async (query) => {
+    if (query.length < 2) {
+      setDrugSuggestions([]);
+      return;
+    }
     try {
-      const now = new Date();
-      const currentTimestamp = now.toISOString();
-      const payload = {
-        createdAt: currentTimestamp,
-        name: patientName || patient?.name || "Unknown Patient",
-        avatar: "https://avatars.githubusercontent.com/u/15015373",
-        prescriptions: prescriptionPayload.prescriptions,
-        patientEmail: email,
-        doctorName: doctorName || "Dr. Kavya Patil",
-        doctorEmail: drEmail || "dr.sheetal@example.com",
-        hospitalName: hospitalName || "AV Hospital",
-      };
-      const response = await axios.post(
-        "https://68abfd0c7a0bbe92cbb8d633.mockapi.io/prescription",
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await searchMedicinesByName(query);
+      const drugs = response.data;
+      setDrugSuggestions(
+        drugs.filter((drug) =>
+          drug.name.toLowerCase().includes(query.toLowerCase())
+        )
       );
-      if (response.status >= 200 && response.status < 300) {
-        return response.data;
-      } else {
-        throw new Error(`API failed: ${response.status}`);
-      }
     } catch (error) {
-      console.error("MockAPI Error:", error);
-      throw error;
+      console.error("Failed to fetch drug suggestions:", error);
+      toast.error("Failed to fetch drug suggestions. Please try again later.", {
+        position: "top-right",
+        autoClose: 2000,
+      });
     }
   };
 
   const handleSave = async () => {
-    const prescriptionPayload = {
-      prescriptions,
+    const medicines = prescriptions.map((med) => ({
+      medicineId: med.medicineId || 0,
+      dosage: med.dosage.toString(),
+      duration: med.duration.toString(),
+      dosageUnitId: med.dosageUnitId || 0,
+      frequencyId: med.frequencyId || 0,
+      intakeId: med.intakeId || 0,
+    }));
+    const payload = {
+      patientId: patient?.id || 0,
+      doctorId: doctorIdFromRedux || doctorIdFromProps || 1,
+      context: (activeTab || "IPD").toUpperCase(),
+      medicines,
     };
     try {
-      const result = await postPrescriptionToMockAPI(prescriptionPayload);
-      setIsSaved(true);
-      setPrescriptionId(result.id);
-      setIsEdit(false);
-      if (onSave) {
-        onSave("prescription", { prescriptions, id: result.id });
+      const response = await createDoctorPrescription(payload);
+      if (response.status >= 200 && response.status < 300) {
+        setIsSaved(true);
+        setIsEdit(false);
+        setPrescriptionId(response.data.prescriptionId);
+        if (onSave) {
+          onSave("prescription", { prescriptions, id: response.data.prescriptionId });
+        }
+        toast.success("✅ Prescription saved successfully!", {
+          position: "top-right",
+          autoClose: 2000,
+          closeOnClick: true,
+        });
+      } else {
+        throw new Error(`API failed: ${response.status}`);
       }
-      toast.success("✅ Prescription saved successfully to MockAPI!", {
-        position: "top-right",
-        autoClose: 2000,
-        closeOnClick: true,
-      });
     } catch (error) {
-      console.error("MockAPI Error:", error);
+      console.error("API Error:", error);
       toast.error(`❌ ${error.message}`, {
         position: "top-right",
         autoClose: 2000,
@@ -212,24 +228,23 @@ const PrescriptionForm = ({
       });
       return;
     }
-    const prescriptionPayload = {
-      prescriptions,
-      patientName: patientName || patient?.name || "Unknown Patient",
-      patientEmail: email,
-      doctorName: doctorName || "Dr. Kavya Patil",
-      doctorEmail: drEmail || "dr.sheetal@example.com",
-      hospitalName: hospitalName || "AV Hospital",
+    const medicines = prescriptions.map((med) => ({
+      medicineId: med.medicineId || 0,
+      dosage: med.dosage.toString(),
+      duration: med.duration.toString(),
+      dosageUnitId: med.dosageUnitId || 0,
+      frequencyId: med.frequencyId || 0,
+      intakeId: med.intakeId || 0,
+    }));
+    const payload = {
+      patientId: patient?.id || 1,
+      doctorId: doctorIdFromRedux || doctorIdFromProps || 1,
+      context: (activeTab || "OPD").toUpperCase(),
+      medicines,
     };
     try {
-      const response = await axios.put(
-        `https://68abfd0c7a0bbe92cbb8d633.mockapi.io/prescription/${prescriptionId}`,
-        prescriptionPayload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await updateDoctorPrescription(prescriptionId, payload);
+      console.log("Update Response:", response.data);
       if (response.status >= 200 && response.status < 300) {
         setIsEdit(false);
         if (onSave) {
@@ -244,30 +259,12 @@ const PrescriptionForm = ({
         throw new Error(`API failed: ${response.status}`);
       }
     } catch (error) {
-      console.error("MockAPI Error:", error);
+      console.error("API Error:", error);
       toast.error(`❌ ${error.message}`, {
         position: "top-right",
         autoClose: 2000,
         closeOnClick: true,
       });
-    }
-  };
-
-  const fetchDrugSuggestions = async (query) => {
-    if (query.length < 2) {
-      setDrugSuggestions([]);
-      return;
-    }
-    try {
-      const response = await fetch("https://mocki.io/v1/efc542df-dc4c-4b06-9e5b-32567facef11");
-      const drugs = await response.json();
-      setDrugSuggestions(
-        drugs.filter((drug) =>
-          drug.name.toLowerCase().includes(query.toLowerCase())
-        )
-      );
-    } catch (error) {
-      console.error("Failed to fetch drug suggestions:", error);
     }
   };
 
@@ -301,7 +298,11 @@ const PrescriptionForm = ({
   };
 
   const handleCancel = () => {
-    setPrescriptions(data?.prescriptions || [{ ...defaultMedicine }]);
+    setPrescriptions(
+      data?.prescriptions?.length
+        ? data.prescriptions
+        : [{ ...defaultMedicine, drugName: "" }]
+    );
     setIsEdit(false);
   };
 
@@ -482,6 +483,7 @@ const PrescriptionForm = ({
                                 handleChange(i, "drugName", drug.name);
                                 handleChange(i, "form", drug.form || "");
                                 handleChange(i, "strength", drug.strength || "");
+                                handleChange(i, "medicineId", drug.id);
                                 setDrugSuggestions([]);
                               }}
                               style={{
@@ -490,7 +492,7 @@ const PrescriptionForm = ({
                                 borderBottom: "1px solid #e5e7eb",
                               }}
                             >
-                              <strong>{drug.name}</strong> ({drug.strength}, {drug.form})
+                              <strong>{drug.name}</strong>
                             </li>
                           ))}
                         </ul>
@@ -522,11 +524,15 @@ const PrescriptionForm = ({
                             fontSize: "0.875rem",
                           }}
                           value={med.dosageUnit}
-                          onChange={(e) => handleChange(i, "dosageUnit", e.target.value)}
+                          onChange={(e) => {
+                            const selectedUnit = dosageUnits.find(unit => unit.name === e.target.value);
+                            handleChange(i, "dosageUnit", e.target.value);
+                            handleChange(i, "dosageUnitId", selectedUnit?.id || 0);
+                          }}
                           disabled={!isEdit}
                         >
                           {dosageUnits.map((unit) => (
-                            <option key={unit.name} value={unit.name}>
+                            <option key={unit.id} value={unit.name}>
                               {unit.name}
                             </option>
                           ))}
@@ -543,12 +549,16 @@ const PrescriptionForm = ({
                           fontSize: "0.875rem",
                         }}
                         value={med.frequency}
-                        onChange={(e) => handleChange(i, "frequency", e.target.value)}
+                        onChange={(e) => {
+                          const selectedFrequency = frequencies.find(freq => freq.name === e.target.value);
+                          handleChange(i, "frequency", e.target.value);
+                          handleChange(i, "frequencyId", selectedFrequency?.id || 0);
+                        }}
                         disabled={!isEdit}
                       >
                         <option value="">Select frequency</option>
                         {frequencies.map((freq) => (
-                          <option key={freq.name} value={freq.name}>
+                          <option key={freq.id} value={freq.name}>
                             {freq.name}
                           </option>
                         ))}
@@ -564,12 +574,16 @@ const PrescriptionForm = ({
                           fontSize: "0.875rem",
                         }}
                         value={med.intake}
-                        onChange={(e) => handleChange(i, "intake", e.target.value)}
+                        onChange={(e) => {
+                          const selectedIntake = intakes.find(intake => intake.name === e.target.value);
+                          handleChange(i, "intake", e.target.value);
+                          handleChange(i, "intakeId", selectedIntake?.id || 0);
+                        }}
                         disabled={!isEdit}
                       >
                         <option value="">Select intake</option>
                         {intakes.map((intake) => (
-                          <option key={intake.name} value={intake.name}>
+                          <option key={intake.id} value={intake.name}>
                             {intake.name}
                           </option>
                         ))}
@@ -682,6 +696,7 @@ const PrescriptionForm = ({
                               handleChange(i, "drugName", drug.name);
                               handleChange(i, "form", drug.form || "");
                               handleChange(i, "strength", drug.strength || "");
+                              handleChange(i, "medicineId", drug.id);
                               setDrugSuggestions([]);
                             }}
                             style={{
@@ -690,7 +705,7 @@ const PrescriptionForm = ({
                               borderBottom: "1px solid #e5e7eb",
                             }}
                           >
-                            <strong>{drug.name}</strong> ({drug.strength}, {drug.form})
+                            <strong>{drug.name}</strong>
                           </li>
                         ))}
                       </ul>
@@ -734,11 +749,15 @@ const PrescriptionForm = ({
                           fontSize: "0.875rem",
                         }}
                         value={med.dosageUnit}
-                        onChange={(e) => handleChange(i, "dosageUnit", e.target.value)}
+                        onChange={(e) => {
+                          const selectedUnit = dosageUnits.find(unit => unit.name === e.target.value);
+                          handleChange(i, "dosageUnit", e.target.value);
+                          handleChange(i, "dosageUnitId", selectedUnit?.id || 0);
+                        }}
                         disabled={!isEdit}
                       >
                         {dosageUnits.map((unit) => (
-                          <option key={unit.name} value={unit.name}>
+                          <option key={unit.id} value={unit.name}>
                             {unit.name}
                           </option>
                         ))}
@@ -758,12 +777,16 @@ const PrescriptionForm = ({
                         fontSize: "0.875rem",
                       }}
                       value={med.frequency}
-                      onChange={(e) => handleChange(i, "frequency", e.target.value)}
+                      onChange={(e) => {
+                        const selectedFrequency = frequencies.find(freq => freq.name === e.target.value);
+                        handleChange(i, "frequency", e.target.value);
+                        handleChange(i, "frequencyId", selectedFrequency?.id || 0);
+                      }}
                       disabled={!isEdit}
                     >
                       <option value="">Select frequency</option>
                       {frequencies.map((freq) => (
-                        <option key={freq.name} value={freq.name}>
+                        <option key={freq.id} value={freq.name}>
                           {freq.name}
                         </option>
                       ))}
@@ -783,12 +806,16 @@ const PrescriptionForm = ({
                           fontSize: "0.875rem",
                         }}
                         value={med.intake}
-                        onChange={(e) => handleChange(i, "intake", e.target.value)}
+                        onChange={(e) => {
+                          const selectedIntake = intakes.find(intake => intake.name === e.target.value);
+                          handleChange(i, "intake", e.target.value);
+                          handleChange(i, "intakeId", selectedIntake?.id || 0);
+                        }}
                         disabled={!isEdit}
                       >
                         <option value="">Select intake</option>
                         {intakes.map((intake) => (
-                          <option key={intake.name} value={intake.name}>
+                          <option key={intake.id} value={intake.name}>
                             {intake.name}
                           </option>
                         ))}
