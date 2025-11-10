@@ -103,27 +103,8 @@ const PatientOverview = () => {
   const { allPatients } = useAppSelector((state) => state.patient);
   const { patientDashboardData } = useAppSelector((state) => state.patientDashboardData);
   const { patientPersonalData } = useAppSelector((state) => state.patientPersonalData);
-  const userEmail = useAppSelector((state) => state.user.userProfile.email);
-  const userHealthSummary = useAppSelector((state) => state?.healthSummaryData?.healthSummaryData);
   const dispatch = useAppDispatch();
-  // Fetch patient data on component mount
-  useEffect(() => {
-    dispatch(fetchAllPatients());
-  }, [dispatch]);
-
-  // Handle patient data once it's loaded
-  useEffect(() => {
-    if (allPatients?.length > 0) {
-      const currentPatient = allPatients.find((item: any) => userEmail === item.email);
-
-      if (currentPatient) {
-        dispatch(setCurrentPatient(currentPatient));
-        dispatch(fetchPatientDashboardData(currentPatient.id));
-        dispatch(setUserProfile({ patientId: currentPatient.id }));
-      }
-    }
-  }, [allPatients, userEmail, dispatch]);
-
+  
   useEffect(() => {
     if (patientDashboardData) {
       const newData = Array.isArray(patientDashboardData) 

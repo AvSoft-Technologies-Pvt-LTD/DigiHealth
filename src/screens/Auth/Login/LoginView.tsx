@@ -47,8 +47,8 @@ const LoginView: React.FC<LoginViewProps> = ({
   navigation,
 }) => {
   const [activeTab, setActiveTab] = useState('password');
-  const [email, setEmail] = useState('sahana@gmail.com');
-  const [password, setPassword] = useState('Sahana@123');
+  const [email, setEmail] = useState('haris@gmail.com');
+  const [password, setPassword] = useState('Haris@123');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [showPassword, setShowPassword] = useState(true);

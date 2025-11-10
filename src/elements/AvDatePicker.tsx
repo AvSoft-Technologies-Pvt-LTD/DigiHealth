@@ -112,6 +112,10 @@ export default function AvDatePicker({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
+    borderWidth:1,
+    borderColor:COLORS.LIGHT_GREY,
+    borderRadius:4,
+    justifyContent:'center',
   },
   dateButton: {
 

@@ -12,7 +12,7 @@ import { getStatusBarStyle } from './src/utils/statusBar';
 import { DrawerProvider } from './src/navigation/DrawerContext';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-// import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ErrorBoundary from './src/components/ErrorBoundary';
@@ -71,9 +71,9 @@ const App: React.FC = () => {
                 translucent={false}
               />
               <DrawerProvider>
-                {/* <SafeAreaProvider> */}
+                <SafeAreaProvider>
                 <AppNavigator />
-                {/* </SafeAreaProvider> */}
+                </SafeAreaProvider>
               </DrawerProvider>
             </NavigationContainer>
           </PaperProvider>

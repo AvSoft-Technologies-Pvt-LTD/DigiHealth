@@ -4,12 +4,17 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 import HomeView from './HomeView';
 import { setHomeData, selectHomeError } from '../../../store/slices/homeSlice';
 import { benefits, features, stats } from '../../../constants/data';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { fetchAllPatients, fetchPatientDashboardData } from '../../../store/thunks/patientThunks';
+import { setCurrentPatient } from '../../../store/slices/allPatientSlice';
+import { setUserProfile } from '../../../store/slices/userSlice';
 
 const Home: React.FC = () => {
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
   const [isConsultationModalVisible, setConsultationModalVisible] = useState(false);
   const [isContentLoaded, setIsContentLoaded] = useState(false);
+  const allPatients = useAppSelector((state) => state.patient.allPatients); 
 
   // ✅ memoize static data
   const homeData = useMemo(
@@ -37,6 +42,25 @@ const Home: React.FC = () => {
       setRefreshing(false);
     }
   }, [dispatch, homeData]);
+
+  const userEmail = useAppSelector((state) => state.user.userProfile.email);
+    // Fetch patient data on component mount
+    useEffect(() => {
+      dispatch(fetchAllPatients());
+    }, [dispatch]);
+  
+    // Handle patient data once it's loaded
+    useEffect(() => {
+      if (allPatients?.length > 0) {
+        const currentPatient = allPatients.find((item: any) => userEmail === item.email);
+  
+        if (currentPatient) {
+          dispatch(setCurrentPatient(currentPatient));
+          dispatch(fetchPatientDashboardData(currentPatient?.id));
+          dispatch(setUserProfile({ patientId: currentPatient?.id }));
+        }
+      }
+    }, [allPatients, userEmail, dispatch]);
 
   const error = useSelector(selectHomeError);
   if (error) {

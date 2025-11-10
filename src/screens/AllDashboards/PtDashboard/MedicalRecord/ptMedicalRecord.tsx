@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, memo,useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   Switch,
   ActivityIndicator,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import Header from '../../../../components/Header';
 import AvButton from '../../../../elements/AvButton';
@@ -30,45 +31,47 @@ import {
 import { AvSelect } from '../../../../elements/AvSelect';
 import { MultiSelectDropdown } from '../../../../elements/MultiSelectDropdown';
 import { FlatList } from 'react-native';
+import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
+import { fetchHospitalList, fetchMedicalConditions, saveMedicalRecord } from '../../../../store/thunks/patientThunks';
 import AvDatePicker from '../../../../elements/AvDatePicker';
 
-interface ChipProps {
-  label: string;
-  onRemove: () => void;
-}
+// interface ChipProps {
+//   label: string;
+//   onRemove: () => void;
+// }
 
-const Chip: React.FC<ChipProps> = React.memo(({ label, onRemove }) => (
-  <View style={styles.chip}>
-    <AvText style={styles.chipText}>{label}</AvText>
-    <TouchableOpacity onPress={onRemove} style={styles.closeButton}>
-      <Icon name="close" size={16} color={COLORS.WHITE} />
-    </TouchableOpacity>
-  </View>
-));
+// const Chip = React.memo(memo(({ label, onRemove }: ChipProps) => (
+//   <View style={styles.chip}>
+//     <AvText style={styles.chipText}>{label}</AvText>
+//     <TouchableOpacity onPress={onRemove} style={styles.closeButton}>
+//       <Icon name="close" size={16} color={COLORS.WHITE} />
+//     </TouchableOpacity>
+//   </View>
+// )));
 
-interface ChipsProps {
-  items: { id: string; label: string }[];
-  selectedIds: string[];
-  onRemove: (id: string) => void;
-}
+// interface ChipsProps {
+//   items: { id: string; label: string }[];
+//   selectedIds: string[];
+//   onRemove: (id: string) => void;
+// }
 
-const Chips: React.FC<ChipsProps> = React.memo(({ items, selectedIds, onRemove }) => (
-  <View style={styles.chipsContainer}>
-    {items
-      .filter((item) => selectedIds.includes(item.id))
-      .map((item) => (
-        <Chip
-          key={item.id}
-          label={item.label}
-          onRemove={() => onRemove(item.id)}
-        />
-      ))}
-  </View>
-));
+// const Chips: React.FC<ChipsProps> = React.memo(({ items, selectedIds, onRemove }) => (
+//   <View style={styles.chipsContainer}>
+//     {items
+//       .filter((item) => selectedIds.includes(item.id))
+//       .map((item) => (
+//         <Chip
+//           key={item.id}
+//           label={item.label}
+//           onRemove={() => onRemove(item.id)}
+//         />
+//       ))}
+//   </View>
+// ));
 
 interface MedicalRecord extends DataRecord {
   recordId: string;
-  hospitalName: string;
+  selectedHospital: string;
   type: 'OPD' | 'IPD' | 'VIRTUAL';
   diagnosis: string;
   dateOfVisit: string;
@@ -92,14 +95,6 @@ const tabs = [
   { key: 'VIRTUAL', label: 'Virtual' },
 ];
 
-const hospitalList = [
-  { label: 'Apollo Hospitals', value: 'Apollo Hospitals' },
-  { label: 'Fortis Healthcare', value: 'Fortis Healthcare' },
-  { label: 'Max Healthcare', value: 'Max Healthcare' },
-  { label: 'Manipal Hospitals', value: 'Manipal Hospitals' },
-  { label: 'AIIMS', value: 'AIIMS' },
-];
-
 const medicalConditionsOptions = [
   { id: 'asthma', label: 'Asthma Disease' },
   { id: 'bp', label: 'BP (Blood Pressure)' },
@@ -114,6 +109,16 @@ const statusOptions = [
   { label: 'Pending', value: 'Pending' },
 ];
 
+// Memoized Chip component to prevent unnecessary re-renders
+// const Chip = memo(({ label, onRemove }: ChipProps) => (
+//   <View style={styles.chip}>
+//     <AvText style={styles.chipText}>{label}</AvText>
+//     <TouchableOpacity onPress={onRemove} style={styles.closeButton}>
+//       <Icon name="close" size={16} color={COLORS.WHITE} />
+//     </TouchableOpacity>
+//   </View>
+// ));
+
 const MedicalRecordsScreen = () => {
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [searchValue, setSearchValue] = useState('');
@@ -122,13 +127,16 @@ const MedicalRecordsScreen = () => {
   const [loading, setLoading] = useState(false);
   const [pressedHospitalId, setPressedHospitalId] = useState<string | null>(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const [hospitalName, setHospitalName] = useState('');
+  const [selectedHospital, setSelectedHospital] = useState('');
   const [dateOfVisit, setDateOfVisit] = useState<Date>(new Date());
   const [dischargedDate, setDischargedDate] = useState<Date | null>(null);
   const [chiefComplaint, setChiefComplaint] = useState('');
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [status, setStatus] = useState<'Active' | 'Discharged' | 'Pending' | 'All'>('All');
   const navigation = useNavigation();
+  const hospitalListData = useAppSelector((state) => state.hospitalList.hospitalListData);
+  const medicalConditionData = useAppSelector((state) => state.medicalConditionData.medicalConditionData);
+
 
   const formatDate = useCallback((dateString: string | undefined) => {
     if (!dateString) return 'N/A';
@@ -139,16 +147,62 @@ const MedicalRecordsScreen = () => {
     }
   }, []);
 
+  useEffect(() => {
+    fetchRecords();
+  }, []);
+
+
+  // Memoize filtered records to avoid recalculating on every render
+  const filteredRecords = useMemo(() => {
+    if (!records.length) return [];
+
+    const searchTerm = searchValue.trim().toLowerCase();
+    const activeFilters = Object.entries(selectedFilters)
+      .filter(([_, value]) => value)
+      .map(([key]) => key);
+
+    return records.filter((record) => {
+      // Early return if record doesn't match the active tab
+      if (record.type?.toLowerCase() !== activeTab.toLowerCase()) {
+        return false;
+      }
+
+      // Apply status filter
+      if (status !== 'All' && record.status !== status) {
+        return false;
+      }
+
+      // Apply search filter if search term exists
+      if (searchTerm && !(
+        record.selectedHospital?.toLowerCase().includes(searchTerm) ||
+        record.diagnosis?.toLowerCase().includes(searchTerm) ||
+        record.status?.toLowerCase().includes(searchTerm) ||
+        record.type?.toLowerCase().includes(searchTerm)
+      )) {
+        return false;
+      }
+
+      // Apply selected filters from chips
+      if (activeFilters.length > 0 && !activeFilters.includes(record.status)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [records, searchValue, selectedFilters, activeTab, status]);
+
+  // Memoize event handlers with useCallback
   const fetchRecords = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec');
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
+
       const formattedData = Array.isArray(data)
         ? data.map((item) => ({
             recordId: item.id?.toString() || Date.now().toString(),
-            hospitalName: item.hospitalName || 'Unknown Hospital',
+          selectedHospital: item.selectedHospital || 'Unknown Hospital',
             type: item.type || 'OPD',
             diagnosis: item.diagnosis || 'No diagnosis',
             dateOfVisit: item.dateOfVisit || new Date().toISOString(),
@@ -160,7 +214,7 @@ const MedicalRecordsScreen = () => {
             dischargeSummary: item.dischargeSummary,
           }))
         : [];
-      setRecords(formattedData);
+      // setRecords(formattedData);
     } catch (error) {
       console.error('Fetch error:', error);
       Alert.alert('Error', `Failed to fetch records: ${error.message}`);
@@ -184,32 +238,32 @@ const MedicalRecordsScreen = () => {
     [records]
   );
 
-  const filteredRecords = useMemo(() => {
-    let filtered = [];
-    if (activeTab === 'OPD') filtered = [...opdRecords];
-    if (activeTab === 'IPD') filtered = [...ipdRecords];
-    if (activeTab === 'VIRTUAL') filtered = [...virtualRecords];
-    if (searchValue.trim()) {
-      const searchTerm = searchValue.toLowerCase();
-      filtered = filtered.filter(
-        (r) =>
-          r.hospitalName?.toLowerCase().includes(searchTerm) ||
-          r.diagnosis?.toLowerCase().includes(searchTerm) ||
-          r.status?.toLowerCase().includes(searchTerm)
-      );
-    }
-    if (status && status !== 'All') {
-      filtered = filtered.filter((r) => r.status === status);
-    }
-    if (Object.values(selectedFilters).some(Boolean)) {
-      filtered = filtered.filter((r) =>
-        Object.entries(selectedFilters).some(
-          ([key, value]) => value && r.status === key
-        )
-      );
-    }
-    return filtered;
-  }, [activeTab, opdRecords, ipdRecords, virtualRecords, searchValue, status, selectedFilters]);
+  // const filteredRecords = useMemo(() => {
+  //   let filtered = [];
+  //   if (activeTab === 'OPD') filtered = [...opdRecords];
+  //   if (activeTab === 'IPD') filtered = [...ipdRecords];
+  //   if (activeTab === 'VIRTUAL') filtered = [...virtualRecords];
+  //   if (searchValue.trim()) {
+  //     const searchTerm = searchValue.toLowerCase();
+  //     filtered = filtered.filter(
+  //       (r) =>
+  //         r.hospitalName?.toLowerCase().includes(searchTerm) ||
+  //         r.diagnosis?.toLowerCase().includes(searchTerm) ||
+  //         r.status?.toLowerCase().includes(searchTerm)
+  //     );
+  //   }
+  //   if (status && status !== 'All') {
+  //     filtered = filtered.filter((r) => r.status === status);
+  //   }
+  //   if (Object.values(selectedFilters).some(Boolean)) {
+  //     filtered = filtered.filter((r) =>
+  //       Object.entries(selectedFilters).some(
+  //         ([key, value]) => value && r.status === key
+  //       )
+  //     );
+  //   }
+  //   return filtered;
+  // }, [activeTab, opdRecords, ipdRecords, virtualRecords, searchValue, status, selectedFilters]);
 
   const toggleCardBlur = useCallback((recordId: string) => {
     setRecords((prev) =>
@@ -219,13 +273,12 @@ const MedicalRecordsScreen = () => {
 
   const handleHospitalPress = useCallback((record: MedicalRecord) => {
     navigation.navigate(PAGES.PATIENT_MEDICAL_DETAILS, {
-      record,
-      recordType: record.type,
+      hospital: record.selectedHospital
     });
   }, [navigation]);
 
-  const handleFieldPress = useCallback((fieldKey: string, value: any, record: DataRecord) => {
-    if (fieldKey === 'hospitalName') {
+  const handleFieldPress = useCallback((fieldKey: string, _: any, record: DataRecord) => {
+    if (fieldKey === 'selectedHospital') {
       handleHospitalPress(record as MedicalRecord);
     }
   }, [handleHospitalPress]);
@@ -236,7 +289,8 @@ const MedicalRecordsScreen = () => {
 
   const closeAddModal = useCallback(() => {
     setIsAddModalVisible(false);
-    setHospitalName('');
+    setSelectedHospital('');
+    setRecordType(null);
     setDateOfVisit(new Date());
     setDischargedDate(null);
     setChiefComplaint('');
@@ -244,6 +298,13 @@ const MedicalRecordsScreen = () => {
     setStatus('Active');
   }, []);
 
+  const dispatch = useAppDispatch();
+  const currentPatient = useAppSelector((state) => state.currentPatient.currentPatient);
+
+  useEffect(() => {
+    dispatch(fetchHospitalList());
+    dispatch(fetchMedicalConditions())
+  }, []);
   const toggleCondition = useCallback((conditionId: string) => {
     setSelectedConditions((prev) =>
       prev.includes(conditionId)
@@ -252,42 +313,68 @@ const MedicalRecordsScreen = () => {
     );
   }, []);
 
-  const handleSubmitRecord = useCallback(async () => {
-    if (!hospitalName) {
-      Alert.alert('Error', 'Please select a hospital');
+  const handleSubmitRecord = async () => {
+
+    // if (!selectedHospital) {
+    //   Alert.alert('Error', 'Please select a hospital');
+    //   return;
+    // }
+    const OPDpayload = {
+      patientId: currentPatient?.id,
+      hospitalId:selectedHospital,
+      // type: activeTab === 'IPD' ? recordType || 'IPD' : activeTab,
+      chiefComplaint: chiefComplaint,
+      status: status,
+      dateOfVisit: dateOfVisit.toISOString(),
+    }
+    const IPDpayload = {
+      patientId: currentPatient?.id,
+      hospitalId:selectedHospital,
+
+      // type: activeTab === 'IPD' ? recordType || 'IPD' : activeTab,
+      chiefComplaint: chiefComplaint,
+      status: status === 'All' ? 'Active' : status,
+      dateOfAdmission: dateOfVisit.toISOString(),
+      dateOfDischarge: dischargedDate?.toISOString(),
+    }
+    console.log("PAYLOAD UPD", IPDpayload)
+    dispatch(saveMedicalRecord(activeTab == 'IPD' ? IPDpayload : OPDpayload, activeTab == 'IPD'))
+    closeAddModal()
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    if (event.type === 'dismissed') {
+      if (datePickerType === 'visit') {
+        setShowDatePicker(false);
+      } else {
+        setShowDischargedDatePicker(false);
+      }
       return;
     }
-    const recordData = {
-      hospitalName,
-      type: activeTab,
-      diagnosis: chiefComplaint,
-      dateOfVisit: dateOfVisit.toISOString(),
-      dischargedDate: activeTab === 'IPD' && dischargedDate ? dischargedDate.toISOString() : undefined,
-      status: status === 'All' ? 'Active' : status,
-      medicalConditions: selectedConditions.join(', '),
-      recordId: Date.now().toString(),
-      chiefComplaint,
-      dischargeSummary: activeTab === 'IPD' ? 'Patient discharged with medications and advice for follow-up.' : undefined,
-    };
-    try {
-      const response = await fetch('https://6895d385039a1a2b28907a16.mockapi.io/pt-mr/patient-mrec', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(recordData),
-      });
-      if (!response.ok) throw new Error('Failed to add record');
-      await fetchRecords();
-      Alert.alert('Success', 'Record added successfully');
-      closeAddModal();
-    } catch (error) {
-      console.error('Submit error:', error);
-      Alert.alert('Error', `Failed to add record: ${error.message}`);
-    }
-  }, [hospitalName, activeTab, dateOfVisit, dischargedDate, chiefComplaint, selectedConditions, status, fetchRecords, closeAddModal]);
 
-  const renderHospitalName = useCallback((record: MedicalRecord) => {
+    if (datePickerType === 'visit') {
+      setShowDatePicker(false);
+      if (selectedDate) {
+        setDateOfVisit(selectedDate);
+      }
+    } else {
+      setShowDischargedDatePicker(false);
+      if (selectedDate) {
+        setDischargedDate(selectedDate);
+      }
+    }
+  };
+
+  const showDatepicker = (type: 'visit' | 'discharged') => {
+    setDatePickerType(type);
+    if (type === 'visit') {
+      setShowDatePicker(true);
+    } else {
+      setShowDischargedDatePicker(true);
+    }
+  };
+
+  const renderselectedHospital = useCallback((record: MedicalRecord) => {
     const isPressed = pressedHospitalId === record.recordId;
     return (
       <TouchableOpacity
@@ -303,7 +390,7 @@ const MedicalRecordsScreen = () => {
               ...(isPressed ? [styles.pressedHospitalText] : [])
             ]}
           >
-            {record.hospitalName}
+            {record.selectedHospital}
           </AvText>
           <Icon name="check-circle" size={18} color={COLORS.GREEN} style={{ marginLeft: 6 }} />
         </View>
@@ -414,17 +501,55 @@ const MedicalRecordsScreen = () => {
           {filteredRecords.length === 0 ? (
             renderEmptyState()
           ) : (
-            <FlatList
-              data={filteredRecords}
-              keyExtractor={(item) => item.recordId}
-              renderItem={renderRecordItem}
-              contentContainerStyle={styles.scrollContainer}
-              getItemLayout={(data, index) => ({
-                length: hp('20%'),
-                offset: hp('20%') * index,
-                index,
-              })}
-            />
+            <>
+              <ScrollView contentContainerStyle={styles.scrollContainer}>
+                {filteredRecords.map((record) => {
+                  const isHidden = !!record.isHidden;
+                  const actions: Action[] = [
+                    {
+                      key: 'blurSwitch',
+                      render: () => (
+                        <Switch
+                          value={isHidden}
+                          onValueChange={() => toggleCardBlur(record.recordId)}
+                          trackColor={{ false: COLORS.GREY_LIGHT, true: COLORS.GREEN }}
+                          thumbColor={COLORS.WHITE}
+                          style={styles.cardToggle}
+                        />
+                      ),
+                      onPress: () => { },
+                    },
+                  ];
+
+                  // Prepare data for TableCard with formatted dates
+                  const cardData = {
+                    ...record,
+                    dateOfVisit: formatDate(record.dateOfVisit),
+                    dischargedDate: formatDate(record.dischargedDate),
+                  };
+
+                  return (
+                    <View key={Number(record.recordId)} style={styles.recordWrapper}>
+                      <View style={styles.cardContainer}>
+                        {isHidden && renderHiddenHeader()}
+                        <TableCard
+                          data={[cardData]}
+                          headerFields={['status', 'type']}
+                          bodyFields={['selectedHospital', 'dischargedDate', 'diagnosis']}
+                          topRightFields={['dateOfVisit']}
+                          actions={actions}
+                          onCardPress={(record) => navigation.navigate(PAGES.PATIENT_MEDICAL_DETAILS, { record })}
+                          onFieldPress={handleFieldPress}
+                          customRenderers={{
+                            selectedHospital: (value, record) => renderselectedHospital(record as MedicalRecord)
+                          }}
+                        />
+                      </View>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </>
           )}
         </>
       )}
@@ -436,12 +561,11 @@ const MedicalRecordsScreen = () => {
       >
         <View style={styles.modalContent}>
           <AvSelect
-            label="Hospital Name"
-            items={hospitalList}
-            selectedValue={hospitalName}
-            onValueChange={setHospitalName}
-            placeholder="Select Hospital"
-            style={styles.input}
+            items={hospitalListData}
+            selectedValue={selectedHospital}
+            onValueChange={setSelectedHospital}
+            placeholder="Search Hospital..."
+            label="Select Hospital"
             required
           />
           <View style={styles.datePickerContainer}>
@@ -493,22 +617,43 @@ const MedicalRecordsScreen = () => {
             onValueChange={(value) => setStatus(value as 'Active' | 'Discharged' | 'Pending')}
             placeholder="Select Status"
             style={styles.input}
-            required
           />
           <View style={styles.conditionsContainer}>
             <AvText style={styles.label}>Medical Conditions</AvText>
-            <MultiSelectDropdown
-              items={medicalConditionsOptions}
+            {/* <AvSelect
+              multiselect={true}
+              items={medicalConditionData}
+              selectedValue={selectedConditions}
+              onValueChange={(selectedItems) => {
+                const selectedValues = Array.isArray(selectedItems)
+                  ? selectedItems
+                  : selectedItems ? [selectedItems] : [];
+                toggleCondition(selectedValues);
+              }}
+              // onSelect={toggleCondition}
+              placeholder="Select health conditions"
+              required
+            /> */}
+            <AvSelect
+              items={medicalConditionData}
+              selectedValue={selectedConditions}
+              onValueChange={setSelectedConditions}
+              placeholder="Select health conditions"
+              label="Select Conditions"
+              required
+            />
+            {/* <MultiSelectDropdown
+              items={medicalConditionData}
               selectedIds={selectedConditions}
               onSelect={toggleCondition}
               placeholder="Select Conditions"
               label=""
-            />
-            <Chips
-              items={medicalConditionsOptions}
+            /> */}
+            {/* <Chips
+              items={medicalConditionData}
               selectedIds={selectedConditions}
-              onRemove={(id) => toggleCondition(id)}
-            />
+              onRemove={toggleCondition}
+            /> */}
           </View>
           <View style={styles.modalActions}>
             <AvButton
@@ -521,7 +666,7 @@ const MedicalRecordsScreen = () => {
             </AvButton>
             <AvButton
               mode="contained"
-              onPress={handleSubmitRecord}
+              onPress={() => handleSubmitRecord()}
               style={styles.submitButton}
               buttonColor={COLORS.SECONDARY}
             >

@@ -42,7 +42,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     }
   };
 
-  const selectedItems = items.filter((item) => selectedIds.includes(item.id));
+const selectedItems = items.filter((item) => (selectedIds || []).includes(item.id));
   const displayText =
     selectedItems.length > 0
       ? `${selectedItems.length} condition(s) selected`

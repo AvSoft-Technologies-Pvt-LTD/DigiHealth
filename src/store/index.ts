@@ -25,6 +25,9 @@ import pharmacyBillingReducer from './slices/pharmacyBillingSlice';
 import labBillingReducer from './slices/labBillingSlice';
 import hospitalBillingReducer from './slices/hospitalBillingSlice';
 import urgencyLevelReducer from './slices/urgencyLevelSlice';
+import medicalConditionReducer from './slices/medicalConditionSlice';
+import familyMemberDataReducer from './slices/familyMemberSlice';
+import patientSettingReducer from './slices/patientSettingSlice';
 
 export const store = configureStore({
   reducer: {
@@ -50,6 +53,11 @@ export const store = configureStore({
     prescription: prescriptionReducer,
     labScan: labScanReducer,
     pharmacyBilling: pharmacyBillingReducer,
+    familyMemberData: familyMemberDataReducer,
+    medicalConditionData: medicalConditionReducer,
+     
+        
+    patientSettingData: patientSettingReducer,
     currentPatient: currentPatientReducer,
     labBilling: labBillingReducer,
      hospitalBilling: hospitalBillingReducer,

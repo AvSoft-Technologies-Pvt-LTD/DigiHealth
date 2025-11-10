@@ -4,7 +4,7 @@ const getBaseUrl = () => {
   if (__DEV__) {
     // Uncomment the appropriate line based on your setup
     // return 'http://10.0.2.2:8080/api/'; // For Android emulator
-    return 'http://192.168.0.100:8080/api/'; // For physical device (replace YOUR_LOCAL_IP with your computer's local IP)
+    return 'http://192.168.0.121:8080/api/'; // For physical device (replace YOUR_LOCAL_IP with your computer's local IP)
   }
   return 'http://your-production-url.com/api/'; // For production
 };
@@ -24,7 +24,7 @@ export const API = {
   PATIENT_RELATION_API: `${BASE_URL}master/relation`,
   PATIENT_FAMILY_HEALTH_API: `${BASE_URL}patient-dashboard/family-members`,
  PATIENT_VITALS_API: `${BASE_URL}patient/vitals`,
-  HOSPITAL_LIST_API: `${BASE_URL}hospitals/`, 
+  HOSPITAL_LIST_API: `${BASE_URL}hospitals/dropdown`, 
   AMBULANCE_TYPE: `${BASE_URL}ambulance-types/`,
   PATIENT_FAMILY_MEMBERS_API: `${BASE_URL}patient-dashboard/family-members/by-patient/`,
   PLANS: `${BASE_URL}plans/`,
@@ -36,6 +36,9 @@ export const API = {
 // GET_PATIENT_BY_ID: (id: string) => `${BASE_URL}auth/patient/${id}`,  // GET
   UPDATE_PATIENT_BY_ID: `${BASE_URL}auth/patient/`, 
   PATIENT_PHOTO: `${BASE_URL}auth/patient/photo?path=`,
+  MEDICAL_CONDITIONS_API: `${BASE_URL}master/medicalConditions`,
+  IPD_RECORD_API: `${BASE_URL}ipd-records/`,
+  OPD_RECORD_API: `${BASE_URL}opd-records/`,
 
 PATIENT_MEDICAL_CONDITIONS_API: `${BASE_URL}master/medicalConditions`,
  MEDICAL_STATUS_API: '${BASE_URL}master/medicalStatus',

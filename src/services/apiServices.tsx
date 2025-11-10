@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { NavigationContainerRef } from '@react-navigation/native';
 import { RootStackParamList } from "../types/navigation";
+import { PAGES } from "../constants/pages";
 // Add this type for navigation reference
 let navigationRef: NavigationContainerRef<RootStackParamList> | null = null;
 
@@ -69,6 +70,12 @@ export const get = async (
     return response.data;
   } catch (error) {
     console.error('Error handling server error:', error);
+    
+    // Logout user and prompt them to login again
+    // await StorageService.remove('userToken');
+    // Alert.alert('Session expired', 'Please login again.');
+    // navigationRef?.navigate(PAGES.LOGIN);
+
     throw error;
   }
 };

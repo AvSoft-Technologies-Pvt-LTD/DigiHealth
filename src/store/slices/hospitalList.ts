@@ -22,8 +22,12 @@ const hospitalListSlice = createSlice({
     },
     fetchHospitalListSuccess(state, action: PayloadAction<any[]>) {
       state.loading = false;
-      state.hospitalListData = action.payload;
+      state.hospitalListData = action.payload.map(hospital => ({
+        label: hospital.hospitalName,
+        value: hospital.id
+      }));
     },
+
     fetchHospitalListFailure(state, action: PayloadAction<string>) {
       state.loading = false;
       state.error = action.payload;

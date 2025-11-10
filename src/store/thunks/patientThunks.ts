@@ -105,6 +105,7 @@ import { fetchFamilyMemberDataFailure, fetchFamilyMemberDataStart, fetchFamilyMe
 
 // --- Patient List ---import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice';
 import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice';
+import { fetchMedicalConditionDataStart, fetchMedicalConditionDataSuccess } from '../slices/medicalConditionSlice.ts';
 
 export const fetchAllPatients = () => async (dispatch: AppDispatch) => {
   try {
@@ -181,6 +182,18 @@ export const fetchHospitalList = () => async (dispatch: AppDispatch) => {
     dispatch(fetchHospitalListFailure(errorMessage));
   }
 };
+
+// --- Medical COnditions List ---
+// export const fetchMedicalConditions = () => async (dispatch: AppDispatch) => {
+//   try {
+//     dispatch(fetchMedicalConditionDataStart());
+//     const response = await get(API.MEDICAL_CONDITIONS_API);
+//     dispatch(fetchMedicalConditionDataSuccess(response));
+//   } catch (error) {
+//     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch hospitals';
+//     dispatch(fetchHospitalListFailure(errorMessage));
+//   }
+// };
 
 // --- Patient Personal Health Data ---
 export const fetchPatientPersonalHealthData = (id: string) => async (dispatch: AppDispatch) => {
@@ -377,6 +390,19 @@ export const saveCoverageData = (data: any) => async (dispatch: AppDispatch) => 
   try {
     dispatch(saveCoverageDataStart());
     const response = await post(API.PATIENT_COVERAGE_API, data);
+    dispatch(saveCoverageDataSuccess(response.data || response));
+  } catch (error: any) {
+    dispatch(saveCoverageDataFailure(error.message || 'Failed to save coverage data'));
+  }
+};
+
+export const saveMedicalRecord = (data: any, isIpd?: boolean) => async (dispatch: AppDispatch) => {
+  console.log("DATA",data)
+  console.log("isIpd",isIpd)
+  try {
+    dispatch(saveCoverageDataStart());
+    const response = await post(isIpd ? API.IPD_RECORD_API : API.OPD_RECORD_API, data);
+    console.log("RESPONSE OF OPD",response)
     dispatch(saveCoverageDataSuccess(response.data || response));
   } catch (error: any) {
     dispatch(saveCoverageDataFailure(error.message || 'Failed to save coverage data'));
