@@ -5,13 +5,13 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { TableCard, DataRecord, Action } from "../../../components/CommonComponents/TableCard";
 import AvText from "../../../elements/AvText";
 import { COLORS, ALERT_COLORS } from "../../../constants/colors";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import billingData from '../../../constants/data';
 import { normalize } from "../../../constants/platform";
 import { PAGES } from '../../../constants/pages';
 import { RootStackParamList } from '../../../types/navigation';
 import { SearchFilterBar, FilterOption } from "../../../components/CommonComponents/SearchFilter";
 import Header from "../../../components/Header";
+import { AvIcons } from '../../../elements';
 
 interface Invoice {
   invoiceNo: string;
@@ -150,7 +150,7 @@ export default function Billing() {
     {
       key: "share",
       onPress: (record: DataRecord) => handleShare(record),
-      render: () => <Icon name="share-variant" size={22} color={COLORS.GREY} />,
+      render: () => <AvIcons type={"MaterialCommunityIcons"} name="share-variant" size={22} color={COLORS.GREY} />,
     },
     {
       key: "payment",

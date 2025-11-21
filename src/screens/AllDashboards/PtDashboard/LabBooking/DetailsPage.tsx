@@ -3,12 +3,10 @@ import { View, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } fro
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
 import { COLORS } from '../../../../constants/colors';
 import { PAGES } from '../../../../constants/pages';
 import { normalize } from '../../../../constants/platform';
+import { AvIcons, AvCards, AvText } from '../../../../elements';
 
 type RootStackParamList = {
   [PAGES.LAB_DETAILS_PAGE]: { id: string; cart: any[]; setCart: (cart: any[]) => void };
@@ -94,16 +92,16 @@ const DetailsPage: React.FC = () => {
 
   return (
     <ScrollView style={styles.scrollView}>
-      <AvCard cardStyle={styles.itemCard}>
+      <AvCards title={item.title} cardStyle={styles.itemCard}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={24} color={COLORS.PRIMARY} />
+            <AvIcons type="MaterialIcons" name="arrow-back" size={24} color={COLORS.PRIMARY} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => navigation.navigate(PAGES.LAB_CART, { cart, setCart: setCartLocal })}
             style={styles.cartIconContainer}
           >
-            <Icon name="shopping-cart" size={24} color={COLORS.PRIMARY} />
+            <AvIcons type="MaterialIcons" name="shopping-cart" size={24} color={COLORS.PRIMARY} />
             {cart.length > 0 && (
               <View style={styles.cartBadge}>
                 <AvText type="caption" style={styles.cartBadgeText}>
@@ -127,7 +125,7 @@ const DetailsPage: React.FC = () => {
           )}
         </View>
         <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
-          <Icon name="add-circle" size={20} color={COLORS.WHITE} />
+          <AvIcons type="MaterialIcons" name="add-circle" size={20} color={COLORS.WHITE} />
           <AvText type="buttonText" style={styles.addToCartButtonText}>Add to Cart</AvText>
         </TouchableOpacity>
         {item.includedTests && item.includedTests.length > 0 && (
@@ -136,15 +134,15 @@ const DetailsPage: React.FC = () => {
             <View style={styles.testsGrid}>
               {item.includedTests.map((test, index) => (
                 <View key={index} style={styles.testItem}>
-                  <Icon name="check-circle" size={16} color={COLORS.SUCCESS} />
+                  <AvIcons type="MaterialIcons" name="check-circle" size={16} color={COLORS.SUCCESS} />
                   <AvText type="body" style={styles.testText}>{test.title}</AvText>
                 </View>
               ))}
             </View>
           </View>
         )}
-  </AvCard>
- <AvCard cardStyle={styles.labsCard}>
+  </AvCards>
+ <AvCards title="" cardStyle={styles.labsCard}>
         <View style={styles.labsHeader}>
           <AvText type="title_6" style={styles.labsTitle}>Find the best labs for {item.title}</AvText>
           <AvText type="caption" style={styles.labsSubtitle}>Compare prices, check availability, and book appointments.</AvText>
@@ -160,8 +158,8 @@ const DetailsPage: React.FC = () => {
             View Available Labs
           </AvText>
         </TouchableOpacity>
-      </AvCard>
-       <AvCard cardStyle={styles.aboutCard}>
+      </AvCards>
+       <AvCards cardStyle={styles.aboutCard}>
         <AvText type="title_6" style={styles.aboutTitle}>💡 About {item.title}</AvText>
         {item.about && (
           <View style={styles.aboutSection}>
@@ -181,7 +179,7 @@ const DetailsPage: React.FC = () => {
             <AvText type="body" style={styles.aboutText}>{item.preparation}</AvText>
           </View>
         )}
-      </AvCard>
+      </AvCards>
     </ScrollView>
   );
 };

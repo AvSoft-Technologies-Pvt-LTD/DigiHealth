@@ -6,7 +6,7 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
-  Dimensions,TouchableOpacity
+  Dimensions,TouchableOpacity,
 } from 'react-native';
 import AvText from '../../../elements/AvText';
 import AvButton from '../../../elements/AvButton';
@@ -14,6 +14,7 @@ import AvImage from '../../../elements/AvImage';
 import { IMAGES } from '../../../assets';
 import { COLORS } from '../../../constants/colors';
 import { normalize } from '../../../constants/platform';
+import { AvTextInput } from '../../../elements';
 
 interface VerifyOTPProps {
   title: string;
@@ -88,7 +89,7 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
 
             <View style={styles.otpContainer}>
               {otp.map((digit, index) => (
-                <TextInput
+                <AvTextInput
                   key={index}
                   ref={(ref) => { if (ref) inputRefs.current[index] = ref }}
                   style={[

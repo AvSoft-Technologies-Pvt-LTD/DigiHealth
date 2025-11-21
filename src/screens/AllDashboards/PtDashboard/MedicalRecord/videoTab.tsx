@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import AvCard from '../../../../elements/AvCards';
-import AvText from '../../../../elements/AvText';
-import AvIcons from '../../../../elements/AvIcons';
+import { AvCards, AvIcons, AvText,  } from '../../../../elements';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 
@@ -21,7 +19,7 @@ const VideoTab: React.FC<VideoTabProps> = ({ videoRecords }) => {
   return (
     <View style={styles.container}>
       {videoRecords.map((record, index) => (
-        <AvCard key={record.id} cardStyle={styles.card}>
+        <AvCards key={record.id} cardStyle={styles.card} title={record.doctorName}>
           <View style={styles.header}>
             <AvText type="heading_6" style={styles.doctorName}>
               Dr. {record.doctorName}
@@ -61,7 +59,7 @@ const VideoTab: React.FC<VideoTabProps> = ({ videoRecords }) => {
               </AvText>
             </View>
           </View>
-        </AvCard>
+        </AvCards>
       ))}
     </View>
   );
@@ -111,7 +109,7 @@ const styles = StyleSheet.create({
     marginBottom: normalize(6),
   },
   detailLabel: {
-    color: COLORS.SECONDARY_TXT,
+    color: COLORS.SECONDARY,
     fontSize: normalize(12),
   },
   detailValue: {

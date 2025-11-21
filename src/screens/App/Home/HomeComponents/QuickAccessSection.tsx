@@ -2,12 +2,13 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Card } from 'react-native-paper';
 import { useSelector } from 'react-redux';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+//  import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AvText from '../../../../elements/AvText';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import FadeInView from './FadeInView';
 import { selectFeatures } from '../../../../store/slices/homeSlice';
+import { AvIcons } from '../../../../elements';
 
 
 const QuickAccessSection = () => {
@@ -23,10 +24,11 @@ const QuickAccessSection = () => {
             <Card style={styles.featureCard}>
               <Card.Content style={styles.featureCardContent}>
                 <View style={styles.iconContainer}>
-                  <MaterialCommunityIcons 
+                  <AvIcons
+                    type="MaterialCommunityIcons"
                     name={feature.icon as any} 
                     size={24} 
-                    color={COLORS.PRIMARY}
+                    color={COLORS.WHITE}
                     style={styles.featureIcon}
                   />
                 </View>
@@ -81,7 +83,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: 'rgba(14, 22, 48, 0.1)',
+    backgroundColor: COLORS.PRIMARY,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: normalize(12),

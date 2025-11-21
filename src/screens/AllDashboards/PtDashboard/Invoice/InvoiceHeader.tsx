@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
+import { AvIcons } from '../../../../elements';
 
 interface InvoiceHeaderProps {
   onClose: () => void;
@@ -21,7 +21,7 @@ const InvoiceHeader: React.FC<InvoiceHeaderProps> = ({ onClose }) => {
       </View>
       <View style={styles.headerRight}>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <Icon name="close" size={24} color={COLORS.GREY} />
+          <AvIcons type="MaterialCommunityIcons" name="close" size={24} color={COLORS.GREY} />
         </TouchableOpacity>
       </View>
     </View>

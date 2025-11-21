@@ -22,6 +22,7 @@ export const Typography = StyleSheet.create({
     heading_5: {
         fontSize: normalize(14),
         lineHeight: normalize(17.33),
+        fontWeight:'bold'
     },
     heading_6: {
         fontSize: normalize(14),

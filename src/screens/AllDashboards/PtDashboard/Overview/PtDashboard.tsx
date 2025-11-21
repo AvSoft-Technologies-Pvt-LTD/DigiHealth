@@ -6,19 +6,14 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Avatar } from 'react-native-paper';
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import AvText from "../../../../elements/AvText";
-import AvButton from "../../../../elements/AvButton";
+
 import { COLORS } from "../../../../constants/colors";
 import { PAGES } from "../../../../constants/pages";
 import { useNavigation } from "@react-navigation/native";
 import PatientModals from "./index";
-import AvImage from "../../../../elements/AvImage";
-import { IMAGES } from "../../../../assets";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
-import { fetchAllPatients, fetchPatientBloodGroupData, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchPatientPhoto } from "../../../../store/thunks/patientThunks";
-import { setUserProfile } from "../../../../store/slices/userSlice";
-import { setCurrentPatient } from "../../../../store/slices/allPatientSlice";
+import { fetchPatientBloodGroupData, fetchPatientPersonalHealthData, fetchPatientPhoto } from "../../../../store/thunks/patientThunks";
+import { AvButton, AvIcons, AvImage, AvText } from "../../../../elements";
 
 interface ActionButtonProps {
   id: string;
@@ -216,12 +211,12 @@ console.log("userInitials", formData);
       onPress={item.onPress}
     >
       <View style={styles.buttonContent}>
-        <Icon name={item.icon} size={16} color={COLORS.WHITE} />
+        <AvIcons type="MaterialCommunityIcons"  name={item.icon} size={16} color={COLORS.WHITE} />
         <AvText type="buttonText" style={styles.buttonText}>
           {item.label}
         </AvText>
         {item.completed && (
-          <Icon
+          <AvIcons type="MaterialCommunityIcons" 
             name="check-circle"
             size={16}
             color={COLORS.SECONDARY}
@@ -250,7 +245,7 @@ console.log("userInitials", formData);
             </AvText>
           </AvButton>
           <TouchableOpacity onPress={() => navigation.navigate(PAGES.PATIENT_SETTINGS as never)}>
-            <Icon name="pencil" size={20} color={COLORS.PRIMARY} />
+            <AvIcons type="MaterialCommunityIcons"  name="pencil" size={20} color={COLORS.PRIMARY} />
           </TouchableOpacity>
         </View>
       </View>
@@ -285,7 +280,7 @@ console.log("userInitials", formData);
         <View style={styles.detailRow}>
           <View style={styles.detailItem}>
             <View style={styles.detailValueRow}>
-              <Icon name="gender-female" size={16} color={COLORS.PRIMARY} />
+              <AvIcons type="MaterialCommunityIcons"  name="gender-female" size={16} color={COLORS.PRIMARY} />
               <AvText type="caption" style={styles.detailLabel}>
                 Gender
               </AvText>
@@ -296,7 +291,7 @@ console.log("userInitials", formData);
           </View>
           <View style={styles.detailItem}>
             <View style={styles.detailValueRow}>
-              <Icon name="phone" size={16} color={COLORS.PRIMARY} />
+              <AvIcons type="MaterialCommunityIcons"  name="phone" size={16} color={COLORS.PRIMARY} />
               <AvText type="caption" style={styles.detailLabel}>
                 Phone No.
               </AvText>
@@ -309,7 +304,7 @@ console.log("userInitials", formData);
         <View style={styles.detailRow}>
           <View style={styles.detailItem}>
             <View style={styles.detailValueRow}>
-              <Icon name="cake" size={16} color={COLORS.PRIMARY} />
+              <AvIcons type="MaterialCommunityIcons"  name="cake" size={16} color={COLORS.PRIMARY} />
               <AvText type="caption" style={styles.detailLabel}>
                 Date Of Birth
               </AvText>
@@ -320,7 +315,7 @@ console.log("userInitials", formData);
           </View>
           <View style={styles.detailItem}>
             <View style={styles.detailValueRow}>
-              <Icon name="water" size={16} color={COLORS.PRIMARY} />
+              <AvIcons type="MaterialCommunityIcons"  name="water" size={16} color={COLORS.PRIMARY} />
               <AvText type="caption" style={styles.detailLabel}>
                 Blood Group
               </AvText>

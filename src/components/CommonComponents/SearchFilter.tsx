@@ -1,21 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Modal,
   Animated,
   Dimensions,
   Easing,
+  Modal,
 } from 'react-native';
 import AvButton from '../../elements/AvButton';
-import AvText from '../../elements/AvText';
 import { COLORS } from '../../constants/colors';
 import { normalize } from '../../constants/platform';
-import AvIcons from '../../elements/AvIcons';
-import { AvTextInput } from '../../elements';
+import { AvTextInput, AvIcons, AvModal, AvText } from '../../elements';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 

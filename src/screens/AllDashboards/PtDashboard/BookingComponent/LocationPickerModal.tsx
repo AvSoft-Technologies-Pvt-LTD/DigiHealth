@@ -1,11 +1,10 @@
 // LocationPickerModal.tsx
 import React from "react";
-import { View, StyleSheet, Modal, FlatList, TouchableOpacity } from "react-native";
-import AvText from "../../../../elements/AvText";
-import AvButton from "../../../../elements/AvButton";
+import { View, StyleSheet, FlatList, TouchableOpacity } from "react-native";
 import { PostOffice } from "../../../../constants/data";
 import { COLORS } from "../../../../constants/colors";
 import { normalize } from "../../../../constants/platform";
+import { AvModal, AvText, AvButton } from "../../../../elements";
 
 interface LocationPickerModalProps {
   isVisible: boolean;
@@ -21,7 +20,7 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   onSelectLocation,
 }) => {
   return (
-    <Modal visible={isVisible} animationType="slide" transparent>
+    <AvModal isModalVisible={isVisible} animationType="slide" transparent>
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <AvText type="title_2" style={styles.modalTitle}>
@@ -52,7 +51,7 @@ const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
           </AvButton>
         </View>
       </View>
-    </Modal>
+    </AvModal>
   );
 };
 

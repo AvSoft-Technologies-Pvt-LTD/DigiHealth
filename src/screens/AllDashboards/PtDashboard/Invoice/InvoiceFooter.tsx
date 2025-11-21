@@ -6,6 +6,7 @@ import { COLORS } from "../../../../constants/colors";
 import { normalize } from "../../../../constants/platform";
 import { Invoice } from "./types"; // Adjust import path as needed
 import { PAGES } from "../../../../constants/pages";
+import { AvText } from "../../../../elements";
 
 interface InvoiceFooterProps {
   invoice: Invoice;
@@ -30,19 +31,19 @@ const InvoiceFooter: React.FC<InvoiceFooterProps> = ({ invoice, navigation }) =>
 
   return (
     <View style={styles.termsContainer}>
-      <Text style={styles.termsTitle}>Terms & Conditions</Text>
-      <Text style={styles.termsText}>
+      <AvText style={styles.termsTitle}>Terms & Conditions</AvText>
+      <AvText style={styles.termsText}>
         Payment due within 30 days. Late fees apply. For queries, contact billing@digihealth.com.
-      </Text>
-      <Text style={styles.thanksText}>
+      </AvText>
+      <AvText style={styles.thanksText}>
         Thank you for choosing DigiHealth for your healthcare needs
-      </Text>
+      </AvText>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.printButton} onPress={handlePrintPress}>
-          <Text style={styles.buttonText}>Print</Text>
+          <AvText style={styles.buttonText}>Print</AvText>
         </TouchableOpacity>
         <TouchableOpacity style={styles.payButton} onPress={handlePayPress}>
-          <Text style={styles.payButtonText}>Pay ₹{invoice.total}</Text>
+          <AvText style={styles.payButtonText}>Pay ₹{invoice.total}</AvText>
         </TouchableOpacity>
       </View>
     </View>

@@ -1,14 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import MCI from 'react-native-vector-icons/MaterialCommunityIcons';
 import AvButton from '../../../../elements/AvButton';
 import AvText from '../../../../elements/AvText';
 import { COLORS } from '../../../../constants/colors';
-import AvCustomMultiSelect from './AvCustomMultiSelect';
 import { normalize } from '../../../../constants/platform';
 import { PAGES } from '../../../../constants/pages';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { AvIcons } from '../../../../elements';
 
 // Define your navigation params type if needed
 type RootStackParamList = {
@@ -82,21 +80,21 @@ const BookingConfirmationScreen: React.FC<BookingConfirmationScreenProps> = ({
     const item = equipmentData.find((e) => e.value === itemValue);
     switch (item?.label) {
       case "Oxygen Cylinder":
-        return <MCI name="oxygen" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
+        return <AvIcons type='MaterialCommunityIcons' name="oxygen" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
       case "Stretcher":
-        return <MCI name="bed" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
+        return <AvIcons type='MaterialCommunityIcons' name="bed" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
       case "First Aid Kit":
-        return <MCI name="first-aid" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
+        return <AvIcons type='MaterialCommunityIcons' name="first-aid" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
       case "Ventilator":
-        return <MCI name="fan" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
+        return <AvIcons type='MaterialCommunityIcons' name="fan" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
       case "Defibrillator":
-        return <MCI name="heart-pulse" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
+        return <AvIcons type='MaterialCommunityIcons' name="heart-pulse" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
       case "ECG Monitor":
-        return <MCI name="heart" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
+        return <AvIcons type='MaterialCommunityIcons' name="heart" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
       case "Suction Machine":
-        return <MCI name="vacuum" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
+        return <AvIcons type='MaterialCommunityIcons' name="vacuum" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
       case "Spinal Board":
-        return <MCI name="bed-empty" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
+        return <AvIcons type='MaterialCommunityIcons' name="bed-empty" size={normalize(20)} color={COLORS.OCEAN_BLUE} />;
       default:
         return null;
     }
@@ -118,7 +116,7 @@ const BookingConfirmationScreen: React.FC<BookingConfirmationScreenProps> = ({
         </View>
         <View style={styles.card}>
           <View style={styles.headerRow}>
-            <MCI name="ambulance" size={normalize(20)} color={COLORS.WHITE} />
+            <AvIcons type='MaterialCommunityIcons' name="ambulance" size={normalize(20)} color={COLORS.WHITE} />
             <AvText type="title_6" style={styles.headerText}>
               Ambulance Booking
             </AvText>
@@ -130,9 +128,9 @@ const BookingConfirmationScreen: React.FC<BookingConfirmationScreenProps> = ({
             mode="contained"
             style={styles.nearbyButton}
             contentStyle={styles.buttonContent}
-            onPress={() => navigation.navigate(PAGES.SEARCH_AMBULANCE_VIEW)}
+            onPress={() => navigation.navigate(PAGES.SEARCH_AMBULANCE_VIEW as any)}
           >
-            <Icon name="location-pin" size={normalize(16)} color={COLORS.WHITE} />
+            <AvIcons type='MaterialCommunityIcons' name="location-pin" size={normalize(16)} color={COLORS.WHITE} />
             <AvText type="buttonText" style={styles.buttonText}>
               Near By Ambulance
             </AvText>
@@ -153,7 +151,7 @@ const BookingConfirmationScreen: React.FC<BookingConfirmationScreenProps> = ({
         </View>
         <View style={styles.confirmationCard}>
           <View style={styles.confirmationCardHeader}>
-            <Icon name="check-circle" size={normalize(20)} color={COLORS.WHITE} />
+            <AvIcons type='MaterialCommunityIcons' name="check-circle" size={normalize(20)} color={COLORS.WHITE} />
             <AvText type="title_6" style={styles.confirmationTitle}>
               Booking Confirmation
             </AvText>
@@ -164,7 +162,7 @@ const BookingConfirmationScreen: React.FC<BookingConfirmationScreenProps> = ({
         </View>
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <Icon name="description" size={normalize(20)} color={COLORS.ERROR} />
+            <AvIcons type='MaterialCommunityIcons' name="description" size={normalize(20)} color={COLORS.ERROR} />
             <AvText type="title_6" style={styles.sectionTitle}>
               Service Details
             </AvText>
@@ -204,7 +202,7 @@ const BookingConfirmationScreen: React.FC<BookingConfirmationScreenProps> = ({
         </View>
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <Icon name="calendar-today" size={normalize(20)} color={COLORS.BRIGHT_ORANGE} />
+            <AvIcons type='MaterialCommunityIcons' name="calendar-today" size={normalize(20)} color={COLORS.BRIGHT_ORANGE} />
             <AvText type="title_6" style={styles.sectionTitle}>
               Schedule & Location
             </AvText>
@@ -236,7 +234,7 @@ const BookingConfirmationScreen: React.FC<BookingConfirmationScreenProps> = ({
         </View>
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <Icon name="inventory-2" size={normalize(20)} color={COLORS.OCEAN_BLUE} />
+            <AvIcons type='MaterialCommunityIcons' name="inventory-2" size={normalize(20)} color={COLORS.OCEAN_BLUE} />
             <AvText type="title_6" style={styles.sectionTitle}>
               Equipment & Billing
             </AvText>

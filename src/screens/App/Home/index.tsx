@@ -8,6 +8,8 @@ import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { fetchAllPatients, fetchPatientDashboardData } from '../../../store/thunks/patientThunks';
 import { setCurrentPatient } from '../../../store/slices/allPatientSlice';
 import { setUserProfile } from '../../../store/slices/userSlice';
+import { AvButton, AvText } from '../../../elements';
+import { COLORS } from '../../../constants/colors';
 
 const Home: React.FC = () => {
   const dispatch = useDispatch();
@@ -66,8 +68,8 @@ const Home: React.FC = () => {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <Button onPress={onRefresh} title="Retry" />
+        <AvText style={styles.errorText}>{error}</AvText>
+        <AvButton onPress={onRefresh} buttonColor={COLORS.SECONDARY}>Retry</AvButton>
       </View>
     );
   }
@@ -95,7 +97,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: 'red',
+    color: COLORS.ERROR,
     marginBottom: 16,
   },
 });

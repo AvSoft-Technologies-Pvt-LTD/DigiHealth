@@ -5,6 +5,7 @@ import { Text } from 'react-native-paper';
 import { COLORS } from '../constants/colors';
 import { format } from 'date-fns';
 import { isIos } from '../constants/platform';
+import AvText from './AvText';
 
 type AvDatePickerProps = {
   value?: Date | string | null;
@@ -82,14 +83,14 @@ export default function AvDatePicker({
         disabled={disabled}
         style={[styles.dateButton, disabled && styles.disabled]}
       >
-        <Text style={[styles.dateText, textStyle, !value && styles.placeholderText]}>
+        <AvText style={[styles.dateText, textStyle, !value && styles.placeholderText]}>
           {value 
             ? format(
                 typeof value === 'string' ? new Date(value) : value, 
                 'dd MMM yyyy'
               )
             : placeholder}
-        </Text>
+        </AvText>
       </TouchableOpacity>
 
       {show && (

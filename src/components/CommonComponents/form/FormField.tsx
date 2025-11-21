@@ -13,6 +13,7 @@ import { COLORS } from "../../../constants/colors";
 import AvText from "../../../elements/AvText";
 import AvTextInput from "../../../elements/AvTextInput";
 import { AvSelect } from "../../../elements/AvSelect";
+import { AvIcons } from "../../../elements";
 
 export type FieldType =
   | "text"
@@ -214,7 +215,7 @@ const FormField: React.FC<FormFieldProps> = ({
                       style={[styles.checkbox, isSelected && styles.checkboxChecked]}
                     >
                       {isSelected && (
-                        <MaterialIcons name="check" size={20} color="#FFFFFF" />
+                        <AvIcons type="MaterialIcons" name="check" size={20} color="#FFFFFF" />
                       )}
                     </View>
                     <AvText type="body" style={styles.checkboxLabel}>
@@ -317,7 +318,8 @@ const FormField: React.FC<FormFieldProps> = ({
                 setShowDatePicker(field.name, true);
               }}
             >
-              <MaterialIcons
+              <AvIcons
+                type="MaterialIcons"
                 name={field.type === "date" ? "calendar-today" : "access-time"}
                 size={20}
                 color={hasError ? COLORS.ERROR : COLORS.GREY}
@@ -394,7 +396,7 @@ const FormField: React.FC<FormFieldProps> = ({
               style={styles.uploadButton}
               onPress={() => handleFileUpload(field.name, field.multiple)}
             >
-              <MaterialIcons name="cloud-upload" size={20} color={COLORS.SECONDARY} />
+              <AvIcons type="MaterialIcons" name="cloud-upload" size={20} color={COLORS.SECONDARY} />
               <AvText type="body" style={styles.uploadText}>
                 {field.multiple ? "Upload Files" : "Upload File"}
               </AvText>
@@ -404,7 +406,7 @@ const FormField: React.FC<FormFieldProps> = ({
                 {Array.isArray(value) ? (
                   value.map((uri: string, index: number) => (
                     <View key={index} style={styles.fileItem}>
-                      <MaterialIcons name="image" size={20} color="#666" />
+                      <AvIcons type="MaterialIcons" name="image" size={20} color="#666" />
                       <AvText type="body" style={styles.fileName}>
                         File {index + 1}
                       </AvText>
@@ -412,7 +414,7 @@ const FormField: React.FC<FormFieldProps> = ({
                   ))
                 ) : (
                   <View style={styles.fileItem}>
-                    <MaterialIcons name="image" size={20} color="#666" />
+                    <AvIcons type="MaterialIcons" name="image" size={20} color="#666" />
                     <AvText type="body" style={styles.fileName}>
                       File selected
                     </AvText>

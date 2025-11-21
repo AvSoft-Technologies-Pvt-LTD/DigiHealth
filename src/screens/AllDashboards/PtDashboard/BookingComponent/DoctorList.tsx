@@ -1,11 +1,9 @@
 import React from "react";
 import { View, StyleSheet, Dimensions, ActivityIndicator, FlatList, Image } from "react-native";
-import AvText from "../../../../elements/AvText";
-import AvCard from "../../../../elements/AvCards";
-import AvButton from "../../../../elements/AvButton";
 import { Doctor } from "../../../../constants/data";
 import { COLORS } from "../../../../constants/colors";
 import { normalize } from "../../../../constants/platform";
+import { AvCards, AvText, AvButton } from "../../../../elements";
 
 interface DoctorListProps {
   doctors?: Doctor[];
@@ -34,7 +32,7 @@ const DoctorList: React.FC<DoctorListProps> = ({
           <FlatList
             data={doctors}
             renderItem={({ item: doctor }) => (
-              <AvCard
+              <AvCards
                 title={doctor.name}
                 cardStyle={styles.doctorCard}
               >
@@ -62,7 +60,7 @@ const DoctorList: React.FC<DoctorListProps> = ({
                     </AvButton>
                   </View>
                 </View>
-              </AvCard>
+              </AvCards>
             )}
             keyExtractor={(doctor) => doctor.id}
             horizontal

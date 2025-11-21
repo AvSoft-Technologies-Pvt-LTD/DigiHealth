@@ -65,6 +65,7 @@ const Login: React.FC<LoginProps> = () => {
     const handlePasswordLogin = async (email: string, password: string) => {
         // Validate email
         console.log("Logging in with ",email,password)
+      
         const emailError = validateEmail(email);
         if (emailError) {
             setSnackbarMessage(emailError);

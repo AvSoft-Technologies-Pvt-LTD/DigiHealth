@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Alert, TouchableOpacity, Animated, Linking } from "react-native";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import AvButton from "./AvButton";
 import AvText from "./AvText";
 import AvTextInput from "./AvTextInput";
-import AvCard from "./AvCards";
+import AvCards from "./AvCards";
 import AvModal from "./AvModal";
 import { COLORS } from "../constants/colors";
+import AvIcons from "./AvIcons";
 
 type PaymentMethod = "card" | "upi" | "wallet" | "cash" | "bankTransfer";
 type CardType = "visa" | "mastercard" | "amex" | "rupay" | null;
@@ -124,16 +124,16 @@ const PaymentComponent: React.FC<PaymentComponentProps> = ({
   const renderPaymentMethods = () => (
     <View style={styles.methodsContainer}>
       {(["upi", "card", "wallet", "cash", "bankTransfer"] as PaymentMethod[]).map((method) => (
-        <AvCard
+        <AvCards
           key={method}
           title={method === "upi" ? "UPI" : method === "card" ? "Credit/Debit Card" : method === "wallet" ? "Wallet" : method === "cash" ? "Cash" : "Bank Transfer"}
-          icon={<Icon name={method === "upi" ? "cellphone-wireless" : method === "card" ? "credit-card" : method === "wallet" ? "wallet" : method === "cash" ? "cash" : "bank-transfer"} size={22} color={paymentMethod === method ? COLORS.WHITE : COLORS.PRIMARY} />}
+          icon={<AvIcons type={"MaterialCommunityIcons"} name={method === "upi" ? "cellphone-wireless" : method === "card" ? "credit-card" : method === "wallet" ? "wallet" : method === "cash" ? "cash" : "bank-transfer"} size={22} color={paymentMethod === method ? COLORS.WHITE : COLORS.PRIMARY} />}
           cardStyle={[styles.methodCard, paymentMethod === method && styles.activeMethodCard]}
           titleStyle={[paymentMethod === method ? styles.activeMethodText : styles.methodText]}
           onPress={() => setPaymentMethod(method)}
         >
-          {paymentMethod === method && <Icon name="check-circle" size={18} color={COLORS.WHITE} style={styles.checkIcon} />}
-        </AvCard>
+          {paymentMethod === method && <AvIcons type={"MaterialCommunityIcons"} name="check-circle" size={18} color={COLORS.WHITE} style={styles.checkIcon} />}
+        </AvCards>
       ))}
     </View>
   );
@@ -142,10 +142,10 @@ const PaymentComponent: React.FC<PaymentComponentProps> = ({
     <>
       <View style={styles.savedCardsContainer}>
         {savedCards.map((card, index) => (
-          <AvCard
+          <AvCards
             key={index}
             title={`**** ${card.last4}`}
-            icon={<Icon name={card.brand === "visa" ? "credit-card" : "credit-card-outline"} size={18} color={COLORS.PRIMARY} />}
+            icon={<AvIcons type={"MaterialCommunityIcons"} name={card.brand === "visa" ? "credit-card" : "credit-card-outline"} size={18} color={COLORS.PRIMARY} />}
             cardStyle={styles.savedCard}
             onPress={() => setFormData({ ...formData, cardNumber: `**** **** **** ${card.last4}`, expiryDate: "12/25", cvv: "123" })}
           />
@@ -194,6 +194,7 @@ const PaymentComponent: React.FC<PaymentComponentProps> = ({
   const renderUPIForm = () => (
     <>
       <AvText style={styles.label}>UPI ID</AvText>
+      
       <AvTextInput
         placeholder="yourname@bank"
         value={formData.upiId}
@@ -206,23 +207,23 @@ const PaymentComponent: React.FC<PaymentComponentProps> = ({
       <TouchableOpacity onPress={() => setFormData({ ...formData, upiId: "test@upi" })}>
         <AvText style={styles.suggestionText}>Use test@upi for testing</AvText>
       </TouchableOpacity>
-      {formData.upiId && <AvCard title="This UPI ID will be used for payment" icon={<Icon name="upi" size={40} color={COLORS.PRIMARY} />} cardStyle={styles.upiIconContainer} />}
+      {formData.upiId && <AvCards title="This UPI ID will be used for payment" icon={<AvIcons type={"MaterialCommunityIcons"} name="upi" size={40} color={COLORS.PRIMARY} />} cardStyle={styles.upiIconContainer} />}
     </>
   );
 
   const renderWalletForm = () => (
     <>
       {(["gpay", "phonepe", "paytm", "amazonpay"] as WalletProvider[]).map((wallet) => (
-        <AvCard
+        <AvCards
           key={wallet}
           title={wallet === "gpay" ? "Google Pay" : wallet === "phonepe" ? "PhonePe" : wallet === "paytm" ? "Paytm" : "Amazon Pay"}
-          icon={<Icon name={wallet === "gpay" ? "google" : wallet === "phonepe" ? "cellphone" : wallet === "paytm" ? "wallet" : "credit-card-outline"} size={24} color={formData.walletProvider === wallet ? COLORS.WHITE : wallet === "gpay" ? "#4285F4" : wallet === "phonepe" ? "#5B2886" : wallet === "paytm" ? "#00BAFF" : "#FF9900"} />}
+          icon={<AvIcons type={"MaterialCommunityIcons"} name={wallet === "gpay" ? "google" : wallet === "phonepe" ? "cellphone" : wallet === "paytm" ? "wallet" : "credit-card-outline"} size={24} color={formData.walletProvider === wallet ? COLORS.WHITE : wallet === "gpay" ? "#4285F4" : wallet === "phonepe" ? "#5B2886" : wallet === "paytm" ? "#00BAFF" : "#FF9900"} />}
           cardStyle={[styles.walletOption, formData.walletProvider === wallet && { backgroundColor: COLORS.SECONDARY, borderColor: COLORS.BG_OFF_WHITE }]}
           titleStyle={[formData.walletProvider === wallet ? styles.selectedWalletText : styles.walletText, { color: formData.walletProvider === wallet ? COLORS.WHITE : wallet === "gpay" ? "#4285F4" : wallet === "phonepe" ? "#5B2886" : wallet === "paytm" ? "#00BAFF" : "#FF9900" }]}
           onPress={() => setFormData({ ...formData, walletProvider: wallet })}
         >
-          {formData.walletProvider === wallet && <Icon name="check-circle" size={18} color={COLORS.WHITE} style={styles.checkIcon} />}
-        </AvCard>
+          {formData.walletProvider === wallet && <AvIcons type={"MaterialCommunityIcons"} name="check-circle" size={18} color={COLORS.WHITE} style={styles.checkIcon} />}
+        </AvCards>
       ))}
     </>
   );
@@ -232,7 +233,7 @@ const PaymentComponent: React.FC<PaymentComponentProps> = ({
       <AvText style={styles.label}>Bank Name</AvText>
       <TouchableOpacity style={[styles.input, styles.dropdownInput]} onPress={() => Alert.alert("Select Bank", "", [...popularBanks.map(bank => ({ text: bank, onPress: () => setFormData({ ...formData, bankName: bank }) })), { text: "Cancel", style: "cancel" }])}>
         <AvText style={formData.bankName ? styles.dropdownText : styles.placeholderText}>{formData.bankName || "Select your bank"}</AvText>
-        <Icon name="chevron-down" size={22} color={COLORS.PRIMARY} />
+        <AvIcons type={"MaterialCommunityIcons"} name="chevron-down" size={22} color={COLORS.PRIMARY} />
       </TouchableOpacity>
       <AvText style={styles.label}>Account Number</AvText>
       <AvTextInput
@@ -259,9 +260,9 @@ const PaymentComponent: React.FC<PaymentComponentProps> = ({
   );
 
   const renderCashForm = () => (
-    <AvCard title={`Please pay ${currency}${amount} in cash`} icon={<Icon name="cash" size={40} color={COLORS.PRIMARY} />} cardStyle={styles.cashContainer}>
+    <AvCards title={`Please pay ${currency}${amount} in cash`} icon={<AvIcons type={"MaterialCommunityIcons"} name="cash" size={40} color={COLORS.PRIMARY} />} cardStyle={styles.cashContainer}>
       <AvText style={styles.cashNote}>Your order will be confirmed after payment</AvText>
-    </AvCard>
+    </AvCards>
   );
 
   return (
@@ -282,14 +283,14 @@ const PaymentComponent: React.FC<PaymentComponentProps> = ({
       <AvButton mode="contained" onPress={handleSubmit} loading={isProcessing} disabled={isProcessing} style={styles.submitButton}>{buttonText}</AvButton>
       <AvModal isModalVisible={isModalVisible} setModalVisible={setIsModalVisible} title="Payment Receipt">
         <View style={styles.successContainer}>
-          <Animated.View style={{ transform: [{ scale: checkmarkScale }] }}><Icon name="check-circle" size={60} color={COLORS.SUCCESS} /></Animated.View>
+          <Animated.View style={{ transform: [{ scale: checkmarkScale }] }}><AvIcons type={"MaterialCommunityIcons"} name="check-circle" size={60} color={COLORS.SUCCESS} /></Animated.View>
           <AvText style={styles.successText}>Payment Successful!</AvText>
-          <AvCard title="Receipt" cardStyle={styles.receiptContainer}>
+          <AvCards title="Receipt" cardStyle={styles.receiptContainer}>
             <View style={styles.receiptRow}><AvText style={styles.receiptLabel}>Amount:</AvText><AvText style={styles.receiptValue}>{currency}{amount}</AvText></View>
             <View style={styles.receiptRow}><AvText style={styles.receiptLabel}>Transaction ID:</AvText><AvText style={styles.receiptValue}>{formData.transactionId}</AvText></View>
             <View style={styles.receiptRow}><AvText style={styles.receiptLabel}>Time:</AvText><AvText style={styles.receiptValue}>{formData.paymentTime}</AvText></View>
             <View style={styles.receiptRow}><AvText style={styles.receiptLabel}>Method:</AvText><AvText style={styles.receiptValue}>{paymentMethod === "upi" ? "UPI" : paymentMethod === "card" ? "Card" : paymentMethod === "wallet" ? formData.walletProvider : paymentMethod === "bankTransfer" ? "Bank Transfer" : "Cash"}</AvText></View>
-          </AvCard>
+          </AvCards>
         </View>
       </AvModal>
     </View>

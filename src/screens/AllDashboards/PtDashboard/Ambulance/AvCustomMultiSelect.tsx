@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput, Modal, ScrollView, TextStyle } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import MCI from 'react-native-vector-icons/MaterialCommunityIcons';
+import { View, StyleSheet, TouchableOpacity, ScrollView, TextStyle } from 'react-native';
 import AvText from '../../../../elements/AvText';
 import { COLORS } from '../../../../constants/colors';
 import { normalize, widthPercentageToDP, heightPercentageToDP } from '../../../../constants/platform';
+import { AvModal, AvTextInput } from '../../../../elements';
+import { AvIcons } from '../../../../elements';
 
 type EquipmentItem = {
   label: string;
@@ -54,14 +54,14 @@ const AvCustomMultiSelect: React.FC<AvCustomMultiSelectProps> = ({
 
   const getEquipmentIcon = (label: string) => {
     switch (label) {
-      case "Oxygen Cylinder": return <MCI name="oxygen" size={normalize(16)} color={COLORS.SECONDARY} />;
-      case "Stretcher": return <MCI name="bed" size={normalize(16)} color={COLORS.SECONDARY} />;
-      case "First Aid Kit": return <MCI name="first-aid" size={normalize(16)} color={COLORS.SECONDARY} />;
-      case "Ventilator": return <MCI name="fan" size={normalize(16)} color={COLORS.SECONDARY} />;
-      case "Defibrillator": return <MCI name="heart-pulse" size={normalize(16)} color={COLORS.SECONDARY} />;
-      case "ECG Monitor": return <MCI name="heart" size={normalize(16)} color={COLORS.SECONDARY} />;
-      case "Suction Machine": return <MCI name="vacuum" size={normalize(16)} color={COLORS.SECONDARY} />;
-      case "Spinal Board": return <MCI name="bed-empty" size={normalize(16)} color={COLORS.SECONDARY} />;
+      case "Oxygen Cylinder": return <AvIcons type="MaterialCommunityIcons" name="oxygen" size={normalize(16)} color={COLORS.SECONDARY} />;
+      case "Stretcher": return <AvIcons type="MaterialCommunityIcons" name="bed" size={normalize(16)} color={COLORS.SECONDARY} />;
+      case "First Aid Kit": return <AvIcons type="MaterialCommunityIcons" name="first-aid" size={normalize(16)} color={COLORS.SECONDARY} />;
+      case "Ventilator": return <AvIcons type="MaterialCommunityIcons" name="fan" size={normalize(16)} color={COLORS.SECONDARY} />;
+      case "Defibrillator": return <AvIcons type="MaterialCommunityIcons" name="heart-pulse" size={normalize(16)} color={COLORS.SECONDARY} />;
+      case "ECG Monitor": return <AvIcons type="MaterialCommunityIcons" name="heart" size={normalize(16)} color={COLORS.SECONDARY} />;
+      case "Suction Machine": return <AvIcons type="MaterialCommunityIcons" name="vacuum" size={normalize(16)} color={COLORS.SECONDARY} />;
+      case "Spinal Board": return <AvIcons type="MaterialCommunityIcons" name="bed-empty" size={normalize(16)} color={COLORS.SECONDARY} />;
       default: return null;
     }
   };
@@ -101,7 +101,8 @@ const AvCustomMultiSelect: React.FC<AvCustomMultiSelectProps> = ({
             ? selectedItems.map(val => data.find(item => item.value === val)?.label).join(", ")
             : placeholder}
         </AvText>
-        <Icon
+        <AvIcons
+          type="MaterialCommunityIcons"
           name="keyboard-arrow-down"
           size={normalize(20)}
           color={error ? COLORS.ERROR : COLORS.PRIMARY_TXT}
@@ -115,8 +116,8 @@ const AvCustomMultiSelect: React.FC<AvCustomMultiSelectProps> = ({
         </AvText>
       ) : null}
 
-      <Modal
-        visible={isOpen}
+      <AvModal
+        isModalVisible={isOpen}
         transparent={true}
         animationType="fade"
         onRequestClose={() => setIsOpen(false)}
@@ -134,8 +135,8 @@ const AvCustomMultiSelect: React.FC<AvCustomMultiSelectProps> = ({
             }
           ]}>
             <View style={styles.searchBarContainer}>
-              <Icon name="search" size={normalize(20)} color={COLORS.GREY} style={styles.searchIcon} />
-              <TextInput
+              <AvIcons type="MaterialCommunityIcons" name="search" size={normalize(20)} color={COLORS.GREY} style={styles.searchIcon} />
+              <AvTextInput
                 style={styles.searchInput}
                 placeholder="Search equipment..."
                 placeholderTextColor={COLORS.GREY}
@@ -161,9 +162,9 @@ const AvCustomMultiSelect: React.FC<AvCustomMultiSelectProps> = ({
                     onPress={() => handleSelect(item)}
                   >
                     {selectedItems.includes(item.value) ? (
-                      <Icon name="check-box" size={normalize(18)} color={COLORS.SECONDARY} />
+                      <AvIcons type="MaterialCommunityIcons" name="check-box" size={normalize(18)} color={COLORS.SECONDARY} />
                     ) : (
-                      <Icon name="check-box-outline-blank" size={normalize(18)} color={COLORS.LIGHT_GREY} />
+                      <AvIcons type="MaterialCommunityIcons" name="check-box-outline-blank" size={normalize(18)} color={COLORS.LIGHT_GREY} />
                     )}
                     <View style={styles.equipmentInfo}>
                       {getEquipmentIcon(item.label)}
@@ -178,7 +179,7 @@ const AvCustomMultiSelect: React.FC<AvCustomMultiSelectProps> = ({
             </ScrollView>
           </View>
         </TouchableOpacity>
-      </Modal>
+      </AvModal>
     </View>
   );
 };

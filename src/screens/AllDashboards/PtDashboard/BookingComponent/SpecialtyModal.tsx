@@ -1,10 +1,9 @@
 // SpecialtyModal.tsx
 import React from "react";
-import { View, StyleSheet, Modal, TouchableOpacity } from "react-native";
-import AvText from "../../../../elements/AvText";
-import AvButton from "../../../../elements/AvButton";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { COLORS } from "../../../../constants/colors";
 import { normalize } from "../../../../constants/platform";
+import { AvModal, AvText, AvButton } from "../../../../elements";
 
 interface SpecialtyModalProps {
   isVisible: boolean;
@@ -20,7 +19,7 @@ const SpecialtyModal: React.FC<SpecialtyModalProps> = ({
   onSelectSpecialty
 }) => {
   return (
-    <Modal visible={isVisible} animationType="slide" transparent>
+    <AvModal isModalVisible={isVisible} animationType="slide" transparent>
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <AvText type="title_2" style={styles.modalTitle}>
@@ -49,7 +48,7 @@ const SpecialtyModal: React.FC<SpecialtyModalProps> = ({
           </AvButton>
         </View>
       </View>
-    </Modal>
+    </AvModal>
   );
 };
 

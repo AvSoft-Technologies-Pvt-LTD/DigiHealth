@@ -9,16 +9,11 @@ import {
   ScrollView,
 } from 'react-native';
 import Header from '../../../../components/Header';
-import AvButton from '../../../../elements/AvButton';
-import AvText from '../../../../elements/AvText';
-import AvTextInput from '../../../../elements/AvTextInput';
 import { COLORS } from '../../../../constants/colors';
-import AvModal from '../../../../elements/AvModal';
 import { PAGES } from '../../../../constants/pages';
 import { TableCard, DataRecord, Action } from '../../../../components/CommonComponents/TableCard';
 import { SearchFilterBar, FilterOption } from '../../../../components/CommonComponents/SearchFilter';
 import { Tabs } from '../../../../components/CommonComponents/Tabs';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import {
   widthPercentageToDP as wp,
@@ -29,11 +24,10 @@ import {
   StatusBarHeight,
 } from '../../../../constants/platform';
 import { AvSelect } from '../../../../elements/AvSelect';
-import { MultiSelectDropdown } from '../../../../elements/MultiSelectDropdown';
-import { FlatList } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { fetchHospitalList, fetchMedicalConditions, saveMedicalRecord } from '../../../../store/thunks/patientThunks';
 import AvDatePicker from '../../../../elements/AvDatePicker';
+import { AvButton, AvIcons, AvModal, AvText, AvTextInput } from '../../../../elements';
 
 // interface ChipProps {
 //   label: string;
@@ -44,7 +38,7 @@ import AvDatePicker from '../../../../elements/AvDatePicker';
 //   <View style={styles.chip}>
 //     <AvText style={styles.chipText}>{label}</AvText>
 //     <TouchableOpacity onPress={onRemove} style={styles.closeButton}>
-//       <Icon name="close" size={16} color={COLORS.WHITE} />
+//       <AvIcons type="MaterialIcons" name="close" size={16} color={COLORS.WHITE} />
 //     </TouchableOpacity>
 //   </View>
 // )));
@@ -114,7 +108,7 @@ const statusOptions = [
 //   <View style={styles.chip}>
 //     <AvText style={styles.chipText}>{label}</AvText>
 //     <TouchableOpacity onPress={onRemove} style={styles.closeButton}>
-//       <Icon name="close" size={16} color={COLORS.WHITE} />
+//       <AvIcons type="MaterialIcons" name="close" size={16} color={COLORS.WHITE} />
 //     </TouchableOpacity>
 //   </View>
 // ));
@@ -392,7 +386,7 @@ const MedicalRecordsScreen = () => {
           >
             {record.selectedHospital}
           </AvText>
-          <Icon name="check-circle" size={18} color={COLORS.GREEN} style={{ marginLeft: 6 }} />
+          <AvIcons type="MaterialIcons" name="check-circle" size={18} color={COLORS.GREEN} style={{ marginLeft: 6 }} />
         </View>
       </TouchableOpacity>
     );
@@ -406,7 +400,7 @@ const MedicalRecordsScreen = () => {
 
   const renderEmptyState = useCallback(() => (
     <View style={styles.emptyContainer}>
-      <Icon name="medical-services" size={60} color={COLORS.GREY} />
+      <AvIcons type="MaterialIcons" name="medical-services" size={60} color={COLORS.GREY} />
       <AvText style={styles.emptyText}>No medical records found</AvText>
       <AvText style={styles.emptySubtext}>
         {loading ? 'Loading records...' : 'Try adjusting your filters or add a new record'}
@@ -452,13 +446,14 @@ const MedicalRecordsScreen = () => {
             onCardPress={() => navigation.navigate(PAGES.PATIENT_MEDICAL_DETAILS, { record: item, recordType: item.type })}
             onFieldPress={handleFieldPress}
             customRenderers={{
-              hospitalName: (value, record) => renderHospitalName(record as MedicalRecord)
+              // hospitalName: (value, record) => renderHospitalName(record as MedicalRecord)
             }}
           />
         </View>
       </View>
     );
-  }, [toggleCardBlur, formatDate, renderHiddenHeader, navigation, handleFieldPress, renderHospitalName]);
+  }, [toggleCardBlur, formatDate, renderHiddenHeader, navigation, handleFieldPress]);
+  // renderHospitalName
 
   useEffect(() => {
     fetchRecords();
@@ -580,7 +575,7 @@ const MedicalRecordsScreen = () => {
                 textStyle={styles.dateText}
                 placeholder="Select Date of Visit"
               />
-              <Icon name="date-range" size={24} color={COLORS.GREY} style={styles.dateIcon} />
+              <AvIcons type="MaterialIcons" name="date-range" size={24} color={COLORS.GREY} style={styles.dateIcon} />
             </View>
           </View>
           {activeTab === 'IPD' && (
@@ -596,7 +591,7 @@ const MedicalRecordsScreen = () => {
                   textStyle={styles.dateText}
                   placeholder="Select Discharged Date"
                 />
-                <Icon name="date-range" size={24} color={COLORS.GREY} style={styles.dateIcon} />
+                <AvIcons type="MaterialIcons" name="date-range" size={24} color={COLORS.GREY} style={styles.dateIcon} />
               </View>
             </View>
           )}

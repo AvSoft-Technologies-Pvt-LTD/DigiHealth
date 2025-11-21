@@ -11,11 +11,11 @@ import {
 import AvText from '../../../elements/AvText';
 import AvTextInput from '../../../elements/AvTextInput';
 import AvButton from '../../../elements/AvButton';
-import AvIcons from '../../../elements/AvIcons';
 import { COLORS } from '../../../constants/colors';
 import { normalize } from '../../../constants/platform';
 import AvImage from '../../../elements/AvImage';
 import { IMAGES } from '../../../assets';
+import { AvIcons } from '../../../elements';
 
 interface ResetPasswordProps {
   title: string;

@@ -2,21 +2,18 @@ import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
-import AvButton from '../../../../elements/AvButton';
 import { COLORS } from '../../../../constants/colors';
 import { PAGES } from '../../../../constants/pages';
 import { normalize } from '../../../../constants/platform';
+import { AvButton, AvCards, AvIcons, AvText } from '../../../../elements';
 
 type LabStackParamList = {
   [PAGES.LAB_CART]: { cart: any[]; setCart: (cart: any[]) => void };
   [PAGES.AVAILABLE_LABS]: { cart: any[]; testDetails: any[] };
 };
 
-type LabCartRouteProp = RouteProp<LabStackParamList, PAGES.LAB_CART>;
-type LabCartNavigationProp = NativeStackNavigationProp<LabStackParamList, PAGES.LAB_CART>;
+type LabCartRouteProp = RouteProp<LabStackParamList, typeof PAGES.LAB_CART>;
+type LabCartNavigationProp = NativeStackNavigationProp<LabStackParamList, typeof PAGES.LAB_CART>;
 
 const LabCart: React.FC = () => {
   const route = useRoute<LabCartRouteProp>();
@@ -48,44 +45,44 @@ const LabCart: React.FC = () => {
   const isPackage = (item: any) => item.type === 'package';
 
   const getTestDetails = () => {
-  const testDetails: any[] = [];
-  cart.forEach((item) => {
-    if (isPackage(item) && expandedPackages[item.id]) {
-      item.includedTests?.forEach((test: any) => {
-        testDetails.push({
-          id: test.id,
-          title: test.title,
-          code: test.code || 'N/A',
-          price: test.price || 0,
-          type: 'test',
+    const testDetails: any[] = [];
+    cart.forEach((item) => {
+      if (isPackage(item) && expandedPackages[item.id]) {
+        item.includedTests?.forEach((test: any) => {
+          testDetails.push({
+            id: test.id,
+            title: test.title,
+            code: test.code || 'N/A',
+            price: test.price || 0,
+            type: 'test',
+          });
         });
-      });
-    } else {
-      testDetails.push({
-        id: item.id,
-        title: item.title,
-        code: item.code || 'N/A',
-        price: item.price || 0,
-        type: item.type,
-      });
-    }
-  });
-  return testDetails;
-};
+      } else {
+        testDetails.push({
+          id: item.id,
+          title: item.title,
+          code: item.code || 'N/A',
+          price: item.price || 0,
+          type: item.type,
+        });
+      }
+    });
+    return testDetails;
+  };
 
   return (
     <ScrollView style={styles.container}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Icon name="arrow-back" size={normalize(20)} color={COLORS.PRIMARY} />
-              <AvText style={styles.backText}>Back to Home</AvText>
-            </TouchableOpacity>
+        <AvIcons type="MaterialIcons" name="arrow-back" size={normalize(20)} color={COLORS.PRIMARY} />
+        <AvText style={styles.backText}>Back to Home</AvText>
+      </TouchableOpacity>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Icon name="shopping-cart" size={24} color={COLORS.PRIMARY} />
+          <AvIcons type="MaterialIcons" name="shopping-cart" size={24} color={COLORS.PRIMARY} />
           <AvText type="title_4" style={styles.title}>Your Cart</AvText>
         </View>
         <TouchableOpacity onPress={handleClearAll} style={styles.clearAllButton}>
-          <Icon name="delete" size={16} color={COLORS.ERROR} />
+          <AvIcons type="MaterialIcons" name="delete" size={16} color={COLORS.ERROR} />
           <AvText style={styles.clearAllText}>Clear All</AvText>
         </TouchableOpacity>
       </View>
@@ -93,7 +90,7 @@ const LabCart: React.FC = () => {
         <AvText style={styles.emptyCartText}>Your cart is empty. Start adding tests!</AvText>
       ) : (
         <>
-          <AvCard cardStyle={styles.cartCard}>
+          <AvCards title="Your Cart" cardStyle={styles.cartCard}>
             {cart.map((item) => (
               <View key={item.id} style={styles.cartItem}>
                 <View style={styles.itemHeader}>
@@ -116,35 +113,35 @@ const LabCart: React.FC = () => {
                 )}
                 {isPackage(item) && expandedPackages[item.id] && item.includedTests && (
                   <View style={styles.includedTestsContainer}>
-                    <AvText type="subtitle" style={styles.includedTestsTitle}>Included Tests:</AvText>
+                    <AvText type="Subtitle_1" style={styles.includedTestsTitle}>Included Tests:</AvText>
                     {item.includedTests.map((test: any, index: number) => (
                       <View key={index} style={styles.testItem}>
-                        <Icon name="check-circle" size={16} color={COLORS.SUCCESS} />
+                        <AvIcons type="MaterialIcons" name="check-circle" size={16} color={COLORS.SUCCESS} />
                         <AvText type="body" style={styles.testText}>{test.title}</AvText>
                       </View>
                     ))}
                   </View>
                 )}
                 <TouchableOpacity onPress={() => handleRemove(item.id)} style={styles.removeButton}>
-                  <Icon name="delete" size={16} color={COLORS.ERROR} />
+                  <AvIcons type="MaterialIcons" name="delete" size={16} color={COLORS.ERROR} />
                   <AvText style={styles.removeButtonText}>Remove</AvText>
                 </TouchableOpacity>
               </View>
             ))}
-          </AvCard>
-          <AvCard cardStyle={styles.summaryCard}>
+          </AvCards>
+          <AvCards title="Order Summary" cardStyle={styles.summaryCard}>
             <AvText type="title_6" style={styles.summaryTitle}>Order Summary</AvText>
             {cart.map((item) => (
-  <View key={item.id} style={styles.cartItem}>
-    <AvText type="title_6" style={styles.itemTitle}>{item.title}</AvText>
-    <AvText type="body" style={styles.itemCode}>Code: {item.code || 'N/A'}</AvText>
-    <AvText type="body" style={styles.itemDescription}>{item.description}</AvText>
-  </View>
-))}
+              <View key={item.id} style={styles.cartItem}>
+                <AvText type="title_6" style={styles.itemTitle}>{item.title}</AvText>
+                <AvText type="body" style={styles.itemCode}>Code: {item.code || 'N/A'}</AvText>
+                <AvText type="body" style={styles.itemDescription}>{item.description}</AvText>
+              </View>
+            ))}
 
             <View style={styles.totalRow}>
-              <AvText type="subtitle" style={styles.totalLabel}>Total</AvText>
-              <AvText type="subtitle" style={styles.totalPrice}>₹{subtotal}</AvText>
+              <AvText type="Subtitle_1" style={styles.totalLabel}>Total</AvText>
+              <AvText type="Subtitle_1" style={styles.totalPrice}>₹{subtotal}</AvText>
             </View>
             <AvButton
               mode="contained"
@@ -156,7 +153,7 @@ const LabCart: React.FC = () => {
             >
               Proceed to Book
             </AvButton>
-          </AvCard>
+          </AvCards>
         </>
       )}
     </ScrollView>
@@ -201,7 +198,7 @@ const styles = StyleSheet.create({
     marginTop: normalize(20),
     color: COLORS.GREY,
   },
-    backButton: {
+  backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: normalize(16),

@@ -6,7 +6,7 @@ project.ext.vectoricons = [
     iconFontNames: [ 'MaterialCommunityIcons.ttf' ]
 ]
 
-apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+
 
 def enableProguardInReleaseBuilds = false
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
@@ -46,6 +46,30 @@ android {
 
     ndkVersion rootProject.ext.ndkVersion
 }
+
+// Add this at the bottom of the file:
+project.ext.vectoricons = [
+    iconFontNames: [
+        'MaterialIcons.ttf',
+        'EvilIcons.ttf',
+        'Feather.ttf',
+        'FontAwesome.ttf',
+        'FontAwesome5_Brands.ttf',
+        'FontAwesome5_Regular.ttf',
+        'FontAwesome5_Solid.ttf',
+        'Foundation.ttf',
+        'Ionicons.ttf',
+        'MaterialCommunityIcons.ttf',
+        'Octicons.ttf',
+        'SimpleLineIcons.ttf',
+        'Zocial.ttf',
+        'AntDesign.ttf',
+        'Entypo.ttf',
+        'Fontisto.ttf',
+    ]
+]
+
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 
 dependencies {
     implementation("com.facebook.react:react-android")

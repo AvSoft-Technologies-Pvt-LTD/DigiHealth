@@ -3,7 +3,7 @@ import { View, StyleSheet, StyleProp, ViewStyle, TextStyle, TouchableOpacity } f
 import { COLORS } from "../constants/colors";
 import AvText from "./AvText";
 
-interface AvCardProps {
+interface AvCardsProps {
   title: React.ReactNode | string;
   icon?: React.ReactNode;
   cardStyle?: StyleProp<ViewStyle>;
@@ -12,7 +12,7 @@ interface AvCardProps {
   children?: React.ReactNode;
 }
 
-const AvCard: React.FC<AvCardProps> = ({
+const AvCards: React.FC<AvCardsProps> = ({
   title,
   icon,
   cardStyle,
@@ -75,4 +75,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(AvCard);
+export default React.memo(AvCards);

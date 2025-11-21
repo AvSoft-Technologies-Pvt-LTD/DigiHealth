@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { COLORS } from "../../../../constants/colors";
-import AvText from "../../../../elements/AvText";
-import AvCard from "../../../../elements/AvCards";
 import AvButton from "../../../../elements/AvButton";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { subscriptionPlans, SubscriptionPlan } from "../../../../constants/data";
@@ -24,6 +22,7 @@ import {
 } from "../../../../store/thunks/patientThunks";
 import { setUserProfile } from "../../../../store/slices/userSlice";
 import { setCurrentPatient } from "../../../../store/slices/allPatientSlice";
+import { AvIcons, AvText, AvCards } from "../../../../elements";
 
 const formatDate = (dateString: string) => {
   if (!dateString) return "N/A";
@@ -120,12 +119,12 @@ const HealthCard: React.FC = () => {
   const renderPlanCard = (plan: SubscriptionPlan) => {
     const isSelected = selectedPlan?.id === plan.id;
     return (
-      <AvCard
+      <AvCards
         key={plan.id}
         title={
           <View style={styles.planHeader}>
             <View style={[styles.planIconContainer, { backgroundColor: `${plan.color}20` }]}>
-              <Icon name={plan.icon} size={24} color={plan.color} />
+              <AvIcons type='MaterialCommunityIcons' name={plan.icon} size={24} color={plan.color} />
             </View>
             <View style={styles.planTitleContainer}>
               <AvText type="title_7" style={[styles.planName, { color: COLORS.PRIMARY_TXT }]}>
@@ -161,7 +160,7 @@ const HealthCard: React.FC = () => {
         <View style={styles.planBenefits}>
           {plan.benefits.map((benefit, index) => (
             <View key={index} style={styles.benefitItem}>
-              <Icon name="check-circle" size={16} color={plan.color} />
+              <AvIcons type="MaterialCommunityIcons" name="check-circle" size={16} color={plan.color} />
               <AvText type="caption" style={styles.benefitText}>
                 {benefit}
               </AvText>
@@ -176,7 +175,7 @@ const HealthCard: React.FC = () => {
             </AvText>
           </View>
         )}
-      </AvCard>
+      </AvCards>
     );
   };
 
@@ -260,7 +259,7 @@ const HealthCard: React.FC = () => {
                 </AvText>
               </View>
               <View style={styles.qrCodeContainer}>
-                <Icon name="qrcode" size={60} color={COLORS.WHITE} />
+                <AvIcons type="MaterialCommunityIcons" name="qrcode" size={60} color={COLORS.WHITE} />
               </View>
             </View>
           </View>

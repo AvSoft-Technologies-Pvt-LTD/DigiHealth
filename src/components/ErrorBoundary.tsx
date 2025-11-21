@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS } from '../constants/colors';
+import { AvText } from '../elements';
 
 interface Props {
   children: ReactNode;
@@ -49,21 +50,21 @@ console.log("Error Information",errorInfo)
       // Default error UI
       return (
         <View style={styles.container}>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.errorText}>
+          <AvText type='title_6' style={styles.title}>Something went wrong</AvText>
+          <AvText type='heading_6' style={styles.errorText}>
             {error?.toString() || 'An unexpected error occurred'}
-          </Text>
-          {__DEV__ && errorInfo && (
-            <Text style={styles.errorDetails}>
+          </AvText>
+          {/* {__DEV__ && errorInfo && (
+            <AvText type='heading_6' style={styles.errorDetails}>
               
-              {/* {errorInfo.componentStack} */}
-            </Text>
-          )}
+              {/* {errorInfo.componentStack} 
+            </AvText>
+          )} */}
           <TouchableOpacity
             style={styles.reloadButton}
             onPress={this.handleReload}
           >
-            <Text style={styles.reloadButtonText}>Try Again</Text>
+            <AvText type='title_2' style={styles.reloadButtonText}>Try Again</AvText>
           </TouchableOpacity>
         </View>
       );
@@ -82,13 +83,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.WHITE,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
     marginBottom: 10,
     color: COLORS.ERROR,
   },
   errorText: {
-    fontSize: 16,
     marginBottom: 20,
     textAlign: 'center',
     color: COLORS.PRIMARY_TXT,
@@ -107,7 +105,7 @@ const styles = StyleSheet.create({
   },
   reloadButtonText: {
     color: COLORS.WHITE,
-    fontSize: 16,
+    // fontSize: 16,
     fontWeight: 'bold',
   },
 });

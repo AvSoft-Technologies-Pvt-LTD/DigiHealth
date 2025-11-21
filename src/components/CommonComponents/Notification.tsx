@@ -1,19 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
+  Pressable,
   FlatList,
   StyleSheet,
-  Modal,
-  SafeAreaView,
   Alert,
+  Animated,
 } from 'react-native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { COLORS } from '../../constants/colors';
 import { Typography } from '../../constants/fonts';
 import { normalize, widthPercentageToDP } from '../../constants/platform';
+import { AvText, AvTextInput , AvIcons, AvModal} from '../../elements';
+import { width } from '../../constants/common';
 
 // Define types
 type MessageType = 'General' | string;
@@ -94,26 +92,37 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
 }) => {
   if (!visible || !message) return null;
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+    <AvModal isModalVisible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
         <View style={styles.detailsModalContainer}>
           <View style={styles.detailsModalHeader}>
-            <Text style={[Typography.heading_5, styles.detailsModalTitle]}>Notification Details</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <MaterialIcons name="close" size={normalize(22)} color={COLORS.GREY} />
-            </TouchableOpacity>
+            <AvText style={[Typography.heading_5, styles.detailsModalTitle]}>Notification Details</AvText>
+            <Pressable onPress={onClose} style={styles.closeButton}>
+              <AvIcons
+                type={"MaterialIcons"}
+                name={"close"}
+                size={normalize(22)}
+                color={COLORS.GREY}
+              />
+            </Pressable>
           </View>
           <View style={styles.detailsModalContent}>
             <View style={styles.detailsModalIcon}>
-              <MaterialIcons name="notifications" size={normalize(22)} color={COLORS.PRIMARY_BLUE} />
+              <AvIcons
+                type={"MaterialIcons"}
+                name={"notifications"}
+                size={normalize(22)}
+                color={COLORS.PRIMARY_BLUE}
+              />
             </View>
             <View style={styles.detailsModalTextContainer}>
-              <Text style={[Typography.body, styles.detailsModalMetaText]}>
+              <AvText type='body' style={[styles.detailsModalMetaText]}>
                 ● {message.type} • {message.timeAgo}
-              </Text>
+              </AvText>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {message.details.icon === 'calendar' && (
-                  <MaterialIcons
+                  <AvIcons
+                    type={"MaterialIcons"}
                     name="event"
                     size={normalize(18)}
                     color={COLORS.GREY}
@@ -121,7 +130,8 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
                   />
                 )}
                 {message.details.icon === 'appointment' && (
-                  <MaterialIcons
+                  <AvIcons
+                    type={"MaterialIcons"}
                     name="check-circle"
                     size={normalize(18)}
                     color={COLORS.SUCCESS}
@@ -129,20 +139,21 @@ const NotificationDetailsModal: React.FC<NotificationDetailsModalProps> = ({
                   />
                 )}
                 {message.details.icon === 'reminder' && (
-                  <MaterialIcons
+                  <AvIcons
+                    type={"MaterialIcons"}
                     name="alarm"
                     size={normalize(18)}
                     color={COLORS.ORANGE}
                     style={{ marginRight: normalize(6) }}
                   />
                 )}
-                <Text style={[Typography.body, styles.detailsModalText]}>{message.text}</Text>
+                <AvText type='body' style={[styles.detailsModalText]}>{message.text}</AvText>
               </View>
             </View>
           </View>
         </View>
       </View>
-    </Modal>
+    </AvModal>
   );
 };
 
@@ -163,27 +174,27 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   if (!visible || !message) return null;
   const doctorName = message.text.split('with ')[1]?.split(' on')[0] || 'the doctor';
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+    <AvModal isModalVisible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalContainer}>
-          <Text style={[Typography.heading_4, styles.modalTitle]}>Confirm Payment</Text>
-          <Text style={[Typography.body, styles.modalText]}>Pay ₹500 for appointment with {doctorName}?</Text>
+          <AvText type='heading_4' style={[styles.modalTitle]}>Confirm Payment</AvText>
+          <AvText type='body' style={[styles.modalText]}>Pay ₹500 for appointment with {doctorName}?</AvText>
           <View style={styles.modalButtons}>
-            <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={onClose}>
-              <Text style={[Typography.buttonText, styles.cancelButtonText]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            <Pressable style={[styles.modalButton, styles.cancelButton]} onPress={onClose}>
+              <AvText type='buttonText' style={[styles.cancelButtonText]}>Cancel</AvText>
+            </Pressable>
+            <Pressable
               style={[styles.modalButton, styles.confirmButton]}
               onPress={() => {
                 onConfirm();
                 onClose();
               }}>
-              <Text style={[Typography.buttonText, styles.confirmButtonText]}>Confirm</Text>
-            </TouchableOpacity>
+              <AvText type='buttonText' style={[styles.confirmButtonText]}>Confirm</AvText>
+            </Pressable>
           </View>
         </View>
       </View>
-    </Modal>
+    </AvModal>
   );
 };
 
@@ -194,6 +205,47 @@ const MessagesScreen: React.FC = () => {
   const [messagesState, setMessagesState] = useState<Message[]>(messages);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  
+  // Animation values
+  const tabIndicatorAnimation = useRef(new Animated.Value(0)).current;
+  const tabContentAnimation = useRef(new Animated.Value(1)).current;
+  
+  // Initialize animation on mount
+  useEffect(() => {
+    const tabIndexes = { All: 0, Unread: 1, Read: 2 };
+    tabIndicatorAnimation.setValue(tabIndexes[activeTab]);
+  }, []);
+  
+  // Handle tab change with animation
+  const handleTabChange = (tab: 'All' | 'Unread' | 'Read') => {
+    if (tab === activeTab) return;
+    
+    // Animate content fade out
+    Animated.timing(tabContentAnimation, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      // Change tab
+      setActiveTab(tab);
+      
+      // Animate indicator slide
+      const tabIndexes = { All: 0, Unread: 1, Read: 2 };
+      Animated.spring(tabIndicatorAnimation, {
+        toValue: tabIndexes[tab],
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+      
+      // Animate content fade in
+      Animated.timing(tabContentAnimation, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
   const [selectedPaymentMessage, setSelectedPaymentMessage] = useState<Message | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
@@ -254,10 +306,21 @@ const MessagesScreen: React.FC = () => {
   };
 
   const renderMessage = ({ item }: { item: Message }) => (
-    <TouchableOpacity onPress={() => handleMessagePress(item)}>
+    <Pressable onPress={() => handleMessagePress(item)}>
       <View style={styles.messageCard}>
         <View style={styles.iconContainer}>
-          <MaterialIcons name="notifications" size={normalize(22)} color={COLORS.PRIMARY_BLUE} />
+          <AvIcons
+            type={"MaterialIcons"}
+            name={
+              item.details.icon === 'calendar'
+                ? 'calendar-today'
+                : item.details.icon === 'appointment'
+                ? 'event'
+                : 'notifications'
+            }
+            size={normalize(16)}
+            color={COLORS.PRIMARY_BLUE}
+          />
         </View>
         <View style={styles.contentContainer}>
           <View style={styles.metaRow}>
@@ -265,65 +328,52 @@ const MessagesScreen: React.FC = () => {
               {item.status === 'unread' && (
                 <View style={styles.unreadIndicator} />
               )}
-              <Text style={[Typography.body, styles.messageType]}>{item.type}</Text>
-              <Text style={[Typography.body, styles.metaSeparator]}>•</Text>
-              <Text style={[Typography.body, styles.timestamp]}>{item.timeAgo}</Text>
+              <AvText type='body' style={[styles.messageType]}>{item.type}</AvText>
+              <AvText type='body' style={[styles.metaSeparator]}>•</AvText>
+              <AvText type='body' style={[styles.timestamp]}>{item.timeAgo}</AvText>
             </View>
             {item.id === '2' && (
-              <TouchableOpacity
+              <Pressable
                 style={styles.payNowButton}
                 onPress={() => handlePayNowPress(item)}>
-                <Text style={[Typography.title_5, styles.payNowText]}>Pay Now</Text>
-              </TouchableOpacity>
+                <AvText type='title_5' style={[styles.payNowText]}>Pay Now</AvText>
+              </Pressable>
             )}
           </View>
           <View style={styles.messageTextWrapper}>
             {item.details.icon === 'calendar' && (
-              <MaterialIcons
-                name="event"
-                size={normalize(18)}
-                color={COLORS.GREY}
+              <AvIcons
+                type={"MaterialIcons"}
+                name={"calendar-today"}
+                size={normalize(14)}
+                color={COLORS.PRIMARY_BLUE}
                 style={{ marginRight: normalize(6) }}
               />
             )}
-            {item.details.icon === 'appointment' && (
-              <MaterialIcons
-                name="check-circle"
-                size={normalize(18)}
-                color={COLORS.SUCCESS}
-                style={{ marginRight: normalize(6) }}
-              />
-            )}
-            {item.details.icon === 'reminder' && (
-              <MaterialIcons
-                name="alarm"
-                size={normalize(18)}
-                color={COLORS.ORANGE}
-                style={{ marginRight: normalize(6) }}
-              />
-            )}
-            <Text style={[Typography.body, styles.messageText]}>{item.text}</Text>
+            <AvText type='body' style={[styles.messageText]}>{item.text}</AvText>
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={[Typography.heading_2, styles.headerTitle]}>Messages & Notifications</Text>
-      <Text style={[Typography.body, styles.unreadCount]}>
+    <>
+      <AvText type='heading_4' style={[styles.headerTitle]}>Messages & Notifications</AvText>
+      <AvText type='body' style={[styles.unreadCount]}>
         {messagesState.filter(msg => msg.status === 'unread').length} unread messages
-      </Text>
+      </AvText>
 
       <View style={styles.searchContainer}>
-        <MaterialIcons
+        <AvIcons
+          type={"MaterialIcons"}
           name="search"
           size={normalize(20)}
           color={COLORS.GREY}
           style={{ marginRight: normalize(8) }}
         />
-        <TextInput
+        
+        <AvTextInput
           style={[Typography.body, styles.searchInput]}
           placeholder="Search messages..."
           placeholderTextColor={COLORS.GREY}
@@ -333,29 +383,44 @@ const MessagesScreen: React.FC = () => {
       </View>
 
       <View style={styles.tabContainer}>
+        <Animated.View 
+          style={[
+            styles.tabIndicator,
+            {
+              transform: [{
+                translateX: tabIndicatorAnimation.interpolate({
+                  inputRange: [0, 1, 2],
+                  outputRange: [0, widthPercentageToDP(33.33), widthPercentageToDP(66.66)],
+                })
+              }]
+            }
+          ]}
+        />
         {(['All', 'Unread', 'Read'] as const).map(tab => (
-          <TouchableOpacity
+          <Pressable
             key={tab}
-            onPress={() => setActiveTab(tab)}
+            onPress={() => handleTabChange(tab)}
             style={[styles.tabButton, activeTab === tab && styles.activeTabButton]}>
-            <Text style={[Typography.body, activeTab === tab ? styles.activeTabText : styles.tabText]}>
+            <AvText type='title_3' style={[activeTab === tab ? styles.activeTabText : styles.tabText]}>
               {tab}
-            </Text>
-          </TouchableOpacity>
+            </AvText>
+          </Pressable>
         ))}
       </View>
 
-      <FlatList
-        data={filterMessages()}
-        renderItem={renderMessage}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[Typography.body, styles.emptyText]}>No messages found</Text>
-          </View>
-        }
-      />
+      <Animated.View style={{ opacity: tabContentAnimation }}>
+        <FlatList
+          data={filterMessages()}
+          renderItem={renderMessage}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <AvText type='title_2' style={[styles.emptyText]}>No messages found</AvText>
+            </View>
+          }
+        />
+      </Animated.View>
 
       <NotificationDetailsModal
         visible={detailsModalVisible}
@@ -372,7 +437,7 @@ const MessagesScreen: React.FC = () => {
         }}
         onConfirm={handlePaymentConfirm}
       />
-    </SafeAreaView>
+    </>
   );
 };
 
@@ -380,6 +445,7 @@ const MessagesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginVertical: normalize(18),
     padding: normalize(16),
     backgroundColor: COLORS.BG_OFF_WHITE,
   },
@@ -396,17 +462,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: normalize(48),
     borderRadius: normalize(8),
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: COLORS.TRANSPARENT,
     paddingHorizontal: normalize(12),
     marginBottom: normalize(16),
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: COLORS.LIGHT_GREY,
   },
   searchInput: {
     flex: 1,
-    height: '100%',
+    height: normalize(48),
     fontSize: normalize(16),
     color: COLORS.PRIMARY,
+    marginTop: normalize(16),
   },
   tabContainer: {
     flexDirection: 'row',
@@ -414,28 +481,46 @@ const styles = StyleSheet.create({
     borderRadius: normalize(8),
     padding: normalize(2),
     marginBottom: normalize(16),
+    position: 'relative',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    top: normalize(0),
+    left: normalize(2),
+    width: widthPercentageToDP(24),
+    height: normalize(36),
+    backgroundColor: COLORS.WHITE,
+    borderRadius: normalize(6),
+    shadowColor: COLORS.BLACK,
+    shadowOpacity: 0.1,
+    shadowRadius: normalize(4),
+    shadowOffset: { width: 0, height: normalize(2) },
+    elevation: 3,
+    zIndex: 1,
   },
   tabButton: {
     flex: 1,
     paddingVertical: normalize(10),
     alignItems: 'center',
     borderRadius: normalize(6),
+    zIndex: 2,
   },
   activeTabButton: {
-    backgroundColor: COLORS.WHITE,
-    shadowColor: COLORS.BLACK,
-    shadowOpacity: 0.1,
-    shadowRadius: normalize(4),
-    elevation: 3,
+    backgroundColor: COLORS.TRANSPARENT,
+    shadowColor: COLORS.TRANSPARENT,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   tabText: {
-    fontSize: normalize(15),
     fontWeight: '500',
     color: COLORS.GREY,
+    zIndex: 3,
   },
   activeTabText: {
     color: COLORS.PRIMARY,
-    fontWeight: '600',
+    fontWeight: '500',
+    zIndex: 3,
   },
   markAllButton: {
     backgroundColor: COLORS.BLACK,
@@ -518,7 +603,7 @@ const styles = StyleSheet.create({
     fontSize: normalize(13),
     color: COLORS.PRIMARY,
     lineHeight: normalize(22),
-    marginRight:normalize(8)
+    marginRight: normalize(8)
   },
   payNowButton: {
     backgroundColor: COLORS.SUCCESS,
@@ -538,21 +623,21 @@ const styles = StyleSheet.create({
     padding: normalize(20),
   },
   emptyText: {
-    fontSize: normalize(16),
+
     color: COLORS.GREY,
   },
   modalBackdrop: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: COLORS.WHITE,
   },
   detailsModalContainer: {
-    width: widthPercentageToDP(90),
+    width: width-50,
     maxWidth: normalize(400),
     backgroundColor: COLORS.WHITE,
     borderRadius: normalize(12),
-    overflow: 'hidden',
+    overflow: 'scroll',
   },
   detailsModalHeader: {
     flexDirection: 'row',

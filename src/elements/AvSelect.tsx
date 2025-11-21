@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback, Platform, ScrollView } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, ScrollView, Modal } from 'react-native';
 import AvText from './AvText';
 import { COLORS } from '../constants/colors';
 import { isIos, normalize } from '../constants/platform';
+import AvModal from './AvModal';
 interface SelectItem {
   label: string;
   value: any;

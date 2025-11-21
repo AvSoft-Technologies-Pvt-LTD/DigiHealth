@@ -106,9 +106,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.WHITE,
   },
   logo: {
-    width: '100%',
-    height: '36%',
-    aspectRatio: 3,
+    width: '50%',
+    height: '60%',
+    aspectRatio: 1,
   },
 });
 

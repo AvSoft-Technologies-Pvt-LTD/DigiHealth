@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, TextInput } from "react-native";
-import Icon from "react-native-vector-icons/MaterialIcons";
-import AvTextInput from "../../../../elements/AvTextInput";
+import { View, TouchableOpacity, StyleSheet,  ScrollView } from "react-native";
 import AvButton from "../../../../elements/AvButton";
 import { COLORS } from "../../../../constants/colors";
 import { normalize } from "../../../../constants/platform";
+import { AvIcons, AvTextInput, AvText, AvModal } from "../../../../elements";
 
 interface LocationModalProps {
   visible: boolean;
@@ -15,19 +14,19 @@ const LocationModal: React.FC<LocationModalProps> = ({ visible, onClose }) => {
   const [searchValue, setSearchValue] = useState("");
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <AvModal isModalVisible={visible} animationType="slide" onRequestClose={onClose}>
       <ScrollView style={styles.modalContainer}>
         <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Enter complete address</Text>
+          <AvText style={styles.modalTitle}>Enter complete address</AvText>
           <TouchableOpacity style={styles.modalCloseBtn} onPress={onClose}>
-            <Icon name="close" size={normalize(16)} color={COLORS.GREY} />
+            <AvIcons type="MaterialIcons" name="close" size={normalize(16)} color={COLORS.GREY} />
           </TouchableOpacity>
         </View>
         {/* Search Bar with Search Button */}
         <View style={styles.searchBarContainer}>
           <View style={styles.searchInputContainer}>
-            <Icon name="search" size={normalize(20)} color={COLORS.GREY} style={styles.searchIcon} />
-            <TextInput
+            <AvIcons type="MaterialIcons" name="search" size={normalize(20)} color={COLORS.GREY} style={styles.searchIcon} />
+            <AvTextInput
               style={styles.searchBar}
               placeholder="Search location..."
               placeholderTextColor={COLORS.GREY}
@@ -41,17 +40,17 @@ const LocationModal: React.FC<LocationModalProps> = ({ visible, onClose }) => {
             style={styles.searchButton}
             onPress={() => {}}
           >
-            <Icon name="search" size={normalize(20)} color={COLORS.WHITE} style={styles.searchIcon} />
+            <AvIcons type="MaterialIcons" name="search" size={normalize(20)} color={COLORS.WHITE} style={styles.searchIcon} />
           </AvButton>
         </View>
         <View style={styles.mapPreviewContainer}>
           <View style={styles.mapPlaceholder}>
-            <Text>Map Preview Placeholder</Text>
+            <AvText>Map Preview Placeholder</AvText>
           </View>
         </View>
         <View style={styles.formContainer}>
-          <Text style={styles.formLabel}>Padmarao Nagar, Leaflet © OpenStreetMap contributors</Text>
-          <Text style={styles.formSubLabel}>Add New Address</Text>
+          <AvText style={styles.formLabel}>Padmarao Nagar, Leaflet © OpenStreetMap contributors</AvText>
+          <AvText style={styles.formSubLabel}>Add New Address</AvText>
           <AvTextInput
             style={styles.formInput}
             placeholder="Flat / House no / Building name *"
@@ -72,7 +71,7 @@ const LocationModal: React.FC<LocationModalProps> = ({ visible, onClose }) => {
             placeholder="Nearby landmark (optional)"
             placeholderTextColor={COLORS.GREY}
           />
-          <Text style={styles.formSectionLabel}>Enter your details for seamless delivery experience</Text>
+          <AvText style={styles.formSectionLabel}>Enter your details for seamless delivery experience</AvText>
           <AvTextInput
             style={styles.formInput}
             placeholder="Your name *"
@@ -95,7 +94,7 @@ const LocationModal: React.FC<LocationModalProps> = ({ visible, onClose }) => {
           Save Address
         </AvButton>
       </ScrollView>
-    </Modal>
+    </AvModal>
   );
 };
 

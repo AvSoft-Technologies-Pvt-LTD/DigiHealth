@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+
 import AvText from '../../../../elements/AvText';
 import DynamicForm from '../../../../components/CommonComponents/form/AvForm';
 import { COLORS } from '../../../../constants/colors';
 import { PAGES } from '../../../../constants/pages';
 import { normalize } from '../../../../constants/platform';
+import { AvIcons } from '../../../../elements';
 
 // Define RootStackParamList with correct route keys
 type RootStackParamList = {
@@ -186,7 +187,7 @@ const BookAppointment: React.FC = () => {
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={normalize(20)} color={COLORS.PRIMARY} />
+          <AvIcons type="MaterialIcons" name="arrow-back" size={normalize(20)} color={COLORS.PRIMARY} />
           <AvText style={styles.backText}>Back to Lab Details</AvText>
         </TouchableOpacity>
 

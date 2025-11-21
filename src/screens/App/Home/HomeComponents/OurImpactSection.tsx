@@ -59,7 +59,7 @@ const OurImpactSection = memo(() => {
                     value={stat.value} 
                     style={styles.statValue}
                   />
-                  <Text style={styles.statSuffix}>{stat.suffix}</Text>
+                  <AvText style={styles.statSuffix}>{stat.suffix}</AvText>
                 </View>
                 <AvText type="body" style={styles.statLabel}>
                   {stat.label}

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import { InvoiceItem } from './types';
+import { AvText } from '../../../../elements';
 
 interface InvoiceTableProps {
   items: InvoiceItem[];
@@ -12,17 +13,17 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({ items }) => {
   return (
     <View style={styles.tableContainer}>
       <View style={styles.tableHeader}>
-        <Text style={[styles.tableHeaderText, { flex: 1 }]}>Description</Text>
-        <Text style={[styles.tableHeaderText, { flex: 1 }]}>Unit Cost</Text>
-        <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>Qty</Text>
-        <Text style={[styles.tableHeaderText, { flex: 1 }]}>Amount</Text>
+        <AvText style={[styles.tableHeaderText, { flex: 1 }]}>Description</AvText>
+        <AvText style={[styles.tableHeaderText, { flex: 1 }]}>Unit Cost</AvText>
+        <AvText style={[styles.tableHeaderText, { flex: 0.5 }]}>Qty</AvText>
+        <AvText style={[styles.tableHeaderText, { flex: 1 }]}>Amount</AvText>
       </View>
       {items.map((item, index) => (
         <View key={index} style={styles.tableRow}>
-          <Text style={[styles.tableCell, { flex: 1 }]}>{item.description}</Text>
-          <Text style={[styles.tableCell, { flex: 1 }]}>₹{item.cost}</Text>
-          <Text style={[styles.tableCell, { flex: 0.5 }]}>{item.quantity}</Text>
-          <Text style={[styles.tableCell, { flex: 1 }]}>₹{item.amount}</Text>
+          <AvText style={[styles.tableCell, { flex: 1 }]}>{item.description}</AvText>
+          <AvText style={[styles.tableCell, { flex: 1 }]}>₹{item.cost}</AvText>
+          <AvText style={[styles.tableCell, { flex: 0.5 }]}>{item.quantity}</AvText>
+          <AvText style={[styles.tableCell, { flex: 1 }]}>₹{item.amount}</AvText>
         </View>
       ))}
     </View>

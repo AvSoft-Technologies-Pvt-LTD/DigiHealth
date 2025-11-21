@@ -8,13 +8,10 @@ import {
   Dimensions,
 } from "react-native";
 import { useAppSelector, useAppDispatch } from "../../../../store/hooks";
-import AvCard from "../../../../elements/AvCards";
-import AvText from "../../../../elements/AvText";
-import AvButton from "../../../../elements/AvButton";
+import { AvCards, AvText, AvButton } from "../../../../elements";
 import { COLORS } from "../../../../constants/colors";
 import { normalize } from "../../../../constants/platform";
 import { SearchFilterBar } from "../../../../components/CommonComponents/SearchFilter";
-import { PAGES } from "../../../../constants/pages";
 import BookingModal from "./BookingModal";
 import { Doctor } from "../../../../constants/data";
 
@@ -98,7 +95,7 @@ const ViewAllDoctor = () => {
     );
   }
 
-  // Render the list of doctors using AvCard
+  // Render the list of doctors using AvCards
   return (
     <View style={styles.container}>
       {/* Search and Filter Bar */}
@@ -118,7 +115,7 @@ const ViewAllDoctor = () => {
         data={filteredDoctors}
         keyExtractor={(item) => item.id}
         renderItem={({ item: doctor }) => (
-          <AvCard
+          <AvCards
             title={doctor.name}
             cardStyle={styles.doctorCard}
           >
@@ -146,7 +143,7 @@ const ViewAllDoctor = () => {
                 </AvButton>
               </View>
             </View>
-          </AvCard>
+          </AvCards>
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

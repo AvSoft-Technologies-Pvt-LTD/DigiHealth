@@ -2,12 +2,10 @@ import React from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
 import { COLORS } from '../../../../constants/colors';
 import { PAGES } from '../../../../constants/pages';
 import { normalize } from '../../../../constants/platform';
+import { AvCards, AvIcons, AvText } from '../../../../elements';
 
 type RootStackParamList = {
   [PAGES.LAB_PAYMENT_SUCCESS]: {
@@ -81,7 +79,7 @@ const PaymentSuccess = () => {
       {/* Success Section */}
       <View style={styles.successContainer}>
         <View style={styles.successIconContainer}>
-          <Icon name="check-circle" size={normalize(60)} color={COLORS.GREEN} />
+          <AvIcons type="MaterialIcons"  name="check-circle" size={normalize(60)} color={COLORS.GREEN} />
         </View>
         <AvText type="title_6" style={styles.successTitle}>
           Appointment Confirmed!
@@ -92,7 +90,7 @@ const PaymentSuccess = () => {
       </View>
 
       {/* Appointment Card */}
-      <AvCard cardStyle={styles.card}>
+      <AvCards title="Appointment Details" cardStyle={styles.card}>
         <AvText type="title_6" style={styles.sectionTitle}>
           Appointment Details
         </AvText>
@@ -100,42 +98,42 @@ const PaymentSuccess = () => {
         {/* Details Rows with Icons */}
         <View style={styles.detailRow}>
           <View style={styles.iconTitleContainer}>
-            <Icon name="confirmation-number" size={normalize(18)} color={COLORS.GREY} />
+            <AvIcons type="MaterialIcons"  name="confirmation-number" size={normalize(18)} color={COLORS.GREY} />
             <AvText type="body" style={styles.detailLabel}>Booking ID</AvText>
           </View>
           <AvText type="body" style={styles.detailValue}>{bookingId}</AvText>
         </View>
         <View style={styles.detailRow}>
           <View style={styles.iconTitleContainer}>
-            <Icon name="person" size={normalize(18)} color={COLORS.GREY} />
+            <AvIcons type="MaterialIcons" name="person" size={normalize(18)} color={COLORS.GREY} />
             <AvText type="body" style={styles.detailLabel}>Patient Name</AvText>
           </View>
           <AvText type="body" style={styles.detailValue}>{fullName}</AvText>
         </View>
         <View style={styles.detailRow}>
           <View style={styles.iconTitleContainer}>
-            <Icon name="phone" size={normalize(18)} color={COLORS.GREY} />
+            <AvIcons type="MaterialIcons" name="phone" size={normalize(18)} color={COLORS.GREY} />
             <AvText type="body" style={styles.detailLabel}>Phone</AvText>
           </View>
           <AvText type="body" style={styles.detailValue}>{phone}</AvText>
         </View>
         <View style={styles.detailRow}>
           <View style={styles.iconTitleContainer}>
-            <Icon name="payment" size={normalize(18)} color={COLORS.GREY} />
+            <AvIcons type="MaterialIcons" name="payment" size={normalize(18)} color={COLORS.GREY} />
             <AvText type="body" style={styles.detailLabel}>Payment Method</AvText>
           </View>
           <AvText type="body" style={styles.detailValue}>{method}</AvText>
         </View>
         <View style={styles.detailRow}>
           <View style={styles.iconTitleContainer}>
-            <Icon name="attach-money" size={normalize(18)} color={COLORS.GREY} />
+            <AvIcons type="MaterialIcons" name="attach-money" size={normalize(18)} color={COLORS.GREY} />
             <AvText type="body" style={styles.detailLabel}>Amount Paid</AvText>
           </View>
           <AvText type="body" style={styles.detailValue}>₹{totalPrice}</AvText>
         </View>
         <View style={styles.detailRow}>
           <View style={styles.iconTitleContainer}>
-            <Icon name="schedule" size={normalize(18)} color={COLORS.GREY} />
+            <AvIcons type="MaterialIcons" name="schedule" size={normalize(18)} color={COLORS.GREY} />
             <AvText type="body" style={styles.detailLabel}>Date & Time</AvText>
           </View>
           <AvText type="body" style={styles.detailValue}>{date} at {time}</AvText>
@@ -160,7 +158,7 @@ const PaymentSuccess = () => {
             </View>
             {test.fasting && (
               <AvText type="body" style={styles.testFasting}>
-                <Icon name="warning" size={normalize(14)} color={COLORS.ERROR} /> Fasting Required
+                <AvIcons type="MaterialIcons" name="warning" size={normalize(14)} color={COLORS.ERROR} /> Fasting Required
               </AvText>
             )}
           </View>
@@ -174,7 +172,7 @@ const PaymentSuccess = () => {
             </AvText>
             <View style={styles.addressContainer}>
               <View style={styles.iconTitleContainer}>
-                <Icon name="home" size={normalize(18)} color={COLORS.GREY} />
+                <AvIcons type="MaterialIcons" name="home" size={normalize(18)} color={COLORS.GREY} />
                 <AvText type="body" style={styles.addressText}>
                   {address || 'N/A'}
                 </AvText>
@@ -188,14 +186,14 @@ const PaymentSuccess = () => {
             </AvText>
             <View style={styles.detailRow}>
               <View style={styles.iconTitleContainer}>
-                <Icon name="local-hospital" size={normalize(18)} color={COLORS.GREY} />
+                <AvIcons type="MaterialIcons" name="local-hospital" size={normalize(18)} color={COLORS.GREY} />
                 <AvText type="body" style={styles.detailLabel}>Lab Name</AvText>
               </View>
               <AvText type="body" style={styles.detailValue}>{labName}</AvText>
             </View>
             <View style={styles.addressContainer}>
               <View style={styles.iconTitleContainer}>
-                <Icon name="location-on" size={normalize(18)} color={COLORS.GREY} />
+                <AvIcons type="MaterialIcons" name="location-on" size={normalize(18)} color={COLORS.GREY} />
                 <AvText type="body" style={styles.addressText}>
                   {location || 'N/A'}
                 </AvText>
@@ -203,7 +201,7 @@ const PaymentSuccess = () => {
             </View>
           </>
         )}
-      </AvCard>
+      </AvCards>
 
       {/* Action Buttons */}
       <View style={styles.buttonsContainer}>
@@ -211,14 +209,14 @@ const PaymentSuccess = () => {
           onPress={() =>
             navigation.navigate(PAGES.LAB_TRACK_APPOINTMENT, { bookingId, fullName, testTitle, labName, date, time, phone, testDetails, location,  homeCollection, address,  })}
           style={[styles.actionButton, { backgroundColor: COLORS.PRIMARY }]}>
-          <Icon name="track-changes" size={normalize(18)} color={COLORS.WHITE} />
+          <AvIcons type="MaterialIcons" name="track-changes" size={normalize(18)} color={COLORS.WHITE} />
           <AvText style={[styles.actionButtonText, { color: COLORS.WHITE }]}>Track Appointment</AvText>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => {}}
           style={[styles.actionButton, styles.outlinedActionButton]}
         >
-          <Icon name="download" size={normalize(18)} color={COLORS.PRIMARY} />
+          <AvIcons type="MaterialIcons" name="download" size={normalize(18)} color={COLORS.PRIMARY} />
           <AvText style={[styles.actionButtonText, { color: COLORS.PRIMARY }]}>Download Receipt</AvText>
         </TouchableOpacity>
       </View>

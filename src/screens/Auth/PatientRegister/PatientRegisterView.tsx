@@ -5,22 +5,17 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
-    Image,
     KeyboardAvoidingView,
-    Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { launchImageLibrary, MediaType, ImagePickerResponse, Asset } from 'react-native-image-picker';
 import { COLORS } from '../../../constants/colors';
-import AvText from '../../../elements/AvText';
-// import Header from '../../../components/Header';
-import AvTextInput from '../../../elements/AvTextInput';
 import { AvSelect } from '../../../elements/AvSelect';
 import { TextInput } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { isIos, normalize } from '../../../constants/platform';
 import Header from '../../../components/Header';
-import AvImage from '../../../elements/AvImage';
+import { AvImage, AvTextInput, AvText, AvIcons } from '../../../elements';
+
 
 export interface PatientFormData {
     firstName: string;
@@ -377,7 +372,7 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                                     <AvImage source={{ uri: formData.photo.uri }} style={styles.photoPreview} />
                                 ) : (
                                     <View style={styles.photoPlaceholder}>
-                                        <Icon name="add-a-photo" size={30} color={COLORS.GREY} />
+                                        <AvIcons type="MaterialIcons" name="add-a-photo" size={30} color={COLORS.GREY} />
                                         <AvText type="body" style={styles.photoButtonText}>Upload Photo</AvText>
                                     </View>
                                 )}

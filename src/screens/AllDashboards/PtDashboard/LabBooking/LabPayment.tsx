@@ -3,11 +3,10 @@ import { ScrollView, View, StyleSheet } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import PaymentComponent from '../../../../elements/AvPayment';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
 import { COLORS } from '../../../../constants/colors';
 import { PAGES } from '../../../../constants/pages';
 import { normalize } from '../../../../constants/platform';
+import { AvCards, AvText } from '../../../../elements';
 
 // Define RootStackParamList with PAGES constants
 type RootStackParamList = {
@@ -116,7 +115,7 @@ const LabPayment = () => {
       />
 
       {/* Booking Summary Card */}
-      <AvCard cardStyle={styles.card}>
+      <AvCards title="Booking Summary" cardStyle={styles.card}>
         <AvText type="title_6" style={styles.cardTitle}>
           Booking Summary
         </AvText>
@@ -188,7 +187,7 @@ const LabPayment = () => {
             Total: ₹{totalPrice}
           </AvText>
         </View>
-      </AvCard>
+      </AvCards>
     </ScrollView>
   );
 };

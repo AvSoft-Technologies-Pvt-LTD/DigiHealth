@@ -1,11 +1,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
-import AvIcons from '../../../../elements/AvIcons';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
-
+import { AvIcons, AvText, AvCards } from '../../../../elements';
 interface VitalsSummaryProps {
   currentPatient: any;
 }
@@ -54,7 +51,7 @@ const VitalsSummary: React.FC<VitalsSummaryProps> = ({ currentPatient }) => {
       unit: 'bpm',
       color: COLORS.BRIGHT_PURPLE,
       bgColor: COLORS.WHITE,
-      borderColor: COLORS.PURPLE,
+      borderColor: COLORS.PRIMARY_BLUE,
     },
     {
       icon: <AvIcons type="MaterialCommunityIcons" name="human-male-height" size={20} color={COLORS.OCEAN_BLUE} />,
@@ -62,7 +59,7 @@ const VitalsSummary: React.FC<VitalsSummaryProps> = ({ currentPatient }) => {
       value: '165 cm',
       color: COLORS.OCEAN_BLUE,
       bgColor: COLORS.WHITE,
-      borderColor: COLORS.BLUE,
+      borderColor: COLORS.PRIMARY_BLUE,
     },
     {
       icon: <AvIcons type="MaterialCommunityIcons" name="weight" size={20} color={COLORS.GREEN} />,
@@ -82,7 +79,7 @@ const VitalsSummary: React.FC<VitalsSummaryProps> = ({ currentPatient }) => {
       </View>
       <View style={styles.vitalsGrid}>
         {vitalsData.map((vital, index) => (
-          <AvCard key={index} cardStyle={[styles.vitalCard, { borderColor: vital.borderColor, backgroundColor: `${vital.color}10` }]}>
+          <AvCards key={index} cardStyle={[styles.vitalCard, { borderColor: vital.borderColor, backgroundColor: `${vital.color}10` }]} title={vital.label}>
             <View style={styles.vitalContent}>
               <View style={[styles.vitalIconContainer, { backgroundColor: `${vital.color}1A` }]}>
                 {vital.icon}
@@ -93,7 +90,7 @@ const VitalsSummary: React.FC<VitalsSummaryProps> = ({ currentPatient }) => {
                 {vital.unit && <AvText type="caption" style={[styles.vitalUnit, { color: vital.color }]}>{vital.unit}</AvText>}
               </View>
             </View>
-          </AvCard>
+          </AvCards>
         ))}
       </View>
     </View>

@@ -121,7 +121,7 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({
       </View>
 
       <AvTextInput
-        label="Enter Pincode for Quick Location Detection"
+        label="Enter Pincode"
         value={pincode}
         onChangeText={setPincode}
         keyboardType="numeric"

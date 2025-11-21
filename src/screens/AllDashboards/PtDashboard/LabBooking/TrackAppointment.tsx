@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import { PAGES } from '../../../../constants/pages';
+import { AvIcons, AvText, AvCards } from '../../../../elements';
 
 type RootStackParamList = {
   [PAGES.LAB_TRACK_APPOINTMENT]: {
@@ -79,11 +77,11 @@ const TrackAppointment = () => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <TouchableOpacity   onPress={() => navigation.navigate(PAGES.LAB_HOME)} style={styles.backButton}>
-        <Icon name="arrow-back" size={normalize(20)} color={COLORS.PRIMARY} />
+        <AvIcons type="MaterialIcons" name="arrow-back" size={normalize(20)} color={COLORS.PRIMARY} />
         <AvText style={styles.backText}>Back to Home</AvText>
       </TouchableOpacity>
       <AvText varient="title_4" style={styles.title}>Appointment Summary</AvText>
-      <AvCard cardStyle={styles.card}>
+      <AvCards title="Appointment Summary" cardStyle={styles.card}>
         <View style={styles.trackingStep}>
           {steps.map((step, index) => (
             <View key={index} style={styles.stepContainer}>
@@ -98,7 +96,7 @@ const TrackAppointment = () => {
                   ]}
                 >
                   {index <= currentStep ? (
-                    <Icon name="check" size={normalize(16)} color={COLORS.WHITE} />
+                    <AvIcons type="MaterialIcons" name="check" size={normalize(16)} color={COLORS.WHITE} />
                   ) : (
                     <AvText style={styles.stepNumber}>{index + 1}</AvText>
                   )}
@@ -128,9 +126,8 @@ const TrackAppointment = () => {
             </View>
           ))}
         </View>
-      </AvCard>
-      <AvCard cardStyle={styles.card}>
-        <AvText varient="title_6" style={styles.cardTitle}>Appointment Details</AvText>
+      </AvCards>
+      <AvCards title="Appointment Details" cardStyle={styles.card}>
         <View style={styles.detailSection}>
           <AvText varient="subtitle" style={styles.sectionTitle}>Test Information</AvText>
           {testDetails.map((test, index) => (
@@ -166,8 +163,8 @@ const TrackAppointment = () => {
             <AvText varient="body" style={styles.detailValue}>{appointment?.phone}</AvText>
           </View>
         </View>
-      </AvCard>
-      <AvCard cardStyle={styles.card}>
+      </AvCards>
+      <AvCards title="Appointment Information" cardStyle={styles.card}>
         <View style={styles.detailSection}>
           <AvText varient="subtitle" style={styles.sectionTitle}>Appointment Information</AvText>
           <View style={styles.detailRow}>
@@ -189,22 +186,21 @@ const TrackAppointment = () => {
             <AvText varient="body" style={styles.detailValue}>Success</AvText>
           </View>
         </View>
-      </AvCard>
-      <AvCard cardStyle={styles.card}>
-        <AvText varient="subtitle" style={styles.sectionTitle}>Lab Information</AvText>
+      </AvCards>
+      <AvCards title="Lab Information" cardStyle={styles.card}>
         <View style={styles.detailRow}>
           <AvText varient="body" style={styles.detailLabel}>{appointment?.labName}</AvText>
         </View>
         <View style={styles.detailRow}>
           <View style={styles.iconTitleContainer}>
-            <Icon name="location-on" size={normalize(16)} color={COLORS.GREY} />
+            <AvIcons type="MaterialIcons" name="location-on" size={normalize(16)} color={COLORS.GREY} />
             <AvText varient="body" style={styles.detailLabel}>Location</AvText>
           </View>
           <AvText varient="body" style={styles.detailValue}>{appointment?.location}</AvText>
         </View>
         <View style={styles.detailRow}>
           <View style={styles.iconTitleContainer}>
-            <Icon name="phone" size={normalize(16)} color={COLORS.GREY} />
+            <AvIcons type="MaterialIcons" name="phone" size={normalize(16)} color={COLORS.GREY} />
             <AvText varient="body" style={styles.detailLabel}>Phone</AvText>
           </View>
           <AvText varient="body" style={styles.detailValue}>+91 98765 43210</AvText>
@@ -217,33 +213,32 @@ const TrackAppointment = () => {
           <AvText varient="body" style={styles.detailLabel}>Payment Status:</AvText>
           <AvText varient="body" style={styles.detailValue}>Success</AvText>
         </View>
-      </AvCard>
-      <AvCard cardStyle={styles.card}>
-        <AvText varient="subtitle" style={styles.sectionTitle}>Actions</AvText>
+      </AvCards>
+      <AvCards title="Actions" cardStyle={styles.card}>
         <View style={styles.actionsRow}>
           <TouchableOpacity
             onPress={() => { }}
             style={[styles.touchableButton, { backgroundColor: COLORS.PRIMARY }]}
           >
-            <Icon name="download" size={normalize(18)} color={COLORS.WHITE} />
+            <AvIcons type="MaterialIcons" name="download" size={normalize(18)} color={COLORS.WHITE} />
             <AvText style={styles.buttonText}>Download</AvText>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => { }}
             style={[styles.touchableButton, styles.outlinedButton]}
           >
-            <Icon name="print" size={normalize(18)} color={COLORS.PRIMARY} />
+            <AvIcons type="MaterialIcons" name="print" size={normalize(18)} color={COLORS.PRIMARY} />
             <AvText style={[styles.buttonText, { color: COLORS.PRIMARY }]}>Print</AvText>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => { }}
             style={[styles.touchableButton, styles.outlinedButton]}
           >
-            <Icon name="share" size={normalize(18)} color={COLORS.PRIMARY} />
+            <AvIcons type="MaterialIcons" name="share" size={normalize(18)} color={COLORS.PRIMARY} />
             <AvText style={[styles.buttonText, { color: COLORS.PRIMARY }]}>Share</AvText>
           </TouchableOpacity>
         </View>
-      </AvCard>
+      </AvCards>
     </ScrollView>
   );
 };

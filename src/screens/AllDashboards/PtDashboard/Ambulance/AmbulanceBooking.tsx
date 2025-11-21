@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Platform, ViewStyle, TextStyle } from 'react-native';
 import DateTimePicker from "@react-native-community/datetimepicker";
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import MCI from 'react-native-vector-icons/MaterialCommunityIcons';
 import AvButton from '../../../../elements/AvButton';
 import { AvSelect } from '../../../../elements/AvSelect';
 import AvText from '../../../../elements/AvText';
@@ -19,8 +17,9 @@ import {
   categoryData,
   equipmentData
 } from '../../../../constants/data';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { PAGES } from '../../../../constants/pages';
+import { AvIcons } from '../../../../elements';
 
 const ACCENT_COLOR = COLORS.SECONDARY;
 
@@ -89,7 +88,7 @@ const AmbulanceBookingView: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.card}>
           <View style={styles.headerRow}>
-            <MCI name="ambulance" size={normalize(20)} color={COLORS.WHITE} />
+            <AvIcons type="MaterialCommunityIcons" name="ambulance" size={normalize(20)} color={COLORS.WHITE} />
             <AvText type="title_6" style={styles.headerText}>Ambulance Booking</AvText>
           </View>
           <AvText type="description" style={styles.subText}>Book an ambulance from AV Swasthya's trusted network</AvText>
@@ -99,7 +98,7 @@ const AmbulanceBookingView: React.FC = () => {
             contentStyle={styles.buttonContent}
             onPress={() => navigation.navigate(PAGES.SEARCH_AMBULANCE_VIEW)}
           >
-            <Icon name="location-pin" size={normalize(16)} color={COLORS.WHITE} />
+            <AvIcons type="MaterialIcons" name="location-pin" size={normalize(16)} color={COLORS.WHITE} />
             <AvText type="buttonText" style={styles.buttonText}>Near By Ambulance</AvText>
           </AvButton>
         </View>

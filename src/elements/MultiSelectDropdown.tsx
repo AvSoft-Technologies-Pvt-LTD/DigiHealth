@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback, FlatList } from 'react-native';
+import { View, TouchableOpacity,  StyleSheet, TouchableWithoutFeedback, FlatList } from 'react-native';
 import AvText from '../elements/AvText';
 import { COLORS } from '../constants/colors';
 import { normalize, widthPercentageToDP as wp } from '../constants/platform';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import AvIcons from './AvIcons';
+import AvModal from './AvModal';
 
 interface MultiSelectItem {
   id: string;
@@ -58,10 +59,11 @@ const selectedItems = items.filter((item) => (selectedIds || []).includes(item.i
         activeOpacity={0.7}
       >
         <AvText style={styles.buttonText}>{displayText}</AvText>
-        <Icon name="chevron-down" size={20} color={COLORS.BLACK} />
+        <AvIcons type={"MaterialIcons"} name="chevron-down" size={20} color={COLORS.BLACK} />
       </TouchableOpacity>
-      <Modal
-        visible={modalVisible}
+      <AvModal
+        isModalVisible={modalVisible}
+        setModalVisible={setModalVisible}
         transparent
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
@@ -99,7 +101,7 @@ const selectedItems = items.filter((item) => (selectedIds || []).includes(item.i
                         ]}
                       >
                         {selectedIds.includes(item.id) && (
-                          <Icon name="check" size={16} color={COLORS.WHITE} />
+                          <AvIcons type={"MaterialIcons"} name="check" size={16} color={COLORS.WHITE} />
                         )}
                       </View>
                       <AvText>{item.label}</AvText>
@@ -110,7 +112,7 @@ const selectedItems = items.filter((item) => (selectedIds || []).includes(item.i
             </View>
           </View>
         </TouchableWithoutFeedback>
-      </Modal>
+      </AvModal>
     </View>
   );
 };

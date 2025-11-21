@@ -2,12 +2,11 @@
 
 import React, { useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
 import { fetchMedicalInfo } from "../../../../store/thunks/patientThunks";
+import { AvText, AvCards } from '../../../../elements';
 
 interface MedicalInformationProps {
   currentPatient: any;
@@ -53,55 +52,55 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({ currentPatient,
         <AvText type="body" style={styles.errorText}>{error}</AvText>
       ) : (
         <View style={styles.medicalInfoGrid}>
-          <AvCard cardStyle={styles.infoCard}>
+          <AvCards title="Chief Complaint" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Chief Complaint</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.chiefComplaint}</AvText>
-          </AvCard>
-          <AvCard cardStyle={styles.infoCard}>
+          </AvCards>
+          <AvCards title="Past History" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Past History</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.pastHistory}</AvText>
-          </AvCard>
-          <AvCard cardStyle={styles.infoCard}>
+          </AvCards>
+          <AvCards title="Advice" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Advice</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.advice}</AvText>
-          </AvCard>
-          <AvCard cardStyle={styles.infoCard}>
+          </AvCards>
+          <AvCards title="Plan" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Plan</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.plan}</AvText>
-          </AvCard>
-          <AvCard cardStyle={styles.infoCard}>
+          </AvCards>
+          <AvCards title="Diagnosis" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Diagnosis</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.diagnosis}</AvText>
-          </AvCard>
-          <AvCard cardStyle={styles.infoCard}>
+          </AvCards>
+          <AvCards title="Treatment Given" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Treatment Given</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.treatmentGiven}</AvText>
-          </AvCard>
-          <AvCard cardStyle={styles.infoCard}>
+          </AvCards>
+          <AvCards title="Doctor Notes" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Doctor Notes</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.doctorNotes}</AvText>
-          </AvCard>
-          <AvCard cardStyle={styles.infoCard}>
+          </AvCards>
+          <AvCards title="Initial Assessment" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Initial Assessment</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.initialAssessment}</AvText>
-          </AvCard>
-          <AvCard cardStyle={styles.infoCard}>
+          </AvCards>
+          <AvCards title="Systematic Examination" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Systematic Examination</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.systematicExamination}</AvText>
-          </AvCard>
-          <AvCard cardStyle={styles.infoCard}>
+          </AvCards>
+          <AvCards title="Investigations" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Investigations</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.investigations}</AvText>
-          </AvCard>
-          <AvCard cardStyle={styles.infoCard}>
+          </AvCards>
+          <AvCards title="Treatment Advice" cardStyle={styles.infoCard}>
             <AvText type="Subtitle_1" style={styles.infoCardTitle}>Treatment Advice</AvText>
             <AvText type="body" style={styles.infoCardValue}>{sampleRecord.treatmentAdvice}</AvText>
-          </AvCard>
+          </AvCards>
           {sampleRecord.dischargeSummary && (
-            <AvCard cardStyle={styles.infoCard}>
+            <AvCards title="Discharge Summary" cardStyle={styles.infoCard}>
               <AvText type="Subtitle_1" style={styles.infoCardTitle}>Discharge Summary</AvText>
               <AvText type="body" style={styles.infoCardValue}>{sampleRecord.dischargeSummary}</AvText>
-            </AvCard>
+            </AvCards>
           )}
         </View>
       )}

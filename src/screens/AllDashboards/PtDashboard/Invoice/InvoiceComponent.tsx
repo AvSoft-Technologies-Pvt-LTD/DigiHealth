@@ -1,6 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { ScrollView, View, StyleSheet } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import InvoiceHeader from './InvoiceHeader';
@@ -9,6 +8,7 @@ import InvoiceTable from './InvoiceTable';
 import InvoiceSummary from './InvoiceSummary';
 import InvoiceFooter from './InvoiceFooter';
 import { InvoiceDetailsProps } from './types';
+import { AvIcons, AvText } from '../../../../elements';
 
 const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ route, navigation }) => {
   const { invoice } = route.params || {
@@ -33,8 +33,8 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ route, navigation }) =>
       <InvoiceHeader onClose={() => navigation.goBack()} />
       <View style={styles.invoiceIdContainer}>
         <View style={styles.invoiceIdHeader}>
-          <Icon name="receipt" size={20} color={COLORS.PRIMARY_TXT} />
-          <Text style={styles.headerTitle}> INVOICE #{invoice.invoiceNo}</Text>
+          <AvIcons type="MaterialCommunityIcons" name="receipt" size={20} color={COLORS.PRIMARY_TXT} />
+          <AvText style={styles.headerTitle}> INVOICE #{invoice.invoiceNo}</AvText>
         </View>
       </View>
       <InvoiceInfoSection invoice={invoice} />

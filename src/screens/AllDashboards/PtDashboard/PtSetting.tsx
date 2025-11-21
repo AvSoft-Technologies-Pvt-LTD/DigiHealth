@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity, Animated, KeyboardAvoidingView, ActivityIndicator, Alert } from "react-native";
-import Icon from "react-native-vector-icons/MaterialIcons";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { RootState } from "../../../store/index";
 import {
@@ -21,7 +20,7 @@ import { isIos } from "../../../constants/platform";
 import AvImage from "../../../elements/AvImage";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
-import { AvSelect } from "../../../elements";
+import { AvIcons, AvSelect } from "../../../elements";
 import { fetchPatientDashboardData, updatePatientById } from "../../../store/thunks/patientThunks";
 
 const PatientSettingsView = () => {
@@ -266,7 +265,8 @@ const PatientSettingsView = () => {
                 style={[styles.tab, activeTab === "personal" && styles.activeTab]}
                 onPress={() => setActiveTab("personal")}
               >
-                <Icon
+                <AvIcons
+                  type="MaterialIcons"
                   name="person"
                   size={22}
                   color={activeTab === "personal" ? COLORS.WHITE : COLORS.GREY}
@@ -282,7 +282,8 @@ const PatientSettingsView = () => {
                 style={[styles.tab, activeTab === "password" && styles.activeTab]}
                 onPress={() => setActiveTab("password")}
               >
-                <Icon
+                <AvIcons
+                  type="MaterialIcons"
                   name="lock"
                   size={22}
                   color={activeTab === "password" ? COLORS.WHITE : COLORS.GREY}
@@ -306,7 +307,7 @@ const PatientSettingsView = () => {
                   {editing ? (
                     <Animated.View style={[styles.blinkingDot, { opacity: blinkAnim }]} />
                   ) : (
-                    <Icon name="edit" size={22} color={COLORS.SECONDARY} />
+                    <AvIcons type="MaterialIcons" name="edit" size={22} color={COLORS.SECONDARY} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -356,7 +357,7 @@ const PatientSettingsView = () => {
                             { borderColor: errors.dob ? COLORS.ERROR : COLORS.LIGHT_GREY }
                           ]}>
                             <AvText>{format(formData.dob, 'dd/MM/yyyy')}</AvText>
-                            <Icon name="calendar" size={20} color={COLORS.GREY} />
+                            <AvIcons type="MaterialCommunityIcons" name="calendar" size={20} color={COLORS.GREY} />
                           </View>
                           {errors.dob && (
                             <AvText style={styles.errorText}>{errors.dob}</AvText>
@@ -618,6 +619,7 @@ const styles = StyleSheet.create({
   dateInput: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent:'space-between',
     borderWidth: 1,
     borderColor: COLORS.LIGHT_GREY,
     borderRadius: 8,

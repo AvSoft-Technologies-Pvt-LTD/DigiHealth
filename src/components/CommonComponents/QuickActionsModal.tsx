@@ -1,30 +1,28 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Pressable } from 'react-native';
 import { useAppSelector } from '../../store/hooks';
 import { COLORS } from '../../constants/colors';
 import { Typography } from '../../constants/fonts';
 import { widthPercentageToDP, normalize } from '../../constants/platform';
+import { AvText, AvIcons } from '../../elements';
 
 interface QuickActionsModalProps {
   visible: boolean;
   onClose: () => void;
-  onPharmacyPress: () => void;
-  onAmbulancePress: () => void;
-  onNotificationsPress: () => void;
+  handleActionPress: (action: 'pharmacy' | 'ambulance' | 'notifications') => void;
+
 }
 
 const QuickActionsModal: React.FC<QuickActionsModalProps> = ({
   visible,
   onClose,
-  onPharmacyPress,
-  onAmbulancePress,
-  onNotificationsPress,
+  handleActionPress,
 }) => {
   const userProfile = useAppSelector((state) => state.user.userProfile);
   const userRole = useAppSelector((state) => state.user.userProfile.role);
   const slideAnim = useRef(new Animated.Value(widthPercentageToDP(100))).current;
-
+  console.log("User Profile", userProfile)
+  console.log("User Role", userRole)
   useEffect(() => {
     if (visible) {
       Animated.spring(slideAnim, {
@@ -43,6 +41,8 @@ const QuickActionsModal: React.FC<QuickActionsModalProps> = ({
     return names.map((n) => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+
+
   return (
     <Modal
       animationType="none"
@@ -50,84 +50,86 @@ const QuickActionsModal: React.FC<QuickActionsModalProps> = ({
       visible={visible}
       onRequestClose={onClose}
     >
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        activeOpacity={1}
-        onPressOut={onClose}
-      >
+      <View style={styles.modalOverlay}>
         <Animated.View
           style={[
             styles.modalContent,
             { transform: [{ translateX: slideAnim }] },
           ]}
+          onStartShouldSetResponder={() => true}
         >
           {/* User Profile Section */}
           <View style={styles.userProfileSection}>
             <View style={styles.userAvatar}>
-              <Text style={[Typography.title_6, styles.userInitial]}>
+              <AvText type='title_6' style={[styles.userInitial]}>
                 {getInitials(userProfile.name)}
-              </Text>
+              </AvText>
             </View>
             <View style={styles.userInfo}>
-              <Text style={[Typography.heading_4, styles.userName]}>
+              <AvText type='heading_4' style={[styles.userName]}>
                 {userProfile.name || 'User'}
-              </Text>
-              <Text style={[Typography.body, styles.userRole]}>
+              </AvText>
+              <AvText type='body' style={[styles.userRole]}>
                 {userRole || 'Patient'}
-              </Text>
+              </AvText>
             </View>
             <TouchableOpacity
               onPress={onClose}
               style={styles.closeButton}
               hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
             >
-              <Icon name="close" size={normalize(24)} color={COLORS.WHITE} />
+              <AvIcons
+                type={"MaterialCommunityIcons"}
+                name={"close"}
+                size={normalize(24)}
+                color={COLORS.WHITE}
+              />
             </TouchableOpacity>
           </View>
 
           {/* Quick Actions Section */}
           <View style={styles.quickActionsContainer}>
             <View style={styles.quickActionsSection}>
-              <Text style={[Typography.title_3, styles.quickActionsTitle]}>
+              <AvText type='title_3' style={[styles.quickActionsTitle]}>
                 QUICK ACTIONS
-              </Text>
+              </AvText>
 
               {/* Pharmacy Action */}
               <TouchableOpacity
                 style={[styles.actionItem, { backgroundColor: COLORS.LIGHT_GREEN }]}
-                onPress={() => { onPharmacyPress(); onClose(); }}
+                onPress={() => handleActionPress('pharmacy')}
               >
                 <View style={[styles.actionIconContainer, { backgroundColor: COLORS.PRIMARY }]}>
-                  <Icon name="pill" size={normalize(24)} color={COLORS.WHITE} />
+                  <AvIcons type={"MaterialCommunityIcons"} name={"pill"} size={normalize(24)} color={COLORS.WHITE} />
                 </View>
-                <Text style={[Typography.buttonText, styles.actionText]}>Pharmacy</Text>
+                <AvText type='buttonText' style={[styles.actionText]}>Pharmacy</AvText>
               </TouchableOpacity>
 
               {/* Ambulance Action (Light Red Background) */}
               <TouchableOpacity
                 style={[styles.actionItem, { backgroundColor: COLORS.LIGHT_RED }]}
-                onPress={() => { onAmbulancePress(); onClose(); }}
+                onPress={() => handleActionPress('ambulance')}
               >
                 <View style={[styles.actionIconContainer, { backgroundColor: COLORS.ERROR }]}>
-                  <Icon name="ambulance" size={normalize(24)} color={COLORS.WHITE} />
+                  <AvIcons type={"MaterialCommunityIcons"} name="ambulance" size={normalize(24)} color={COLORS.WHITE} />
                 </View>
-                <Text style={[Typography.buttonText, styles.actionText]}>Ambulance</Text>
+                <AvText type='buttonText' style={[styles.actionText]}>Ambulance</AvText>
               </TouchableOpacity>
 
               {/* Notifications Action (Light Purple Background) */}
               <TouchableOpacity
                 style={[styles.actionItem, { backgroundColor: COLORS.LIGHT_PURPLE }]}
-                onPress={() => { onNotificationsPress(); onClose(); }}
+                onPress={() => handleActionPress('notifications')}
               >
                 <View style={[styles.actionIconContainer, { backgroundColor: COLORS.BRIGHT_PURPLE }]}>
-                  <Icon name="bell" size={normalize(24)} color={COLORS.WHITE} />
+                  <AvIcons type={"MaterialCommunityIcons"} name="bell" size={normalize(24)} color={COLORS.WHITE} />
                 </View>
-                <Text style={[Typography.buttonText, styles.actionText]}>Notifications</Text>
+                <AvText type='buttonText' style={[styles.actionText]}>Notifications</AvText>
               </TouchableOpacity>
             </View>
           </View>
         </Animated.View>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 };

@@ -6,24 +6,19 @@ import {
     Platform,
     ScrollView,
     Dimensions,
-    Modal,
     TouchableOpacity,
     FlatList,
 } from 'react-native';
-import AvText from '../../../elements/AvText';
 import {
-    Button,
     Card,
     Divider,
-    Menu,
 } from 'react-native-paper';
 import { COLORS } from '../../../constants/colors';
-import { PAGES } from '../../../constants/pages';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types/navigation';
 import { normalize } from '../../../constants/platform';
+import { AvModal, AvText } from '../../../elements';
 
-const { width } = Dimensions.get('window');
 
 type UserRole = 'Patient' | 'Hospital' | 'Doctor' | 'Labs/Scan';
 
@@ -86,8 +81,8 @@ const RegisterView: React.FC<RegisterViewProps> = ({ onRoleSelect, selectedRole,
                         </View>
 
                         {/* Role Selection Modal */}
-                        <Modal
-                            visible={modalVisible}
+                        <AvModal    
+                            isModalVisible={modalVisible}
                             transparent={true}
                             animationType="fade"
                             onRequestClose={closeModal}
@@ -125,7 +120,7 @@ const RegisterView: React.FC<RegisterViewProps> = ({ onRoleSelect, selectedRole,
                                     </TouchableOpacity>
                                 </View>
                             </TouchableOpacity>
-                        </Modal>
+                        </AvModal>
 
                         {/* Footer */}
                         <View style={styles.footer}>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
+
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import { SearchFilterBar } from '../../../../components/CommonComponents/SearchFilter';
@@ -12,6 +11,7 @@ import {
   fetchHospitalBilling,
 } from '../../../../store/thunks/patientThunks';
 import { RootState, AppDispatch } from '../../../../store'; // Import AppDispatch
+import { AvCards, AvText } from '../../../../elements';
 
 // --- Helper Components ---
 interface PharmacyItem {
@@ -29,10 +29,7 @@ interface PharmacyListProps {
 const PharmacyList: React.FC<PharmacyListProps> = ({ data }) => (
   <>
     {data.map((item, index) => (
-      <AvCard key={index} cardStyle={styles.dataCard}>
-        <AvText type="heading_5" style={styles.cardTitle}>
-          {item.medicineName}
-        </AvText>
+      <AvCards title={item.medicineName} key={index} cardStyle={styles.dataCard}>
         <View style={styles.dataRow}>
           <View style={styles.dataItem}>
             <AvText type="caption" style={styles.label}>
@@ -61,7 +58,7 @@ const PharmacyList: React.FC<PharmacyListProps> = ({ data }) => (
             <AvText type="Subtitle_1">{item.date}</AvText>
           </View>
         </View>
-      </AvCard>
+      </AvCards>
     ))}
   </>
 );
@@ -80,10 +77,7 @@ interface LabsListProps {
 const LabsList: React.FC<LabsListProps> = ({ data }) => (
   <>
     {data.map((item, index) => (
-      <AvCard key={index} cardStyle={styles.dataCard}>
-        <AvText type="heading_5" style={styles.cardTitle}>
-          {item.testName}
-        </AvText>
+      <AvCards title={item.testName} key={index} cardStyle={styles.dataCard}>
         <View style={styles.dataRow}>
           <View style={styles.dataItem}>
             <AvText type="caption" style={styles.label}>
@@ -117,7 +111,7 @@ const LabsList: React.FC<LabsListProps> = ({ data }) => (
             </AvText>
           </View>
         </View>
-      </AvCard>
+      </AvCards>
     ))}
   </>
 );
@@ -137,10 +131,7 @@ interface HospitalBillsListProps {
 const HospitalBillsList: React.FC<HospitalBillsListProps> = ({ data }) => (
   <>
     {data.map((item, index) => (
-      <AvCard key={index} cardStyle={styles.dataCard}>
-        <AvText type="heading_5" style={styles.cardTitle}>
-          {item.billType}
-        </AvText>
+      <AvCards title={item.billType} key={index} cardStyle={styles.dataCard}>
         <View style={styles.dataRow}>
           <View style={styles.dataItem}>
             <AvText type="caption" style={styles.label}>
@@ -178,7 +169,7 @@ const HospitalBillsList: React.FC<HospitalBillsListProps> = ({ data }) => (
             </AvText>
           </View>
         </View>
-      </AvCard>
+      </AvCards>
     ))}
   </>
 );

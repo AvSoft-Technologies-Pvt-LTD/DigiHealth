@@ -5,24 +5,19 @@ import {
   ScrollView,
   FlatList,
   TouchableOpacity,
-  TextInput,
   ActivityIndicator,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../../store';
 import {
-  fetchLabTests,
-  fetchLabScans,
   fetchAllLabData,
 } from '../../../../store/thunks/patientThunks';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
 import { COLORS } from '../../../../constants/colors';
 import { Tabs } from '../../../../components/CommonComponents/Tabs';
 import { normalize } from '../../../../constants/platform';
 import { PAGES } from '../../../../constants/pages';
+import { AvCards, AvIcons, AvText, AvTextInput } from '../../../../elements';
 
 // ---------------- Types ----------------
 type Test = {
@@ -66,8 +61,8 @@ const SearchBar = ({
   return (
     <View style={styles.searchBarContainer}>
       <View style={styles.searchInputContainer}>
-        <Icon name="search" size={normalize(20)} color={COLORS.GREY} style={styles.searchIcon} />
-        <TextInput
+        <AvIcons type="MaterialIcons" name="search" size={normalize(20)} color={COLORS.GREY} style={styles.searchIcon} />
+        <AvTextInput
           style={styles.searchInput}
           placeholder="Search for tests, scans..."
           placeholderTextColor={COLORS.GREY}
@@ -79,7 +74,7 @@ const SearchBar = ({
         />
       </View>
       <TouchableOpacity style={styles.cartIconContainer} onPress={onCartPress}>
-        <Icon name="shopping-cart" size={normalize(24)} color={COLORS.PRIMARY} />
+        <AvIcons type="MaterialIcons" name="shopping-cart" size={normalize(24)} color={COLORS.PRIMARY} />
         {cartItemCount > 0 && (
           <View style={styles.cartBadge}>
             <AvText type="body" style={styles.cartBadgeText}>
@@ -96,7 +91,7 @@ const SearchBar = ({
 const PrescriptionUploadCard = () => (
   <View style={styles.prescriptionCard}>
     <View style={styles.prescriptionRow}>
-      <Icon name="upload-file" size={normalize(32)} color={COLORS.WHITE} />
+      <AvIcons type="MaterialIcons" name="upload-file" size={normalize(32)} color={COLORS.WHITE} />
       <View style={styles.prescriptionText}>
         <AvText type="title_6" style={styles.prescriptionTitle}>
           Have a prescription? Upload it!
@@ -202,7 +197,7 @@ const LabHome: React.FC = () => {
           <FlatList
             data={filteredTests}
             renderItem={({ item }) => (
-              <AvCard cardStyle={styles.testCard}>
+              <AvCards title={item.title} cardStyle={styles.testCard}>
                 <TouchableOpacity onPress={() => handleCardPress(item.id)}>
                   <View style={styles.testCardContent}>
                     <AvText type="title_6" style={styles.testTitle}>
@@ -217,7 +212,7 @@ const LabHome: React.FC = () => {
                       </AvText>
                       <View style={styles.testButtons}>
                         <TouchableOpacity style={styles.addButton} onPress={() => handleAddToCart(item)}>
-                          <Icon name="add-circle" size={normalize(30)} color={COLORS.PRIMARY} />
+                          <AvIcons type="MaterialIcons" name="add-circle" size={normalize(30)} color={COLORS.PRIMARY} />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.bookButton} onPress={() => handleBookNow(item)}>
                           <AvText type="buttonText" style={styles.bookButtonText}>
@@ -228,7 +223,7 @@ const LabHome: React.FC = () => {
                     </View>
                   </View>
                 </TouchableOpacity>
-              </AvCard>
+              </AvCards>
             )}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.listContent}
@@ -238,7 +233,7 @@ const LabHome: React.FC = () => {
           <FlatList
             data={filteredScans}
             renderItem={({ item }) => (
-              <AvCard cardStyle={styles.testCard}>
+              <AvCards title={item.title} cardStyle={styles.testCard}>
                 <TouchableOpacity onPress={() => handleCardPress(item.id)}>
                   <View style={styles.testCardContent}>
                     <AvText type="title_6" style={styles.testTitle}>
@@ -253,7 +248,7 @@ const LabHome: React.FC = () => {
                       </AvText>
                       <View style={styles.testButtons}>
                         <TouchableOpacity style={styles.addButton} onPress={() => handleAddToCart(item)}>
-                          <Icon name="add-circle" size={normalize(30)} color={COLORS.PRIMARY} />
+                          <AvIcons type="MaterialIcons" name="add-circle" size={normalize(30)} color={COLORS.PRIMARY} />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.bookButton} onPress={() => handleBookNow(item)}>
                           <AvText type="buttonText" style={styles.bookButtonText}>
@@ -264,7 +259,7 @@ const LabHome: React.FC = () => {
                     </View>
                   </View>
                 </TouchableOpacity>
-              </AvCard>
+              </AvCards>
             )}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.listContent}

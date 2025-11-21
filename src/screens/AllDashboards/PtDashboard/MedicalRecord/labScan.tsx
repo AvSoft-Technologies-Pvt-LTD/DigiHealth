@@ -1,12 +1,10 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
-import AvIcons from '../../../../elements/AvIcons';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import { useAppSelector, useAppDispatch } from '../../../../store/hooks';
 import { fetchLabScans } from '../../../../store/thunks/patientThunks';
+import { AvIcons, AvCards,AvText } from '../../../../elements';
 
 const LabScan: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -51,7 +49,7 @@ const LabScan: React.FC = () => {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {labScanData.map((report, index) => (
-        <AvCard key={index} cardStyle={styles.labReportCard}>
+        <AvCards title={report.testName} key={index} cardStyle={styles.labReportCard}>
           {/* Header: Test Name and Status */}
           <View style={styles.header}>
             <AvText style={styles.testName}>{report.testName}</AvText>
@@ -109,7 +107,7 @@ const LabScan: React.FC = () => {
               </View>
             </View>
           </View>
-        </AvCard>
+        </AvCards>
       ))}
     </ScrollView>
   );

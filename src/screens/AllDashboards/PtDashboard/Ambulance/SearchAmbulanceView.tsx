@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import AmbulanceResults from "./AmbulanceResults";
 import LocationModal from "./LocationModal";
@@ -7,6 +7,7 @@ import { SearchFilterBar } from "../../../../components/CommonComponents/SearchF
 import { COLORS } from "../../../../constants/colors"; // Import COLORS
 import { Typography } from "../../../../constants/fonts"; // Import Typography
 import { normalize } from "../../../../constants/platform"; // Import normalize for scaling
+import { AvIcons, AvText } from "../../../../elements";
 
 type LocationType = {
   latitude: number;
@@ -48,19 +49,19 @@ const SearchAmbulanceView: React.FC = () => {
       {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.headerIcon}>
-          <Icon name="search" size={normalize(20)} color={COLORS.GREEN} />
+          <AvIcons type="MaterialIcons" name="search" size={normalize(20)} color={COLORS.GREEN} />
         </View>
         <View style={styles.headerText}>
-          <Text style={[Typography.title_6, styles.title]}>Search Ambulances</Text>
-          <Text style={[Typography.body, styles.subtitle]}>
+          <AvText style={[Typography.title_6, styles.title]}>Search Ambulances</AvText>
+          <AvText style={[Typography.body, styles.subtitle]}>
             Find ambulances by location
-          </Text>
+          </AvText>
         </View>
       </View>
 
       {/* Close Button */}
       <TouchableOpacity style={styles.closeBtn} onPress={() => {}}>
-        <Icon name="close" size={normalize(16)} color={COLORS.GREY} />
+        <AvIcons type="MaterialIcons" name="close" size={normalize(16)} color={COLORS.GREY} />
       </TouchableOpacity>
 
       {/* Search & Filter Bar */}
@@ -81,15 +82,15 @@ const SearchAmbulanceView: React.FC = () => {
     style={[styles.actionBtn, { marginLeft: normalize(15) }]} // Add left margin here
     onPress={() => setMapVisible(true)}
   >
-    <Icon name="location-on" size={normalize(16)} color={COLORS.WHITE} />
-    <Text style={[Typography.buttonText, styles.btnText]}>Location</Text>
+    <AvIcons type="MaterialIcons" name="location-on" size={normalize(16)} color={COLORS.WHITE} />
+    <AvText style={[Typography.buttonText, styles.btnText]}>Location</AvText>
   </TouchableOpacity>
   <TouchableOpacity
     style={styles.actionBtn}
     onPress={() => setShowResults(true)}
   >
-    <Icon name="search" size={normalize(16)} color={COLORS.WHITE} />
-    <Text style={[Typography.buttonText, styles.btnText]}>Search</Text>
+    <AvIcons type="MaterialIcons" name="search" size={normalize(16)} color={COLORS.WHITE} />
+    <AvText style={[Typography.buttonText, styles.btnText]}>Search</AvText>
   </TouchableOpacity>
 </View>
 

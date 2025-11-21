@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import { Invoice } from './types';
+import { AvText } from '../../../../elements';
 
 interface InvoicePrintPreviewProps {
   route: {
@@ -18,91 +19,91 @@ const InvoicePrintPreview: React.FC<InvoicePrintPreviewProps> = ({ route }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.invoiceTitle}>INVOICE</Text>
+        <AvText style={styles.invoiceTitle}>INVOICE</AvText>
         
       </View>
 
       <View style={styles.detailsContainer}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>INVOICE DETAILS</Text>
+          <AvText style={styles.sectionTitle}>INVOICE DETAILS</AvText>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Date:</Text>
-            <Text style={styles.detailText}>{invoice.date}</Text>
+            <AvText style={styles.detailLabel}>Date:</AvText>
+            <AvText style={styles.detailText}>{invoice.date}</AvText>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Due:</Text>
-            <Text style={styles.detailText}>{invoice.dueDate}</Text>
+            <AvText style={styles.detailLabel}>Due:</AvText>
+            <AvText style={styles.detailText}>{invoice.dueDate}</AvText>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Doctor:</Text>
-            <Text style={styles.detailText}>{invoice.doctorName}</Text>
+            <AvText style={styles.detailLabel}>Doctor:</AvText>
+            <AvText style={styles.detailText}>{invoice.doctorName}</AvText>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PATIENT INFORMATION</Text>
+          <AvText style={styles.sectionTitle}>PATIENT INFORMATION</AvText>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Name:</Text>
-            <Text style={styles.detailText}>{invoice.patientName}</Text>
+            <AvText style={styles.detailLabel}>Name:</AvText>
+            <AvText style={styles.detailText}>{invoice.patientName}</AvText>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Email:</Text>
-            <Text style={styles.detailText}>{invoice.patientEmail}</Text>
+            <AvText style={styles.detailLabel}>Email:</AvText>
+            <AvText style={styles.detailText}>{invoice.patientEmail}</AvText>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Phone:</Text>
-            <Text style={styles.detailText}>{invoice.patientPhone}</Text>
+            <AvText style={styles.detailLabel}>Phone:</AvText>
+            <AvText style={styles.detailText}>{invoice.patientPhone}</AvText>
           </View>
         </View>
       </View>
 
       <View style={styles.tableContainer}>
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, { flex: 2 }]}>Description</Text>
-          <Text style={[styles.tableHeaderText, { flex: 1 }]}>Unit Cost</Text>
-          <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>Qty</Text>
-          <Text style={[styles.tableHeaderText, { flex: 1 }]}>Amount</Text>
+          <AvText style={[styles.tableHeaderText, { flex: 2 }]}>Description</AvText>
+          <AvText style={[styles.tableHeaderText, { flex: 1 }]}>Unit Cost</AvText>
+          <AvText style={[styles.tableHeaderText, { flex: 0.5 }]}>Qty</AvText>
+          <AvText style={[styles.tableHeaderText, { flex: 1 }]}>Amount</AvText>
         </View>
         {invoice.items.map((item, index) => (
           <View key={index} style={styles.tableRow}>
-            <Text style={[styles.tableCell, { flex: 2 }]}>{item.description}</Text>
-            <Text style={[styles.tableCell, { flex: 1 }]}>₹{item.cost}</Text>
-            <Text style={[styles.tableCell, { flex: 0.5 }]}>{item.quantity}</Text>
-            <Text style={[styles.tableCell, { flex: 1 }]}>₹{item.amount}</Text>
+            <AvText style={[styles.tableCell, { flex: 2 }]}>{item.description}</AvText>
+            <AvText style={[styles.tableCell, { flex: 1 }]}>₹{item.cost}</AvText>
+            <AvText style={[styles.tableCell, { flex: 0.5 }]}>{item.quantity}</AvText>
+            <AvText style={[styles.tableCell, { flex: 1 }]}>₹{item.amount}</AvText>
           </View>
         ))}
       </View>
 
       <View style={styles.summaryContainer}>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Subtotal</Text>
-          <Text style={styles.summaryValue}>₹{invoice.billedAmount}</Text>
+          <AvText style={styles.summaryLabel}>Subtotal</AvText>
+          <AvText style={styles.summaryValue}>₹{invoice.billedAmount}</AvText>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Discount</Text>
-          <Text style={styles.summaryValue}>₹{invoice.discount}</Text>
+          <AvText style={styles.summaryLabel}>Discount</AvText>
+          <AvText style={styles.summaryValue}>₹{invoice.discount}</AvText>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Tax</Text>
-          <Text style={styles.summaryValue}>₹{invoice.tax}</Text>
+          <AvText style={styles.summaryLabel}>Tax</AvText>
+          <AvText style={styles.summaryValue}>₹{invoice.tax}</AvText>
         </View>
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total Amount</Text>
-          <Text style={styles.totalValue}>₹{invoice.total}</Text>
+          <AvText style={styles.totalLabel}>Total Amount</AvText>
+          <AvText style={styles.totalValue}>₹{invoice.total}</AvText>
         </View>
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerTitle}>Terms & Conditions</Text>
-        <Text style={styles.footerText}>
+        <AvText type='heading_5' style={styles.footerTitle}>Terms & Conditions</AvText>
+        <AvText type='title_4' style={styles.footerText}>
           Payment due within 30 days of invoice date. Late payments may incur additional charges.
-        </Text>
-        <Text style={styles.footerText}>
+        </AvText>
+        <AvText type='title_4' style={styles.footerText}>
           For any queries regarding this invoice, please contact us at billing@digihealth.com
-        </Text>
-        <Text style={styles.thanksText}>
-          Thank you for choosing DigiHealth for your healthcare needs
-        </Text>
+        </AvText>
+        <AvText type='Subtitle_2' style={styles.thanksText}>
+          Thank you for choosing Pocket Clinic for your healthcare needs
+        </AvText>
       </View>
     </ScrollView>
   );
@@ -113,6 +114,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.WHITE,
     padding: normalize(20),
+    marginVertical :normalize(20)
   },
   header: {
     flexDirection: 'row',
@@ -231,18 +233,14 @@ const styles = StyleSheet.create({
     marginTop: normalize(20),
   },
   footerTitle: {
-    fontSize: normalize(14),
-    fontWeight: 'bold',
-    color: COLORS.PRIMARY_TXT,
     marginBottom: normalize(8),
   },
   footerText: {
-    fontSize: normalize(10),
     color: COLORS.GREY,
     marginBottom: normalize(4),
   },
   thanksText: {
-    fontSize: normalize(10),
+    // fontSize: normalize(10),
     color: COLORS.GREY,
     marginTop: normalize(8),
     fontStyle: 'italic',

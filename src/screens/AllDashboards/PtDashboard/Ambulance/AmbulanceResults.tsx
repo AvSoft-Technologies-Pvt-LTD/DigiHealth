@@ -1,11 +1,8 @@
 import React, { useState } from "react";
 import { View, StyleSheet, ViewStyle, TextStyle, TextInput, TouchableOpacity } from "react-native";
-import Icon from "react-native-vector-icons/MaterialIcons";
-import AvCard from "../../../../elements/AvCards";
-import AvText from "../../../../elements/AvText";
-import AvButton from "../../../../elements/AvButton";
 import { COLORS } from "../../../../constants/colors";
 import { normalize } from "../../../../constants/platform";
+import { AvTextInput,AvIcons, AvButton, AvText, AvCards } from "../../../../elements";
 
 // Define types for our data
 interface Ambulance {
@@ -54,15 +51,15 @@ const ambulanceData: Ambulance[] = [
 ];
 
 const AmbulanceCard: React.FC<Ambulance> = ({ name, location, tags, distance, rating, phone }) => (
-  <AvCard
+  <AvCards  
     title={name}
     titleStyle={styles.cardTitle}  // Add custom title style
     cardStyle={styles.ambulanceCard}
   >
     <View style={styles.cardHeader}>
-      <Icon name="favorite" size={normalize(24)} color={COLORS.PRIMARY} />
+      <AvIcons type="MaterialIcons" name="favorite" size={normalize(24)} color={COLORS.PRIMARY} />
       <View style={styles.locationRow}>
-        <Icon name="location-on" size={normalize(16)} color={COLORS.GREY} />
+        <AvIcons type="MaterialIcons" name="location-on" size={normalize(16)} color={COLORS.GREY} />
         <AvText type="caption" style={styles.locationText}>
           {location}
         </AvText>
@@ -96,13 +93,13 @@ const AmbulanceCard: React.FC<Ambulance> = ({ name, location, tags, distance, ra
     {/* Distance & Rating */}
     <View style={styles.detailsRow}>
       <View style={styles.distanceRow}>
-        <Icon name="directions" size={normalize(16)} color={COLORS.PRIMARY} />
+        <AvIcons type="MaterialIcons" name="directions" size={normalize(16)} color={COLORS.PRIMARY} />
         <AvText type="caption" style={styles.distanceText}>
           {distance}
         </AvText>
       </View>
       <View style={styles.ratingRow}>
-        <Icon name="star" size={normalize(16)} color={COLORS.BRIGHT_ORANGE} />
+        <AvIcons type="MaterialIcons" name="star" size={normalize(16)} color={COLORS.BRIGHT_ORANGE} />
         <AvText type="caption" style={styles.ratingText}>
           {rating}
         </AvText>
@@ -120,7 +117,7 @@ const AmbulanceCard: React.FC<Ambulance> = ({ name, location, tags, distance, ra
         mode="contained"
         buttonColor={COLORS.GREEN}
         style={styles.callButton}
-        icon={() => <Icon name="call" size={normalize(18)} color={COLORS.WHITE} />}
+        icon={() => <AvIcons type="MaterialIcons" name="call" size={normalize(18)} color={COLORS.WHITE} />}
         onPress={() => {}}
       >
         Call Now
@@ -129,13 +126,13 @@ const AmbulanceCard: React.FC<Ambulance> = ({ name, location, tags, distance, ra
         mode="contained"
         buttonColor={COLORS.PRIMARY}
         style={styles.bookButton}
-        icon={() => <Icon name="book" size={normalize(18)} color={COLORS.WHITE} />}
+        icon={() => <AvIcons type="MaterialIcons" name="book" size={normalize(18)} color={COLORS.WHITE} />}
         onPress={() => {}}
       >
         Book
       </AvButton>
     </View>
-  </AvCard>
+  </AvCards>
 );
 
 const AmbulanceResults: React.FC = () => {
@@ -165,8 +162,8 @@ const AmbulanceResults: React.FC = () => {
       {/* Search Input - Now properly implemented */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-          <Icon name="search" size={normalize(20)} color={COLORS.PRIMARY}  />
-          <TextInput
+          <AvIcons type="MaterialIcons" name="search" size={normalize(20)} color={COLORS.PRIMARY}  />
+          <AvTextInput
             style={styles.searchInput}
             placeholder="Search ambulances or locations..."
             placeholderTextColor={COLORS.GREY}
@@ -214,7 +211,7 @@ const AmbulanceResults: React.FC = () => {
         ))
       ) : (
         <View style={styles.noResultsContainer}>
-          <Icon name="search-off" size={normalize(40)} color={COLORS.PRIMARY} />
+          <AvIcons type="MaterialIcons" name="search-off" size={normalize(40)} color={COLORS.PRIMARY} />
           <AvText type="body" style={styles.noResultsText}>
             No ambulances found matching your search
           </AvText>

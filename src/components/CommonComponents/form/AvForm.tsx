@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform, Alert, TextInput } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { COLORS } from '../../../constants/colors';
 import FormField, { FieldType } from '../form/FormField';
 import { isIos, normalize } from '../../../constants/platform';
+import { AvIcons, AvText, AvTextInput } from '../../../elements';
+
 
 interface FormField {
   name: string;
@@ -113,8 +114,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     if (field.type === 'textarea') {
       return (
         <View key={field.name} style={styles.textAreaContainer}>
-          <Text style={styles.label}>{field.label}</Text>
-          <TextInput
+          <AvText style={styles.label}>{field.label}</AvText>
+          <AvTextInput
             style={styles.textArea}
             multiline
             numberOfLines={4}
@@ -122,7 +123,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             value={formData[field.name] || ''}
             onChangeText={(value) => onChange(field.name, value)}
           />
-          {errors[field.name] && <Text style={styles.errorText}>{errors[field.name]}</Text>}
+          {errors[field.name] && <AvText style={styles.errorText}>{errors[field.name]}</AvText>}
         </View>
       );
     } else {
@@ -150,7 +151,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>{headerTitle || 'Form'}</Text>
+        <AvText style={styles.headerText}>{headerTitle || 'Form'}</AvText>
       </View>
       <ScrollView style={styles.formContainer} contentContainerStyle={styles.scrollContent}>
         {fields.map(renderField)}
@@ -158,13 +159,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
       <View style={[styles.footer, { justifyContent: singleButton ? 'center' : 'space-between' }]}>
         {!singleButton && (
           <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-            <Icon name="close" size={20} color="#DC2626" />
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <AvIcons type={"MaterialIcons"} name="close" size={normalize(24)} color={COLORS.ERROR} />
+            <AvText style={styles.cancelButtonText}>Cancel</AvText>
           </TouchableOpacity>
         )}
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Icon name="check" size={20} color={COLORS.WHITE} />
-          <Text style={styles.submitButtonText}>Save</Text>
+          <AvIcons type={"MaterialIcons"} name="check" size={normalize(24)} color={COLORS.SUCCESS} />
+          <AvText style={styles.submitButtonText}>Save</AvText>
         </TouchableOpacity>
       </View>
     </View>

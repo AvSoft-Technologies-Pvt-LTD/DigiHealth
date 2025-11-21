@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import { Invoice } from './types';
+import { AvText } from '../../../../elements';
 
 interface InvoiceSummaryProps {
   invoice: Invoice;
@@ -13,21 +14,21 @@ const InvoiceSummary: React.FC<InvoiceSummaryProps> = ({ invoice }) => {
     <>
       <View style={styles.summaryContainer}>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Subtotal</Text>
-          <Text style={styles.summaryValue}>₹{invoice.billedAmount}</Text>
+          <AvText style={styles.summaryLabel}>Subtotal</AvText>
+          <AvText style={styles.summaryValue}>₹{invoice.billedAmount}</AvText>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Discount</Text>
-          <Text style={styles.summaryValue}>₹{invoice.discount}</Text>
+          <AvText style={styles.summaryLabel}>Discount</AvText>
+          <AvText style={styles.summaryValue}>₹{invoice.discount}</AvText>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Tax</Text>
-          <Text style={styles.summaryValue}>₹{invoice.tax}</Text>
+          <AvText style={styles.summaryLabel}>Tax</AvText>
+          <AvText style={styles.summaryValue}>₹{invoice.tax}</AvText>
         </View>
       </View>
       <View style={styles.totalContainer}>
-        <Text style={styles.totalText}>Total Amount</Text>
-        <Text style={styles.totalAmount}>₹{invoice.total}</Text>
+        <AvText style={styles.totalText}>Total Amount</AvText>
+        <AvText style={styles.totalAmount}>₹{invoice.total}</AvText>
       </View>
     </>
   );

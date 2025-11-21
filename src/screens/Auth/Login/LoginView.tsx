@@ -153,7 +153,7 @@ const LoginView: React.FC<LoginViewProps> = ({
       ) : null}
 
       {!otpSent ? (
-        <Button
+        <AvButton
           mode="contained"
           onPress={() => phoneNumber.trim() ? onSendOTP(phoneNumber) : handlePhoneNumberChange('')}
           loading={loading}
@@ -162,8 +162,8 @@ const LoginView: React.FC<LoginViewProps> = ({
           labelStyle={styles.loginButtonText}
           buttonColor={COLORS.SECONDARY}
         >
-          {loading ? 'Sending OTP...' : 'Send OTP'}
-        </Button>
+          <AvText type="buttonText" style={{ color: COLORS.WHITE }}>{loading ? 'Sending OTP...' : 'Send OTP'}</AvText>
+        </AvButton>
       ) : (
         <>
           <AvTextInput
@@ -182,16 +182,16 @@ const LoginView: React.FC<LoginViewProps> = ({
             }}
           />
 
-          <Button
+          <AvButton
             mode="text"
             onPress={() => onSendOTP(phoneNumber)}
             style={styles.resendButton}
             labelStyle={styles.resendButtonText}
           >
             Resend OTP
-          </Button>
+          </AvButton>
 
-          <Button
+          <AvButton
             mode="contained"
             onPress={() => onOTPLogin(otp)}
             loading={loading}
@@ -201,7 +201,7 @@ const LoginView: React.FC<LoginViewProps> = ({
             buttonColor={COLORS.SECONDARY}
           >
             {loading ? 'Verifying...' : 'Verify & Sign In'}
-          </Button>
+          </AvButton>
         </>
       )}
     </View>
@@ -261,13 +261,13 @@ const LoginView: React.FC<LoginViewProps> = ({
             {/* Sign Up Link */}
             <View style={styles.signupContainer}>
               <AvText type="body" style={styles.signupText}>Don't have an account? </AvText>
-              <Button
+              <AvButton
                 mode="text"
                 onPress={() => { navigation.navigate(PAGES.REGISTER) }}
                 labelStyle={styles.signupLink}
               >
                 Sign Up
-              </Button>
+              </AvButton>
             </View>
           </Card.Content>
         </Card>

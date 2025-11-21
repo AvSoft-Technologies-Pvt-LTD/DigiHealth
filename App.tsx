@@ -8,11 +8,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { store } from "./src/store/index"
 import AppNavigator from './src/navigation/AppNavigation';
 import { COLORS } from './src/constants/colors';
-import { getStatusBarStyle } from './src/utils/statusBar';
+import { getStatusBarStyle, applyStatusBarForBackground } from './src/utils/statusBar';
 import { DrawerProvider } from './src/navigation/DrawerContext';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ErrorBoundary from './src/components/ErrorBoundary';
@@ -37,6 +34,7 @@ const App: React.FC = () => {
     colors: {
       ...MD3LightTheme.colors,
       primary: COLORS.SECONDARY,
+
       secondary: COLORS.PRIMARY,
       surface: COLORS.WHITE,
       background: COLORS.BG_OFF_WHITE,
@@ -49,37 +47,38 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Set initial status bar configuration
-    StatusBar.setBarStyle(statusBarStyle, true);
-    StatusBar.setBackgroundColor(defaultBackgroundColor, true);
+    applyStatusBarForBackground(defaultBackgroundColor);
   }, []);
 
-    return (
-    <ErrorBoundary>
-    <GestureHandlerWrapper>
-        <Provider store={store}>
-          <PaperProvider theme={theme}>
-            <NavigationContainer
-            ref={(ref)=>{
-              if(ref){
-                setNavigationReference(ref);
-              }
-            }}
-            >
-              <StatusBar
-                barStyle={statusBarStyle}
-                backgroundColor={defaultBackgroundColor}
-                translucent={false}
-              />
-              <DrawerProvider>
-                <SafeAreaProvider>
-                <AppNavigator />
-                </SafeAreaProvider>
-              </DrawerProvider>
-            </NavigationContainer>
-          </PaperProvider>
-        </Provider>
-      </GestureHandlerWrapper>
-    </ErrorBoundary>
+  return (
+      <ErrorBoundary>
+        <GestureHandlerWrapper>
+          <Provider store={store}>
+            {/* <SafeAreaProvider> */}
+              <PaperProvider theme={theme}>
+                <NavigationContainer
+                  ref={(ref) => {
+                    if (ref) {
+                      setNavigationReference(ref);
+                    }
+                  }}
+                >
+                  {/* <SafeAreaView style={{ flex: 1, backgroundColor: defaultBackgroundColor }}> */}
+                    <StatusBar
+                      barStyle={statusBarStyle}
+                      backgroundColor={defaultBackgroundColor}
+                      translucent={false}
+                    />
+                    <DrawerProvider>
+                      <AppNavigator />
+                    </DrawerProvider>
+                  {/* </SafeAreaView> */}
+                </NavigationContainer>
+              </PaperProvider>
+            {/* </SafeAreaProvider> */}
+          </Provider>
+        </GestureHandlerWrapper>
+      </ErrorBoundary>
   );
 };
 

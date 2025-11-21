@@ -5,8 +5,7 @@ import { Snackbar } from 'react-native-paper';
 import { COLORS } from '../../../../constants/colors';
 import { deleteFamilyMember, fetchFamilyHealthData, fetchHealthConditionData, fetchRelationData, saveFamilyHealthData } from '../../../../store/thunks/patientThunks';
 import { useAppSelector } from '../../../../store/hooks';
-import AvIcons from '../../../../elements/AvIcons';
-
+import { AvIcons } from '../../../../elements';
 interface FamilyMemberForm {
     id?: string;
     familyRelation: string;

@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { View, StyleSheet } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import { Invoice } from './types';
+import { AvIcons, AvText } from '../../../../elements';
 
 interface InvoiceInfoSectionProps {
   invoice: Invoice;
@@ -14,40 +14,40 @@ const InvoiceInfoSection: React.FC<InvoiceInfoSectionProps> = ({ invoice }) => {
     <View style={styles.detailsSection}>
       <View style={styles.detailsColumn}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitleWithIcon}>INVOICE DETAILS</Text>
+          <AvText style={styles.sectionTitleWithIcon}>INVOICE DETAILS</AvText>
         </View>
         <View style={styles.detailRowWithIcon}>
-          <Icon name="calendar" size={16} color={COLORS.GREY} />
-          <Text style={styles.detailLabel}>Date:</Text>
-          <Text style={styles.detailText}>{invoice.date}</Text>
+          <AvIcons type="MaterialCommunityIcons" name="calendar" size={16} color={COLORS.GREY} />
+          <AvText style={styles.detailLabel}>Date:</AvText>
+          <AvText style={styles.detailText}>{invoice.date}</AvText>
         </View>
         <View style={styles.detailRowWithIcon}>
-          <Icon name="calendar-clock" size={16} color={COLORS.GREY} />
-          <Text style={styles.detailLabel}>Due:</Text>
-          <Text style={styles.detailText}>{invoice.dueDate}</Text>
+          <AvIcons type="MaterialCommunityIcons" name="calendar-clock" size={16} color={COLORS.GREY} />
+          <AvText style={styles.detailLabel}>Due:</AvText>
+          <AvText style={styles.detailText}>{invoice.dueDate}</AvText>
         </View>
         <View style={styles.detailRowWithIcon}>
-          <Icon name="account-tie" size={16} color={COLORS.GREY} />
-          <Text style={styles.detailLabel}>Doctor:</Text>
-          <Text style={styles.detailText}>{invoice.doctorName}</Text>
+          <AvIcons type="MaterialCommunityIcons" name="account-tie" size={16} color={COLORS.GREY} />
+          <AvText style={styles.detailLabel}>Doctor:</AvText>
+          <AvText style={styles.detailText}>{invoice.doctorName}</AvText>
         </View>
       </View>
       <View style={{ width: 20 }} />
       <View style={styles.detailsColumn}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitleWithIcon}>PATIENT INFORMATION</Text>
+          <AvText style={styles.sectionTitleWithIcon}>PATIENT INFORMATION</AvText>
         </View>
         <View style={styles.detailRowWithIcon}>
-          <Icon name="account" size={16} color={COLORS.GREY} />
-          <Text style={styles.detailText}>{invoice.patientName}</Text>
+          <AvIcons type="MaterialCommunityIcons" name="account" size={16} color={COLORS.GREY} />
+          <AvText style={styles.detailText}>{invoice.patientName}</AvText>
         </View>
         <View style={styles.detailRowWithIcon}>
-          <Icon name="email" size={16} color={COLORS.GREY} />
-          <Text style={styles.detailText}>{invoice.patientEmail}</Text>
+          <AvIcons type="MaterialCommunityIcons" name="email" size={16} color={COLORS.GREY} />
+          <AvText style={styles.detailText}>{invoice.patientEmail}</AvText>
         </View>
         <View style={styles.detailRowWithIcon}>
-          <Icon name="phone" size={16} color={COLORS.GREY} />
-          <Text style={styles.detailText}>{invoice.patientPhone}</Text>
+          <AvIcons type="MaterialCommunityIcons" name="phone" size={16} color={COLORS.GREY} />
+          <AvText style={styles.detailText}>{invoice.patientPhone}</AvText>
         </View>
       </View>
     </View>

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity, Platform } from "react-native";
-import { AvModal, AvTextInput, AvButton, AvText, AvSelect } from "../../../../elements";
+import { AvModal, AvTextInput, AvButton, AvText, AvSelect, AvIcons } from "../../../../elements";
 import { COLORS } from "../../../../constants/colors";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAppSelector, useAppDispatch } from "../../../../store/hooks";
 import {
@@ -211,7 +210,7 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
                 onPress={() => handleInputChange("isPrimaryHolder", val === "Yes")}
                 style={styles.radioContainer}
               >
-                <Icon
+                <AvIcons type="MaterialIcons" 
                   name={
                     (val === "Yes" && formData.isPrimaryHolder) ||
                     (val === "No" && !formData.isPrimaryHolder)
@@ -246,7 +245,7 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
             mode="outlined"
             theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
           />
-          <Icon name="calendar" size={24} color={COLORS.PRIMARY} style={styles.calendarIcon} />
+          <AvIcons type="MaterialIcons"  name="calendar" size={24} color={COLORS.PRIMARY} style={styles.calendarIcon} />
         </TouchableOpacity>
         
         {showDatePicker.startDate && (
@@ -270,7 +269,7 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
             mode="outlined"
             theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
           />
-          <Icon name="calendar" size={24} color={COLORS.PRIMARY} style={styles.calendarIcon} />
+          <AvIcons type="MaterialIcons"  name="calendar" size={24} color={COLORS.PRIMARY} style={styles.calendarIcon} />
         </TouchableOpacity>
         
         {showDatePicker.endDate && (

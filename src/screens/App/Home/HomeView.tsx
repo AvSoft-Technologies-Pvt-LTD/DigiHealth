@@ -72,10 +72,10 @@ const HomeView: React.FC<HomeViewProps> = ({
                 <AvImage source={IMAGES.LOGO_CROPPED} style={styles.logoImage} />
               </View>
               <AvText type="heading_2" style={styles.title}>
-                Welcome to DigiHealth
+                Welcome to Pocket Clinic
               </AvText>
               <AvText type="title_3" style={styles.subtitle}>
-                Your Digital Healthcare Partner
+                Your Digital Health Care Partner
               </AvText>
             </View>
           </View>
@@ -161,9 +161,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    width: normalize(90),
-    height: normalize(90),
-    borderRadius: normalize(45),
+    width: normalize(100),
+    height: normalize(100),
+    borderRadius: normalize(60),
     backgroundColor: COLORS.WHITE,
     justifyContent: 'center',
     alignItems: 'center',

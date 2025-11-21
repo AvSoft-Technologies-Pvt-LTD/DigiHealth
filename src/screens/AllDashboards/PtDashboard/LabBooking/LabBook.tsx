@@ -2,13 +2,11 @@ import React from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import AvText from '../../../../elements/AvText';
-import AvCard from '../../../../elements/AvCards';
 import AvButton from '../../../../elements/AvButton';
 import { COLORS } from '../../../../constants/colors';
 import { PAGES } from '../../../../constants/pages';
 import { normalize } from '../../../../constants/platform';
+import { AvCards, AvIcons, AvText } from '../../../../elements';
 
 // Define the expected route parameters
 type LabBookRouteParams = {
@@ -48,33 +46,33 @@ const LabBook = () => {
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       {/* Back Button */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Icon name="arrow-back" size={normalize(20)} color={COLORS.PRIMARY} />
+        <AvIcons type="MaterialIcons" name="arrow-back" size={normalize(20)} color={COLORS.PRIMARY} />
         <AvText style={styles.backText}>Back to Labs List</AvText>
       </TouchableOpacity>
 
       {/* Lab Info */}
-      <AvCard cardStyle={styles.labInfoCard}>
+      <AvCards title={lab.name} cardStyle={styles.labInfoCard}>
         <View style={styles.labHeader}>
           <AvText type="title_6" style={styles.labName}>{lab.name}</AvText>
           <View style={styles.locationRow}>
-            <Icon name="location-on" size={normalize(16)} color={COLORS.GREY} />
+            <AvIcons type="MaterialIcons" name="location-on" size={normalize(16)} color={COLORS.GREY} />
             <AvText type="body" style={styles.locationText}>{lab.location}</AvText>
           </View>
         </View>
         <View style={styles.ratingRow}>
-          <Icon name="star" size={normalize(16)} color={COLORS.GREEN} />
+          <AvIcons type="MaterialIcons" name="star" size={normalize(16)} color={COLORS.GREEN} />
           <AvText type="body" style={styles.ratingText}>{lab.rating}/5</AvText>
         </View>
         {lab.homeCollection && (
           <View style={styles.facilityItem}>
-            <Icon name="check" size={normalize(16)} color={COLORS.GREEN} />
+            <AvIcons type="MaterialIcons" name="check" size={normalize(16)} color={COLORS.GREEN} />
             <AvText type="body" style={styles.facilityText}>Home Collection Available</AvText>
           </View>
         )}
-      </AvCard>
+      </AvCards>
 
       {/* Selected Tests */}
-      <AvCard cardStyle={styles.selectedTestsCard}>
+      <AvCards title="Selected Tests" cardStyle={styles.selectedTestsCard}>
         <AvText type="title_6" style={styles.sectionTitle}>Selected Tests</AvText>
         {cart.map((test) => (
           <View key={test.id} style={styles.testItem}>
@@ -92,10 +90,10 @@ const LabBook = () => {
         <View style={styles.totalRow}>
           <AvText type="title_6" style={styles.totalPrice}>₹{totalPrice}</AvText>
         </View>
-      </AvCard>
+      </AvCards>
 
       {/* Booking Section */}
-      <AvCard cardStyle={styles.bookingCard}>
+      <AvCards title="Book Your Appointment" cardStyle={styles.bookingCard}>
         <AvText type="title_6" style={styles.sectionTitle}>Book Your Appointment</AvText>
         <AvText type="body" style={styles.bookingDescription}>
           Choose between home sample collection or visiting the lab for your selected tests.
@@ -105,9 +103,9 @@ const LabBook = () => {
           onPress={() => navigation.navigate(PAGES.LAB_BOOK_APPOINTMENT, { lab, cart })}
           style={styles.bookButton}
         >
-          Book Appointment
+          Book Appointment here
         </AvButton>
-      </AvCard>
+      </AvCards>
     </ScrollView>
   );
 };

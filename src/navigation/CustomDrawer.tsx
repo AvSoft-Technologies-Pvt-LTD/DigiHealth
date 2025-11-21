@@ -1,20 +1,20 @@
 // src/navigation/CustomDrawer.tsx
-import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, View, Pressable, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, View, Pressable } from 'react-native';
 import { useDrawer } from './DrawerContext';
 import { PAGES } from '../constants/pages';
 import { COLORS } from '../constants/colors';
 import { RootStackParamList } from '../types/navigation';
 import StorageService from '../services/storageService';
 import { CommonActions, useNavigation } from '@react-navigation/native';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AvText from '../elements/AvText';
 import { width } from '../constants/common';
 import { normalize } from '../constants/platform';
 import { useDispatch } from 'react-redux';
 import { setAuthenticated, setUserProfile } from '../store/slices/userSlice';
-import { useAppSelector } from '../store/hooks';
 import { ROLES } from '../constants/data';
+import AvModal from '../elements/AvModal';
+import { AvButton, AvIcons } from '../elements';
 
 
 const DRAWER_WIDTH = width * 0.75;
@@ -29,36 +29,35 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
   const animation = useRef(new Animated.Value(0)).current;
   const dispatch = useDispatch();
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const handleLogout = async () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
     try {
       // Clear user token and role
       await StorageService.remove('userToken');
       await StorageService.remove('userRole');
       dispatch(setAuthenticated(false));
       dispatch(setUserProfile({ role: null }));
-      // Reload app
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [
-            {
-              name: PAGES.SPLASH,
-            },
-          ],
-        })
-      );
-            
+      setShowLogoutModal(false);
+      
       // Close drawer
       closeDrawer();
       
-      // Navigate to login screen
-      navigation.reset({
-        index: 0,
-        routes: [{ name: PAGES.HOME }],
-      });
+      // Navigate to home screen
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: PAGES.HOME }],
+        })
+      );
     } catch (error) {
       console.error('Error during logout:', error);
-      Alert.alert('Error', 'Failed to logout. Please try again.');
+      // Show error message
+      setShowLogoutModal(false);
     }
   };
 
@@ -97,39 +96,32 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
   if (!isVisible) return null;
  
   const menuItems = [
-    ...(userRole === ROLES.PATIENT ? [
-      { title: 'Patient Dashboard', icon: 'account-details', screen: PAGES.PATIENT_OVERVIEW },
-      { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
-      { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
+    ...(userRole === ROLES.DOCTOR
+      ? [
+          { title: 'Dashboard', icon: 'view-dashboard', screen: PAGES.PATIENT_OVERVIEW },
+          { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
+          { title: 'Patients', icon: 'account-group', screen: PAGES.PATIENT_MEDICAL_RECORD },
+          { title: 'Payments', icon: 'credit-card', screen: PAGES.BILLING },
+          { title: 'Scheduler', icon: 'calendar-month', screen: PAGES.PATIENT_APPOINTMENTS },
+          { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
+        ]
+      : userRole === ROLES.PATIENT
+      ? [
+          { title: 'Dashboard', icon: 'view-dashboard', screen: PAGES.PATIENT_OVERVIEW },
+          { title: 'My Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
+          { title: 'Medical Records', icon: 'file-document', screen: PAGES.PATIENT_MEDICAL_RECORD },
+          { title: 'Billing', icon: 'credit-card', screen: PAGES.BILLING },
+          { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
+        ]
+      : [
+          // Default menu items for other roles
+          { title: 'Home', icon: 'home', screen: PAGES.HOME },
+          { title: 'Patient Dashboard', icon: 'account-details', screen: PAGES.PATIENT_OVERVIEW },
           { title: 'Medical Record', icon: 'receipt', screen: PAGES.PATIENT_MEDICAL_RECORD },
-
-      { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
-
-    ] : [
-      // Add other role-specific menu items here if needed
-      { title: 'Home', icon: 'home', screen: PAGES.HOME },
-      { title: 'Patient Dashboard', icon: 'account-details', screen: PAGES.PATIENT_OVERVIEW },
-      // { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
-    { title: 'Medical Record', icon: 'receipt', screen: PAGES.PATIENT_MEDICAL_RECORD },
-      { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
-
-      { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
-      { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
-    ]),
-    // { title: 'Home', icon: 'home', screen: PAGES.HOME },
-    // // { title: 'Patient Dashboard', icon: 'home', screen: PAGES.PATIENT_DASHBOARD },
-    // // { title: 'Home', icon: 'home', screen: PAGES.HOME },
-    // { title: 'Patient Dashboard', icon: 'home', screen: PAGES.PATIENT_OVERVIEW },
-    // // { title: 'Patient Register', icon: 'account-plus', screen: PAGES.PATIENT_REGISTER },
-    // // { title: 'Doctor Register', icon: 'stethoscope', screen: PAGES.DOCTOR_REGISTER },
-    // // { title: 'Hospital Register', icon: 'hospital-building', screen: PAGES.HOSPITAL_REGISTER },
-    // // { title: 'Labs & Scan', icon: 'microscope', screen: PAGES.LABS_SCAN_REGISTER },
-    //  { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
- 
-        //  { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
-    // { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
-    // // { title: 'Settings', icon: 'setting', screen: PAGES.PATIENT_SETTINGS },
-   
+          { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
+          { title: 'Billing', icon: 'receipt', screen: PAGES.BILLING },
+          { title: 'Settings', icon: 'cog-outline', screen: PAGES.PATIENT_SETTINGS },
+        ]),
     { title: 'Logout', icon: 'logout', action: handleLogout, isDestructive: true },
   ];
 
@@ -140,7 +132,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
       </Pressable>
       <Animated.View style={[styles.drawer, { transform: [{ translateX }] }]}>
         <View style={styles.header}>
-          <AvText style={styles.title}>DigiHealth</AvText>
+          <AvText style={styles.title}>Pocket Clinic</AvText>
           <AvText style={styles.subtitle}>Your Health Partner</AvText>
         </View>
         <View style={styles.menuContainer}>
@@ -168,7 +160,8 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
               }}
             >
               <View style={styles.iconContainer}>
-                <MaterialCommunityIcons
+                <AvIcons
+                  type="MaterialCommunityIcons"
                   name={item.icon}
                   size={normalize(24)}
                   color={COLORS.WHITE}
@@ -179,6 +172,37 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
           ))}
         </View>
       </Animated.View>
+
+      {/* Logout Confirmation Modal */}
+      <AvModal
+        isModalVisible={showLogoutModal}
+        setModalVisible={setShowLogoutModal}
+        animationType="fade"
+        modalStyles={styles.modalContainer}
+      >
+        <View style={styles.modalContent}>
+          <AvText type="heading_2" style={styles.modalTitle}>
+            Logout
+          </AvText>
+          <AvText style={styles.modalMessage}>
+            Are you sure you want to logout?
+          </AvText>
+          <View style={styles.modalButtons}>
+            <AvButton
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={() => setShowLogoutModal(false)}
+            >
+              <AvText>Cancel</AvText>
+            </AvButton>
+            <AvButton
+              style={[styles.modalButton, styles.logoutButton]}
+              onPress={confirmLogout}
+            >
+              <AvText  style={styles.logoutButtonText}>Logout</AvText>
+            </AvButton>
+          </View>
+        </View>
+      </AvModal>
     </View>
   );
 };
@@ -248,6 +272,49 @@ const styles = StyleSheet.create({
   },
   destructiveText: {
     color: COLORS.ERROR,
+  },
+  modalContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: COLORS.WHITE,
+    borderRadius: normalize(12),
+    padding: normalize(20),
+    maxWidth: 400,
+  },
+  modalTitle: {
+    // fontSize: normalize(20),
+    fontWeight: 'bold',
+    marginBottom: normalize(12),
+    color: COLORS.BLACK,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: normalize(16),
+    color: COLORS.GREY,
+    marginBottom: normalize(24),
+    textAlign: 'center',
+    lineHeight: normalize(22),
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: normalize(16),
+  },
+  modalButton: {
+    marginLeft: normalize(20),
+    minWidth: normalize(100),
+  },
+  cancelButton: {
+    backgroundColor: COLORS.LIGHT_GREY,
+  },
+  logoutButton: {
+    backgroundColor: COLORS.PRIMARY,
+  },
+  logoutButtonText: {
+    color: COLORS.WHITE,
+    fontWeight: '500',
   },
 });
 

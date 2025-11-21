@@ -2,10 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, StyleSheet, TextInput, ScrollView, Alert } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "../../../../store";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import AvText from "../../../../elements/AvText";
-import AvButton from "../../../../elements/AvButton";
-import AvCard from "../../../../elements/AvCards";
+
 import AvModal from "../../../../elements/AvModal";
 import { COLORS } from "../../../../constants/colors";
 import {
@@ -13,6 +10,7 @@ import {
   updatePatientVitals,
   createPatientVitals,
 } from "../../../../store/thunks/patientThunks";
+import { AvButton, AvCards, AvIcons, AvText, AvTextInput } from "../../../../elements";
 
 interface Vital {
   id: string;
@@ -185,7 +183,7 @@ const HealthSummary = () => {
           mode="contained"
           style={styles.addVitalsButton}
           buttonColor={COLORS.SECONDARY}
-          icon={() => <Icon name={hasNoData ? "plus" : "pencil"} size={16} color={COLORS.WHITE} />}
+          icon={() => <AvIcons type="MaterialIcons"  name={hasNoData ? "plus" : "pencil"} size={16} color={COLORS.WHITE} />}
           onPress={handleUpdateVitals}
           disabled={isLoading}
         >
@@ -197,16 +195,16 @@ const HealthSummary = () => {
       <View style={styles.vitalsContainer}>
         {vitals.some(vital => vital.value) ? (
           vitals.map((vital) => (
-            <AvCard
+            <AvCards
               key={vital.id}
               title={<AvText type="body" style={{ color: COLORS.PRIMARY_TXT, fontWeight: "500" }}>{vital.type}</AvText>}
-              icon={<Icon name={vital.icon} size={20} color={COLORS.PRIMARY} />}
+              icon={<AvIcons type="MaterialIcons" name={vital.icon} size={20} color={COLORS.PRIMARY} />}
               cardStyle={[styles.vitalCard, { borderLeftColor: COLORS.PRIMARY, borderLeftWidth: 4 }]}
             >
               <AvText type="title_2" style={{ color: COLORS.PRIMARY, marginTop: 4 }}>
                 {vital.value || "N/A"} {vital.unit}
               </AvText>
-            </AvCard>
+            </AvCards>
           ))
         ) : (
           <AvText type="body" style={{ color: COLORS.PRIMARY_TXT, textAlign: "center", width: "100%" }}>
@@ -219,11 +217,11 @@ const HealthSummary = () => {
           {vitals.map((vital) => (
             <View key={vital.id} style={styles.vitalInputContainer}>
               <View style={styles.vitalInputHeader}>
-                <Icon name={vital.icon} size={20} color={COLORS.PRIMARY} style={styles.vitalIcon} />
+                <AvIcons type="MaterialIcons" name={vital.icon} size={20} color={COLORS.PRIMARY} style={styles.vitalIcon} />
                 <AvText type="body" style={styles.vitalInputLabel}>{vital.type}</AvText>
               </View>
               <View style={styles.inputRow}>
-                <TextInput
+                <AvTextInput
                   style={styles.input}
                   value={vitalValues[vital.id] || ''}
                   onChangeText={(text) => handleValueChange(vital.id, text)}

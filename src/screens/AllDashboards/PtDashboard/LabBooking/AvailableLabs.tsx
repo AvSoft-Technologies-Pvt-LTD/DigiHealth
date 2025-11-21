@@ -3,12 +3,12 @@ import { View, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } fro
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import AvText from '../../../../elements/AvText';
 import { COLORS } from '../../../../constants/colors';
 import { SearchFilterBar } from '../../../../components/CommonComponents/SearchFilter';
 import { PAGES } from '../../../../constants/pages';
 import { normalize } from '../../../../constants/platform';
+import { AvIcons } from '../../../../elements';
 
 type RootStackParamList = {
   [PAGES.LAB_CART]: { cart: any[]; testDetails?: any[] };
@@ -139,7 +139,7 @@ const AvailableLabs: React.FC = () => {
     <AvText varient="subtitle" style={styles.includedTestsTitle}>Included Tests:</AvText>
     {item.tests.map((test: any, index: number) => (
       <View key={index} style={styles.testItem}>
-        <Icon name="check-circle" size={16} color={COLORS.SUCCESS} />
+        <AvIcons type="MaterialCommunityIcons" name="check-circle" size={16} color={COLORS.SUCCESS} />
         <AvText type="body" style={styles.testText}>{test.title}</AvText>
       </View>
     ))}
