@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -70,9 +70,9 @@ const DoctorRegisterView: React.FC<DoctorRegisterViewProps> = ({
 }) => {
   const [formData, setFormData] = useState<DoctorFormData>({
     firstName: 'John',
-    middleName: 'Doe',
-    lastName: 'Smith',
-    phone: '1234567890',
+    middleName: 'Smith',
+    lastName: 'Doe',
+    phone: '9876543210',
     email: 'john.doe@example.com',
     password: 'John@123$$',
     confirmPassword: 'John@123$$',
@@ -85,10 +85,10 @@ const DoctorRegisterView: React.FC<DoctorRegisterViewProps> = ({
     qualification: 'MBBS',
     associationType: 'HOSPITAL',
     clinicName: 'John Smith Clinic',
-    pincode: '123456',
-    city: 'New York',
-    district: 'Manhattan',
-    state: 'NY',
+    pincode: '803115',
+    city: 'Lucknow',
+    district: 'Lucknow',
+    state: 'UP',
     agreeDeclaration: false,
     photo: null,
   });
@@ -104,11 +104,21 @@ const DoctorRegisterView: React.FC<DoctorRegisterViewProps> = ({
     message: '',
     isActive: false
   });
+  const [errorTimer, setErrorTimer] = useState<number | null>(null);
   const [selectedAssociation, setSelectedAssociation] = useState<'HOSPITAL' | 'CLINIC'>('HOSPITAL');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigation = useNavigation();
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (errorTimer) {
+        clearTimeout(errorTimer);
+      }
+    };
+  }, [errorTimer]);
 
   const updateFormData = <K extends keyof DoctorFormData>(field: K, value: DoctorFormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -116,7 +126,35 @@ const DoctorRegisterView: React.FC<DoctorRegisterViewProps> = ({
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
     if (formError.isActive && formError.field === field) {
-      setFormError(prev => ({ ...prev, isActive: false }));
+      clearFormError();
+    }
+  };
+
+  const showFormError = (message: string, field?: keyof DoctorFormData) => {
+    // Clear any existing timer
+    if (errorTimer) {
+      clearTimeout(errorTimer);
+    }
+    
+    setFormError({
+      field,
+      message,
+      isActive: true
+    });
+    
+    // Auto-hide error after 5 seconds
+    const timer = setTimeout(() => {
+      clearFormError();
+    }, 3000);
+    
+    setErrorTimer(timer);
+  };
+
+  const clearFormError = () => {
+    setFormError(prev => ({ ...prev, isActive: false }));
+    if (errorTimer) {
+      clearTimeout(errorTimer);
+      setErrorTimer(null);
     }
   };
 
@@ -132,53 +170,186 @@ const DoctorRegisterView: React.FC<DoctorRegisterViewProps> = ({
     return formatted;
   };
 
+  const handlePincodeChange = async (text: string) => {
+    // Only allow numbers and limit to 6 digits
+    const cleanText = text.replace(/[^0-9]/g, '').substring(0, 6);
+    updateFormData('pincode', cleanText);
+    
+    // If pincode is 6 digits, try to fetch location data
+    if (cleanText.length === 6) {
+      try {
+        // You can use any pincode API service
+        // Example using India Post API or similar service
+        const response = await fetch(`https://api.postalpincode.in/pincode/${cleanText}`);
+        const data = await response.json();
+        
+        if (data && data.length > 0 && data[0].Status === 'Success') {
+          const postOffice = data[0].PostOffice[0];
+          if (postOffice) {
+            // Always update city, district, and state when pincode changes
+            updateFormData('city', postOffice.Block || postOffice.District || '');
+            updateFormData('district', postOffice.District || '');
+            updateFormData('state', postOffice.State || '');
+          }
+        }
+      } catch (error) {
+        console.log('Failed to fetch pincode details:', error);
+        // Silently fail - user can manually enter the details
+      }
+    } else {
+      // If pincode is not 6 digits, clear the auto-filled fields
+      updateFormData('city', '');
+      updateFormData('district', '');
+      updateFormData('state', '');
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
-    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    if (!formData.password.trim()) newErrors.password = 'Password is required';
-    if (!formData.confirmPassword.trim()) newErrors.confirmPassword = 'Confirm password is required';
-    if (!formData.registrationNumber.trim()) newErrors.registrationNumber = 'Registration number is required';
-    if (!formData.qualification.trim()) newErrors.qualification = 'Qualification is required';
-    if (!formData.associationType) newErrors.associationType = 'Association type is required';
-    if (!formData.pincode.trim()) newErrors.pincode = 'Pincode is required';
-    if (!formData.city.trim()) newErrors.city = 'City is required';
-    if (!formData.district.trim()) newErrors.district = 'District is required';
-    if (!formData.state.trim()) newErrors.state = 'State is required';
-    if (!formData.agreeDeclaration) newErrors.agreeDeclaration = 'You must agree to the declaration';
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    // First Name validation
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    } else if (!/^[a-zA-Z\s]{2,50}$/.test(formData.firstName.trim())) {
+      newErrors.firstName = 'First name must contain only letters and be 2-50 characters';
+    }
+
+    // Middle Name validation (optional)
+    if (formData.middleName && formData.middleName.trim()) {
+      if (!/^[a-zA-Z\s]{2,50}$/.test(formData.middleName.trim())) {
+        newErrors.middleName = 'Middle name must contain only letters and be 2-50 characters';
+      }
+    }
+
+    // Last Name validation
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    } else if (!/^[a-zA-Z\s]{2,50}$/.test(formData.lastName.trim())) {
+      newErrors.lastName = 'Last name must contain only letters and be 2-50 characters';
+    }
+
+    // Phone validation
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^[6-9]\d{9}$/.test(formData.phone.trim())) {
+      newErrors.phone = 'Please enter a valid 10-digit mobile number';
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (formData.phone && !/^[0-9]{10}$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid 10-digit phone number';
+    // Password validation
+    if (!formData.password.trim()) {
+      newErrors.password = 'Password is required';
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(formData.password)) {
+      newErrors.password = 'Password must be at least 8 characters with uppercase, lowercase, number, and special character';
     }
 
-    // if (formData.aadhaar && !/^[0-9]{12}$/.test(formData.aadhaar)) {
-    //   newErrors.aadhaar = 'Please enter a valid 12-digit Aadhaar number';
-    // }
-
-    if (formData.pincode && !/^[0-9]{6}$/.test(formData.pincode)) {
-      newErrors.pincode = 'Please enter a valid 6-digit pin code';
-    }
-
-    if (formData.password && formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters long';
-    }
-
-    if (formData.password !== formData.confirmPassword) {
+    // Confirm Password validation
+    if (!formData.confirmPassword.trim()) {
+      newErrors.confirmPassword = 'Confirm password is required';
+    } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    if (formData.dob) {
+    // Aadhaar validation (optional but if provided, must be valid)
+    if (formData.aadhaar && formData.aadhaar.trim()) {
+      const aadhaarDigits = formData.aadhaar.replace(/-/g, '');
+      if (!/^\d{12}$/.test(aadhaarDigits)) {
+        newErrors.aadhaar = 'Please enter a valid 12-digit Aadhaar number';
+      }
+    }
+
+    // Gender validation
+    if (!formData.genderId) {
+      newErrors.genderId = 'Please select your gender';
+    }
+
+    // Date of Birth validation
+    if (!formData.dob) {
+      newErrors.dob = 'Date of birth is required';
+    } else {
       const dob = new Date(formData.dob);
       const today = new Date();
-      if (dob > today) {
-        newErrors.dob = 'Date of birth cannot be in the future';
+      const age = today.getFullYear() - dob.getFullYear();
+      if (age < 18 || age > 100) {
+        newErrors.dob = 'You must be between 18 and 100 years old';
       }
+    }
+
+    // Registration Number validation
+    if (!formData.registrationNumber.trim()) {
+      newErrors.registrationNumber = 'Registration number is required';
+    } else if (!/^[A-Z0-9]{6,20}$/.test(formData.registrationNumber.trim().toUpperCase())) {
+      newErrors.registrationNumber = 'Registration number must be 6-20 alphanumeric characters';
+    }
+
+    // Practice Type validation
+    if (!formData.practiceTypeId) {
+      newErrors.practiceTypeId = 'Please select your practice type';
+    }
+
+    // Specialization validation
+    if (!formData.specializationId) {
+      newErrors.specializationId = 'Please select your specialization';
+    }
+
+    // Qualification validation
+    if (!formData.qualification.trim()) {
+      newErrors.qualification = 'Qualification is required';
+    } else if (!/^[a-zA-Z\s,\-\.]{3,100}$/.test(formData.qualification.trim())) {
+      newErrors.qualification = 'Qualification must contain only letters, spaces, commas, hyphens, or periods';
+    }
+
+    // Association Type validation
+    if (!formData.associationType) {
+      newErrors.associationType = 'Association type is required';
+    } else if (formData.associationType === 'HOSPITAL' && !formData.hospitalId) {
+      newErrors.hospitalId = 'Please select a hospital';
+    } else if (formData.associationType === 'CLINIC' && !formData.clinicName.trim()) {
+      newErrors.clinicName = 'Clinic name is required';
+    }
+
+    // Pincode validation
+    if (!formData.pincode.trim()) {
+      newErrors.pincode = 'Pincode is required';
+    } else if (!/^[1-9][0-9]{5}$/.test(formData.pincode.trim())) {
+      newErrors.pincode = 'Please enter a valid 6-digit pincode';
+    }
+
+    // City validation
+    if (!formData.city.trim()) {
+      newErrors.city = 'City is required';
+    } else if (!/^[a-zA-Z\s]{2,50}$/.test(formData.city.trim())) {
+      newErrors.city = 'City name must contain only letters and be 2-50 characters';
+    }
+
+    // District validation
+    if (!formData.district.trim()) {
+      newErrors.district = 'District is required';
+    } else if (!/^[a-zA-Z\s]{2,50}$/.test(formData.district.trim())) {
+      newErrors.district = 'District name must contain only letters and be 2-50 characters';
+    }
+
+    // State validation
+    if (!formData.state.trim()) {
+      newErrors.state = 'State is required';
+    } else if (!/^[a-zA-Z\s]{2,50}$/.test(formData.state.trim())) {
+      newErrors.state = 'State name must contain only letters and be 2-50 characters';
+    }
+
+    // Photo validation
+    if (!formData.photo) {
+      newErrors.photo = 'Profile photo is required';
+    }
+
+    // Terms agreement validation
+    if (!formData.agreeDeclaration) {
+      newErrors.agreeDeclaration = 'You must agree to the terms and conditions';
     }
 
     setErrors(newErrors);
@@ -265,11 +436,7 @@ const DoctorRegisterView: React.FC<DoctorRegisterViewProps> = ({
         errorField = 'registrationNumber';
       }
 
-      setFormError({
-        field: errorField,
-        message: errorMessage,
-        isActive: true
-      });
+      showFormError(errorMessage, errorField);
     }
   };
 
@@ -596,15 +763,28 @@ const DoctorRegisterView: React.FC<DoctorRegisterViewProps> = ({
                   <AvTextInput
                     label="Pincode *"
                     value={formData.pincode}
-                    onChangeText={(text) => updateFormData('pincode', text.replace(/[^0-9]/g, ''))}
+                    onChangeText={handlePincodeChange}
                     keyboardType="number-pad"
                     maxLength={6}
-                    error={!!errors.pincode || (formError.isActive && formError.field === 'pincode')}
-                    errorText={errors.pincode || (formError.field === 'pincode' ? formError.message : '')}
                     mode="outlined"
                     dense={true}
-                    style={styles.input}
+                    style={[
+                      styles.input,
+                      (errors.pincode || (formError.isActive && formError.field === 'pincode')) ? styles.inputError : {}
+                    ]}
+                    theme={{
+                      colors: {
+                        primary: COLORS.SECONDARY,
+                        outline: (errors.pincode || (formError.isActive && formError.field === 'pincode')) ? COLORS.TRANSPARENT : COLORS.LIGHT_GREY,
+                        background: COLORS.WHITE,
+                      }
+                    }}
                   />
+                  {(errors.pincode || (formError.field === 'pincode' && formError.isActive)) && (
+                    <AvText type="caption" style={styles.errorText}>
+                      {errors.pincode || (formError.field === 'pincode' ? formError.message : '')}
+                    </AvText>
+                  )}
                 </View>
                 <View style={styles.flex3}>
                   {renderInput('City', formData.city, text => updateFormData('city', text), 'City', 'default', false, true, 'city')}
@@ -788,7 +968,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.ERROR,
   },
   errorText: {
-    color: COLORS.ERROR,
+    color: COLORS.TRANSPARENT,
     fontSize: normalize(11),
     marginTop: normalize(2),
     marginLeft: normalize(4),

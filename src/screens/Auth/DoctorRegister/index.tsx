@@ -122,15 +122,18 @@ const DoctorRegister: React.FC<DoctorRegisterProps> = () => {
     } catch (error: any) {
       console.error('Doctor registration error:', error);
 
-      if (error.response?.data?.message) {
+      // Check for specific API error response
+      if (error.response?.data?.error) {
+        showSnackbar(error.response.data.error);
+      } else if (error.response?.data?.message) {
         showSnackbar(error.response.data.message);
-        // Re-throw the error to be caught by the view component
-        throw error;
       } else if (error.message) {
         showSnackbar(error.message);
       } else {
         showSnackbar('Network error. Please check your internet connection and try again.');
       }
+      // Re-throw the error to be caught by the view component if needed
+      throw error;
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Card } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 //  import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -8,11 +8,30 @@ import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import FadeInView from './FadeInView';
 import { selectFeatures } from '../../../../store/slices/homeSlice';
-import { AvIcons } from '../../../../elements';
+import { AvIcons, AvModal, AvButton } from '../../../../elements';
+import { useNavigation } from '@react-navigation/native';
+import { PAGES } from '../../../../constants/pages';
 
 
 const QuickAccessSection = () => {
   const features = useSelector(selectFeatures);
+  const isAuthenticated = useSelector((state: any) => state.user.isAuthenticated);
+  const navigation = useNavigation();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const handleFeaturePress = (feature: any) => {
+    // if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    // }
+    // Handle navigation to feature when authenticated
+    console.log('Navigate to:', feature.title);
+  };
+
+  const handleLoginPress = () => {
+    setShowLoginModal(false);
+    navigation.navigate(PAGES.LOGIN);
+  };
   return (
     <View style={styles.section}>
       <AvText type="heading_3" style={styles.sectionTitle}>
@@ -21,28 +40,62 @@ const QuickAccessSection = () => {
       <View style={styles.featuresGrid}>
         {features?.map((feature, index) => (
           <FadeInView key={feature.id} delay={index * 100} style={styles.featureItem}>
-            <Card style={styles.featureCard}>
-              <Card.Content style={styles.featureCardContent}>
-                <View style={styles.iconContainer}>
-                  <AvIcons
-                    type="MaterialCommunityIcons"
-                    name={feature.icon as any} 
-                    size={24} 
-                    color={COLORS.WHITE}
-                    style={styles.featureIcon}
-                  />
-                </View>
-                <AvText type="title_3" style={styles.featureTitle}>
-                  {feature.title}
-                </AvText>
-                <AvText type="body" style={styles.featureDescription}>
-                  {feature.description}
-                </AvText>
-              </Card.Content>
-            </Card>
+            <TouchableOpacity onPress={() => handleFeaturePress(feature)}>
+              <Card style={styles.featureCard}>
+                <Card.Content style={styles.featureCardContent}>
+                  <View style={styles.iconContainer}>
+                    <AvIcons
+                      type="MaterialCommunityIcons"
+                      name={feature.icon as any} 
+                      size={24} 
+                      color={COLORS.WHITE}
+                      style={styles.featureIcon}
+                    />
+                  </View>
+                  <AvText type="title_3" style={styles.featureTitle}>
+                    {feature.title}
+                  </AvText>
+                  <AvText type="body" style={styles.featureDescription}>
+                    {feature.description}
+                  </AvText>
+                </Card.Content>
+              </Card>
+            </TouchableOpacity>
           </FadeInView>
         ))}
       </View>
+      
+      {/* Login Modal */}
+      <AvModal
+        isModalVisible={showLoginModal}
+        onDismiss={() => setShowLoginModal(false)}
+        title="Authentication Required"
+      >
+        <View style={styles.modalContent}>
+          <AvText type="body" style={styles.modalMessage}>
+            You need to be logged in to access this feature. 
+            Please login to continue.
+          </AvText>
+          <View style={styles.modalButtons}>
+            <AvButton
+              mode="outlined"
+              onPress={() => setShowLoginModal(false)}
+              style={styles.cancelButton}
+              labelStyle={styles.cancelButtonText}
+            >
+              Cancel
+            </AvButton>
+            <AvButton
+              mode="contained"
+              onPress={handleLoginPress}
+              style={styles.loginButton}
+              buttonColor={COLORS.PRIMARY}
+            >
+              Login
+            </AvButton>
+          </View>
+        </View>
+      </AvModal>
     </View>
   );
 };
@@ -104,6 +157,28 @@ const styles = StyleSheet.create({
   featureDescription: {
     color: COLORS.GREY,
     fontSize: normalize(12),
+  },
+  modalContent: {
+    padding: normalize(20),
+  },
+  modalMessage: {
+    textAlign: 'center',
+    marginBottom: normalize(20),
+    color: COLORS.GREY,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    gap: normalize(12),
+  },
+  cancelButton: {
+    flex: 1,
+  },
+  cancelButtonText: {
+    color: COLORS.GREY,
+  },
+  loginButton: {
+    flex: 1,
   },
 });
 

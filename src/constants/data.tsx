@@ -26,7 +26,7 @@ export const features: Feature[] = [
     { id: '1', title: 'Consult Doctor', description: 'Talk to top specialists', icon: 'stethoscope' },
     { id: '2', title: 'Medical Records', description: 'Track securely', icon: 'file-document' },
     { id: '3', title: 'Book Lab/Scans', description: 'Book tests easily', icon: 'microscope' },
-    { id: '4', title: 'Online Shopping', description: 'Eletronic Medical Record', icon: 'medical-bag' },
+    { id: '4', title: 'Online Shopping', description: 'Eletronic Medical Record', icon: 'medical-bbag' },
 ];
   
 export interface Benefit {

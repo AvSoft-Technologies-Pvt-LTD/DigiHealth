@@ -150,9 +150,10 @@ export const postFormData = async (url: string, formData: FormData) => {
     console.error("POST FormData request error:", error);
     if (error.response) {
       // The request was made and the server responded with a status code
-      console.error('Response data:', error.response.data);
+      console.error('Response data HEre:', error.response.data.error);
       console.error('Response status:', error.response.status);
       console.error('Response headers:', error.response.headers);
+      throw error;
     } else if (error.request) {
       // The request was made but no response was received
       console.error('No response received:', error.request);
