@@ -15,7 +15,8 @@ import { TextInput } from 'react-native-paper';
 import { isIos, normalize } from '../../../constants/platform';
 import Header from '../../../components/Header';
 import { AvImage, AvTextInput, AvText, AvIcons } from '../../../elements';
-
+import { CommonActions, useNavigation } from '@react-navigation/native';
+import { PAGES } from '../../../constants/pages';
 
 export interface PatientFormData {
     firstName: string;
@@ -37,6 +38,12 @@ export interface PatientFormData {
     photo: Asset | null;
 }
 
+interface FormError {
+    field?: keyof PatientFormData;
+    message: string;
+    isActive: boolean;
+}
+
 type FormErrors = Partial<Record<keyof PatientFormData, string>>;
 
 interface PatientRegisterViewProps {
@@ -51,20 +58,20 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
     loading = false,
 }) => {
     const [formData, setFormData] = useState<PatientFormData>({
-        firstName: 'Haris',
-        middleName: 'Ali',
-        lastName: 'Patel',
-        phone: '1234567863',
-        email: 'haris@gmail.com',
-        password: 'Test@123$$',
-        confirmPassword: 'Test@123$$',
-        aadhaar: '123456789012',
+        firstName: 'Perfect',
+        middleName: 'User',
+        lastName: 'Data',
+        phone: '9998887776',
+        email: 'perfect.user@example.com',
+        password: 'Perfect@123',
+        confirmPassword: 'Perfect@123',
+        aadhaar: '999988887777',
         genderId: 1,
-        dob: '1990-09-26',
-        occupation: 'Student',
-        pinCode: '123456',
-        city: 'Dharwad',
-        district: 'Dharwad',
+        dob: '1990-01-01',
+        occupation: 'Quality Analyst',
+        pinCode: '805104',
+        city: 'Bangalore',
+        district: 'Bangalore Urban',
         state: 'Karnataka',
         agreeDeclaration: true,
         photo: null,
@@ -72,11 +79,23 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
 
     const [errors, setErrors] = useState<FormErrors>({});
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [formError, setFormError] = useState<FormError>({
+        field: undefined,
+        message: '',
+        isActive: false
+    });
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const navigation = useNavigation();
 
     const updateFormData = <K extends keyof PatientFormData>(field: K, value: PatientFormData[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (errors[field]) {
             setErrors(prev => ({ ...prev, [field]: undefined }));
+        }
+        if (formError.isActive && formError.field === field) {
+            setFormError(prev => ({ ...prev, isActive: false }));
         }
     };
 
@@ -207,14 +226,32 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         }
     };
 
-    const handleSubmit = () => {
-        if (validateForm()) {
-            onSubmit(formData);
+    const handleSubmit = async () => {
+        if (!validateForm()) return;
+
+        try {
+            await onSubmit(formData);
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
+            let errorField: keyof PatientFormData | undefined;
+
+            if (errorMessage.toLowerCase().includes('Pincode')) {
+                errorField = 'pinCode';
+            } else if (errorMessage.toLowerCase().includes('email')) {
+                errorField = 'email';
+            } else if (errorMessage.toLowerCase().includes('phone')) {
+                errorField = 'phone';
+            } else if (errorMessage.toLowerCase().includes('aadhaar')) {
+                errorField = 'aadhaar';
+            }
+
+            setFormError({
+                field: errorField,
+                message: errorMessage,
+                isActive: true
+            });
         }
     };
-
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const renderInput = (
         label: string,
@@ -240,7 +277,7 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                 icon={isPasswordVisible ? "eye-off" : "eye"}
                 onPress={setPasswordVisibility}
                 color={COLORS.GREY}
-                size={20}
+                size={18}
             />
         ) : undefined;
 
@@ -260,10 +297,12 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                     placeholderTextColor={COLORS.GREY}
                     right={rightIcon}
                     mode="outlined"
+                    dense={true}
                     theme={{
                         colors: {
                             primary: COLORS.SECONDARY,
                             outline: hasError ? COLORS.ERROR : COLORS.LIGHT_GREY,
+                            background: COLORS.WHITE,
                         }
                     }}
                 />
@@ -280,13 +319,19 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         <KeyboardAvoidingView
             style={styles.container}
             behavior={isIos() ? 'padding' : 'height'}
-            keyboardVerticalOffset={isIos() ? 90 : 0}
+            keyboardVerticalOffset={isIos() ? 60 : 0}
         >
             <Header
-                title="Patient Registration"
+                title={PAGES.DOCTOR_REGISTER}
                 showBackButton={true}
+                onLoginPress={() => navigation.dispatch(
+                    CommonActions.reset({
+                        index: 0,
+                        routes: [{ name: PAGES.LOGIN }],
+                    })
+                )}
                 backgroundColor={COLORS.WHITE}
-                titleColor={COLORS.BLACK}
+                titleColor={COLORS.PRIMARY}
             />
             <ScrollView
                 style={styles.scrollContainer}
@@ -295,140 +340,220 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.content}>
-                    <AvText type="body" style={styles.subtitle}>Please fill in all the required information</AvText>
+                    {/* Header Section */}
+                    <View style={styles.headerSection}>
+                        <AvText type="h4" style={styles.title}>Create Account</AvText>
+                        <AvText type="body2" style={styles.subtitle}>Fill in your details to get started</AvText>
+                    </View>
+
                     <View style={styles.form}>
-                        {/* Personal Information */}
-                        <AvText type="title_2" style={styles.sectionTitle}>Personal Information</AvText>
-                        {renderInput('First Name', formData.firstName, text => updateFormData('firstName', text), 'Enter your first name', 'default', false, true, 'firstName')}
-                        {renderInput('Middle Name', formData.middleName, text => updateFormData('middleName', text), 'Enter your middle name')}
-                        {renderInput('Last Name', formData.lastName, text => updateFormData('lastName', text), 'Enter your last name', 'default', false, true, 'lastName')}
-                        {renderInput('Phone Number', formData.phone, text => updateFormData('phone', text), 'Enter your phone number', 'phone-pad', false, true, 'phone')}
-                        {renderInput('Email', formData.email, text => updateFormData('email', text), 'Enter your email address', 'email-address', false, true, 'email')}
-                        {renderInput('Aadhaar Number', formatAadhaar(formData.aadhaar), handleAadhaarChange, 'Enter your 12-digit Aadhaar number', 'default', false, false, 'aadhaar')}
+                        {/* Personal Information Section */}
+                        <View style={styles.section}>
+                            <AvText type="subtitle1" style={styles.sectionTitle}>Personal Information</AvText>
 
-                        {/* Gender */}
-                        <View style={styles.inputContainer}>
-                            <AvSelect
-                                label="Gender *"
-                                required
-                                items={[
-                                    { label: 'Male', value: 1 },
-                                    { label: 'Female', value: 2 },
-                                    { label: 'Other', value: 3 },
-                                ]}
-                                selectedValue={formData.genderId}
-                                onValueChange={(value) => updateFormData('genderId', value)}
-                                placeholder="Select Gender"
-                                error={!!errors.genderId}
-                                errorText={errors.genderId}
-                                mode="outlined"
-                                theme={{
-                                    colors: {
-                                        primary: COLORS.SECONDARY,
-                                        outline: errors.genderId ? COLORS.ERROR : COLORS.LIGHT_GREY,
-                                    }
-                                }}
-                            />
-                        </View>
-
-                        {/* Date of Birth */}
-                        <View style={styles.inputContainer}>
-                            <AvText type="Subtitle_1" style={styles.label}>
-                                Date of Birth *
-                            </AvText>
-                            <TouchableOpacity
-                                style={[styles.dateButton, errors.dob ? styles.inputError : {}]}
-                                onPress={() => setShowDatePicker(true)}
-                            >
-                                <AvText type="body" style={[styles.dateText, !formData.dob ? styles.placeholderText : {}]}>
-                                    {formData.dob ? new Date(formData.dob).toDateString() : 'Select Date of Birth'}
-                                </AvText>
-                            </TouchableOpacity>
-                            {errors.dob && <AvText type="caption" style={styles.errorText}>{errors.dob}</AvText>}
-                        </View>
-
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={formData.dob ? new Date(formData.dob) : new Date()}
-                                mode="date"
-                                display="default"
-                                onChange={handleDateChange}
-                                maximumDate={new Date()}
-                            />
-                        )}
-
-                        {renderInput('Occupation', formData.occupation, text => updateFormData('occupation', text), 'Enter your occupation', 'default', false, true, 'occupation')}
-
-                        {/* Photo Upload */}
-                        <View style={styles.inputContainer}>
-                            <AvText type="Subtitle_1" style={styles.label}>
-                                Upload Photo *
-                            </AvText>
-                            <TouchableOpacity
-                                style={[styles.photoButton, errors.photo ? styles.inputError : {}]}
-                                onPress={handleImagePicker}
-                            >
-                                {formData.photo?.uri ? (
-                                    <AvImage source={{ uri: formData.photo.uri }} style={styles.photoPreview} />
-                                ) : (
-                                    <View style={styles.photoPlaceholder}>
-                                        <AvIcons type="MaterialIcons" name="add-a-photo" size={30} color={COLORS.GREY} />
-                                        <AvText type="body" style={styles.photoButtonText}>Upload Photo</AvText>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                            {errors.photo && <AvText type="caption" style={styles.errorText}>{errors.photo}</AvText>}
-                        </View>
-
-                        {/* Address Information */}
-                        <AvText type="title_2" style={styles.sectionTitle}>Address Information</AvText>
-                        {renderInput('Pin Code', formData.pinCode, text => updateFormData('pinCode', text), 'Enter your pin code', 'numeric', false, true, 'pinCode')}
-                        {renderInput('City', formData.city, text => updateFormData('city', text), 'Enter your city', 'default', false, true, 'city')}
-                        {renderInput('District', formData.district, text => updateFormData('district', text), 'Enter your district', 'default', false, true, 'district')}
-                        {renderInput('State', formData.state, text => updateFormData('state', text), 'Enter your state', 'default', false, true, 'state')}
-
-                        {/* Security */}
-                        <AvText type="title_2" style={styles.sectionTitle}>Security</AvText>
-                        {renderInput('Password', formData.password, text => updateFormData('password', text), 'Enter your password', 'default', true, true, 'password')}
-                        {renderInput('Confirm Password', formData.confirmPassword, text => updateFormData('confirmPassword', text), 'Confirm your password', 'default', true, true, 'confirmPassword')}
-
-                        {/* Terms and Conditions */}
-                        <View style={styles.checkboxContainer}>
-                            <TouchableOpacity
-                                style={styles.checkbox}
-                                onPress={() => updateFormData('agreeDeclaration', !formData.agreeDeclaration)}
-                            >
-                                <View style={[styles.checkboxInner, formData.agreeDeclaration && styles.checkboxChecked]}>
-                                    {formData.agreeDeclaration && <AvText type="caption" style={styles.checkmark}>✓</AvText>}
+                            {/* Name Row - Compact Layout */}
+                            <View style={styles.row}>
+                                <View style={[styles.flex1, styles.rightSpacing]}>
+                                    {renderInput('First Name', formData.firstName, text => updateFormData('firstName', text), 'First name', 'default', false, true, 'firstName')}
                                 </View>
-                                <AvText type="body" style={styles.checkboxText}>
-                                    I agree to the declaration *
+                                <View style={styles.flex1}>
+                                    {renderInput('Last Name', formData.lastName, text => updateFormData('lastName', text), 'Last name', 'default', false, true, 'lastName')}
+                                </View>
+                            </View>
+
+                            {renderInput('Middle Name', formData.middleName, text => updateFormData('middleName', text), 'Middle name (optional)')}
+
+                            {/* Contact Row */}
+                            <View style={styles.row}>
+                                <View style={[styles.flex1, styles.rightSpacing]}>
+                                    {renderInput('Phone', formData.phone, text => updateFormData('phone', text), 'Phone number', 'phone-pad', false, true, 'phone')}
+                                </View>
+                                <View style={styles.flex1}>
+                                    {renderInput('Email', formData.email, text => updateFormData('email', text), 'Email address', 'email-address', false, true, 'email')}
+                                </View>
+                            </View>
+
+                            {renderInput('Aadhaar', formatAadhaar(formData.aadhaar), handleAadhaarChange, 'Aadhaar number', 'default', false, false, 'aadhaar')}
+
+                            {/* Gender and DOB Row */}
+                            <View style={styles.row}>
+                                <View style={[styles.flex1, styles.rightSpacing]}>
+                                    <View style={styles.inputContainer}>
+                                        <AvSelect
+                                            label="Gender *"
+                                            required
+                                            items={[
+                                                { label: 'Male', value: 1 },
+                                                { label: 'Female', value: 2 },
+                                                { label: 'Other', value: 3 },
+                                            ]}
+                                            selectedValue={formData.genderId}
+                                            onValueChange={(value) => updateFormData('genderId', value)}
+                                            placeholder="Select Gender"
+                                            error={!!errors.genderId}
+                                            errorText={errors.genderId}
+                                            mode="outlined"
+                                            dense={true}
+                                            theme={{
+                                                colors: {
+                                                    primary: COLORS.SECONDARY,
+                                                    outline: errors.genderId ? COLORS.ERROR : COLORS.LIGHT_GREY,
+                                                }
+                                            }}
+                                        />
+                                    </View>
+                                </View>
+                                <View style={styles.flex1}>
+                                    <View style={styles.inputContainer}>
+                                        <AvText type="caption" style={styles.label}>
+                                            Date of Birth *
+                                        </AvText>
+                                        <TouchableOpacity
+                                            style={[styles.dateButton, errors.dob ? styles.inputError : {}]}
+                                            onPress={() => setShowDatePicker(true)}
+                                        >
+                                            <AvText type="body2" style={[styles.dateText, !formData.dob ? styles.placeholderText : {}]}>
+                                                {formData.dob ? new Date(formData.dob).toLocaleDateString() : 'Select DOB'}
+                                            </AvText>
+                                        </TouchableOpacity>
+                                        {errors.dob && <AvText type="caption" style={styles.errorText}>{errors.dob}</AvText>}
+                                    </View>
+                                </View>
+                            </View>
+
+                            {renderInput('Occupation', formData.occupation, text => updateFormData('occupation', text), 'Occupation', 'default', false, true, 'occupation')}
+
+                            {/* Photo Upload */}
+                            <View style={styles.inputContainer}>
+                                <AvText type="caption" style={styles.label}>
+                                    Profile Photo
                                 </AvText>
-                            </TouchableOpacity>
-                            {errors.agreeDeclaration && <AvText type="caption" style={styles.errorText}>{errors.agreeDeclaration}</AvText>}
+                                <TouchableOpacity
+                                    style={[styles.photoButton, errors.photo ? styles.inputError : {}]}
+                                    onPress={handleImagePicker}
+                                >
+                                    {formData.photo?.uri ? (
+                                        <AvImage source={{ uri: formData.photo.uri }} style={styles.photoPreview} />
+                                    ) : (
+                                        <View style={styles.photoPlaceholder}>
+                                            <AvIcons type="MaterialIcons" name="add-a-photo" size={24} color={COLORS.GREY} />
+                                            <AvText type="caption" style={styles.photoButtonText}>Add Photo</AvText>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                                {errors.photo && <AvText type="caption" style={styles.errorText}>{errors.photo}</AvText>}
+                            </View>
                         </View>
 
-                        {/* Submit Button */}
-                        <TouchableOpacity
-                            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-                            onPress={handleSubmit}
-                            disabled={loading}
-                        >
-                            <AvText type="buttonText" style={styles.submitButtonText}>
-                                {loading ? 'Processing...' : 'Verify & Proceed'}
-                            </AvText>
-                        </TouchableOpacity>
+                        {/* Address Information Section */}
+                        <View style={styles.section}>
+                            <AvText type="subtitle1" style={styles.sectionTitle}>Address Information</AvText>
 
-                        {/* Login Link */}
-                        <View style={styles.loginLinkContainer}>
-                            <AvText type="body" style={styles.loginLinkText}>Already have an account? </AvText>
-                            <TouchableOpacity onPress={onLoginPress}>
-                                <AvText type="Link" style={styles.loginLink}>Login Here</AvText>
+                            {/* Pincode and City Row */}
+                            <View style={styles.row}>
+                                <View style={[styles.flex2, styles.rightSpacing]}>
+                                    <AvTextInput
+                                        label="Pincode *"
+                                        value={formData.pinCode}
+                                        onChangeText={(text) => updateFormData('pinCode', text.replace(/[^0-9]/g, ''))}
+                                        keyboardType="number-pad"
+                                        maxLength={6}
+                                        error={!!errors.pinCode || (formError.isActive && formError.field === 'pinCode')}
+                                        errorText={errors.pinCode || (formError.field === 'pinCode' ? formError.message : '')}
+                                        mode="outlined"
+                                        dense={true}
+                                        style={styles.input}
+                                    />
+                                </View>
+                                <View style={styles.flex3}>
+                                    {renderInput('City', formData.city, text => updateFormData('city', text), 'City', 'default', false, true, 'city')}
+                                </View>
+                            </View>
+
+                            {/* District and State Row */}
+                            <View style={styles.row}>
+                                <View style={[styles.flex1, styles.rightSpacing]}>
+                                    {renderInput('District', formData.district, text => updateFormData('district', text), 'District', 'default', false, true, 'district')}
+                                </View>
+                                <View style={styles.flex1}>
+                                    {renderInput('State', formData.state, text => updateFormData('state', text), 'State', 'default', false, true, 'state')}
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Security Section */}
+                        <View style={styles.section}>
+                            <AvText type="subtitle1" style={styles.sectionTitle}>Security</AvText>
+
+                            {/* Password Row */}
+                            <View style={styles.row}>
+                                <View style={[styles.flex1, styles.rightSpacing]}>
+                                    {renderInput('Password', formData.password, text => updateFormData('password', text), 'Password', 'default', true, true, 'password')}
+                                </View>
+                                <View style={styles.flex1}>
+                                    {renderInput('Confirm', formData.confirmPassword, text => updateFormData('confirmPassword', text), 'Confirm password', 'default', true, true, 'confirmPassword')}
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Terms and Submit Section */}
+                        <View style={styles.section}>
+                            <View style={styles.checkboxContainer}>
+                                <TouchableOpacity
+                                    style={styles.checkbox}
+                                    onPress={() => updateFormData('agreeDeclaration', !formData.agreeDeclaration)}
+                                >
+                                    <View style={[styles.checkboxInner, formData.agreeDeclaration && styles.checkboxChecked]}>
+                                        {formData.agreeDeclaration && <AvText type="caption" style={styles.checkmark}>✓</AvText>}
+                                    </View>
+                                    <AvText type="body2" style={styles.checkboxText}>
+                                        I agree to the terms and conditions *
+                                    </AvText>
+                                </TouchableOpacity>
+                                {errors.agreeDeclaration && <AvText type="caption" style={styles.errorText}>{errors.agreeDeclaration}</AvText>}
+                            </View>
+
+                            {/* Submit Button */}
+                            <TouchableOpacity
+                                style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+                                onPress={handleSubmit}
+                                disabled={loading}
+                            >
+                                <AvText type="button" style={styles.submitButtonText}>
+                                    {loading ? 'Creating Account...' : 'Create Account'}
+                                </AvText>
                             </TouchableOpacity>
+
+                            {/* Login Link */}
+                            <View style={styles.loginLinkContainer}>
+                                <AvText type="body2" style={styles.loginLinkText}>Already have an account? </AvText>
+                                <TouchableOpacity onPress={onLoginPress}>
+                                    <AvText type="link" style={styles.loginLink}>Sign In</AvText>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Error Message */}
+                            {formError.isActive && !formError.field && (
+                                <View style={styles.errorContainer}>
+                                    <AvText type="caption" style={styles.errorText}>
+                                        {formError.message}
+                                    </AvText>
+                                </View>
+                            )}
                         </View>
                     </View>
                 </View>
             </ScrollView>
+
+            {showDatePicker && (
+                <DateTimePicker
+                    value={formData.dob ? new Date(formData.dob) : new Date()}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                    maximumDate={new Date()}
+                />
+            )}
         </KeyboardAvoidingView>
     );
 };
@@ -440,81 +565,105 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         flex: 1,
-        width: '100%',
     },
     scrollContentContainer: {
         flexGrow: 1,
-        paddingBottom: normalize(20),
+        paddingBottom: normalize(10),
     },
     content: {
-        padding: normalize(20),
         flex: 1,
-        width: '100%',
+        paddingHorizontal: normalize(16),
     },
-    header: {
-        paddingHorizontal: normalize(20),
-        paddingTop: normalize(40),
-        paddingBottom: normalize(20),
+    headerSection: {
+        alignItems: 'center',
+        paddingVertical: normalize(16),
+        marginBottom: normalize(8),
     },
     title: {
+        fontSize: normalize(24),
+        fontWeight: 'bold',
+        color: COLORS.PRIMARY,
         textAlign: 'center',
     },
     subtitle: {
-        fontSize: normalize(16),
+        fontSize: normalize(14),
+        color: COLORS.GREY,
         textAlign: 'center',
-        marginTop: normalize(8),
-        opacity: 0.9,
+        marginTop: normalize(4),
     },
     form: {
-        padding: normalize(20),
+        flex: 1,
+    },
+    section: {
+        marginBottom: normalize(16),
+        backgroundColor: COLORS.WHITE,
+        borderRadius: normalize(12),
+        padding: normalize(16),
+        shadowColor: COLORS.BLACK,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
     },
     sectionTitle: {
-        fontSize: normalize(20),
-        fontWeight: 'bold',
+        fontSize: normalize(16),
+        fontWeight: '600',
         color: COLORS.PRIMARY,
-        marginTop: normalize(20),
-        marginBottom: normalize(15),
+        marginBottom: normalize(12),
+        paddingBottom: normalize(6),
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.LIGHT_GREY,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    flex1: {
+        flex: 1,
+    },
+    flex2: {
+        flex: 2,
+    },
+    flex3: {
+        flex: 3,
+    },
+    rightSpacing: {
+        marginRight: normalize(8),
     },
     inputContainer: {
-        marginBottom: normalize(16),
+        marginBottom: normalize(10),
     },
     label: {
-        fontSize: normalize(14),
+        fontSize: normalize(12),
         fontWeight: '500',
         color: COLORS.BLACK,
         marginBottom: normalize(4),
-        backgroundColor: COLORS.WHITE,
-        paddingHorizontal: normalize(4),
-        marginLeft: normalize(8),
-        alignSelf: 'flex-start',
-        zIndex: 1,
     },
     input: {
-        height: normalize(56),
-        backgroundColor: COLORS.WHITE,
-        borderRadius: 8,
-        fontSize: normalize(16),
-        color: COLORS.BLACK,
+        height: normalize(48),
+        fontSize: normalize(14),
     },
     inputError: {
         borderColor: COLORS.ERROR,
     },
     errorText: {
         color: COLORS.ERROR,
-        fontSize: normalize(12),
-        marginTop: normalize(4),
-        marginLeft: normalize(12),
+        fontSize: normalize(11),
+        marginTop: normalize(2),
+        marginLeft: normalize(4),
     },
     dateButton: {
         borderWidth: 1,
         borderColor: COLORS.LIGHT_GREY,
-        borderRadius: 8,
-        paddingHorizontal: normalize(15),
-        paddingVertical: normalize(14),
+        borderRadius: normalize(8),
+        paddingHorizontal: normalize(12),
+        paddingVertical: normalize(12),
         backgroundColor: COLORS.WHITE,
+        height: normalize(48),
+        justifyContent: 'center',
     },
     dateText: {
-        fontSize: normalize(16),
+        fontSize: normalize(14),
         color: COLORS.BLACK,
     },
     placeholderText: {
@@ -523,41 +672,41 @@ const styles = StyleSheet.create({
     photoButton: {
         borderWidth: 1,
         borderColor: COLORS.LIGHT_GREY,
-        borderRadius: 8,
-        padding: normalize(20),
+        borderRadius: normalize(8),
+        padding: normalize(12),
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: COLORS.WHITE,
-        minHeight: normalize(120),
+        minHeight: normalize(80),
     },
     photoPlaceholder: {
         alignItems: 'center',
         justifyContent: 'center',
     },
     photoButtonText: {
-        fontSize: normalize(16),
+        fontSize: normalize(12),
         color: COLORS.GREY,
-        marginTop: normalize(8),
+        marginTop: normalize(4),
     },
     photoPreview: {
-        width: normalize(100),
-        height: normalize(100),
-        borderRadius: 8,
+        width: normalize(60),
+        height: normalize(60),
+        borderRadius: normalize(8),
     },
     checkboxContainer: {
-        marginBottom: normalize(20),
+        marginBottom: normalize(16),
     },
     checkbox: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     checkboxInner: {
-        width: normalize(20),
-        height: normalize(20),
+        width: normalize(18),
+        height: normalize(18),
         borderWidth: 2,
         borderColor: COLORS.PRIMARY,
-        borderRadius: 4,
-        marginRight: normalize(10),
+        borderRadius: normalize(4),
+        marginRight: normalize(8),
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -566,44 +715,53 @@ const styles = StyleSheet.create({
     },
     checkmark: {
         color: COLORS.WHITE,
-        fontSize: normalize(14),
+        fontSize: normalize(12),
         fontWeight: 'bold',
     },
     checkboxText: {
-        fontSize: normalize(16),
+        fontSize: normalize(14),
         color: COLORS.BLACK,
         flex: 1,
     },
     submitButton: {
         backgroundColor: COLORS.PRIMARY,
-        paddingVertical: normalize(15),
-        borderRadius: 8,
+        paddingVertical: normalize(14),
+        borderRadius: normalize(8),
         alignItems: 'center',
-        marginTop: normalize(10),
-        marginBottom: normalize(20),
+        marginBottom: normalize(16),
+        shadowColor: COLORS.PRIMARY,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
     },
     submitButtonDisabled: {
         opacity: 0.6,
     },
     submitButtonText: {
         color: COLORS.WHITE,
-        fontSize: normalize(18),
-        fontWeight: 'bold',
+        fontSize: normalize(16),
+        fontWeight: '600',
     },
     loginLinkContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: normalize(10),
     },
     loginLinkText: {
-        fontSize: normalize(16),
+        fontSize: normalize(14),
         color: COLORS.GREY,
     },
     loginLink: {
-        fontSize: normalize(16),
+        fontSize: normalize(14),
         color: COLORS.PRIMARY,
-        fontWeight: 'bold',
+        fontWeight: '600',
+    },
+    errorContainer: {
+        padding: normalize(8),
+        backgroundColor: COLORS.ERROR,
+        borderRadius: normalize(4),
+        marginTop: normalize(8),
     },
 });
 

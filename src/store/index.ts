@@ -28,6 +28,7 @@ import urgencyLevelReducer from './slices/urgencyLevelSlice';
 import medicalConditionReducer from './slices/medicalConditionSlice';
 import familyMemberDataReducer from './slices/familyMemberSlice';
 import patientSettingReducer from './slices/patientSettingSlice';
+import masterReducer from './slices/masterSlice'; // Import the reducer
 
 export const store = configureStore({
   reducer: {
@@ -45,6 +46,7 @@ export const store = configureStore({
     coverageData: coverageReducer,
     relationData: relationReducer,
     ambulanceType: ambulanceTypeReducer,
+    master: masterReducer, 
     pharmacy: pharmacyReducer,
     patientAdditionalData: patientAdditionalDataReducer,
     medicalInfo: medicalInfoSlice,

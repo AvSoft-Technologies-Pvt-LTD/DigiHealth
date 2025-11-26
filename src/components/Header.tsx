@@ -10,7 +10,7 @@ import { RootStackParamList } from '../types/navigation';
 import QuickActionsModal from './CommonComponents/QuickActionsModal';
 import { useDrawer } from '../navigation/DrawerContext'; // Make sure this import is correct
 import { PAGES } from "../constants/pages"
-import { AvIcons, AvText } from '../elements';
+import { AvButton, AvIcons, AvText } from '../elements';
 interface HeaderProps {
   title?: string;
   showBackButton?: boolean;
@@ -36,6 +36,7 @@ const Header: React.FC<HeaderProps> = ({
   showHiveIcon = false,
   showMoreIcon = true,
 }) => {
+  // console.log("HEADER PROPS",title)
   const isAuthenticated = useSelector((state: RootState) => state.user.isAuthenticated);
   const navigation = useNavigation<HeaderNavigationProp>();
   const { openDrawer } = useDrawer(); // Use the openDrawer function from your drawer context
@@ -117,7 +118,17 @@ const Header: React.FC<HeaderProps> = ({
       <View style={[styles.container, { backgroundColor }]}>
         <View style={styles.rightSection}>
           <View style={styles.buttonRow}>
-            <Pressable
+            <AvButton
+              mode="contained"
+              onPress={onLoginPress}
+              labelStyle={styles.btnText}
+              buttonColor={COLORS.WHITE}
+              icon="login"
+              style={{ marginRight: normalize(8),width:normalize(82) }}
+            >
+              Login
+            </AvButton>
+            {/* <Pressable
               onPress={onLoginPress}
               style={styles.iconButton}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -129,7 +140,7 @@ const Header: React.FC<HeaderProps> = ({
                 color={COLORS.ERROR}
               />
               <AvText type="overline" style={[{ color: titleColor }]}> Login</AvText>
-            </Pressable>
+            </Pressable> */}
           </View>
         </View>
       </View>
@@ -137,7 +148,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const handleActionPress = (action: 'pharmacy' | 'ambulance' | 'notifications') => {
-    console.log("ACTION CLICKED",action);
+    console.log("ACTION CLICKED", action);
     switch (action) {
       case 'pharmacy':
         navigation.navigate(PAGES.PHARMACY_FINDER_VIEW);
@@ -179,14 +190,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: normalize(16),
+    paddingHorizontal: normalize(0),
     paddingTop: isIos() ? normalize(50) : normalize(40),
     paddingBottom: normalize(10),
-    elevation: 2,
+    // elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    backgroundColor:COLORS.ERROR
   },
   leftSection: {
     flexDirection: 'row',
@@ -199,8 +211,9 @@ const styles = StyleSheet.create({
   },
   rightSection: {
     flex: 1,
+    justifyContent: 'flex-end',
     alignItems: 'flex-end',
-    paddingRight: normalize(16),
+    marginLeft: normalize(75),
   },
   backButton: {
     padding: normalize(8),
@@ -219,11 +232,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  btnText: {
+    fontWeight: '600',
+    color: COLORS.PRIMARY,
+    fontSize:normalize(14),
+  },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingRight: normalize(8),
   },
   iconButton: {
     flexDirection: 'row',

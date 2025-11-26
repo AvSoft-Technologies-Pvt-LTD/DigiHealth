@@ -4,13 +4,14 @@ export interface StatItem {
   value: number;
   label: string;
   suffix: string;
+  icon:string
 }
 
 export const stats: StatItem[] = [
-  { id: '1', value: 500, label: 'Expert Doctors', suffix: '+' },
-  { id: '2', value: 25000, label: 'Happy Patients', suffix: '+' },
-  { id: '3', value: 1000, label: 'Lab Tests', suffix: '+' },
-  { id: '4', value: 50, label: 'Medical Centers', suffix: '+' },
+  { id: '1', value: 500, label: 'Expert Doctors', suffix: '+', icon:'account' },
+  { id: '2', value: 25000, label: 'Happy Patients', suffix: '+',icon:'account-group-outline' },
+  { id: '3', value: 1000, label: 'Lab Tests', suffix: '+',icon:'test-tube' },
+  { id: '4', value: 50, label: 'Medical Centers', suffix: '+',icon:'hospital-building' },
 ];
 
 

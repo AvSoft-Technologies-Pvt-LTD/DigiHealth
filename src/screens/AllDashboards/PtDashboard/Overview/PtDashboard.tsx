@@ -30,6 +30,7 @@ const PatientOverview = () => {
     family: false,
     additionalDetails: false,
   });
+  const [associationType, setAssociationType] = useState<'HOSPITAL' | 'CLINIC'>('HOSPITAL');
   const [formData, setFormData] = useState({
     name: "Trupti Chavan",
     gender: "Female",

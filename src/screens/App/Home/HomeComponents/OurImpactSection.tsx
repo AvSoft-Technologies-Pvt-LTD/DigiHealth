@@ -6,6 +6,7 @@ import AvText from '../../../../elements/AvText';
 import { COLORS } from '../../../../constants/colors';
 import { normalize } from '../../../../constants/platform';
 import { selectStats } from '../../../../store/slices/homeSlice';
+import { AvIcons } from '../../../../elements';
 
 
 
@@ -46,14 +47,15 @@ const OurImpactSection = memo(() => {
   const stats = useSelector(selectStats);  
   return (
     <View style={styles.section}>
-      <AvText type="heading_3" style={styles.sectionTitle}>
+      {/* <AvText type="heading_3" style={styles.sectionTitle}>
         Our Impact
-      </AvText>
+      </AvText> */}
       <View style={styles.statsContainer}>
         {stats?.map((stat) => (
           <View key={stat.id} style={styles.statItem}>
             <Card style={styles.statCard}>
               <Card.Content style={styles.statCardContent}>
+                 <AvIcons type={"MaterialCommunityIcons"} name={stat.icon} size={normalize(24)} color={COLORS.PRIMARY} />
                 <View style={styles.statValueContainer}>
                   <AnimatedNumber 
                     value={stat.value} 

@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
 import { Tabs } from '../../../../components/CommonComponents/Tabs';

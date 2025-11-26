@@ -3,7 +3,6 @@ import { View, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, ScrollVie
 import AvText from './AvText';
 import { COLORS } from '../constants/colors';
 import { isIos, normalize } from '../constants/platform';
-import AvModal from './AvModal';
 interface SelectItem {
   label: string;
   value: any;
@@ -76,7 +75,7 @@ export const AvSelect: React.FC<AvSelectProps> = ({
 
   const handleClose = () => {
     // if (multiselect) {
-      setModalVisible(false);
+    setModalVisible(false);
     // }
   };
 
@@ -84,12 +83,12 @@ export const AvSelect: React.FC<AvSelectProps> = ({
     if (multiselect) {
       if (selectedValues.length === 0) return placeholder;
       if (selectedValues.length === 1) {
-        const item = items.find(i => i.value === selectedValues[0]);
+        const item = items?.find(i => i.value === selectedValues[0]);
         return item ? item.label : placeholder;
       }
       return `${selectedValues.length} items selected`;
     } else {
-      const selectedItem = items.find(item => item.value === selectedValue);
+      const selectedItem = items?.find(item => item.value === selectedValue);
       return selectedItem ? selectedItem.label : placeholder;
     }
   };
@@ -106,7 +105,7 @@ export const AvSelect: React.FC<AvSelectProps> = ({
           </AvText>
         </View>
       ) : null}
-      
+
       <TouchableOpacity
         ref={buttonRef}
         style={[
@@ -117,10 +116,10 @@ export const AvSelect: React.FC<AvSelectProps> = ({
         disabled={disabled}
         activeOpacity={0.7}
       >
-        <AvText 
-          type="body" 
+        <AvText
+          type="body"
           style={[
-            styles.buttonText, 
+            styles.buttonText,
             ...((multiselect ? selectedValues.length === 0 : !selectedValue) ? [styles.placeholderText] : [])
           ]}
         >
@@ -143,7 +142,7 @@ export const AvSelect: React.FC<AvSelectProps> = ({
       >
         <TouchableWithoutFeedback onPress={handleClose}>
           <View style={styles.modalOverlay}>
-            <View 
+            <View
               style={[
                 styles.dropdown,
                 {
@@ -155,16 +154,16 @@ export const AvSelect: React.FC<AvSelectProps> = ({
                 },
               ]}
             >
-              <ScrollView 
+              <ScrollView
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={true}
                 nestedScrollEnabled={true}
               >
-                {items.map((item) => {
-                  const isSelected = multiselect 
+                {items?.map((item) => {
+                  const isSelected = multiselect
                     ? selectedValues.includes(item.value)
                     : selectedValue === item.value;
-                  
+
                   return (
                     <TouchableOpacity
                       key={item.value}
@@ -185,7 +184,7 @@ export const AvSelect: React.FC<AvSelectProps> = ({
                       <AvText
                         style={[
                           styles.dropdownItemText,
-                          isSelected && styles.selectedItemText,
+                          ...(isSelected ? [styles.selectedItemText] : [])
                         ]}
                       >
                         {item.label}
