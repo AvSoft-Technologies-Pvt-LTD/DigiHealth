@@ -14,6 +14,7 @@ import PatientModals from "./index";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
 import { fetchPatientBloodGroupData, fetchPatientPersonalHealthData, fetchPatientPhoto } from "../../../../store/thunks/patientThunks";
 import { AvButton, AvIcons, AvImage, AvText } from "../../../../elements";
+import Header from "../../../../components/Header";
 
 interface ActionButtonProps {
   id: string;
@@ -228,6 +229,13 @@ console.log("userInitials", formData);
     </AvButton>
   );
   return (
+    <>
+    <Header
+    title={PAGES.PATIENT_DASHBOARD}
+    showBackButton={false}
+    backgroundColor={COLORS.WHITE}
+    titleColor={COLORS.BLACK}
+/>
     <View style={[styles.card, styles.cardShadow]}>
       {/* Header */}
       <View style={styles.cardHeader}>
@@ -361,6 +369,7 @@ console.log("userInitials", formData);
         handleSave={handleSave}
       />
     </View>
+    </>
   );
 };
 

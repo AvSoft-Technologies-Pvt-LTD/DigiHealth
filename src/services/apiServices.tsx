@@ -14,6 +14,21 @@ export const setNavigationReference = (ref: NavigationContainerRef<RootStackPara
   navigationRef = ref;
 };
 
+// Handle server errors (401 unauthorized, etc.)
+const handleServerError = async () => {
+  try {
+    console.log("CLEAR TOKEN AND NAVIGATE TO LOGIN")
+    // Clear user token and navigate to login
+    // await StorageService.remove('userToken');
+    // Alert.alert('Session expired', 'Please login again.');
+    // if (navigationRef) {
+    //   navigationRef.navigate(PAGES.LOGIN);
+    // }
+  } catch (error) {
+    console.error('Error handling server error:', error);
+  }
+};
+
 // Create an Axios instance
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -176,3 +191,6 @@ export const mediaUpload = async (url: string, file: File) => {
     throw error;
   }
 };
+
+// Export the apiClient for use in Redux slices
+export { apiClient };

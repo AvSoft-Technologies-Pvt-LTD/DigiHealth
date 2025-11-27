@@ -7,7 +7,7 @@ import { IMAGES } from '../../assets';
 import { PAGES } from '../../constants/pages';
 import { COLORS } from '../../constants/colors';
 import { normalize } from '../../constants/platform';
-import { benefits, features, stats } from '../../constants/data';
+import { benefits, features, ROLES, stats } from '../../constants/data';
 
 import StorageService from '../../services/storageService';
 import { RootStackParamList } from '../../types/navigation';
@@ -42,11 +42,13 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   useEffect(() => {
     const checkToken = async () => {
       try {
-        const [token, userRole, userId, userEmail] = await Promise.all([
+        const [token, userRole, userId, userEmail, doctorId, patientId] = await Promise.all([
           StorageService.get<string>("userToken"),
           StorageService.get<string>("userRole"),
           StorageService.get<string>("userId"),
           StorageService.get<string>("userEmail"),
+          StorageService.get<string>("doctorId"),
+          StorageService.get<string>("patientId"),
         ]);
 
 
@@ -54,7 +56,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           // Update Redux store with authentication state
           dispatch(setAuthenticated(true));
 
-          // If user role is available, update it in the store
+
           if (userRole) {
             dispatch(setUserProfile({ role: userRole as any }));
           }
@@ -63,8 +65,24 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           }
           if (userEmail) {
             dispatch(setUserProfile({ email: userEmail as any }));
-          } 
-          navigation.replace(PAGES.HOME);
+          }
+          if(userRole === ROLES.PATIENT){
+            dispatch(setUserProfile({ patientId: patientId as any }));
+          } else if(userRole === ROLES.DOCTOR){
+            console.log("DISPATCHING DOCTOR ID",doctorId)
+            dispatch(setUserProfile({ doctorId: doctorId as any }));
+          } else {
+            dispatch(setUserProfile({ userId: userId as any }));
+          }
+          console.log("USER ROLE",userRole)
+          // Navigate based on user role
+          if(userRole == ROLES.DOCTOR){
+            navigation.replace(PAGES.DOCTOR_DASHBOARD);
+          } else if(userRole == ROLES.PATIENT){
+            navigation.replace(PAGES.PATIENT_OVERVIEW);
+          } else {
+            navigation.replace(PAGES.HOME);
+          }
         } else {
           // If no token, ensure Redux state is cleared
           dispatch(setAuthenticated(false));

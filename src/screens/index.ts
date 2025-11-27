@@ -31,6 +31,10 @@ import PasswordResetPage from './Auth/PasswordReset/PasswordResetPage';
 import MedicalRecordsPreview from './AllDashboards/PtDashboard/MedicalRecord/secondOpinion'
 import MedicalRecordScreen from './AllDashboards/PtDashboard/MedicalRecord/ptMedicalRecord'
 import MedicalRecordDetails from './AllDashboards/PtDashboard/MedicalRecord/medicalRecordDetails';
+
+// Doctor
+import DoctorDashboard from './AllDashboards/DoctorDashboard';
+
 export {
   // Auth
   Login,
@@ -63,4 +67,6 @@ export {
   PaymentScreen,
   InvoiceDetails,
   InvoicePrintPreview,
+  // Doctor
+  DoctorDashboard,
 };

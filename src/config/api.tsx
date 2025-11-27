@@ -55,6 +55,7 @@ export const API = {
   LAB_BILLING_API: (patientId: string) => `${BASE_URL}medical-record-billing/labs/${patientId}`,
   HOSPITAL_BILLING_API: (patientId: string) => `${BASE_URL}medical-record-billing/hospitals/${patientId}`,
   URGENCY_LEVELS_API: `${BASE_URL}master/urgency-levels`,
+  FETCH_DOCTOR_API: `${BASE_URL}auth/doctor/`,
 
 };
 

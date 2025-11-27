@@ -11,6 +11,7 @@ import { PAGES } from '../../../constants/pages';
 import StorageService from '../../../services/storageService';
 import { useDispatch } from 'react-redux';
 import { setAuthenticated, setUserProfile, UserRole } from '../../../store/slices/userSlice';
+import { ROLES } from '../../../constants/data';
 
 // Validation utility functions
 const validateEmail = (email: string): string | null => {
@@ -47,11 +48,13 @@ const validateOTP = (otp: string): string | null => {
 type LoginProps = {};
 
 interface LoginResponse {
+    doctorId?: string;
     token: string;
     role: UserRole;
     message?: string;
-    userId:string;
-    email:string;
+    userId: string;
+    email: string;
+    patientId?: string;
 }
 
 const Login: React.FC<LoginProps> = () => {
@@ -64,8 +67,8 @@ const Login: React.FC<LoginProps> = () => {
 
     const handlePasswordLogin = async (email: string, password: string) => {
         // Validate email
-        console.log("Logging in with ",email,password)
-      
+        console.log("Logging in with ", email, password)
+
         const emailError = validateEmail(email);
         if (emailError) {
             setSnackbarMessage(emailError);
@@ -80,31 +83,36 @@ const Login: React.FC<LoginProps> = () => {
             setSnackbarVisible(true);
             return;
         }
-        
-            setLoading(true);
+
+        setLoading(true);
         try {
             const responseData = await post<LoginResponse>(API.LOGIN_API, { identifier: email, password });
             console.log("Login response:", responseData);
-            
+
             if (!responseData.token) {
                 throw new Error(responseData.message || 'Login failed. Please try again.');
+            }            
+            // Save role-specific ID
+            if(responseData.role === ROLES.PATIENT && responseData.userId){
+                await StorageService.save("patientId", responseData.userId);
+            } else if(responseData.role === ROLES.DOCTOR && responseData.doctorId){
+                await StorageService.save("doctorId", responseData.doctorId);
             }
-
-            // Save token and role to AsyncStorage
+            
             await StorageService.save("userToken", responseData.token);
             await StorageService.save("userRole", responseData.role);
             await StorageService.save("userEmail", responseData.email);
-            await StorageService.save("userId",responseData.userId)
+            await StorageService.save("userId", responseData.userId)
             dispatch(setAuthenticated(true));
-            dispatch(setUserProfile({ role: responseData.role,email:responseData.email,userId:responseData.userId }));
-            
+            dispatch(setUserProfile({ role: responseData.role, email: responseData.email, userId: responseData.userId, doctorId: responseData.doctorId, patientId: responseData.patientId }));
+
             // Show success message
             setSnackbarMessage(responseData.message || 'Login successful!');
             setSnackbarVisible(true);
-            
+            const navigateTo = responseData.role == ROLES.PATIENT ? PAGES.PATIENT_OVERVIEW : responseData.role == ROLES.DOCTOR ? PAGES.DOCTOR_DASHBOARD : PAGES.HOME;
             // Navigate to drawer navigator after a short delay
             setTimeout(() => {
-                navigation.replace(PAGES.HOME);
+                navigation.replace(navigateTo);
             }, 0);
         } catch (error: any) {
             console.error('Login error:', error);
@@ -130,7 +138,7 @@ const Login: React.FC<LoginProps> = () => {
             setSnackbarVisible(true);
             return;
         }
-        
+
         setLoading(true);
         // Simulate API call
         setTimeout(() => {
@@ -149,7 +157,7 @@ const Login: React.FC<LoginProps> = () => {
             setSnackbarVisible(true);
             return;
         }
-        
+
         setLoading(true);
         // Simulate API call
         setTimeout(() => {
@@ -160,7 +168,7 @@ const Login: React.FC<LoginProps> = () => {
     };
 
     return (
-        <LoginView 
+        <LoginView
             loading={loading}
             otpSent={otpSent}
             snackbarVisible={snackbarVisible}

@@ -11,6 +11,7 @@ interface UserState {
     email: string | null;
     phone: string | null;
     role?: UserRole | null;
+    doctorId: string | null;
   };
 }
 
@@ -23,6 +24,7 @@ const initialState: UserState = {
     email: null,
     phone: null,
     role: null,
+    doctorId: null,
   },
 };
 
@@ -51,6 +53,7 @@ const userSlice = createSlice({
         email: null,
         phone: null,
         role: null,
+        doctorId: null,
       };
     },
   },

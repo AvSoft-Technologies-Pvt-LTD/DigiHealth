@@ -98,7 +98,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ userRole }) => {
   const menuItems = [
     ...(userRole === ROLES.DOCTOR
       ? [
-          { title: 'Dashboard', icon: 'view-dashboard', screen: PAGES.PATIENT_OVERVIEW },
+          { title: 'Dashboard', icon: 'view-dashboard', screen: PAGES.DOCTOR_DASHBOARD },
           { title: 'Appointments', icon: 'calendar-clock', screen: PAGES.PATIENT_APPOINTMENTS },
           { title: 'Patients', icon: 'account-group', screen: PAGES.PATIENT_MEDICAL_RECORD },
           { title: 'Payments', icon: 'credit-card', screen: PAGES.BILLING },

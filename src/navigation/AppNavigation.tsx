@@ -14,6 +14,7 @@ import {
   
   MedicalRecordsPreview,
   MedicalRecordDetails,
+  DoctorDashboard,
 } from '../screens';
 import PatientDashboardView from '../screens/AllDashboards/PtDashboard/Overview/PatientDashboardView';
 import PatientSettingsView from '../screens/AllDashboards/PtDashboard/PtSetting';
@@ -56,7 +57,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name={PAGES.PHARMACY_FINDER_VIEW} component={PharmacyFinderView} />
         <Stack.Screen name={PAGES.NOTIFICATION_SCREEN} component={NotificationsScreen} />
 
-        <Stack.Screen name={PAGES.PATIENT_OVERVIEW} component={PatientDashboardView} />
+        <Stack.Screen name={PAGES.PATIENT_OVERVIEW} component={PatientDashboard} />
         <Stack.Screen name={PAGES.PATIENT_SETTINGS} component={PatientSettingsView} />
         <Stack.Screen name={PAGES.PATIENT_HEALTHCARD} component={HealthCard} />
         <Stack.Screen name={PAGES.PATIENT_APPOINTMENTS} component={Appointments} />
@@ -73,6 +74,8 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name={PAGES.PATIENT_MEDICAL_RECORD} component={MedicalRecordScreen} />
         <Stack.Screen name={PAGES.PATIENT_MEDICAL_DETAILS} component={MedicalRecordDetails} />
         <Stack.Screen name={PAGES.PATIENT_SECOND_OPINION} component={MedicalRecordsPreview} />
+        {/* Doctor Screens */}
+        <Stack.Screen name={PAGES.DOCTOR_DASHBOARD} component={DoctorDashboard}/>
       </Stack.Navigator>
       <CustomDrawer userRole={userRole ?? ''} />
 
