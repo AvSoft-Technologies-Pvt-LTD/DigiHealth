@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "DigiHealthMobile.app"
-               BlueprintName = "DigiHealthMobile"
-               ReferencedContainer = "container:DigiHealthMobile.xcodeproj">
+               BuildableName = "PocketClinic.app"
+               BlueprintName = "PocketClinic"
+               ReferencedContainer = "container:PocketClinic.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "DigiHealthMobileTests.xctest"
-               BlueprintName = "DigiHealthMobileTests"
-               ReferencedContainer = "container:DigiHealthMobile.xcodeproj">
+               BuildableName = "PocketClinicTests.xctest"
+               BlueprintName = "PocketClinicTests"
+               ReferencedContainer = "container:PocketClinic.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "DigiHealthMobile.app"
-            BlueprintName = "DigiHealthMobile"
-            ReferencedContainer = "container:DigiHealthMobile.xcodeproj">
+            BuildableName = "PocketClinic.app"
+            BlueprintName = "PocketClinic"
+            ReferencedContainer = "container:PocketClinic.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "DigiHealthMobile.app"
-            BlueprintName = "DigiHealthMobile"
-            ReferencedContainer = "container:DigiHealthMobile.xcodeproj">
+            BuildableName = "PocketClinic.app"
+            BlueprintName = "PocketClinic"
+            ReferencedContainer = "container:PocketClinic.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

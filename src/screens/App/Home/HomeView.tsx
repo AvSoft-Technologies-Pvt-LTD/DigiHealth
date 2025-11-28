@@ -39,7 +39,7 @@ const HomeView: React.FC<HomeViewProps> = ({
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
       <Header
-        title="DigiHealth"
+        title="PocketClinic"
         showBackButton={false}
         onLoginPress={() => navigation.navigate('Login')}
         onRegisterPress={() => navigation.navigate('Register')}

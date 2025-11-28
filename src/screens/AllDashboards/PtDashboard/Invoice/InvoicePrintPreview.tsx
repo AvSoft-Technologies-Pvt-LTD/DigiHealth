@@ -99,7 +99,7 @@ const InvoicePrintPreview: React.FC<InvoicePrintPreviewProps> = ({ route }) => {
           Payment due within 30 days of invoice date. Late payments may incur additional charges.
         </AvText>
         <AvText type='title_4' style={styles.footerText}>
-          For any queries regarding this invoice, please contact us at billing@digihealth.com
+          For any queries regarding this invoice, please contact us at billing@pocketclinic.com
         </AvText>
         <AvText type='Subtitle_2' style={styles.thanksText}>
           Thank you for choosing Pocket Clinic for your healthcare needs

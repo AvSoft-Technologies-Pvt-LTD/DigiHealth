@@ -1,4 +1,4 @@
-package com.digihealthmobile
+package com.pocketclinic
 
 import android.app.Application
 import com.facebook.react.PackageList

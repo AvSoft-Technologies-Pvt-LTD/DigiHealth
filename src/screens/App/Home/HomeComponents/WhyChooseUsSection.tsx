@@ -15,7 +15,7 @@ const WhyChooseUsSection = () => {
   return (
     <View style={styles.section}>
       <AvText type="heading_3" style={styles.sectionTitle}>
-        Why Choose DigiHealth?
+        Why Choose Pocket Clinic?
       </AvText>
       <FadeInView delay={200}>
         <Card style={styles.whyCard}>

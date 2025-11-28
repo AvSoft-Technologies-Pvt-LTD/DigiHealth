@@ -28,9 +28,9 @@ import VerifyOTP from '../components/CommonComponents/form/VerifyOTP';
 import ResetPassword from '../components/CommonComponents/form/ResetPassword';
 
 import PasswordResetPage from './Auth/PasswordReset/PasswordResetPage';
-import MedicalRecordsPreview from './AllDashboards/PtDashboard/MedicalRecord/secondOpinion'
-import MedicalRecordScreen from './AllDashboards/PtDashboard/MedicalRecord/ptMedicalRecord'
-import MedicalRecordDetails from './AllDashboards/PtDashboard/MedicalRecord/medicalRecordDetails';
+import MedicalRecordsPreview from './AllDashboards/PtDashboard/MedicalRecord/SecondOpinion'
+import MedicalRecordScreen from './AllDashboards/PtDashboard/MedicalRecord/PtMedicalRecord'
+import MedicalRecordDetails from './AllDashboards/PtDashboard/MedicalRecord/MedicalRecordDetails';
 
 // Doctor
 import DoctorDashboard from './AllDashboards/DoctorDashboard';

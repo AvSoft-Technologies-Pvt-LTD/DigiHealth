@@ -1,4 +1,4 @@
-package com.digihealthmobile
+package com.pocketclinic
 
 import com.facebook.react.ReactActivity
 import android.os.Bundle;
@@ -17,7 +17,7 @@ class MainActivity : ReactActivity() {
     super.onCreate(null)
   }
 
-  override fun getMainComponentName(): String = "DigiHealthMobile"
+  override fun getMainComponentName(): String = "PocketClinic"
 
   /**
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]

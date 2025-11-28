@@ -33,10 +33,10 @@ const InvoiceFooter: React.FC<InvoiceFooterProps> = ({ invoice, navigation }) =>
     <View style={styles.termsContainer}>
       <AvText style={styles.termsTitle}>Terms & Conditions</AvText>
       <AvText style={styles.termsText}>
-        Payment due within 30 days. Late fees apply. For queries, contact billing@digihealth.com.
+        Payment due within 30 days. Late fees apply. For queries, contact billing@pocketclinic.com.
       </AvText>
       <AvText style={styles.thanksText}>
-        Thank you for choosing DigiHealth for your healthcare needs
+        Thank you for choosing Pocket Clinic for your healthcare needs
       </AvText>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.printButton} onPress={handlePrintPress}>
