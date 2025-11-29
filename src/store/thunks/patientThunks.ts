@@ -103,9 +103,11 @@ import { fetchFamilyMemberDataFailure, fetchFamilyMemberDataStart, fetchFamilyMe
 
 // ====================== PATIENT THUNKS ======================
 
-// --- Patient List ---import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice';
-import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice';
+// --- Patient List ---
 import { fetchMedicalConditionDataStart, fetchMedicalConditionDataSuccess } from '../slices/medicalConditionSlice.ts';
+import { fetchAllergiesDataFailure, fetchAllergiesDataStart, fetchAllergiesDataSuccess } from '../slices/allergiesSlice.ts';
+import { fetchSurgeriesDataFailure, fetchSurgeriesDataStart, fetchSurgeriesDataSuccess } from '../slices/surgeriesSlice.ts';
+import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice';
 
 export const fetchAllPatients = () => async (dispatch: AppDispatch) => {
   try {
@@ -183,17 +185,37 @@ export const fetchHospitalList = () => async (dispatch: AppDispatch) => {
   }
 };
 
-// --- Medical COnditions List ---
-// export const fetchMedicalConditions = () => async (dispatch: AppDispatch) => {
-//   try {
-//     dispatch(fetchMedicalConditionDataStart());
-//     const response = await get(API.MEDICAL_CONDITIONS_API);
-//     dispatch(fetchMedicalConditionDataSuccess(response));
-//   } catch (error) {
-//     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch hospitals';
-//     dispatch(fetchHospitalListFailure(errorMessage));
-//   }
-// };
+// --- Allergies List ---
+export const fetchAllergiesData = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchAllergiesDataStart());
+    const response = await get(API.ALLERGIES);
+     const formattedAllergies = response?.map((item: any) => ({
+                label: item.allergyName,
+                value: item.id
+            }));
+    dispatch(fetchAllergiesDataSuccess(formattedAllergies));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch hospitals';
+    dispatch(fetchAllergiesDataFailure(errorMessage));
+  }
+};
+
+// --- Surgeries List ---
+export const fetchSurgeriesData = () => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchSurgeriesDataStart());
+    const response = await get(API.SURGERIES);
+     const formattedSurgeries = response?.map((item: any) => ({
+                label: item.surgeryName,
+                value: item.id
+            }));
+    dispatch(fetchSurgeriesDataSuccess(formattedSurgeries));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch hospitals';
+    dispatch(fetchSurgeriesDataFailure(errorMessage));
+  }
+};
 
 // --- Patient Personal Health Data ---
 export const fetchPatientPersonalHealthData = (id: string) => async (dispatch: AppDispatch) => {
@@ -207,10 +229,15 @@ export const fetchPatientPersonalHealthData = (id: string) => async (dispatch: A
   }
 };
 
-export const updatePatientPersonalHealthData = (id: string, data: any) => async (dispatch: AppDispatch) => {
+export const updatePatientPersonalHealthData = (id: number, data: any) => async (dispatch: AppDispatch) => {
+  console.log("UPDATING",id,"DATA",data,"DISPATCH",dispatch)
   try {
     dispatch(fetchPatientPersonalDataStart());
     const response = await put(API.PATIENT_PERSONAL_HEALTH_API + id, data);
+    console.log("RESPONSE OF UDATED",response)
+    if(response){
+      dispatch(fetchPatientPersonalHealthData(id));
+    }
     dispatch(fetchPatientPersonalDataSuccess(response));
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to update patient personal health data';
@@ -343,23 +370,23 @@ export const fetchFamilyHealthData = (patientId: string) => async (dispatch: App
   // };
 
   export const fetchPatientPhoto = (path: string) => async (dispatch: AppDispatch) => {
-    try {
-      dispatch(getPatientPhotoStart());
+    // try {
+    //   dispatch(getPatientPhotoStart());
   
       // Get binary data
-      const response = await get(API.PATIENT_PHOTO + path, {}, 'arraybuffer');
-  
+      // const response = await get(API.PATIENT_PHOTO + path, {}, 'arraybuffer');
+      console.log("PHOTO URL",API.PATIENT_PHOTO + path)
       // Convert binary -> base64 (React Native safe)
-      const base64 = arrayBufferToBase64(response);
-      const imageUri = `data:image/jpeg;base64,${base64}`;
+    //   const base64 = arrayBufferToBase64(response);
+    //   const imageUri = `data:image/jpeg;base64,${base64}`;
   
-      dispatch(getPatientPhotoSuccess(imageUri));
-    } catch (error) {
-      console.error('Error in fetchPatientPhoto:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient photo';
-      dispatch(getPatientPhotoFailure(errorMessage));
-      return Promise.reject(error);
-    }
+    //   dispatch(getPatientPhotoSuccess(imageUri));
+    // } catch (error) {
+    //   console.error('Error in fetchPatientPhoto:', error);
+    //   const errorMessage = error instanceof Error ? error.message : 'Failed to fetch patient photo';
+    //   dispatch(getPatientPhotoFailure(errorMessage));
+    //   return Promise.reject(error);
+    // }
   };
   
   // Utility function to convert ArrayBuffer -> base64

@@ -43,6 +43,8 @@ export const API = {
   OPD_RECORD_API: `${BASE_URL}opd-records/`,
   SPECIALIZATIONS_API: `${BASE_URL}master/specializations`,
   ASSOCIATIONS_API: `${BASE_URL}master/associations`,
+  ALLERGIES:`${BASE_URL}allergies`,
+  SURGERIES:`${BASE_URL}surgeries`,
 
   PATIENT_MEDICAL_CONDITIONS_API: `${BASE_URL}master/medicalConditions`,
   MEDICAL_STATUS_API: '${BASE_URL}master/medicalStatus',

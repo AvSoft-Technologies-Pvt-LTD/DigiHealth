@@ -10,6 +10,7 @@ import QuickStatsComponent from './DocDashboardComponents/QuickStatsComponent';
 import PatientCountBreakdown from './DocDashboardComponents/PatientCountComponent';
 import RecentAppointmentsComponent from './DocDashboardComponents/RecentAppintmentsComponent';
 import RevenueGeneratedComponent from './DocDashboardComponents/RevenueGeneratedComponent';
+import { ROLES } from '../../../constants/data';
 
 interface DoctorDashboardViewProps {
     loading: boolean;
@@ -82,7 +83,7 @@ const DoctorDashboardView: React.FC<DoctorDashboardViewProps> = ({
                     <PatientCountBreakdown patientCounts={patientCounts} />
 
                     {/* Recent Appointments */}
-                    <RecentAppointmentsComponent recentAppointments={recentAppointments} />
+                    <RecentAppointmentsComponent displayType={"DOCTOR"} recentAppointments={recentAppointments} />
 
                     {/* Revenue Generated */}
                     <RevenueGeneratedComponent doctorData={doctorData} onViewBilling={onViewBilling} />

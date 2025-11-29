@@ -38,10 +38,12 @@ const FamilyModal = ({ modalVisible, closeModal, dispatch }: any) => {
     };
     const hCData = useAppSelector((state) => state.healthConditionData.healthConditionData);
     const relData = useAppSelector((state) => state.relationData.relationData);
+    // const sampleData = useAppSelector((state) => state);
     const [healthConditionData, setHealthConditionData] = useState<Array<{ label: string, value: string }>>([]);
     const [relationData, setRelationData] = useState<Array<{ label: string, value: string }>>([]);
     const patientId = useAppSelector((state) => state.user.userProfile.patientId);
     const familyMemberData = useAppSelector((state) => state.familyMemberData.familyMemberData);
+    // console.log("DATAAA",sampleData)
     useEffect(() => {
         if (hCData && hCData.length > 0) {
             const formattedBloodGroups = hCData.map((item: any) => ({
@@ -52,11 +54,11 @@ const FamilyModal = ({ modalVisible, closeModal, dispatch }: any) => {
         }
 
         if (relData && relData.length > 0) {
-            const formattedBloodGroups = relData.map((item: any) => ({
+            const formattedrelData = relData.map((item: any) => ({
                 label: item.relationName,
                 value: item.id
             }));
-            setRelationData(formattedBloodGroups);
+            setRelationData(formattedrelData);
         }
     }, [hCData, relData]);
     useEffect(() => {

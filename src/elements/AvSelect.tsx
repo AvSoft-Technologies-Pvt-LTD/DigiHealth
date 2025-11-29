@@ -210,7 +210,7 @@ export const AvSelect: React.FC<AvSelectProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: normalize(16),
+    // marginBottom: normalize(16),
   },
   labelContainer: {
     marginBottom: normalize(4),

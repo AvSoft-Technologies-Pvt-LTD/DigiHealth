@@ -94,7 +94,7 @@ const Login: React.FC<LoginProps> = () => {
             }            
             // Save role-specific ID
             if(responseData.role === ROLES.PATIENT && responseData.userId){
-                await StorageService.save("patientId", responseData.userId);
+                await StorageService.save("patientId", responseData.patientId);
             } else if(responseData.role === ROLES.DOCTOR && responseData.doctorId){
                 await StorageService.save("doctorId", responseData.doctorId);
             }

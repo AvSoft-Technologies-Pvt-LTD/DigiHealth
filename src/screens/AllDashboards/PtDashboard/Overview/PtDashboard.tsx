@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Avatar } from 'react-native-paper';
+import moment from 'moment';
 
 import { COLORS } from "../../../../constants/colors";
 import { PAGES } from "../../../../constants/pages";
@@ -15,6 +16,7 @@ import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
 import { fetchPatientBloodGroupData, fetchPatientPersonalHealthData, fetchPatientPhoto } from "../../../../store/thunks/patientThunks";
 import { AvButton, AvIcons, AvImage, AvText } from "../../../../elements";
 import Header from "../../../../components/Header";
+import { API } from "../../../../config/api";
 
 interface ActionButtonProps {
   id: string;
@@ -31,18 +33,20 @@ const PatientOverview = () => {
     family: false,
     additionalDetails: false,
   });
-  const [associationType, setAssociationType] = useState<'HOSPITAL' | 'CLINIC'>('HOSPITAL');
   const [formData, setFormData] = useState({
-    name: "Trupti Chavan",
-    gender: "Female",
-    dob: "2001-03-09",
+    firstName: "",
+    lastName: "",
+    gender: "",
+    dob: "",
     email: "",
-    phone: "9370672873",
-    bloodGroup: "",
+    phone: "",
+    bloodGroup: null as number | null,
     height: "",
     weight: "",
-    surgeries: "",
-    allergies: "",
+    surgeries: null as number | null,
+    allergies: null as number | null,
+    surgerySinceYears: "",
+    allergySinceYears: "",
     drinkAlcohol: false,
     alcoholSinceYears: "",
     smoke: false,
@@ -60,6 +64,7 @@ const PatientOverview = () => {
     startDate: new Date(),
     endDate: new Date(),
     isPrimaryHolder: false,
+    photo: null,
   });
 
   const [completion, setCompletion] = useState({
@@ -89,10 +94,11 @@ const PatientOverview = () => {
   };
 
   const handleSave = (section: keyof typeof completion) => {
-    setCompletion((prev) => ({ ...prev, [section]: true }));
-    if (section === "personalHealth" || section === "family" || section === "additionalDetails") {
-      closeModal(section);
-    }
+    console.log("UPDATE HANDLE SAVE",section,"Completion",completion)
+    // setCompletion((prev) => ({ ...prev, [section]: true }));
+    // if (section === "personalHealth" || section === "family" || section === "additionalDetails") {
+    //   closeModal(section);
+    // }
   };
 
   const completedSections = Object.values(completion).filter(Boolean).length;
@@ -101,10 +107,10 @@ const PatientOverview = () => {
   const { patientDashboardData } = useAppSelector((state) => state.patientDashboardData);
   const { patientPersonalData } = useAppSelector((state) => state.patientPersonalData);
   const dispatch = useAppDispatch();
-  
+
   useEffect(() => {
     if (patientDashboardData) {
-      const newData = Array.isArray(patientDashboardData) 
+      const newData = Array.isArray(patientDashboardData)
         ? patientDashboardData[0] || {}
         : patientDashboardData;
 
@@ -117,22 +123,23 @@ const PatientOverview = () => {
 
   const id = useAppSelector((state) => state.user.userProfile.patientId);
   const { currentPatient } = useAppSelector((state) => state.currentPatient || {});
-  const fetchPtImage = async () => {
-    try {
-      if (currentPatient?.photo) {
-        await dispatch(fetchPatientPhoto(currentPatient.photo));
-      }
-    } catch (error) {
-      console.log("Error fetching photo", error);
-    }
-  };
-  useEffect(() => {
-    fetchPtImage();
-  }, []); // Add empty dependency array to prevent rerendering
+  // const fetchPtImage = async () => {
+  //   try {
+  //     if (formData?.photo) {
+  //       console.log("FORM PHOTO HERE",formData)
+  //       await dispatch(fetchPatientPhoto(formData?.photo));
+  //     }
+  //   } catch (error) {
+  //     console.log("Error fetching photo", error);
+  //   }
+  // };
+  // useEffect(() => {
+  //   fetchPtImage();
+  // }, [formData?.photo]); // Add empty dependency array to prevent rerendering
 
   const { photo } = useAppSelector((state) => state.patientSettingData || { photo: null, loading: true });
   const [profileImage, setProfileImage] = useState<string>(photo || '');
-
+// console.log("FORM DATA HERE",formData)
   // Generate initials from name
   const getInitials = (name: string) => {
     if (!name) return 'US';
@@ -144,8 +151,7 @@ const PatientOverview = () => {
       .toUpperCase()
       .substring(0, 2);
   };
-console.log("userInitials", formData);
-  const userInitials = getInitials(formData.firstName+" "+formData.lastName);
+  // const userInitials = getInitials(formData.firstName + " " + formData.lastName);
 
   useEffect(() => {
     if (id) {
@@ -158,17 +164,19 @@ console.log("userInitials", formData);
     if (patientPersonalData) {
       setFormData(prev => ({
         ...prev,
-        bloodGroup: patientPersonalData?.bloodGroupName || "",
+        bloodGroup: patientPersonalData?.bloodGroupId || "",
         height: patientPersonalData?.height?.toString() || "",
         weight: patientPersonalData?.weight?.toString() || "",
-        surgeries: patientPersonalData?.surgeries || "",
-        allergies: patientPersonalData?.allergies || "",
+        surgeries: patientPersonalData?.surgeryIds?.[0] || null,
+        allergies: patientPersonalData?.allergyIds?.[0] || null,
         drinkAlcohol: patientPersonalData?.isAlcoholic || false,
         smoke: patientPersonalData?.isSmoker || false,
         tobaccoUse: patientPersonalData?.isTobacco || false,
         alcoholSinceYears: patientPersonalData?.yearsAlcoholic?.toString() || "",
         smokeSinceYears: patientPersonalData?.yearsSmoking?.toString() || "",
-        tobaccoSinceYears: patientPersonalData?.yearsTobacco?.toString() || ""
+        tobaccoSinceYears: patientPersonalData?.yearsTobacco?.toString() || "",
+        allergySinceYears: patientPersonalData?.allergySinceYears?.toString() || "",
+        surgerySinceYears: patientPersonalData?.surgerySinceYears?.toString() || ""
       }));
     }
     setProfileImage(photo || '');
@@ -204,7 +212,6 @@ console.log("userInitials", formData);
       completed: completion.additionalDetails
     }
   ];
-
   const renderActionButton = ({ item }: { item: ActionButtonProps }) => (
     <AvButton
       mode="contained"
@@ -213,12 +220,12 @@ console.log("userInitials", formData);
       onPress={item.onPress}
     >
       <View style={styles.buttonContent}>
-        <AvIcons type="MaterialCommunityIcons"  name={item.icon} size={16} color={COLORS.WHITE} />
+        <AvIcons type="MaterialCommunityIcons" name={item.icon} size={16} color={COLORS.WHITE} />
         <AvText type="buttonText" style={styles.buttonText}>
           {item.label}
         </AvText>
         {item.completed && (
-          <AvIcons type="MaterialCommunityIcons" 
+          <AvIcons type="MaterialCommunityIcons"
             name="check-circle"
             size={16}
             color={COLORS.SECONDARY}
@@ -230,145 +237,140 @@ console.log("userInitials", formData);
   );
   return (
     <>
-    <Header
-    title={PAGES.PATIENT_DASHBOARD}
-    showBackButton={false}
-    backgroundColor={COLORS.WHITE}
-    titleColor={COLORS.BLACK}
-/>
-    <View style={[styles.card, styles.cardShadow]}>
-      {/* Header */}
-      <View style={styles.cardHeader}>
-        <AvText type="title_7" style={{ color: COLORS.PRIMARY }}>
-          Patient Info
-        </AvText>
-        <View style={styles.headerButtons}>
-          <AvButton
-            onPress={() => navigation.navigate(PAGES.PATIENT_HEALTHCARD as never)}
-            mode="contained"
-            contentStyle={styles.viewHealthCardButtonContent}
-            buttonColor={COLORS.PRIMARY}
-          >
-            <AvText type="buttonText" style={{ color: COLORS.WHITE, fontSize: 14, fontWeight: "500" }}>
-              View Health Card
-            </AvText>
-          </AvButton>
-          <TouchableOpacity onPress={() => navigation.navigate(PAGES.PATIENT_SETTINGS as never)}>
-            <AvIcons type="MaterialCommunityIcons"  name="pencil" size={20} color={COLORS.PRIMARY} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Profile Section */}
-      <View style={styles.profileSection}>
-        <View style={styles.avatarContainer}>
-          {(photo === null) && (
-            <Avatar.Text
-              size={80}
-              label={userInitials}
-              style={{ backgroundColor: COLORS.PRIMARY }}
-              color={COLORS.WHITE}
-              labelStyle={{ fontSize: 32, fontWeight: 'bold' }}
-            />
-          )}
-          {photo && (
-            <AvImage
-              source={{ uri: profileImage }}
-              style={{ width: 80, height: 80, borderRadius: 100 }}
-            />
-
-          )}
-        </View>
-        <AvText type="title_6" style={{ color: COLORS.PRIMARY, marginTop: 8 }}>
-          {formData.email || formData.name}
-        </AvText>
-      </View>
-
-      {/* Details Section */}
-      <View style={styles.detailsSection}>
-        <View style={styles.detailRow}>
-          <View style={styles.detailItem}>
-            <View style={styles.detailValueRow}>
-              <AvIcons type="MaterialCommunityIcons"  name="gender-female" size={16} color={COLORS.PRIMARY} />
-              <AvText type="caption" style={styles.detailLabel}>
-                Gender
+      <View style={[styles.card, styles.cardShadow]}>
+        {/* Header */}
+        <View style={styles.cardHeader}>
+          <AvText type="title_7" style={{ color: COLORS.PRIMARY }}>
+            Patient Info
+          </AvText>
+          <View style={styles.headerButtons}>
+            <AvButton
+              onPress={() => navigation.navigate(PAGES.PATIENT_HEALTHCARD as never)}
+              mode="contained"
+              contentStyle={styles.viewHealthCardButtonContent}
+              buttonColor={COLORS.PRIMARY}
+            >
+              <AvText type="buttonText" style={{ color: COLORS.WHITE, fontSize: 14, fontWeight: "500" }}>
+                View Health Card
               </AvText>
-            </View>
-            <AvText type="body" style={styles.detailValue}>
-              {formData.gender}
-            </AvText>
-          </View>
-          <View style={styles.detailItem}>
-            <View style={styles.detailValueRow}>
-              <AvIcons type="MaterialCommunityIcons"  name="phone" size={16} color={COLORS.PRIMARY} />
-              <AvText type="caption" style={styles.detailLabel}>
-                Phone No.
-              </AvText>
-            </View>
-            <AvText type="body" style={styles.detailValue}>
-              {formData.phone}
-            </AvText>
+            </AvButton>
+            <TouchableOpacity onPress={() => navigation.navigate(PAGES.PATIENT_SETTINGS as never)}>
+              <AvIcons type="MaterialCommunityIcons" name="pencil" size={20} color={COLORS.PRIMARY} />
+            </TouchableOpacity>
           </View>
         </View>
-        <View style={styles.detailRow}>
-          <View style={styles.detailItem}>
-            <View style={styles.detailValueRow}>
-              <AvIcons type="MaterialCommunityIcons"  name="cake" size={16} color={COLORS.PRIMARY} />
-              <AvText type="caption" style={styles.detailLabel}>
-                Date Of Birth
+
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <View style={styles.avatarContainer}>
+            {/* {(photo === null) && (
+              <Avatar.Text
+                size={80}
+                label={userInitials}
+                style={{ backgroundColor: COLORS.PRIMARY }}
+                color={COLORS.WHITE}
+                labelStyle={{ fontSize: 32, fontWeight: 'bold' }}
+              />
+            )} */}
+
+            {formData.photo && (
+              <AvImage
+                source={{ uri: API.PATIENT_PHOTO + formData.photo }}
+                style={{ width: 80, height: 80, borderRadius: 100 }}
+              />
+
+            )}
+          </View>
+          <AvText type="title_6" style={{ color: COLORS.PRIMARY, marginTop: 8 }}>
+            {formData.firstName +" "+ formData.lastName || formData.email}
+          </AvText>
+        </View>
+
+        {/* Details Section */}
+        <View style={styles.detailsSection}>
+          <View style={styles.detailRow}>
+            <View style={styles.detailItem}>
+              <View style={styles.detailValueRow}>
+                <AvIcons type="MaterialCommunityIcons" name="gender-female" size={16} color={COLORS.PRIMARY} />
+                <AvText type="caption" style={styles.detailLabel}>
+                  Gender
+                </AvText>
+              </View>
+              <AvText type="body" style={styles.detailValue}>
+                {formData.gender}
               </AvText>
             </View>
-            <AvText type="body" style={styles.detailValue}>
-              {formData.dob}
-            </AvText>
-          </View>
-          <View style={styles.detailItem}>
-            <View style={styles.detailValueRow}>
-              <AvIcons type="MaterialCommunityIcons"  name="water" size={16} color={COLORS.PRIMARY} />
-              <AvText type="caption" style={styles.detailLabel}>
-                Blood Group
+            <View style={styles.detailItem}>
+              <View style={styles.detailValueRow}>
+                <AvIcons type="MaterialCommunityIcons" name="phone" size={16} color={COLORS.PRIMARY} />
+                <AvText type="caption" style={styles.detailLabel}>
+                  Phone No.
+                </AvText>
+              </View>
+              <AvText type="body" style={styles.detailValue}>
+                {formData.phone}
               </AvText>
             </View>
-            <AvText type="body" style={styles.detailValue}>
-              {formData.bloodGroup || "N/A"}
-            </AvText>
+          </View>
+          <View style={styles.detailRow}>
+            <View style={styles.detailItem}>
+              <View style={styles.detailValueRow}>
+                <AvIcons type="MaterialCommunityIcons" name="cake" size={16} color={COLORS.PRIMARY} />
+                <AvText type="caption" style={styles.detailLabel}>
+                  Date Of Birth
+                </AvText>
+              </View>
+              <AvText type="body" style={styles.detailValue}>
+                {formData.dob ? moment(formData.dob).format('MMM DD YYYY') : ''}
+              </AvText>
+            </View>
+            <View style={styles.detailItem}>
+              <View style={styles.detailValueRow}>
+                <AvIcons type="MaterialCommunityIcons" name="water" size={16} color={COLORS.PRIMARY} />
+                <AvText type="caption" style={styles.detailLabel}>
+                  Blood Group
+                </AvText>
+              </View>
+              <AvText type="body" style={styles.detailValue}>
+                {patientPersonalData && patientPersonalData? patientPersonalData?.bloodGroupName || "N/A" : "N/A"}
+              </AvText>
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Progress Bar */}
-      <View style={styles.progressSection}>
-        <View style={styles.progressBar}>
-          <View style={{ height: "100%", backgroundColor: COLORS.SECONDARY, borderRadius: 3, width: `${progress}%` }} />
+        {/* Progress Bar */}
+        <View style={styles.progressSection}>
+          <View style={styles.progressBar}>
+            <View style={{ height: "100%", backgroundColor: COLORS.SECONDARY, borderRadius: 3, width: `${progress}%` }} />
+          </View>
+          <AvText type="caption" style={styles.progressText}>
+            {Math.round(progress)}% Profile Complete
+          </AvText>
         </View>
-        <AvText type="caption" style={styles.progressText}>
-          {Math.round(progress)}% Profile Complete
-        </AvText>
+
+        {/* Action Buttons */}
+        <FlatList
+          data={actionButtons}
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          indicatorStyle="black" // or "white" for dark backgrounds
+          contentContainerStyle={[styles.buttonsContainer, { paddingBottom: 10 }]} // Add some padding
+          keyExtractor={(item) => item.id}
+          renderItem={renderActionButton}
+          style={{ height: 'auto' }} // Ensure height is properly set
+        />
+
+        {/* Modals */}
+        <PatientModals
+          modalVisible={modalVisible}
+          closeModal={closeModal}
+          dispatch={dispatch}
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleToggleChange={handleToggleChange}
+          handleSave={handleSave}
+        />
       </View>
-
-      {/* Action Buttons */}
-      <FlatList
-        data={actionButtons}
-        horizontal
-        showsHorizontalScrollIndicator={true}
-        indicatorStyle="black" // or "white" for dark backgrounds
-        contentContainerStyle={[styles.buttonsContainer, { paddingBottom: 10 }]} // Add some padding
-        keyExtractor={(item) => item.id}
-        renderItem={renderActionButton}
-        style={{ height: 'auto' }} // Ensure height is properly set
-      />
-
-      {/* Modals */}
-      <PatientModals
-        modalVisible={modalVisible}
-        closeModal={closeModal}
-        dispatch={dispatch}
-        formData={formData}
-        handleInputChange={handleInputChange}
-        handleToggleChange={handleToggleChange}
-        handleSave={handleSave}
-      />
-    </View>
     </>
   );
 };
@@ -376,16 +378,16 @@ console.log("userInitials", formData);
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.WHITE,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 0,
+    padding: 20,
+    // marginBottom: 16,
   },
   cardShadow: {
-    shadowColor: COLORS.SECONDARY,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    // shadowColor: COLORS.SECONDARY,
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.2,
+    // shadowRadius: 4,
+    // elevation: 3,
   },
   cardHeader: {
     flexDirection: "row",

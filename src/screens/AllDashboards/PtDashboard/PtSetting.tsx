@@ -53,15 +53,15 @@ const PatientSettingsView = () => {
   };
 
   const [patient, setPatient] = useState({
-    firstName: "Trupti",
+    firstName: "",
     middleName: "",
-    lastName: "Chavan",
-    aadhaar: "5785-4549-8879",
-    dob: "2002-12-03",
-    genderId: "female",
-    email: "trupti@gmail.com",
-    phone: "9901341783",
-    occupation: "Software Developer",
+    lastName: "",
+    aadhaar: "",
+    dob: "",
+    genderId: "",
+    email: "",
+    phone: "",
+    occupation: "",
     district: "",
     city: "",
     state: "",

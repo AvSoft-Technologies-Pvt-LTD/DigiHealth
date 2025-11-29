@@ -57,7 +57,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name={PAGES.PHARMACY_FINDER_VIEW} component={PharmacyFinderView} />
         <Stack.Screen name={PAGES.NOTIFICATION_SCREEN} component={NotificationsScreen} />
 
-        <Stack.Screen name={PAGES.PATIENT_OVERVIEW} component={PatientDashboard} />
+        <Stack.Screen name={PAGES.PATIENT_OVERVIEW} component={PatientDashboardView} />
         <Stack.Screen name={PAGES.PATIENT_SETTINGS} component={PatientSettingsView} />
         <Stack.Screen name={PAGES.PATIENT_HEALTHCARD} component={HealthCard} />
         <Stack.Screen name={PAGES.PATIENT_APPOINTMENTS} component={Appointments} />

@@ -23,6 +23,7 @@ import {
 import { setUserProfile } from "../../../../store/slices/userSlice";
 import { setCurrentPatient } from "../../../../store/slices/allPatientSlice";
 import { AvIcons, AvText, AvCards } from "../../../../elements";
+import { API } from "../../../../config/api";
 
 const formatDate = (dateString: string) => {
   if (!dateString) return "N/A";
@@ -200,7 +201,6 @@ const HealthCard: React.FC = () => {
       (userData.firstName && userData.lastName
         ? `${userData.firstName} ${userData.lastName}`
         : userData.email);
-
     return (
       <>
         <View style={[styles.planBadge, { backgroundColor: `${selectedPlan.color}20` }]}>
@@ -229,7 +229,7 @@ const HealthCard: React.FC = () => {
             </View>
             <View style={styles.userSection}>
               <AvImage
-                source={{ uri: photo || userData.photo || IMAGES.PROFILE }}
+                source={{ uri: API.PATIENT_PHOTO + userData.photo}}
                 style={styles.userPhoto}
               />
               <View style={styles.userInfo}>

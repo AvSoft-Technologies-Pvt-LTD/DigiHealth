@@ -14,7 +14,7 @@ import { DrawerProvider } from './src/navigation/DrawerContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { setNavigationReference } from './src/services/apiServices';
-
+import ApiCallTrackerComponent from './src/components/ApiCallTracker/ApiCallTrackerComponent';
 
 // This is needed for react-native-gesture-handler to work in the whole app
 const GestureHandlerWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -72,6 +72,7 @@ const App: React.FC = () => {
                     <DrawerProvider>
                       <AppNavigator />
                     </DrawerProvider>
+                    {/* <ApiCallTrackerComponent /> */}
                   {/* </SafeAreaView> */}
                 </NavigationContainer>
               </PaperProvider>

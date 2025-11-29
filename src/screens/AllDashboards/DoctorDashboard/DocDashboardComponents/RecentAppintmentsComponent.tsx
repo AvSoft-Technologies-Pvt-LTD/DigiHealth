@@ -1,36 +1,92 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { AvIcons, AvText } from "../../../../elements";
 import { COLORS } from "../../../../constants/colors";
 import { normalize } from "../../../../constants/platform";
+import { ROLES } from "../../../../constants/data";
 
 interface Appointment {
     id: number;
-    name: string;
+    name?: string;
     lastName?: string;
+    doctorName?: string;
+    doctorSpeciality?: string;
     date: string;
     time: string;
     type: 'Virtual' | 'Physical';
-    action: string;
+    status?: string;
+    action?: string;
 }
 
-const RecentAppointmentsComponent: React.FC<{ recentAppointments: any }> = ({ recentAppointments }) => {
+const RecentAppointmentsComponent: React.FC<{ recentAppointments: any; displayType?: 'DOCTOR' | 'PATIENT' }> = ({ recentAppointments, displayType = 'doctor' }) => {
     const onViewAllAppointments = () => {
         console.log('View All Appointments');
     };
     const onAppointmentAction = (id: number, action: string) => {
         console.log('Appointment Action:', id, action);
     };
-    return (
-        <View style={styles.card}>
-            <View style={styles.cardHeader}>
-                <AvText type="heading_6" style={styles.cardTitle}>Recent Appointments</AvText>
-                <TouchableOpacity style={styles.viewAllButton} onPress={onViewAllAppointments}>
-                    <AvText type="caption" style={styles.viewAllText}>View All</AvText>
-                    <AvIcons type="MaterialIcons" name="arrow-forward" size={16} color={COLORS.PRIMARY} />
-                </TouchableOpacity>
-            </View>
 
+    // Render table for patient view
+    const renderPatientTableView = () => {
+        return (
+            <View style={styles.tableContainer}>
+                <View style={styles.tableHeader}>
+                    <AvText type="caption" style={styles.headerText}>Doctor Speciality</AvText>
+                    <AvText type="caption" style={styles.headerText}>Date & Time</AvText>
+                    <AvText type="caption" style={styles.headerText}>Consultation Type</AvText>
+                    <AvText type="caption" style={styles.headerText}>Status</AvText>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View style={styles.tableBody}>
+                        {recentAppointments.slice(0, 3).map((appointment: Appointment) => (
+                            <TouchableOpacity 
+                                key={appointment.id} 
+                                style={styles.tableRow}
+                                onPress={() => onAppointmentAction(appointment.id, 'view')}
+                            >
+                                <View style={styles.tableCell}>
+                                    <AvText type="caption" style={styles.cellText}>
+                                        {appointment.doctorSpeciality || 'General'}
+                                    </AvText>
+                                </View>
+                                <View style={styles.tableCell}>
+                                    <AvText type="caption" style={styles.cellText}>
+                                        {appointment.date} {appointment.time}
+                                    </AvText>
+                                </View>
+                                <View style={styles.tableCell}>
+                                    <View style={[styles.typeBadge, appointment.type === 'Virtual' ? styles.virtualBadge : styles.physicalBadge]}>
+                                        <AvText type="caption" style={styles.typeText}>{appointment.type}</AvText>
+                                    </View>
+                                </View>
+                                <View style={styles.tableCell}>
+                                    <View style={[styles.statusBadge, getStatusStyle(appointment.status)]}>
+                                        <AvText type="caption" style={styles.statusText}>{appointment.status || 'Scheduled'}</AvText>
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </ScrollView>
+            </View>
+        );
+    };
+
+    const getStatusStyle = (status?: string) => {
+        switch (status?.toLowerCase()) {
+            case 'completed':
+                return { backgroundColor: COLORS.SUCCESS + '20' };
+            case 'cancelled':
+                return { backgroundColor: COLORS.ERROR + '20' };
+            case 'scheduled':
+            default:
+                return { backgroundColor: COLORS.WARNING + '20' };
+        }
+    };
+
+    // Render card view for doctor view
+    const renderDoctorCardView = () => {
+        return (
             <View style={styles.appointmentsList}>
                 {recentAppointments.slice(0, 3).map((appointment: Appointment) => (
                     <View key={appointment.id} style={styles.appointmentItem}>
@@ -53,13 +109,27 @@ const RecentAppointmentsComponent: React.FC<{ recentAppointments: any }> = ({ re
                         </View>
                         <TouchableOpacity
                             style={styles.appointmentAction}
-                            onPress={() => onAppointmentAction(appointment.id, appointment.action)}
+                            onPress={() => onAppointmentAction(appointment.id, appointment.action || 'view')}
                         >
                             <AvIcons type="MaterialIcons" name="chevron-right" size={20} color={COLORS.GREY} />
                         </TouchableOpacity>
                     </View>
                 ))}
             </View>
+        );
+    };
+
+    return (
+        <View style={styles.card}>
+            <View style={styles.cardHeader}>
+                <AvText type="heading_6" style={styles.cardTitle}>Recent Appointments</AvText>
+                <TouchableOpacity style={styles.viewAllButton} onPress={onViewAllAppointments}>
+                    <AvText type="caption" style={styles.viewAllText}>View All</AvText>
+                    <AvIcons type="MaterialIcons" name="arrow-forward" size={16} color={COLORS.PRIMARY} />
+                </TouchableOpacity>
+            </View>
+
+            {displayType === ROLES.PATIENT ? renderPatientTableView() : renderDoctorCardView()}
         </View>
     );
 };
@@ -85,7 +155,7 @@ const styles = StyleSheet.create({
     cardTitle: {
         color: COLORS.BLACK,
     },
-viewAllButton: {
+    viewAllButton: {
         flexDirection: 'row',
         alignItems: 'center',
     },
@@ -96,26 +166,26 @@ viewAllButton: {
     appointmentsList: {
         gap: normalize(12),
     },
-        appointmentItem: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: COLORS.GREY + '10',
-            borderRadius: normalize(12),
-            padding: normalize(12),
-        },
-        appointmentAvatar: {
-            width: normalize(40),
-            height: normalize(40),
-            borderRadius: normalize(20),
-            backgroundColor: COLORS.PRIMARY + '20',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginRight: normalize(12),
-        },
-        appointmentInfo: {
-            flex: 1,
-        },
-        appointmentMeta: {
+    appointmentItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.GREY + '10',
+        borderRadius: normalize(12),
+        padding: normalize(12),
+    },
+    appointmentAvatar: {
+        width: normalize(40),
+        height: normalize(40),
+        borderRadius: normalize(20),
+        backgroundColor: COLORS.PRIMARY + '20',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: normalize(12),
+    },
+    appointmentInfo: {
+        flex: 1,
+    },
+    appointmentMeta: {
         flexDirection: 'row',
         alignItems: 'center',
     },
@@ -145,6 +215,52 @@ viewAllButton: {
     typeText: {
         fontSize: normalize(10),
         fontWeight: '500',
+    },
+    // Table styles for patient view
+    tableContainer: {
+        marginTop: normalize(8),
+    },
+    tableHeader: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.GREY + '30',
+        paddingBottom: normalize(8),
+        marginBottom: normalize(4),
+    },
+    headerText: {
+        color: COLORS.BLACK,
+        fontWeight: '600',
+        flex: 1,
+        textAlign: 'center',
+    },
+    tableBody: {
+        minWidth: '100%',
+    },
+    tableRow: {
+        flexDirection: 'row',
+        paddingVertical: normalize(8),
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.GREY + '20',
+    },
+    tableCell: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: normalize(4),
+    },
+    cellText: {
+        color: COLORS.BLACK,
+        textAlign: 'center',
+    },
+    statusBadge: {
+        paddingHorizontal: normalize(6),
+        paddingVertical: normalize(2),
+        borderRadius: normalize(4),
+    },
+    statusText: {
+        fontSize: normalize(10),
+        fontWeight: '500',
+        textAlign: 'center',
     },
 });
 export default RecentAppointmentsComponent;

@@ -1,11 +1,18 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface PatientPersonalData {
+  bloodGroupId?: number;
   bloodGroupName?: string;
   height?: number;
   weight?: number;
   surgeries?: string;
   allergies?: string;
+  allergyIds?: number[];
+  surgeryIds?: number[];
+  allergyNames?: string[];
+  surgeryNames?: string[];
+  allergySinceYears?: number;
+  surgerySinceYears?: number;
   isAlcoholic?: boolean;
   isSmoker?: boolean;
   isTobacco?: boolean;
