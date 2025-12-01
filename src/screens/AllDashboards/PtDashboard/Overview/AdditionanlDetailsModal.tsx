@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { AvModal, AvTextInput, AvButton, AvText, AvSelect, AvIcons } from "../../../../elements";
 import { COLORS } from "../../../../constants/colors";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { Snackbar } from 'react-native-paper';
 import { useAppSelector, useAppDispatch } from "../../../../store/hooks";
 import {
   fetchCoverageTypes,
@@ -35,15 +36,23 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
 }) => {
   const [showDatePicker, setShowDatePicker] = useState<{ [key: string]: boolean }>({});
   const [coverageTypes, setCoverageTypes] = useState<Array<{ label: string; value: string }>>([]);
+  const [snackbar, setSnackbar] = useState({
+    visible: false,
+    message: '',
+    type: 'success' as 'success' | 'error',
+  });
   
   const dispatch = useAppDispatch();
   
   const coverageData: Coverage[] = useAppSelector((state) => state?.coverageData?.coverageData || []);
   const patientId = useAppSelector((state) => state.user.userProfile.patientId);
   const patientAdditionalData = useAppSelector(
-    (state) => state?.patient?.patientAdditionalData
+    (state) => state?.patientAdditionalData?.additionalDetails
   );
-
+  const patientData = useAppSelector(
+    (state) => state.patientAdditionalData.additionalDetails
+  );
+console.log("ADDITIONAL DATA",patientData)
   useEffect(() => {
     if (modalVisible) {
       dispatch(fetchCoverageTypes());
@@ -102,7 +111,7 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
     if (coverageData && coverageData.length > 0) {
       const formatted = coverageData.map((item) => ({
         label: item.coverageTypeName,
-        value: item.id,
+        value: item.id.toString(), // Convert to string for consistency
       }));
       setCoverageTypes(formatted);
     }
@@ -143,10 +152,29 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
 
     try {
       const response = await dispatch(savePatientAdditionalData(patientId, payload));
+      
       console.log("✅ Additional details saved successfully:", response);
-      closeModal();
+      
+      // Show success snackbar
+      setSnackbar({
+        visible: true,
+        message: 'Additional details saved successfully!',
+        type: 'success',
+      });
+      
+      // Close modal after delay
+      setTimeout(() => {
+        closeModal();
+      }, 1000);
     } catch (error) {
       console.error("❌ Failed to save additional details:", error);
+      
+      // Show error snackbar
+      setSnackbar({
+        visible: true,
+        message: 'Failed to save additional details',
+        type: 'error',
+      });
     }
   };
 
@@ -210,7 +238,7 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
                 onPress={() => handleInputChange("isPrimaryHolder", val === "Yes")}
                 style={styles.radioContainer}
               >
-                <AvIcons type="MaterialIcons" 
+                <AvIcons type="MaterialCommunityIcons" 
                   name={
                     (val === "Yes" && formData.isPrimaryHolder) ||
                     (val === "No" && !formData.isPrimaryHolder)
@@ -233,20 +261,37 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
           </View>
         </View>
         
-        <TouchableOpacity
-          onPress={() => setShowDatePicker((prev) => ({ ...prev, startDate: true }))}
-          style={styles.dateInputContainer}
-        >
-          <AvTextInput
-            label="Start Date"
-            value={formData.startDate ? formData.startDate.toLocaleDateString() : ""}
-            editable={false}
-            style={styles.input}
-            mode="outlined"
-            theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
-          />
-          <AvIcons type="MaterialIcons"  name="calendar" size={24} color={COLORS.PRIMARY} style={styles.calendarIcon} />
-        </TouchableOpacity>
+        <View style={styles.dateRow}>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker((prev) => ({ ...prev, startDate: true }))}
+            style={styles.dateInputContainer}
+          >
+            <AvTextInput
+              label="Start Date"
+              value={formData.startDate ? formData.startDate.toLocaleDateString() : ""}
+              editable={false}
+              style={styles.halfInput}
+              mode="outlined"
+              theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
+            />
+            {/* <AvIcons type="MaterialCommunityIcons"  name="calendar" size={4} color={COLORS.PRIMARY} style={styles.calendarIcon} /> */}
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            onPress={() => setShowDatePicker((prev) => ({ ...prev, endDate: true }))}
+            style={styles.dateInputContainer}
+          >
+            <AvTextInput
+              label="End Date"
+              value={formData.endDate ? formData.endDate.toLocaleDateString() : ""}
+              editable={false}
+              style={styles.halfInput}
+              mode="outlined"
+              theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
+            />
+            {/* <AvIcons type="MaterialCommunityIcons"  name="calendar" size={24} color={COLORS.PRIMARY} style={styles.calendarIcon} /> */}
+          </TouchableOpacity>
+        </View>
         
         {showDatePicker.startDate && (
           <DateTimePicker
@@ -256,21 +301,6 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
             onChange={(e, date) => handleDateChange("startDate", e, date)}
           />
         )}
-        
-        <TouchableOpacity
-          onPress={() => setShowDatePicker((prev) => ({ ...prev, endDate: true }))}
-          style={styles.dateInputContainer}
-        >
-          <AvTextInput
-            label="End Date"
-            value={formData.endDate ? formData.endDate.toLocaleDateString() : ""}
-            editable={false}
-            style={styles.input}
-            mode="outlined"
-            theme={{ colors: { primary: COLORS.SECONDARY, outline: COLORS.LIGHT_GREY } }}
-          />
-          <AvIcons type="MaterialIcons"  name="calendar" size={24} color={COLORS.PRIMARY} style={styles.calendarIcon} />
-        </TouchableOpacity>
         
         {showDatePicker.endDate && (
           <DateTimePicker
@@ -301,19 +331,31 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
 const styles = StyleSheet.create({
   modalContent: { padding: 16 },
   inputRow: { marginBottom: 12 },
+  dateRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 12
+  },
   input: {
     marginBottom: 4,
     backgroundColor: COLORS.WHITE,
     height: 50,
   },
-  toggleContainer: { marginBottom: 16 },
+  halfInput: {
+    marginBottom: 4,
+    backgroundColor: COLORS.WHITE,
+    height: 50,
+    flex: 1,
+  },
+  toggleContainer: { marginBottom: 16,marginTop: 16, },
   toggleLabel: { color: COLORS.PRIMARY_TXT, marginBottom: 8 },
   radioGroup: { flexDirection: "row", alignItems: "center" },
   radioContainer: { flexDirection: "row", alignItems: "center", marginRight: 16 },
   radioLabel: { marginLeft: 8, color: COLORS.PRIMARY_TXT },
   modalButtons: { flexDirection: "row", justifyContent: "flex-end", marginTop: 16 },
   saveButton: { borderRadius: 8 },
-  dateInputContainer: { position: "relative" },
+  dateInputContainer: { position: "relative", flex: 1 },
   calendarIcon: { position: "absolute", right: 18, top: 22, zIndex: 1 },
 });
 

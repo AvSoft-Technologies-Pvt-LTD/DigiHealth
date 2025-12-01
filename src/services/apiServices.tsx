@@ -108,7 +108,6 @@ export const post = async <T = any>(url: string, data: object): Promise<T> => {
 };
 
 export const put = async (url: string, data: object) => {
-  console.log("Calling PUT API",url,"DATA",data)
   try {
     const token = await getAccessJwtToken();
     const response = await apiClient.put(url, data,{headers: { Authorization: `Bearer ${token}` }});

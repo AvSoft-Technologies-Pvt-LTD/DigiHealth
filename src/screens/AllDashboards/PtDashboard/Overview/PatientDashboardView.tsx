@@ -6,7 +6,7 @@ import { PAGES } from "../../../../constants/pages";
 import PatientOverview from "./PtDashboard";
 import HealthSummary from "./HealthSummary";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
-import { fetchAllergiesData, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchSurgeriesData } from "../../../../store/thunks/patientThunks";
+import { fetchAllergiesData, fetchPatientAdditionalData, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchSurgeriesData } from "../../../../store/thunks/patientThunks";
 import RecentAppointmentsComponent from "../../DoctorDashboard/DocDashboardComponents/RecentAppintmentsComponent";
 import { ROLES } from "../../../../constants/data";
 
@@ -21,6 +21,7 @@ const PatientDashboardView = () => {
           dispatch(fetchPatientDashboardData(id));
           dispatch(fetchAllergiesData());
           dispatch(fetchSurgeriesData());
+          dispatch(fetchPatientAdditionalData(id));
         }
       }, [id]);
     

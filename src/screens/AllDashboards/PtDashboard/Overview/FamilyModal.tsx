@@ -6,6 +6,7 @@ import { COLORS } from '../../../../constants/colors';
 import { deleteFamilyMember, fetchFamilyHealthData, fetchHealthConditionData, fetchRelationData, saveFamilyHealthData } from '../../../../store/thunks/patientThunks';
 import { useAppSelector } from '../../../../store/hooks';
 import { AvIcons } from '../../../../elements';
+import { normalize } from '../../../../constants/platform';
 interface FamilyMemberForm {
     id?: string;
     familyRelation: string;
@@ -43,7 +44,6 @@ const FamilyModal = ({ modalVisible, closeModal, dispatch }: any) => {
     const [relationData, setRelationData] = useState<Array<{ label: string, value: string }>>([]);
     const patientId = useAppSelector((state) => state.user.userProfile.patientId);
     const familyMemberData = useAppSelector((state) => state.familyMemberData.familyMemberData);
-    // console.log("DATAAA",sampleData)
     useEffect(() => {
         if (hCData && hCData.length > 0) {
             const formattedBloodGroups = hCData.map((item: any) => ({
@@ -127,11 +127,10 @@ const FamilyModal = ({ modalVisible, closeModal, dispatch }: any) => {
 
         }
     }
-    const { currentPatient } = useAppSelector((state) => state.currentPatient || {});
     const fetchFamilyMembersData = async () => {
         try {
-            if (currentPatient?.id) {
-                await dispatch(fetchFamilyHealthData(currentPatient?.id));
+            if (patientId) {
+                await dispatch(fetchFamilyHealthData(patientId));
             }
 
         } catch (error) {
@@ -276,7 +275,7 @@ const FamilyModal = ({ modalVisible, closeModal, dispatch }: any) => {
 
                 <ScrollView
                     style={{ maxHeight: 200, overflow: 'scroll' }} // adjust 200 to fit your design
-                    contentContainerStyle={{ paddingBottom: 10 }}
+                    contentContainerStyle={{ paddingBottom: normalize(100) }}
                 >
                     <View style={styles.membersList}>
                     {familyMemberData && familyMemberData.length > 0 ? (
