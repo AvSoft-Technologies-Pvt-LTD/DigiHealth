@@ -59,5 +59,8 @@ export const API = {
   URGENCY_LEVELS_API: `${BASE_URL}master/urgency-levels`,
   FETCH_DOCTOR_API: `${BASE_URL}auth/doctor/`,
 
+  FETCH_PATIENT_APPOINTMENT: `${BASE_URL}appointments/patient/`,
+  FETCH_DOCTOR_APPOINTMENT: `${BASE_URL}appointments/doctor/`,
+
 };
 

@@ -108,6 +108,7 @@ import { fetchMedicalConditionDataStart, fetchMedicalConditionDataSuccess } from
 import { fetchAllergiesDataFailure, fetchAllergiesDataStart, fetchAllergiesDataSuccess } from '../slices/allergiesSlice.ts';
 import { fetchSurgeriesDataFailure, fetchSurgeriesDataStart, fetchSurgeriesDataSuccess } from '../slices/surgeriesSlice.ts';
 import { updatePatientFailure, updatePatientStart, updatePatientSuccess } from '../slices/updatePatientSlice';
+import { fetchPatientAppointmentsFailure, fetchPatientAppointmentsStart, fetchPatientAppointmentsSuccess } from '../slices/patientAppointmentsSlice.ts';
 
 export const fetchAllPatients = () => async (dispatch: AppDispatch) => {
   try {
@@ -146,9 +147,11 @@ export const healthSummaryData = (id: string) => async (dispatch: AppDispatch) =
 };
 
 export const updatePatientVitals = (id: string, vitalsData: any) => async (dispatch: AppDispatch) => {
+  console.log("CALLING UPDATE API",id,"VITALS",API.PATIENT_VITALS_API + "/" + id)
   try {
     dispatch(fetchHealthSummaryDataStart());
-    const response = await put(API.PATIENT_VITALS_API + id, vitalsData);
+    const response = await put(API.PATIENT_VITALS_API + "/" + id, vitalsData);
+    console.log("RESPONSE OF HEALTH SUMMARY UPDATE",response)
     const responseData = response?.data || response;
     dispatch(fetchHealthSummaryDataSuccess(responseData));
     return responseData;
@@ -159,14 +162,18 @@ export const updatePatientVitals = (id: string, vitalsData: any) => async (dispa
   }
 };
 
-export const createPatientVitals = (id: string, vitalsData: any) => async (dispatch: AppDispatch) => {
+export const createPatientVitals = (vitalsData: any) => async (dispatch: AppDispatch) => {
+  console.log("CREATING",API.PATIENT_VITALS_API, vitalsData)
+  // return;
   try {
     dispatch(fetchHealthSummaryDataStart());
     const response = await post(API.PATIENT_VITALS_API, vitalsData);
+     console.log("RESPONSE",response)
     const responseData = response?.data || response;
     dispatch(fetchHealthSummaryDataSuccess(responseData));
-    return responseData;
+    return response;
   } catch (error) {
+    console.log("ERROR",error)
     const errorMessage = error instanceof Error ? error.message : 'Failed to create vitals';
     dispatch(fetchHealthSummaryDataFailure(errorMessage));
     throw error;
@@ -230,7 +237,6 @@ export const fetchPatientPersonalHealthData = (id: string) => async (dispatch: A
 };
 
 export const updatePatientPersonalHealthData = (id: number, data: any) => async (dispatch: AppDispatch) => {
-  console.log("UPDATING",id,"DATA",data,"DISPATCH",dispatch)
   try {
     dispatch(fetchPatientPersonalDataStart());
     const response = await put(API.PATIENT_PERSONAL_HEALTH_API + id, data);
@@ -286,7 +292,6 @@ export const saveFamilyHealthData = (data: any, isEditing?: boolean) => async (d
   const method = isEditing ? put : post;
   const apiUrl = isEditing ? `${API.PATIENT_FAMILY_HEALTH_API}/${data.id}` : API.PATIENT_FAMILY_HEALTH_API;
   console.log("API URL",apiUrl)
-  console.log("DATA",data)
   console.log("isEditing",isEditing)
   try {
     dispatch(saveFamilyHealthDataStart());
@@ -424,7 +429,6 @@ export const saveCoverageData = (data: any) => async (dispatch: AppDispatch) => 
 };
 
 export const saveMedicalRecord = (data: any, isIpd?: boolean) => async (dispatch: AppDispatch) => {
-  console.log("DATA",data)
   console.log("isIpd",isIpd)
   try {
     dispatch(saveCoverageDataStart());
@@ -499,6 +503,18 @@ export const fetchAmbulanceTypes = () => async (dispatch: AppDispatch) => {
   }
 };
 
+
+// --- Appointments ---
+export const fetchPatientAppointments = (id:string,) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch(fetchPatientAppointmentsStart());
+    const response = await get(API.FETCH_DOCTOR_APPOINTMENT+id);
+    dispatch(fetchPatientAppointmentsSuccess(response));
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch ambulance types';
+    dispatch(fetchPatientAppointmentsFailure(errorMessage));
+  }
+};
 // --- Pharmacy List ---
 
 export const updatePatientById = (id:string,data:any) => async (dispatch: AppDispatch) => {

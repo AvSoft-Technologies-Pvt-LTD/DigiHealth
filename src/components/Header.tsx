@@ -36,7 +36,6 @@ const Header: React.FC<HeaderProps> = ({
   showHiveIcon = false,
   showMoreIcon = true,
 }) => {
-  // console.log("HEADER PROPS",title)
   const isAuthenticated = useSelector((state: RootState) => state.user.isAuthenticated);
   const navigation = useNavigation<HeaderNavigationProp>();
   const { openDrawer } = useDrawer(); // Use the openDrawer function from your drawer context
@@ -148,7 +147,6 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const handleActionPress = (action: 'pharmacy' | 'ambulance' | 'notifications') => {
-    console.log("ACTION CLICKED", action);
     switch (action) {
       case 'pharmacy':
         navigation.navigate(PAGES.PHARMACY_FINDER_VIEW);

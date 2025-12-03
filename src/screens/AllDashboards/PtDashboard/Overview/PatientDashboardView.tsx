@@ -6,14 +6,12 @@ import { PAGES } from "../../../../constants/pages";
 import PatientOverview from "./PtDashboard";
 import HealthSummary from "./HealthSummary";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
-import { fetchAllergiesData, fetchPatientAdditionalData, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchSurgeriesData } from "../../../../store/thunks/patientThunks";
+import { fetchAllergiesData, fetchPatientAdditionalData, fetchPatientAppointments, fetchPatientDashboardData, fetchPatientPersonalHealthData, fetchSurgeriesData } from "../../../../store/thunks/patientThunks";
 import RecentAppointmentsComponent from "../../DoctorDashboard/DocDashboardComponents/RecentAppintmentsComponent";
 import { ROLES } from "../../../../constants/data";
 
 const PatientDashboardView = () => {
-      const id = useAppSelector((state) => state.user.userProfile.patientId);
-      const PatData = useAppSelector((state) => state.patientDashboardData.patientDashboardData);
-    
+      const id = useAppSelector((state) => state.user.userProfile.patientId);    
     const dispatch = useAppDispatch()
       useEffect(() => {
         if (id) {
@@ -22,6 +20,7 @@ const PatientDashboardView = () => {
           dispatch(fetchAllergiesData());
           dispatch(fetchSurgeriesData());
           dispatch(fetchPatientAdditionalData(id));
+          dispatch(fetchPatientAppointments(id))
         }
       }, [id]);
     
@@ -37,7 +36,7 @@ const PatientDashboardView = () => {
                 <View style={styles.container}>
                     <PatientOverview />
                     <RecentAppointmentsComponent displayType={ROLES.PATIENT} recentAppointments={[]} />
-                    {/* <HealthSummary /> */}
+                    <HealthSummary />
                 </View>
             </ScrollView>
         </>

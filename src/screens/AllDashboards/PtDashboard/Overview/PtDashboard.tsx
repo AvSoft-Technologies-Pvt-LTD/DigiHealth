@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
   FlatList,
+  Animated,
   TouchableOpacity,
 } from "react-native";
-import { Avatar } from 'react-native-paper';
 import moment from 'moment';
 
 import { COLORS } from "../../../../constants/colors";
@@ -15,7 +15,6 @@ import PatientModals from "./index";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
 import { fetchPatientBloodGroupData, fetchPatientPersonalHealthData, fetchPatientPhoto } from "../../../../store/thunks/patientThunks";
 import { AvButton, AvIcons, AvImage, AvText } from "../../../../elements";
-import Header from "../../../../components/Header";
 import { API } from "../../../../config/api";
 
 interface ActionButtonProps {
@@ -66,6 +65,9 @@ const PatientOverview = () => {
     isPrimaryHolder: false,
     photo: null,
   });
+const patientAdditionalData = useAppSelector((state) => state?.patientAdditionalData?.additionalDetails);
+const familyMemberData = useAppSelector((state) => state.familyMemberData.familyMemberData);
+  
 
   const [completion, setCompletion] = useState({
     basicDetails: true,
@@ -103,10 +105,35 @@ const PatientOverview = () => {
 
   const completedSections = Object.values(completion).filter(Boolean).length;
   const progress = (completedSections / 4) * 100;
+  
+  // Animated progress bar
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  
+  useEffect(() => {
+    // Animate progress bar to target value
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: 1500, // 1.5 seconds animation
+      useNativeDriver: false, // For width animation
+    }).start();
+  }, [progress]);
   const { allPatients } = useAppSelector((state) => state.patient);
   const { patientDashboardData } = useAppSelector((state) => state.patientDashboardData);
   const { patientPersonalData } = useAppSelector((state) => state.patientPersonalData);
   const dispatch = useAppDispatch();
+
+  
+  useEffect(() => {
+    if(patientAdditionalData){
+      setCompletion((prev) => ({ ...prev, additionalDetails: true }));
+    }
+    if (familyMemberData){
+      setCompletion((prev) => ({ ...prev, family: true }));
+    }
+    if (patientPersonalData){
+      setCompletion((prev) => ({ ...prev, personalHealth: true }));
+    }
+  }, [patientAdditionalData,familyMemberData,patientPersonalData])
 
   useEffect(() => {
     if (patientDashboardData) {
@@ -120,6 +147,7 @@ const PatientOverview = () => {
       }));
     }
   }, [patientDashboardData]);
+  
 
   const id = useAppSelector((state) => state.user.userProfile.patientId);
   const { currentPatient } = useAppSelector((state) => state.currentPatient || {});
@@ -139,7 +167,6 @@ const PatientOverview = () => {
 
   const { photo } = useAppSelector((state) => state.patientSettingData || { photo: null, loading: true });
   const [profileImage, setProfileImage] = useState<string>(photo || '');
-// console.log("FORM DATA HERE",formData)
   // Generate initials from name
   const getInitials = (name: string) => {
     if (!name) return 'US';
@@ -296,7 +323,7 @@ const PatientOverview = () => {
                   Gender
                 </AvText>
               </View>
-              <AvText type="body" style={styles.detailValue}>
+              <AvText type="heading_5" style={styles.detailValue}>
                 {formData.gender}
               </AvText>
             </View>
@@ -307,7 +334,7 @@ const PatientOverview = () => {
                   Phone No.
                 </AvText>
               </View>
-              <AvText type="body" style={styles.detailValue}>
+              <AvText type="heading_5" style={styles.detailValue}>
                 {formData.phone}
               </AvText>
             </View>
@@ -320,7 +347,7 @@ const PatientOverview = () => {
                   Date Of Birth
                 </AvText>
               </View>
-              <AvText type="body" style={styles.detailValue}>
+              <AvText type="heading_5" style={styles.detailValue}>
                 {formData.dob ? moment(formData.dob).format('MMM DD YYYY') : ''}
               </AvText>
             </View>
@@ -331,7 +358,7 @@ const PatientOverview = () => {
                   Blood Group
                 </AvText>
               </View>
-              <AvText type="body" style={styles.detailValue}>
+              <AvText type="heading_5" style={styles.detailValue}>
                 {patientPersonalData && patientPersonalData? patientPersonalData?.bloodGroupName || "N/A" : "N/A"}
               </AvText>
             </View>
@@ -341,7 +368,18 @@ const PatientOverview = () => {
         {/* Progress Bar */}
         <View style={styles.progressSection}>
           <View style={styles.progressBar}>
-            <View style={{ height: "100%", backgroundColor: COLORS.SECONDARY, borderRadius: 3, width: `${progress}%` }} />
+            <Animated.View 
+              style={{
+                height: "100%", 
+                backgroundColor: COLORS.SECONDARY, 
+                borderRadius: 3, 
+                width: progressAnim.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: ['0%', '100%'],
+                  extrapolate: 'clamp'
+                })
+              }} 
+            />
           </View>
           <AvText type="caption" style={styles.progressText}>
             {Math.round(progress)}% Profile Complete
@@ -369,6 +407,7 @@ const PatientOverview = () => {
           handleInputChange={handleInputChange}
           handleToggleChange={handleToggleChange}
           handleSave={handleSave}
+          
         />
       </View>
     </>
@@ -442,14 +481,13 @@ const styles = StyleSheet.create({
   detailLabel: {
     marginLeft: 8,
     color: COLORS.PRIMARY,
-    fontWeight: "900",
-    fontSize: 17,
+    fontWeight: "600",
   },
   detailValue: {
     marginLeft: 24,
     color: COLORS.PRIMARY_TXT,
-    fontSize: 15,
-    fontWeight: "600",
+    // fontSize: 15,
+    fontWeight: "900",
   },
   progressSection: {
     marginBottom: 20,

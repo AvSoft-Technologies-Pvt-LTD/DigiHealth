@@ -67,7 +67,6 @@ const PersonalHealthModal = ({
   }
   const dispatch = useAppDispatch();
   const savePersonalHealth = () => {
-    console.log("ID", id)
     if (id) {
       dispatch(updatePatientPersonalHealthData(id, payload))
     }

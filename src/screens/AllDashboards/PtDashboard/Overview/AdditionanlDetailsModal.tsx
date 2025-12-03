@@ -52,7 +52,6 @@ const AdditionalDetailsModal: React.FC<AdditionalDetailsModalProps> = ({
   const patientData = useAppSelector(
     (state) => state.patientAdditionalData.additionalDetails
   );
-console.log("ADDITIONAL DATA",patientData)
   useEffect(() => {
     if (modalVisible) {
       dispatch(fetchCoverageTypes());

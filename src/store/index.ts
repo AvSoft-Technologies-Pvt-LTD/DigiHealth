@@ -31,6 +31,7 @@ import patientSettingReducer from './slices/patientSettingSlice';
 import masterReducer from './slices/masterSlice'; // Import the reducer
 import allergiesReducer from './slices/allergiesSlice';
 import surgeriesReducer from './slices/surgeriesSlice';
+import patientAppointmentsReducer from './slices/patientAppointmentsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -61,6 +62,7 @@ export const store = configureStore({
     medicalConditionData: medicalConditionReducer,
     allergiesData: allergiesReducer,
     surgeriesData: surgeriesReducer,
+    patientAppointmentsData: patientAppointmentsReducer,
      
         
     patientSettingData: patientSettingReducer,

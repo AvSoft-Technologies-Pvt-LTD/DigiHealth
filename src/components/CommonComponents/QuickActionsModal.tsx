@@ -21,8 +21,6 @@ const QuickActionsModal: React.FC<QuickActionsModalProps> = ({
   const userProfile = useAppSelector((state) => state.user.userProfile);
   const userRole = useAppSelector((state) => state.user.userProfile.role);
   const slideAnim = useRef(new Animated.Value(widthPercentageToDP(100))).current;
-  // console.log("User Profile", userProfile)
-  // console.log("User Role", userRole)
   useEffect(() => {
     if (visible) {
       Animated.spring(slideAnim, {

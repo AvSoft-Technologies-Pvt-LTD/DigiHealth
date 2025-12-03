@@ -2,12 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity, Animated, KeyboardAvoidingView, ActivityIndicator, Alert } from "react-native";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { RootState } from "../../../store/index";
-import {
-  updatePatientStart,
-  updatePatientSuccess,
-  updatePatientFailure,
-  resetUpdateState,
-} from "../../../store/slices/updatePatientSlice";
+import { updatePatientStart, updatePatientFailure, } from "../../../store/slices/updatePatientSlice";
 import { API } from "../../../config/api";
 
 import AvText from "../../../elements/AvText";
@@ -21,7 +16,6 @@ import AvImage from "../../../elements/AvImage";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import { AvIcons, AvSelect } from "../../../elements";
-import { fetchPatientDashboardData, updatePatientById } from "../../../store/thunks/patientThunks";
 
 const PatientSettingsView = () => {
   const { loading, error, success } = useAppSelector(
@@ -103,30 +97,20 @@ const PatientSettingsView = () => {
         phone: currentPatient.phone,
         occupation: currentPatient.occupation,
         district: currentPatient.district,
-        city:currentPatient.city,
-        state:currentPatient.state,
+        city: currentPatient.city,
+        state: currentPatient.state,
       });
     }
   }, [currentPatient]);
-  // const handleSave = async () => {
-  //   dispatch(updatePatientStart());
-  //   const url = API.UPDATE_PATIENT_BY_ID + currentPatient?.id;
-  //   console.log("API URL", url);
-  //   console.log("PAYLOAD", patient);
-  //   const payload = {
-  //    id:currentPatient?.id,
-  //   ...patient 
-  //   }
-  //   dispatch(updatePatientById(currentPatient?.id,payload));
-  // }
+
   const handleSave = async () => {
     dispatch(updatePatientStart());
     const url = `${API.UPDATE_PATIENT_BY_ID}${currentPatient?.id}`;
-  
+
     try {
       // ✅ Prepare FormData for sending multipart data
       const formDataToSend = new FormData();
-  
+
       // Append all text fields safely
       formDataToSend.append('id', String(currentPatient?.id || ''));
       formDataToSend.append('firstName', patient.firstName || '');
@@ -144,7 +128,7 @@ const PatientSettingsView = () => {
       formDataToSend.append('district', patient.district || '');
       formDataToSend.append('state', patient.state || '');
       formDataToSend.append('agreeDeclaration', true || '');
-  
+
       // ✅ Append photo only if it’s a new local file (has a URI)
       if (patient.photo?.uri) {
         const photo = {
@@ -154,28 +138,28 @@ const PatientSettingsView = () => {
         };
         formDataToSend.append('photo', photo as any);
       }
-  
+
       console.log("🧾 Update Payload Prepared:", {
         url,
-        formDataKeys:formDataToSend,
+        formDataKeys: formDataToSend,
       });
-  
+
       // ✅ Call update API
       // await dispatch(updatePatientById(currentPatient?.id, formDataToSend));
       // dispatch(updatePatientSuccess());
-  
+
       // ✅ Optionally refresh patient dashboard
       // if (currentPatient?.id) {
       //   dispatch(fetchPatientDashboardData(currentPatient.id));
       // }
-  
+
     } catch (error) {
       console.error("❌ Update failed:", error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update patient';
       dispatch(updatePatientFailure(errorMessage));
     }
   };
-  
+
   useEffect(() => {
     if (editing) {
       Animated.loop(
@@ -619,7 +603,7 @@ const styles = StyleSheet.create({
   dateInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent:'space-between',
+    justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: COLORS.LIGHT_GREY,
     borderRadius: 8,

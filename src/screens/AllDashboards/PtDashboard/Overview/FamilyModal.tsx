@@ -68,7 +68,6 @@ const FamilyModal = ({ modalVisible, closeModal, dispatch }: any) => {
     }, [dispatch]);
 
     const handleEdit = (item: any) => {
-        console.log("EDITING", item);
 
         // Map the health conditions to match the expected format
         const healthConditions = item.healthConditions?.map((hc: any) => hc.id) || [];

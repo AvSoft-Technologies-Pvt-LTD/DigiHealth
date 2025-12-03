@@ -3,10 +3,11 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 interface VitalData {
   temperature?: number;
   spo2?: number;
-  blood_pressure?: string;
-  heart_rate?: number;
-  respiratory_rate?: number;
-  blood_sugar?: number;
+  bloodPressure?: string;
+  heartRate?: number;
+  respiratoryRate?: number;
+  bloodSugar?: number;
+  steps?:number;
 }
 
 interface HealthSummaryState {
@@ -25,10 +26,11 @@ const normalizeVitalData = (data: any): VitalData => {
   return {
     temperature: data.temperature || data.temp,
     spo2: data.spo2 || data.oxygenSaturation,
-    blood_pressure: data.bloodPressure || data.bp,
-    heart_rate: data.heartRate || data.pulse,
-    respiratory_rate: data.respiratoryRate || data.rr,
-    blood_sugar: data.bloodSugar || data.glucose,
+    bloodPressure: data.bloodPressure || data.bp,
+    heartRate: data.heartRate || data.pulse,
+    respiratoryRate: data.respiratoryRate || data.rr,
+    bloodSugar: data.bloodSugar || data.glucose,
+    steps:data.steps || data.steps,
   };
 };
 

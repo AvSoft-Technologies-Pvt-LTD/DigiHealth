@@ -4,6 +4,8 @@ import { AvIcons, AvText } from "../../../../elements";
 import { COLORS } from "../../../../constants/colors";
 import { normalize } from "../../../../constants/platform";
 import { ROLES } from "../../../../constants/data";
+import { useAppSelector } from "../../../../store/hooks";
+import moment from "moment";
 
 interface Appointment {
     id: number;
@@ -11,8 +13,11 @@ interface Appointment {
     lastName?: string;
     doctorName?: string;
     doctorSpeciality?: string;
+    consultationType?: string;
     date: string;
     time: string;
+    appointmentDate:"string";
+    appointmentTime:"string";
     type: 'Virtual' | 'Physical';
     status?: string;
     action?: string;
@@ -25,20 +30,24 @@ const RecentAppointmentsComponent: React.FC<{ recentAppointments: any; displayTy
     const onAppointmentAction = (id: number, action: string) => {
         console.log('Appointment Action:', id, action);
     };
-
+      const PatAppointmentData = useAppSelector((state) => state.patientAppointmentsData.appointmentsData);
     // Render table for patient view
-    const renderPatientTableView = () => {
+    const renderPatientTableView = (PatAppointmentData:any) => {
         return (
             <View style={styles.tableContainer}>
                 <View style={styles.tableHeader}>
-                    <AvText type="caption" style={styles.headerText}>Doctor Speciality</AvText>
+                    <AvText type="caption" style={styles.headerText}>Doctor Name</AvText>
                     <AvText type="caption" style={styles.headerText}>Date & Time</AvText>
                     <AvText type="caption" style={styles.headerText}>Consultation Type</AvText>
                     <AvText type="caption" style={styles.headerText}>Status</AvText>
                 </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={true}
+                    style={styles.horizontalScrollView}
+                >
                     <View style={styles.tableBody}>
-                        {recentAppointments.slice(0, 3).map((appointment: Appointment) => (
+                        {PatAppointmentData.slice(0, 3).map((appointment: Appointment) => (
                             <TouchableOpacity 
                                 key={appointment.id} 
                                 style={styles.tableRow}
@@ -46,17 +55,19 @@ const RecentAppointmentsComponent: React.FC<{ recentAppointments: any; displayTy
                             >
                                 <View style={styles.tableCell}>
                                     <AvText type="caption" style={styles.cellText}>
-                                        {appointment.doctorSpeciality || 'General'}
+                                        {appointment.doctorName || 'General'}
                                     </AvText>
                                 </View>
                                 <View style={styles.tableCell}>
                                     <AvText type="caption" style={styles.cellText}>
-                                        {appointment.date} {appointment.time}
+                                {appointment.appointmentDate ? moment(appointment.appointmentDate).format('DD-MM-YY')+" | " : ''}
+                                {appointment.appointmentTime ? moment(appointment.appointmentTime, 'HH:mm:ss').format('hh:mm A') : ''}
+                                        
                                     </AvText>
                                 </View>
                                 <View style={styles.tableCell}>
-                                    <View style={[styles.typeBadge, appointment.type === 'Virtual' ? styles.virtualBadge : styles.physicalBadge]}>
-                                        <AvText type="caption" style={styles.typeText}>{appointment.type}</AvText>
+                                    <View style={[styles.typeBadge, appointment.consultationType === 'Virtual' ? styles.virtualBadge : styles.physicalBadge]}>
+                                        <AvText type="caption" style={styles.typeText}>{appointment.consultationType}</AvText>
                                     </View>
                                 </View>
                                 <View style={styles.tableCell}>
@@ -87,8 +98,9 @@ const RecentAppointmentsComponent: React.FC<{ recentAppointments: any; displayTy
     // Render card view for doctor view
     const renderDoctorCardView = () => {
         return (
+            <>
             <View style={styles.appointmentsList}>
-                {recentAppointments.slice(0, 3).map((appointment: Appointment) => (
+                {recentAppointments?.slice(0, 3).map((appointment: Appointment) => (
                     <View key={appointment.id} style={styles.appointmentItem}>
                         <View style={styles.appointmentAvatar}>
                             <AvIcons type="MaterialIcons" name="person" size={24} color={COLORS.PRIMARY} />
@@ -116,6 +128,7 @@ const RecentAppointmentsComponent: React.FC<{ recentAppointments: any; displayTy
                     </View>
                 ))}
             </View>
+            </>
         );
     };
 
@@ -129,7 +142,7 @@ const RecentAppointmentsComponent: React.FC<{ recentAppointments: any; displayTy
                 </TouchableOpacity>
             </View>
 
-            {displayType === ROLES.PATIENT ? renderPatientTableView() : renderDoctorCardView()}
+            {displayType === ROLES.PATIENT ? renderPatientTableView(PatAppointmentData) : renderDoctorCardView()}
         </View>
     );
 };
@@ -232,9 +245,13 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         flex: 1,
         textAlign: 'center',
+        minWidth: 80,
     },
     tableBody: {
         minWidth: '100%',
+    },
+    horizontalScrollView: {
+        marginTop: normalize(4),
     },
     tableRow: {
         flexDirection: 'row',
@@ -247,6 +264,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: normalize(4),
+        minWidth: 80,
     },
     cellText: {
         color: COLORS.BLACK,
