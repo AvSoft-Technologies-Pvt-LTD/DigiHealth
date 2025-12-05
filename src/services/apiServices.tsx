@@ -143,51 +143,254 @@ export const patch = async (url: string, data: object) => {
 
 export const postFormData = async (url: string, formData: FormData) => {
   try {
+    console.log("Sending FormData request to:", url);
+    
     // Create a new instance of axios for this request to avoid header conflicts
     const instance = axios.create({
       baseURL: BASE_URL,
       timeout: 30000, // Increased timeout for file uploads
     });
+    
     // Add auth token if available
     const token = await getAccessJwtToken();
     const headers: Record<string, string> = {
       'Accept': 'application/json',
-      'Content-Type': 'multipart/form-data',
     };
+    
+    // Note: Don't set Content-Type for FormData, axios will set it automatically
+    // with the correct boundary for multipart/form-data
     
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
+    
     const response = await instance.post(url, formData, { headers });
+    
+    console.log("FormData request successful:", {
+      status: response.status,
+      data: response.data
+    });
+    
     return response.data;
   } catch (error: any) {
     console.error("POST FormData request error:", error);
+    
     if (error.response) {
       // The request was made and the server responded with a status code
-      console.error('Response data HEre:', error.response.data.error);
       console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
       console.error('Response headers:', error.response.headers);
-      throw error;
+      
+      // Create a more informative error object
+      const apiError = new Error(
+        error.response.data?.message || 
+        error.response.data?.error || 
+        `HTTP Error ${error.response.status}`
+      ) as any;
+      
+      apiError.response = {
+        data: error.response.data,
+        status: error.response.status,
+        headers: error.response.headers,
+      };
+      
+      throw apiError;
     } else if (error.request) {
       // The request was made but no response was received
       console.error('No response received:', error.request);
+      throw new Error('No response received from server. Please check your internet connection.');
     } else {
       // Something happened in setting up the request
-      console.error('Error:', error.message);
+      console.error('Request setup error:', error.message);
+      throw new Error(`Request failed: ${error.message}`);
     }
-    throw error;
   }
 };
+
 export const mediaUpload = async (url: string, file: File) => {
   const formData = new FormData();
   formData.append("file", file);
 
   try {
+    console.log("Uploading media file:", {
+      name: file.name,
+      type: file.type,
+      size: `${Math.round(file.size / 1024)}KB`
+    });
+    
     const response = await postFormData(url, formData);
+    console.log("Media upload successful:", response);
     return response;
   } catch (error) {
     console.error("Media upload error:", error);
     throw error;
+  }
+};
+
+
+// Optional: Helper function to handle base64 image uploads
+export const uploadBase64Image = async (url: string, base64Image: string, fileName: string = 'image.jpg') => {
+  try {
+    console.log("Uploading base64 image:", {
+      fileName,
+      size: `${Math.round(base64Image.length / 1024)}KB`
+    });
+    
+    // Convert base64 to blob if you need to use FormData
+    const response = await fetch(`data:image/jpeg;base64,${base64Image}`);
+    const blob = await response.blob();
+    const file = new File([blob], fileName, { type: 'image/jpeg' });
+    
+    return await mediaUpload(url, file);
+  } catch (error) {
+    console.error("Base64 image upload error:", error);
+    throw error;
+  }
+};
+
+export const postJson = async (url: string, data: any) => {
+  try {
+    console.log("Sending JSON request to:", url);
+    console.log("Request data:", { 
+      ...data, 
+      photo: data.photo ? `[Base64 Image - ${data.photo.length} characters]` : 'No photo' 
+    });
+    
+    // Create a new instance of axios for this request
+    const instance = axios.create({
+      baseURL: BASE_URL,
+      timeout: 30000,
+    });
+    
+    // Add auth token if available
+    const token = await getAccessJwtToken();
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await instance.post(url, data, { headers });
+    
+    console.log("JSON request successful:", {
+      status: response.status,
+      data: response.data
+    });
+    
+    return response.data;
+  } catch (error: any) {
+    console.error("POST JSON request error:", error);
+    
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
+      console.error('Response headers:', error.response.headers);
+      
+      // Create a more informative error object
+      const apiError = new Error(
+        error.response.data?.message || 
+        error.response.data?.error || 
+        `HTTP Error ${error.response.status}`
+      ) as any;
+      
+      apiError.response = {
+        data: error.response.data,
+        status: error.response.status,
+        headers: error.response.headers,
+      };
+      
+      // Include validation errors if available
+      if (error.response.data?.errors) {
+        apiError.validationErrors = error.response.data.errors;
+      }
+      
+      throw apiError;
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received:', error.request);
+      throw new Error('No response received from server. Please check your internet connection.');
+    } else {
+      // Something happened in setting up the request
+      console.error('Request setup error:', error.message);
+      throw new Error(`Request failed: ${error.message}`);
+    }
+  }
+};
+
+export const putJson = async (url: string, data: any) => {
+  try {
+    console.log("Sending PUT JSON request to:", url);
+    console.log("Request data:", { 
+      ...data, 
+      photo: data.photo ? `[Base64 Image - ${data.photo.length} characters]` : 'No photo' 
+    });
+    
+    // Create a new instance of axios for this request
+    const instance = axios.create({
+      baseURL: BASE_URL,
+      timeout: 30000,
+    });
+    
+    // Add auth token if available
+    const token = await getAccessJwtToken();
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await instance.put(url, data, { headers });
+    
+    console.log("PUT request successful:", {
+      status: response.status,
+      data: response.data
+    });
+    
+    return response.data;
+  } catch (error: any) {
+    console.error("PUT request error:", error);
+    
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
+      console.error('Response headers:', error.response.headers);
+      
+      // Create a more informative error object
+      const apiError = new Error(
+        error.response.data?.message || 
+        error.response.data?.error || 
+        `HTTP Error ${error.response.status}`
+      ) as any;
+      
+      apiError.response = {
+        data: error.response.data,
+        status: error.response.status,
+        headers: error.response.headers,
+      };
+      
+      // Include validation errors if available
+      if (error.response.data?.errors) {
+        apiError.validationErrors = error.response.data.errors;
+      }
+      
+      throw apiError;
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received:', error.request);
+      throw new Error('No response received from server. Please check your internet connection.');
+    } else {
+      // Something happened in setting up the request
+      console.error('Request setup error:', error.message);
+      throw new Error(`Request failed: ${error.message}`);
+    }
   }
 };
 

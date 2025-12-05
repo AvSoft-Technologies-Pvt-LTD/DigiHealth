@@ -74,21 +74,21 @@ const HealthCard: React.FC = () => {
   }, [dispatch]);
 
   // Match current patient by email
-  useEffect(() => {
-    if (allPatients?.length > 0) {
-      const currentPatient = allPatients.find(
-        (item: any) => userEmail === item.email
-      );
+  // useEffect(() => {
+  //   if (allPatients?.length > 0) {
+  //     const currentPatient = allPatients.find(
+  //       (item: any) => userEmail === item.email
+  //     );
 
-      if (currentPatient) {
-        dispatch(setCurrentPatient(currentPatient));
-        dispatch(fetchPatientDashboardData(currentPatient.id));
-        dispatch(setUserProfile({ patientId: currentPatient.id }));
-      } else {
-        console.log("No patient found with email:", userEmail);
-      }
-    }
-  }, [allPatients, userEmail, dispatch]);
+  //     if (currentPatient) {
+  //       dispatch(setCurrentPatient(currentPatient));
+  //       dispatch(fetchPatientDashboardData(currentPatient.id));
+  //       dispatch(setUserProfile({ patientId: currentPatient.id }));
+  //     } else {
+  //       console.log("No patient found with email:", userEmail);
+  //     }
+  //   }
+  // }, [allPatients, userEmail, dispatch]);
 
   // Fetch photo if available
   useEffect(() => {

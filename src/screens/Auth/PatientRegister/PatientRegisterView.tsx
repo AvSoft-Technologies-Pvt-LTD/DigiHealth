@@ -58,17 +58,17 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
     loading = false,
 }) => {
     const [formData, setFormData] = useState<PatientFormData>({
-        firstName: 'Perfect',
-        middleName: 'User',
-        lastName: 'Data',
+        firstName: 'Sahana',
+        middleName: 'S',
+        lastName: 'Kadrolli',
         phone: '9998887776',
-        email: 'perfect.user@example.com',
-        password: 'Perfect@123',
-        confirmPassword: 'Perfect@123',
+        email: 'sahana@gmail.com',
+        password: 'Sahana@123',
+        confirmPassword: 'Sahana@123',
         aadhaar: '999988887777',
-        genderId: 1,
-        dob: '1990-01-01',
-        occupation: 'Quality Analyst',
+        genderId: 2,
+        dob: '1998-01-01',
+        occupation: 'Developer',
         pinCode: '805104',
         city: 'Bangalore',
         district: 'Bangalore Urban',
@@ -119,6 +119,7 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         if (!formData.email.trim()) newErrors.email = 'Email is required';
         if (!formData.password.trim()) newErrors.password = 'Password is required';
         if (!formData.confirmPassword.trim()) newErrors.confirmPassword = 'Confirm password is required';
+        if (!formData.agreeDeclaration) newErrors.agreeDeclaration = 'You must agree to the terms and conditions';
 
         if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = 'Please enter a valid email address';
@@ -152,13 +153,18 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
             }
         }
 
+        // Optional: Validate image size client-side if needed
+        if (formData.photo?.fileSize && formData.photo.fileSize > 5 * 1024 * 1024) {
+            newErrors.photo = 'Image size should be less than 5MB';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleImagePicker = () => {
         Alert.alert(
-            'Select Image',
+            'Select Profile Photo',
             'Choose an option to select your photo',
             [
                 { text: 'Camera', onPress: () => openCamera() },
@@ -171,9 +177,11 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
     const openCamera = () => {
         const options = {
             mediaType: 'photo' as MediaType,
-            includeBase64: false,
+            includeBase64: false, // We'll convert in container
             maxHeight: 2000,
             maxWidth: 2000,
+            quality: 0.8, // Compress image quality
+            saveToPhotos: false,
         };
         launchImageLibrary(options, handleImageResponse);
     };
@@ -181,9 +189,10 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
     const openGallery = () => {
         const options = {
             mediaType: 'photo' as MediaType,
-            includeBase64: false,
+            includeBase64: false, // We'll convert in container
             maxHeight: 2000,
             maxWidth: 2000,
+            quality: 0.8, // Compress image quality
         };
         launchImageLibrary(options, handleImageResponse);
     };
@@ -199,6 +208,11 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
         if (response.assets && response.assets.length > 0) {
             const selectedImage = response.assets[0];
             updateFormData('photo', selectedImage);
+            
+            // Clear any previous photo errors
+            if (errors.photo) {
+                setErrors(prev => ({ ...prev, photo: undefined }));
+            }
         } else {
             Alert.alert('Error', 'No image was selected. Please try again.');
         }
@@ -235,7 +249,7 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
             const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
             let errorField: keyof PatientFormData | undefined;
 
-            if (errorMessage.toLowerCase().includes('Pincode')) {
+            if (errorMessage.toLowerCase().includes('pincode')) {
                 errorField = 'pinCode';
             } else if (errorMessage.toLowerCase().includes('email')) {
                 errorField = 'email';
@@ -243,6 +257,8 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                 errorField = 'phone';
             } else if (errorMessage.toLowerCase().includes('aadhaar')) {
                 errorField = 'aadhaar';
+            } else if (errorMessage.toLowerCase().includes('photo') || errorMessage.toLowerCase().includes('image')) {
+                errorField = 'photo';
             }
 
             setFormError({
@@ -433,7 +449,19 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                                     onPress={handleImagePicker}
                                 >
                                     {formData.photo?.uri ? (
-                                        <AvImage source={{ uri: formData.photo.uri }} style={styles.photoPreview} />
+                                        <View style={styles.photoPreviewContainer}>
+                                            <AvImage 
+                                                source={{ uri: formData.photo.uri }} 
+                                                style={styles.photoPreview} 
+                                                resizeMode="cover"
+                                            />
+                                            <TouchableOpacity 
+                                                style={styles.removePhotoButton}
+                                                onPress={() => updateFormData('photo', null)}
+                                            >
+                                                <AvIcons type="MaterialIcons" name="close" size={16} color={COLORS.WHITE} />
+                                            </TouchableOpacity>
+                                        </View>
                                     ) : (
                                         <View style={styles.photoPlaceholder}>
                                             <AvIcons type="MaterialIcons" name="add-a-photo" size={24} color={COLORS.GREY} />
@@ -442,6 +470,12 @@ const PatientRegisterView: React.FC<PatientRegisterViewProps> = ({
                                     )}
                                 </TouchableOpacity>
                                 {errors.photo && <AvText type="caption" style={styles.errorText}>{errors.photo}</AvText>}
+                                {formData.photo?.uri && (
+                                    <AvText type="caption2" style={styles.photoInfoText}>
+                                        {formData.photo.fileName || 'Selected image'} 
+                                        {formData.photo.fileSize ? ` • ${Math.round(formData.photo.fileSize / 1024)}KB` : ''}
+                                    </AvText>
+                                )}
                             </View>
                         </View>
 
@@ -568,7 +602,7 @@ const styles = StyleSheet.create({
     },
     scrollContentContainer: {
         flexGrow: 1,
-        paddingBottom: normalize(10),
+        paddingBottom: normalize(20),
     },
     content: {
         flex: 1,
@@ -576,47 +610,34 @@ const styles = StyleSheet.create({
     },
     headerSection: {
         alignItems: 'center',
-        paddingVertical: normalize(16),
-        marginBottom: normalize(8),
+        marginVertical: normalize(20),
     },
     title: {
-        fontSize: normalize(24),
-        fontWeight: 'bold',
         color: COLORS.PRIMARY,
-        textAlign: 'center',
+        fontWeight: '600',
+        marginBottom: normalize(4),
     },
     subtitle: {
-        fontSize: normalize(14),
         color: COLORS.GREY,
         textAlign: 'center',
-        marginTop: normalize(4),
     },
     form: {
-        flex: 1,
+        marginBottom: normalize(20),
     },
     section: {
-        marginBottom: normalize(16),
-        backgroundColor: COLORS.WHITE,
-        borderRadius: normalize(12),
-        padding: normalize(16),
-        shadowColor: COLORS.BLACK,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+        marginBottom: normalize(24),
     },
     sectionTitle: {
-        fontSize: normalize(16),
-        fontWeight: '600',
         color: COLORS.PRIMARY,
-        marginBottom: normalize(12),
-        paddingBottom: normalize(6),
+        fontWeight: '600',
+        marginBottom: normalize(16),
+        paddingBottom: normalize(8),
         borderBottomWidth: 1,
         borderBottomColor: COLORS.LIGHT_GREY,
     },
     row: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        marginBottom: normalize(12),
     },
     flex1: {
         flex: 1,
@@ -631,16 +652,10 @@ const styles = StyleSheet.create({
         marginRight: normalize(8),
     },
     inputContainer: {
-        marginBottom: normalize(10),
-    },
-    label: {
-        fontSize: normalize(12),
-        fontWeight: '500',
-        color: COLORS.BLACK,
-        marginBottom: normalize(4),
+        marginBottom: normalize(12),
     },
     input: {
-        height: normalize(48),
+        backgroundColor: COLORS.WHITE,
         fontSize: normalize(14),
     },
     inputError: {
@@ -648,23 +663,26 @@ const styles = StyleSheet.create({
     },
     errorText: {
         color: COLORS.ERROR,
-        fontSize: normalize(11),
-        marginTop: normalize(2),
-        marginLeft: normalize(4),
+        marginTop: normalize(4),
+        fontSize: normalize(12),
+    },
+    label: {
+        color: COLORS.DARK_GREY,
+        marginBottom: normalize(8),
+        fontSize: normalize(14),
+        fontWeight: '500',
     },
     dateButton: {
         borderWidth: 1,
         borderColor: COLORS.LIGHT_GREY,
-        borderRadius: normalize(8),
-        paddingHorizontal: normalize(12),
+        borderRadius: normalize(4),
         paddingVertical: normalize(12),
+        paddingHorizontal: normalize(12),
         backgroundColor: COLORS.WHITE,
-        height: normalize(48),
-        justifyContent: 'center',
     },
     dateText: {
-        fontSize: normalize(14),
         color: COLORS.BLACK,
+        fontSize: normalize(14),
     },
     placeholderText: {
         color: COLORS.GREY,
@@ -677,34 +695,56 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: COLORS.WHITE,
-        minHeight: normalize(80),
+        minHeight: normalize(100),
+    },
+    photoPreviewContainer: {
+        position: 'relative',
+        width: normalize(80),
+        height: normalize(80),
+    },
+    photoPreview: {
+        width: '100%',
+        height: '100%',
+        borderRadius: normalize(40),
+    },
+    removePhotoButton: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        backgroundColor: COLORS.ERROR,
+        borderRadius: normalize(10),
+        width: normalize(20),
+        height: normalize(20),
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     photoPlaceholder: {
         alignItems: 'center',
         justifyContent: 'center',
     },
     photoButtonText: {
-        fontSize: normalize(12),
         color: COLORS.GREY,
-        marginTop: normalize(4),
+        marginTop: normalize(8),
+        fontSize: normalize(12),
     },
-    photoPreview: {
-        width: normalize(60),
-        height: normalize(60),
-        borderRadius: normalize(8),
+    photoInfoText: {
+        marginTop: normalize(4),
+        color: COLORS.GREY,
+        fontSize: normalize(12),
+        textAlign: 'center',
     },
     checkboxContainer: {
-        marginBottom: normalize(16),
+        marginBottom: normalize(20),
     },
     checkbox: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     checkboxInner: {
-        width: normalize(18),
-        height: normalize(18),
-        borderWidth: 2,
-        borderColor: COLORS.PRIMARY,
+        width: normalize(20),
+        height: normalize(20),
+        borderWidth: 1,
+        borderColor: COLORS.LIGHT_GREY,
         borderRadius: normalize(4),
         marginRight: normalize(8),
         alignItems: 'center',
@@ -712,6 +752,7 @@ const styles = StyleSheet.create({
     },
     checkboxChecked: {
         backgroundColor: COLORS.PRIMARY,
+        borderColor: COLORS.PRIMARY,
     },
     checkmark: {
         color: COLORS.WHITE,
@@ -719,49 +760,42 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     checkboxText: {
-        fontSize: normalize(14),
-        color: COLORS.BLACK,
+        color: COLORS.DARK_GREY,
         flex: 1,
     },
     submitButton: {
         backgroundColor: COLORS.PRIMARY,
-        paddingVertical: normalize(14),
         borderRadius: normalize(8),
+        paddingVertical: normalize(14),
         alignItems: 'center',
-        marginBottom: normalize(16),
-        shadowColor: COLORS.PRIMARY,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
+        marginBottom: normalize(20),
     },
     submitButtonDisabled: {
-        opacity: 0.6,
+        backgroundColor: COLORS.LIGHT_GREY,
+        opacity: 0.7,
     },
     submitButtonText: {
         color: COLORS.WHITE,
-        fontSize: normalize(16),
         fontWeight: '600',
     },
     loginLinkContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
+        marginBottom: normalize(20),
     },
     loginLinkText: {
-        fontSize: normalize(14),
         color: COLORS.GREY,
     },
     loginLink: {
-        fontSize: normalize(14),
         color: COLORS.PRIMARY,
         fontWeight: '600',
     },
     errorContainer: {
-        padding: normalize(8),
-        backgroundColor: COLORS.ERROR,
-        borderRadius: normalize(4),
-        marginTop: normalize(8),
+        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+        padding: normalize(12),
+        borderRadius: normalize(8),
+        marginTop: normalize(12),
     },
 });
 

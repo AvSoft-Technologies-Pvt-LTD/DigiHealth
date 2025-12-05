@@ -16,8 +16,8 @@ interface Appointment {
     consultationType?: string;
     date: string;
     time: string;
-    appointmentDate:"string";
-    appointmentTime:"string";
+    appointmentDate: "string";
+    appointmentTime: "string";
     type: 'Virtual' | 'Physical';
     status?: string;
     action?: string;
@@ -30,56 +30,63 @@ const RecentAppointmentsComponent: React.FC<{ recentAppointments: any; displayTy
     const onAppointmentAction = (id: number, action: string) => {
         console.log('Appointment Action:', id, action);
     };
-      const PatAppointmentData = useAppSelector((state) => state.patientAppointmentsData.appointmentsData);
+    const PatAppointmentData = useAppSelector((state) => state.patientAppointmentsData.appointmentsData);
     // Render table for patient view
-    const renderPatientTableView = (PatAppointmentData:any) => {
+    const renderPatientTableView = (PatAppointmentData: any) => {
         return (
-            <View style={styles.tableContainer}>
-                <View style={styles.tableHeader}>
-                    <AvText type="caption" style={styles.headerText}>Doctor Name</AvText>
-                    <AvText type="caption" style={styles.headerText}>Date & Time</AvText>
-                    <AvText type="caption" style={styles.headerText}>Consultation Type</AvText>
-                    <AvText type="caption" style={styles.headerText}>Status</AvText>
-                </View>
-                <ScrollView 
-                    horizontal 
-                    showsHorizontalScrollIndicator={true}
-                    style={styles.horizontalScrollView}
-                >
-                    <View style={styles.tableBody}>
-                        {PatAppointmentData.slice(0, 3).map((appointment: Appointment) => (
-                            <TouchableOpacity 
-                                key={appointment.id} 
-                                style={styles.tableRow}
-                                onPress={() => onAppointmentAction(appointment.id, 'view')}
-                            >
-                                <View style={styles.tableCell}>
-                                    <AvText type="caption" style={styles.cellText}>
-                                        {appointment.doctorName || 'General'}
-                                    </AvText>
-                                </View>
-                                <View style={styles.tableCell}>
-                                    <AvText type="caption" style={styles.cellText}>
-                                {appointment.appointmentDate ? moment(appointment.appointmentDate).format('DD-MM-YY')+" | " : ''}
-                                {appointment.appointmentTime ? moment(appointment.appointmentTime, 'HH:mm:ss').format('hh:mm A') : ''}
-                                        
-                                    </AvText>
-                                </View>
-                                <View style={styles.tableCell}>
-                                    <View style={[styles.typeBadge, appointment.consultationType === 'Virtual' ? styles.virtualBadge : styles.physicalBadge]}>
-                                        <AvText type="caption" style={styles.typeText}>{appointment.consultationType}</AvText>
-                                    </View>
-                                </View>
-                                <View style={styles.tableCell}>
-                                    <View style={[styles.statusBadge, getStatusStyle(appointment.status)]}>
-                                        <AvText type="caption" style={styles.statusText}>{appointment.status || 'Scheduled'}</AvText>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
+            <>
+
+                {PatAppointmentData.length > 0 ? <View style={styles.tableContainer}>
+                    <View style={styles.tableHeader}>
+                        <AvText type="caption" style={styles.headerText}>Doctor Name</AvText>
+                        <AvText type="caption" style={styles.headerText}>Date & Time</AvText>
+                        <AvText type="caption" style={styles.headerText}>Consultation Type</AvText>
+                        <AvText type="caption" style={styles.headerText}>Status</AvText>
                     </View>
-                </ScrollView>
-            </View>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={true}
+                        style={styles.horizontalScrollView}
+                    >
+                        <View style={styles.tableBody}>
+                            {PatAppointmentData.slice(0, 3).map((appointment: Appointment) => (
+                                <TouchableOpacity
+                                    key={appointment.id}
+                                    style={styles.tableRow}
+                                    onPress={() => onAppointmentAction(appointment.id, 'view')}
+                                >
+                                    <View style={styles.tableCell}>
+                                        <AvText type="caption" style={styles.cellText}>
+                                            {appointment.doctorName || 'General'}
+                                        </AvText>
+                                    </View>
+                                    <View style={styles.tableCell}>
+                                        <AvText type="caption" style={styles.cellText}>
+                                            {appointment.appointmentDate ? moment(appointment.appointmentDate).format('DD-MM-YY') + " | " : ''}
+                                            {appointment.appointmentTime ? moment(appointment.appointmentTime, 'HH:mm:ss').format('hh:mm A') : ''}
+
+                                        </AvText>
+                                    </View>
+                                    <View style={styles.tableCell}>
+                                        <View style={[styles.typeBadge, appointment.consultationType === 'Virtual' ? styles.virtualBadge : styles.physicalBadge]}>
+                                            <AvText type="caption" style={styles.typeText}>{appointment.consultationType}</AvText>
+                                        </View>
+                                    </View>
+                                    <View style={styles.tableCell}>
+                                        <View style={[styles.statusBadge, getStatusStyle(appointment.status)]}>
+                                            <AvText type="caption" style={styles.statusText}>{appointment.status || 'Scheduled'}</AvText>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </ScrollView>
+                </View> : <View style={styles.tableCell}>
+                    <View style={[styles.typeBadge, styles.virtualBadge]}>
+                        <AvText type="caption" style={styles.typeText}>No Data Found</AvText>
+                    </View>
+                </View>}
+            </>
         );
     };
 
@@ -99,35 +106,35 @@ const RecentAppointmentsComponent: React.FC<{ recentAppointments: any; displayTy
     const renderDoctorCardView = () => {
         return (
             <>
-            <View style={styles.appointmentsList}>
-                {recentAppointments?.slice(0, 3).map((appointment: Appointment) => (
-                    <View key={appointment.id} style={styles.appointmentItem}>
-                        <View style={styles.appointmentAvatar}>
-                            <AvIcons type="MaterialIcons" name="person" size={24} color={COLORS.PRIMARY} />
-                        </View>
-                        <View style={styles.appointmentInfo}>
-                            <AvText type="body" style={styles.patientName}>
-                                {appointment.name} {appointment.lastName || ''}
-                            </AvText>
-                            <View style={styles.appointmentMeta}>
-                                <AvIcons type="MaterialIcons" name="schedule" size={12} color={COLORS.GREY} />
-                                <AvText type="caption" style={styles.appointmentTime}>
-                                    {appointment.date + "  |  " + appointment.time}
+                <View style={styles.appointmentsList}>
+                    {recentAppointments?.slice(0, 3).map((appointment: Appointment) => (
+                        <View key={appointment.id} style={styles.appointmentItem}>
+                            <View style={styles.appointmentAvatar}>
+                                <AvIcons type="MaterialIcons" name="person" size={24} color={COLORS.PRIMARY} />
+                            </View>
+                            <View style={styles.appointmentInfo}>
+                                <AvText type="body" style={styles.patientName}>
+                                    {appointment.name} {appointment.lastName || ''}
                                 </AvText>
-                                <View style={[styles.typeBadge, appointment.type === 'Virtual' ? styles.virtualBadge : styles.physicalBadge]}>
-                                    <AvText type="caption" style={styles.typeText}>{appointment.type}</AvText>
+                                <View style={styles.appointmentMeta}>
+                                    <AvIcons type="MaterialIcons" name="schedule" size={12} color={COLORS.GREY} />
+                                    <AvText type="caption" style={styles.appointmentTime}>
+                                        {appointment.date + "  |  " + appointment.time}
+                                    </AvText>
+                                    <View style={[styles.typeBadge, appointment.type === 'Virtual' ? styles.virtualBadge : styles.physicalBadge]}>
+                                        <AvText type="caption" style={styles.typeText}>{appointment.type}</AvText>
+                                    </View>
                                 </View>
                             </View>
+                            <TouchableOpacity
+                                style={styles.appointmentAction}
+                                onPress={() => onAppointmentAction(appointment.id, appointment.action || 'view')}
+                            >
+                                <AvIcons type="MaterialIcons" name="chevron-right" size={20} color={COLORS.GREY} />
+                            </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                            style={styles.appointmentAction}
-                            onPress={() => onAppointmentAction(appointment.id, appointment.action || 'view')}
-                        >
-                            <AvIcons type="MaterialIcons" name="chevron-right" size={20} color={COLORS.GREY} />
-                        </TouchableOpacity>
-                    </View>
-                ))}
-            </View>
+                    ))}
+                </View>
             </>
         );
     };
@@ -136,10 +143,10 @@ const RecentAppointmentsComponent: React.FC<{ recentAppointments: any; displayTy
         <View style={styles.card}>
             <View style={styles.cardHeader}>
                 <AvText type="heading_6" style={styles.cardTitle}>Recent Appointments</AvText>
-                <TouchableOpacity style={styles.viewAllButton} onPress={onViewAllAppointments}>
+                {PatAppointmentData.length>0 &&<TouchableOpacity style={styles.viewAllButton} onPress={onViewAllAppointments}>
                     <AvText type="caption" style={styles.viewAllText}>View All</AvText>
                     <AvIcons type="MaterialIcons" name="arrow-forward" size={16} color={COLORS.PRIMARY} />
-                </TouchableOpacity>
+                </TouchableOpacity>}
             </View>
 
             {displayType === ROLES.PATIENT ? renderPatientTableView(PatAppointmentData) : renderDoctorCardView()}

@@ -6,16 +6,17 @@ import {
   Animated,
   TouchableOpacity,
 } from "react-native";
+import { Avatar } from "react-native-paper";
 import moment from 'moment';
-
 import { COLORS } from "../../../../constants/colors";
 import { PAGES } from "../../../../constants/pages";
 import { useNavigation } from "@react-navigation/native";
 import PatientModals from "./index";
 import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
-import { fetchPatientBloodGroupData, fetchPatientPersonalHealthData, fetchPatientPhoto } from "../../../../store/thunks/patientThunks";
+import { fetchAllPatients, fetchPatientBloodGroupData, fetchPatientPersonalHealthData, fetchPatientPhoto } from "../../../../store/thunks/patientThunks";
 import { AvButton, AvIcons, AvImage, AvText } from "../../../../elements";
-import { API } from "../../../../config/api";
+import { setCurrentPatient } from "../../../../store/slices/allPatientSlice";
+import { getImageSource, getInitials } from "../../../../services/apiHelpers";
 
 interface ActionButtonProps {
   id: string;
@@ -63,11 +64,11 @@ const PatientOverview = () => {
     startDate: new Date(),
     endDate: new Date(),
     isPrimaryHolder: false,
-    photo: null,
+    photo: null as string | null, // Changed to string for base64
   });
-const patientAdditionalData = useAppSelector((state) => state?.patientAdditionalData?.additionalDetails);
-const familyMemberData = useAppSelector((state) => state.familyMemberData.familyMemberData);
-  
+  const patientAdditionalData = useAppSelector((state) => state?.patientAdditionalData?.additionalDetails);
+  const familyMemberData = useAppSelector((state) => state.familyMemberData.familyMemberData);
+
 
   const [completion, setCompletion] = useState({
     basicDetails: true,
@@ -96,7 +97,7 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
   };
 
   const handleSave = (section: keyof typeof completion) => {
-    console.log("UPDATE HANDLE SAVE",section,"Completion",completion)
+    console.log("UPDATE HANDLE SAVE", section, "Completion", completion)
     // setCompletion((prev) => ({ ...prev, [section]: true }));
     // if (section === "personalHealth" || section === "family" || section === "additionalDetails") {
     //   closeModal(section);
@@ -105,10 +106,10 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
 
   const completedSections = Object.values(completion).filter(Boolean).length;
   const progress = (completedSections / 4) * 100;
-  
+
   // Animated progress bar
   const progressAnim = useRef(new Animated.Value(0)).current;
-  
+
   useEffect(() => {
     // Animate progress bar to target value
     Animated.timing(progressAnim, {
@@ -122,18 +123,18 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
   const { patientPersonalData } = useAppSelector((state) => state.patientPersonalData);
   const dispatch = useAppDispatch();
 
-  
+
   useEffect(() => {
-    if(patientAdditionalData){
+    if (patientAdditionalData) {
       setCompletion((prev) => ({ ...prev, additionalDetails: true }));
     }
-    if (familyMemberData){
+    if (familyMemberData) {
       setCompletion((prev) => ({ ...prev, family: true }));
     }
-    if (patientPersonalData){
+    if (patientPersonalData) {
       setCompletion((prev) => ({ ...prev, personalHealth: true }));
     }
-  }, [patientAdditionalData,familyMemberData,patientPersonalData])
+  }, [patientAdditionalData, familyMemberData, patientPersonalData])
 
   useEffect(() => {
     if (patientDashboardData) {
@@ -147,42 +148,21 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
       }));
     }
   }, [patientDashboardData]);
-  
+
 
   const id = useAppSelector((state) => state.user.userProfile.patientId);
   const { currentPatient } = useAppSelector((state) => state.currentPatient || {});
-  // const fetchPtImage = async () => {
-  //   try {
-  //     if (formData?.photo) {
-  //       console.log("FORM PHOTO HERE",formData)
-  //       await dispatch(fetchPatientPhoto(formData?.photo));
-  //     }
-  //   } catch (error) {
-  //     console.log("Error fetching photo", error);
-  //   }
-  // };
-  // useEffect(() => {
-  //   fetchPtImage();
-  // }, [formData?.photo]); // Add empty dependency array to prevent rerendering
 
-  const { photo } = useAppSelector((state) => state.patientSettingData || { photo: null, loading: true });
-  const [profileImage, setProfileImage] = useState<string>(photo || '');
-  // Generate initials from name
-  const getInitials = (name: string) => {
-    if (!name) return 'US';
-    return name
-      .split(' ')
-      .filter(part => part.length > 0) // Filter out any empty strings
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
-  // const userInitials = getInitials(formData.firstName + " " + formData.lastName);
+
+  // Get user initials for avatar fallback
+  const userInitials = getInitials(`${formData.firstName} ${formData.lastName}`);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchPatientPersonalHealthData(id));
+      dispatch(fetchAllPatients());
+      // Optionally fetch photo separately if needed
+      // dispatch(fetchPatientPhoto(id));
     }
   }, [dispatch, id]);
 
@@ -206,7 +186,6 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
         surgerySinceYears: patientPersonalData?.surgerySinceYears?.toString() || ""
       }));
     }
-    setProfileImage(photo || '');
   }, [patientPersonalData]);
 
   const actionButtons: ActionButtonProps[] = [
@@ -239,6 +218,7 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
       completed: completion.additionalDetails
     }
   ];
+
   const renderActionButton = ({ item }: { item: ActionButtonProps }) => (
     <AvButton
       mode="contained"
@@ -262,6 +242,30 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
       </View>
     </AvButton>
   );
+
+
+
+  const imageSource = getImageSource(formData);
+
+  const handleNavigation = ({ button }: { button: string }) => {
+    if (allPatients?.length > 0) {
+      const currentPatient = allPatients.find(
+        (item: any) => formData.email === item.email
+      );
+      if (currentPatient) {
+        dispatch(setCurrentPatient(currentPatient));
+      } else {
+        console.log("No patient found with email:", formData.email);
+      }
+    }
+    if (button === "viewHealthCard") {
+      navigation.navigate(PAGES.PATIENT_HEALTHCARD as never);
+    }
+    if (button === "editProfile") {
+      navigation.navigate(PAGES.PATIENT_SETTINGS as never);
+    }
+  }
+
   return (
     <>
       <View style={[styles.card, styles.cardShadow]}>
@@ -272,7 +276,7 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
           </AvText>
           <View style={styles.headerButtons}>
             <AvButton
-              onPress={() => navigation.navigate(PAGES.PATIENT_HEALTHCARD as never)}
+              onPress={() => handleNavigation({ button: "viewHealthCard" })}
               mode="contained"
               contentStyle={styles.viewHealthCardButtonContent}
               buttonColor={COLORS.PRIMARY}
@@ -281,7 +285,7 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
                 View Health Card
               </AvText>
             </AvButton>
-            <TouchableOpacity onPress={() => navigation.navigate(PAGES.PATIENT_SETTINGS as never)}>
+            <TouchableOpacity onPress={() => handleNavigation({ button: "editProfile" })}>
               <AvIcons type="MaterialCommunityIcons" name="pencil" size={20} color={COLORS.PRIMARY} />
             </TouchableOpacity>
           </View>
@@ -290,7 +294,13 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
-            {/* {(photo === null) && (
+            {imageSource ? (
+              <AvImage
+                source={imageSource}
+                style={styles.profileImage}
+                resizeMode="cover" // Add a default profile image to your IMAGES constant
+              />
+            ) : (
               <Avatar.Text
                 size={80}
                 label={userInitials}
@@ -298,18 +308,10 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
                 color={COLORS.WHITE}
                 labelStyle={{ fontSize: 32, fontWeight: 'bold' }}
               />
-            )} */}
-
-            {formData.photo && (
-              <AvImage
-                source={{ uri: API.PATIENT_PHOTO + formData.photo }}
-                style={{ width: 80, height: 80, borderRadius: 100 }}
-              />
-
             )}
           </View>
           <AvText type="title_6" style={{ color: COLORS.PRIMARY, marginTop: 8 }}>
-            {formData.firstName +" "+ formData.lastName || formData.email}
+            {formData.firstName + " " + formData.lastName || formData.email}
           </AvText>
         </View>
 
@@ -359,7 +361,7 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
                 </AvText>
               </View>
               <AvText type="heading_5" style={styles.detailValue}>
-                {patientPersonalData && patientPersonalData? patientPersonalData?.bloodGroupName || "N/A" : "N/A"}
+                {patientPersonalData && patientPersonalData ? patientPersonalData?.bloodGroupName || "N/A" : "N/A"}
               </AvText>
             </View>
           </View>
@@ -368,17 +370,17 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
         {/* Progress Bar */}
         <View style={styles.progressSection}>
           <View style={styles.progressBar}>
-            <Animated.View 
+            <Animated.View
               style={{
-                height: "100%", 
-                backgroundColor: COLORS.SECONDARY, 
-                borderRadius: 3, 
+                height: "100%",
+                backgroundColor: COLORS.SECONDARY,
+                borderRadius: 3,
                 width: progressAnim.interpolate({
                   inputRange: [0, 100],
                   outputRange: ['0%', '100%'],
                   extrapolate: 'clamp'
                 })
-              }} 
+              }}
             />
           </View>
           <AvText type="caption" style={styles.progressText}>
@@ -391,11 +393,11 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
           data={actionButtons}
           horizontal
           showsHorizontalScrollIndicator={true}
-          indicatorStyle="black" // or "white" for dark backgrounds
-          contentContainerStyle={[styles.buttonsContainer, { paddingBottom: 10 }]} // Add some padding
+          indicatorStyle="black"
+          contentContainerStyle={[styles.buttonsContainer, { paddingBottom: 10 }]}
           keyExtractor={(item) => item.id}
           renderItem={renderActionButton}
-          style={{ height: 'auto' }} // Ensure height is properly set
+          style={{ height: 'auto' }}
         />
 
         {/* Modals */}
@@ -407,26 +409,19 @@ const familyMemberData = useAppSelector((state) => state.familyMemberData.family
           handleInputChange={handleInputChange}
           handleToggleChange={handleToggleChange}
           handleSave={handleSave}
-          
         />
       </View>
     </>
   );
 };
-
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.WHITE,
     borderRadius: 0,
     padding: 20,
-    // marginBottom: 16,
   },
   cardShadow: {
-    // shadowColor: COLORS.SECONDARY,
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.2,
-    // shadowRadius: 4,
-    // elevation: 3,
+    // shadow styles...
   },
   cardHeader: {
     flexDirection: "row",
@@ -454,13 +449,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  profileImage: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    borderRadius: 40,
-  },
-
   detailsSection: {
     marginBottom: 20,
   },
@@ -486,7 +474,6 @@ const styles = StyleSheet.create({
   detailValue: {
     marginLeft: 24,
     color: COLORS.PRIMARY_TXT,
-    // fontSize: 15,
     fontWeight: "900",
   },
   progressSection: {
@@ -523,6 +510,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     marginLeft: 8,
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
 });
 
